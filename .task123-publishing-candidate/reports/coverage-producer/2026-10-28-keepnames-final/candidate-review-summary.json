@@ -1,0 +1,47 @@
+{
+  "schemaVersion": 1,
+  "recordedAt": "2026-10-28T12:34:20.111791+00:00",
+  "scope": "Outside-checkout C5 helper-repair candidate; not landed, no global merge and no readiness claim",
+  "candidateSourceHash": "25236fe156f174604227874e4efd3e8de2d52a5c1df43652e2d20f4c37882268",
+  "tests": {
+    "actualCases": 9,
+    "passed": 9,
+    "failed": 0,
+    "skipped": 0,
+    "includesActualSyntheticVMInspector": true,
+    "appCredentialsInherited": false,
+    "notes": "Initial7PASS1FAILwasanincorrectfixtureassumptionaboutesbuildrenamingauthor__name;source/logretainedandcorrected."
+  },
+  "replayedFiles": 9,
+  "allConvertedProfilesValidated": true,
+  "serializedMapCompatibleFiles": [
+    "server/config/ports.ts",
+    "server/lib/pdimCircuitBreaker.ts"
+  ],
+  "strictRawCompatibleFiles": [],
+  "remainingSerializedIncompatibleFiles": [
+    "server/pocket-dimension/fabric/storage/PocketDimensionChunkStore.ts",
+    "external/pdim/artifacts/api-server/src/redis/store.ts",
+    "server/lib/pdimClient.ts",
+    "server/logger.ts",
+    "external/pdim/artifacts/api-server/src/workers/lua-pool.ts",
+    "server/lib/luaExecutor.ts",
+    "server/logSanitizer.ts"
+  ],
+  "coordinateComparisonChanged": false,
+  "mergedIntoGlobalCoverage": false,
+  "canonicalCoverageUnchanged": true,
+  "currentRepoSourceUnchanged": {
+    "scripts/testing/coverage-provenance.mjs": "71e7697be79434da049ccce6b79dc06139ab8ea63f5290891109878efd2c5030",
+    "scripts/testing/collect-node-coverage.mjs": "5690f641c69b2d55c12be972920a740cac23e0215a87ef5ed5692b0830308cd3",
+    "tests/testing/coverage-provenance.test.mjs": "58492a0d5130c0acbd291699d671c3ebcb894680e6ecd285beceb3f10cc8a85f"
+  },
+  "integrationPatchFiles": [
+    "scripts/testing/coverage-provenance.mjs",
+    "scripts/testing/collect-node-coverage.mjs",
+    "tests/testing/coverage-provenance.test.mjs"
+  ],
+  "portableAdditionalFrameworkTests": 8,
+  "portableFullFrameworkRun": "NOT_RUN;patchcheck/syntaxonlyuntilrootreviewandcoldcomplete",
+  "productionReady": false
+}

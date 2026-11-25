@@ -41,13 +41,15 @@ test("historical publishing owns packing; ordinary compilation cannot launch a s
   const {buildPlan}=await import("../script/deployment/plans.mjs");
   const plan=buildPlan();
   const source=plan.find(task=>task.id==="source");
-  assert.deepEqual(new Set(source.deps),new Set(["pack_node","pack_python","pack_maxcore","pack_pdim"]));
+  assert.deepEqual(new Set(source.deps),new Set([
+    "assets","rust","pack_node","pack_python","pack_maxcore","pack_pdim",
+  ]));
   assert.deepEqual(plan.find(task=>task.id==="remainder").deps,["source"]);
   assert.deepEqual(plan.find(task=>task.id==="finalize").deps,["remainder"]);
   const bootstrap=fs.readFileSync("script/deployment/bootstrap.sh","utf8");
   assert.ok(bootstrap.indexOf("isolate_publishing_caches") < bootstrap.indexOf('for candidate'));
   assert.ok(bootstrap.indexOf("--recover") < bootstrap.indexOf('for manager in npm pnpm'));
-  assert.ok(bootstrap.indexOf("--recover") < bootstrap.lastIndexOf('exec "$tools/node"'));
+  assert.ok(bootstrap.indexOf("--recover") < bootstrap.lastIndexOf('"$tools/node" "$sequential_build"'));
   assert.match(fs.readFileSync("script/deployment/publishing-context.sh","utf8"),/export PUBLISH_SHELL_PACKS_CAPSULES=1/);
   assert.match(fs.readFileSync("build.sh","utf8"),/bash .*image-size-gate\.sh/);
 });

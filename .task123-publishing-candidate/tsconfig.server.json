@@ -1,0 +1,15 @@
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "tsBuildInfoFile": "./.cache/tsbuildinfo.server"
+  },
+  "include": ["server/**/*", "shared/**/*", "*.ts"],
+  "exclude": [
+    "node_modules",
+    "build",
+    "dist",
+    "**/*.test.ts",
+    "node_modules/googleapis/**",
+    "fix-*.ts"
+  ]
+}

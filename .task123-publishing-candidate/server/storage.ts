@@ -1,0 +1,3890 @@
+// @ts-nocheck
+import { logger } from "./logger";
+import { decryptSocialCredential } from "./services/socialCredentialCodec.js";
+import {
+  getToolostApiEnvironment,
+  type ToolostApiEnvironment,
+} from "./services/toolostEnvironment.js";
+import { randomBytes } from "crypto";
+import { users, dspProviders, projects, releases, posts, socialAccounts, socialCampaigns, adCampaigns, adCreatives, adDeliveryLogs, contentCalendar, aiModels, notifications, analytics, pluginCatalog, pluginPresets, distroReleases, distroTracks, artistProfiles, instantPayouts, royaltyTransactions, hyperFollowPages, jwtTokens, refreshTokens, listings, listingLicenseTiers, sessions, collabSnapshots, orders, autopilotLearningData, inferenceRuns, socialKeywords, socialMentions, socialAutopilotContent, systemSettings, workspaceAuditLog, contractTemplates, systemLogs, toolostConnection, youtubeConnections, youtubeUploads, type User, type InsertUser, type DSPProvider, type InsertProject, type CollabSnapshot, type InsertCollabSnapshot, type ToolostConnection, type InsertToolostConnection, type YoutubeConnection, type InsertYoutubeConnection, type YoutubeUpload, type InsertYoutubeUpload } from "@shared/schema";
+import { db, dbRead } from "./db";
+import {
+  canAccessBeatMoneyLoopSourceAudio,
+  getDistinctBeatMoneyLoopPreviewUrl,
+} from "./services/beatMoneyLoopAudioAccess.js";
+import { eq, and, desc, gte, lte, sql, inArray, ilike, or, asc, lt, isNotNull } from "drizzle-orm";
+
+type Project = typeof projects.$inferSelect;
+type Release = typeof releases.$inferSelect;
+type Post = typeof posts.$inferSelect;
+type SocialAccount = typeof socialAccounts.$inferSelect;
+type AdCampaign = typeof adCampaigns.$inferSelect;
+type Notification = typeof notifications.$inferSelect;
+type DistroRelease = typeof distroReleases.$inferSelect;
+type DistroTrack = typeof distroTracks.$inferSelect;
+
+export interface IStorage {
+  createOptimizationTask(task: {
+    taskType: string;
+    status: string;
+    description: string;
+    metrics?: Record<string, unknown>;
+    executedAt?: Date;
+    completedAt?: Date;
+  }): Promise<{ id: number }>;
+  getUser(id: string): Promise<User | undefined>;
+  getUserByEmail(email: string): Promise<User | undefined>;
+  getUserByUsername(username: string): Promise<User | undefined>;
+  getUserByPasswordResetToken(token: string): Promise<User | undefined>;
+  createUser(user: InsertUser): Promise<User>;
+  updateUser(id: string, data: Partial<User>): Promise<User | undefined>;
+  deleteUser(id: string): Promise<boolean>;
+  getDistributionProvider(slug: string): Promise<DSPProvider | undefined>;
+  getToolostConnection(
+    userId: string,
+    environment?: ToolostApiEnvironment,
+  ): Promise<ToolostConnection | undefined>;
+  getAdminToolostConnection(
+    environment?: ToolostApiEnvironment,
+  ): Promise<ToolostConnection | undefined>;
+  upsertToolostConnection(
+    data: Partial<InsertToolostConnection> & {
+      accessToken: string;
+      refreshToken: string;
+      tokenExpiresAt: Date;
+      connectedByUserId: string;
+      environment?: ToolostApiEnvironment;
+    },
+  ): Promise<ToolostConnection>;
+  deleteToolostConnection(
+    userId: string,
+    environment?: ToolostApiEnvironment,
+  ): Promise<boolean>;
+  getProjectsByUserId(userId: string): Promise<Project[]>;
+  createProject(project: InsertProject): Promise<Project>;
+  getReleasesByUserId(userId: string): Promise<Release[]>;
+  createJWTToken(data: Record<string, unknown>): Promise<string>;
+  verifyJWTToken(jti: string): Promise<boolean>;
+  revokeJWTToken(id: string, reason: string): Promise<void>;
+  revokeAllJWTTokensForUser(userId: string, reason: string): Promise<void>;
+  createRefreshToken(data: Record<string, unknown>): Promise<string>;
+  getRefreshToken(token: string): Promise<unknown>;
+  revokeRefreshToken(id: string, reason: string): Promise<void>;
+  revokeAllRefreshTokensForUser(userId: string, reason: string): Promise<void>;
+  createAdDeliveryLog(data: {
+    variantId: string;
+    platform: string;
+    platformAdId?: string;
+    deliveryStatus: string;
+    platformResponse?: Record<string, unknown>;
+    errorMessage?: string;
+    retryCount?: number;
+    deliveredAt?: Date;
+  }): Promise<unknown>;
+}
+
+export class DatabaseStorage implements IStorage {
+  // Auth queries always use the primary db — replicas are for analytics/dashboard reads.
+  // Authentication requires the latest committed data; replica lag cannot be tolerated here.
+  private async _retryQuery<T>(
+    fn: () => Promise<T>,
+    label: string,
+  ): Promise<T> {
+    let lastErr: unknown;
+    // 2 attempts (1 retry) with a 300 ms backoff.  Kept small so that a
+    // congested Neon WebSocket connection doesn't stall foreground requests
+    // for multiple seconds — the caller (attachUser, route handlers) must
+    // respond within the HTTP client's AbortSignal budget.
+    const MAX_ATTEMPTS = 2;
+    for (let attempt = 1; attempt <= MAX_ATTEMPTS; attempt++) {
+      try {
+        return await fn();
+      } catch (err) {
+        lastErr = err;
+        const msg = (err as any)?.message ?? "";
+        const causeMsg = (err as any)?.cause?.message ?? "";
+        const causeCode = (err as any)?.cause?.code ?? (err as any)?.code ?? "";
+        const permanentCodes = new Set([
+          "42703",
+          "42P01",
+          "42601",
+          "23505",
+          "23503",
+          "22001",
+          "22P02",
+        ]);
+        const isPermanent = permanentCodes?.has(causeCode);
+        const isTransient =
+          !isPermanent &&
+          (msg?.includes("Failed query") ||
+            causeMsg?.includes("timeout") ||
+            causeMsg?.includes("connection") ||
+            causeMsg?.includes("ECONNRESET") ||
+            causeMsg?.includes("WebSocket") ||
+            causeMsg?.includes("closed"));
+        if (isTransient && attempt < MAX_ATTEMPTS) {
+          logger.warn(
+            `[Storage] ${label} transient DB error (attempt ${attempt}/${MAX_ATTEMPTS}), retrying in 300ms:`,
+            msg,
+            "| cause:",
+            causeMsg || "none",
+            "| code:",
+            causeCode || "none",
+          );
+          await new Promise((r) => setTimeout(r, 300));
+          continue;
+        }
+        logger.warn(
+          `[Storage] ${label} final DB error after ${attempt} attempts:`,
+          msg,
+          "| cause:",
+          causeMsg || "none",
+          "| code:",
+          causeCode || "none",
+          "| causeDetail:",
+          JSON.stringify((err as any)?.cause ?? null),
+        );
+        throw err;
+      }
+    }
+    throw lastErr;
+  }
+
+  async getUser(id: string): Promise<User | undefined> {
+    const [user] = await this._retryQuery(
+      () => db.select().from(users).where(eq(users.id, id)).limit(1),
+      "getUser",
+    );
+    return user || undefined;
+  }
+
+  // Persistent audit trail for self-evolution / silent-deployment / autonomous
+  // update tasks. Backed by the existing system_logs table (service:
+  // "optimization") rather than a new table, since callers only need a
+  // queryable append-only record, not a dedicated schema.
+  async createOptimizationTask(task: {
+    taskType: string;
+    status: string;
+    description: string;
+    metrics?: Record<string, unknown>;
+    executedAt?: Date;
+    completedAt?: Date;
+  }): Promise<{ id: number }> {
+    const [row] = await db
+      .insert(systemLogs)
+      .values({
+        level: task.status === "failed" ? "warn" : "info",
+        service: "optimization",
+        message: `[${task.taskType}] ${task.description}`,
+        metadata: {
+          taskType: task.taskType,
+          status: task.status,
+          metrics: task.metrics ?? {},
+          executedAt: (task.executedAt ?? new Date()).toISOString(),
+          completedAt: (task.completedAt ?? new Date()).toISOString(),
+        },
+      })
+      .returning({ id: systemLogs.id });
+    return { id: row.id };
+  }
+
+  async getUserByEmail(email: string): Promise<User | undefined> {
+    const [user] = await this._retryQuery(
+      () => db.select().from(users).where(eq(users.email, email)).limit(1),
+      "getUserByEmail",
+    );
+    return user || undefined;
+  }
+
+  async getUserByUsername(username: string): Promise<User | undefined> {
+    const [user] = await this._retryQuery(
+      () =>
+        db.select().from(users).where(eq(users.username, username)).limit(1),
+      "getUserByUsername",
+    );
+    return user || undefined;
+  }
+
+  async getUserByPasswordResetToken(token: string): Promise<User | undefined> {
+    const [user] = await this._retryQuery(
+      () =>
+        db
+          .select()
+          .from(users)
+          .where(eq(users.passwordResetToken, token))
+          .limit(1),
+      "getUserByPasswordResetToken",
+    );
+    return user || undefined;
+  }
+
+  async createUser(insertUser: InsertUser): Promise<User> {
+    const [user] = await db.insert(users).values(insertUser).returning();
+
+    // Initialize Pocket Dimension storage for new user — fire-and-forget so
+    // PDIM congestion never blocks or fails the user-creation response.
+    import("./services/userPocketDimensionService.js")
+      .then(({ userPocketService }) =>
+        userPocketService?.initializeUserStorage(user?.id, user?.email),
+      )
+      .catch((error) =>
+        logger.warn(
+          { err: error },
+          `[Storage] Failed to initialize pocket dimension for user ${user?.id}:`,
+        ),
+      );
+
+    return user;
+  }
+
+  async updateUser(id: string, data: Partial<User>): Promise<User | undefined> {
+    const [user] = await db
+      .update(users)
+      .set(data)
+      .where(eq(users.id, id))
+      .returning();
+    return user || undefined;
+  }
+
+  async deleteUser(id: string): Promise<boolean> {
+    const result = await db
+      .delete(users)
+      .where(eq(users.id, id))
+      .returning({ id: users.id });
+    return result?.length > 0;
+  }
+
+  async getDistributionProvider(
+    slug: string,
+  ): Promise<DSPProvider | undefined> {
+    const [provider] = await dbRead
+      .select()
+      .from(dspProviders)
+      .where(eq(dspProviders.slug, slug));
+    return provider || undefined;
+  }
+
+  async getToolostConnection(
+    userId: string,
+    environment: ToolostApiEnvironment = getToolostApiEnvironment(),
+  ): Promise<ToolostConnection | undefined> {
+    const [connection] = await dbRead
+      .select()
+      .from(toolostConnection)
+      .where(
+        and(
+          eq(toolostConnection.connectedByUserId, userId),
+          eq(toolostConnection.environment, environment),
+        ),
+      )
+      .orderBy(desc(toolostConnection.updatedAt))
+      .limit(1);
+    return connection || undefined;
+  }
+
+  /**
+   * Max Booster can operate a shared distributor account for users who have
+   * not connected their own Too Lost account yet. Only an admin-owned
+   * connection may be used for this fallback; artist connections never cross
+   * user boundaries.
+   */
+  async getAdminToolostConnection(
+    environment: ToolostApiEnvironment = getToolostApiEnvironment(),
+  ): Promise<ToolostConnection | undefined> {
+    const rows = await dbRead
+      .select()
+      .from(toolostConnection)
+      .innerJoin(users, eq(toolostConnection.connectedByUserId, users.id))
+      .where(
+        and(
+          eq(users.role, "admin"),
+          eq(toolostConnection.environment, environment),
+        ),
+      )
+      .orderBy(desc(toolostConnection.updatedAt))
+      .limit(1);
+    return rows[0]?.toolost_connection;
+  }
+
+  async upsertToolostConnection(
+    data: Partial<InsertToolostConnection> & {
+      accessToken: string;
+      refreshToken: string;
+      tokenExpiresAt: Date;
+      connectedByUserId: string;
+    },
+  ): Promise<ToolostConnection> {
+    const environment = data.environment ?? getToolostApiEnvironment();
+    const scopedData = { ...data, environment };
+    const existing = await this.getToolostConnection(
+      data.connectedByUserId,
+      environment,
+    );
+    if (existing) {
+      const [updated] = await db
+        .update(toolostConnection)
+        .set({ ...scopedData, updatedAt: new Date() })
+        .where(eq(toolostConnection.id, existing.id))
+        .returning();
+      return updated;
+    }
+    const [created] = await db
+      .insert(toolostConnection)
+      .values({
+        ...scopedData,
+        connectedAt: new Date(),
+        updatedAt: new Date(),
+      })
+      .returning();
+    return created;
+  }
+
+  async deleteToolostConnection(
+    userId: string,
+    environment: ToolostApiEnvironment = getToolostApiEnvironment(),
+  ): Promise<boolean> {
+    const result = await db
+      .delete(toolostConnection)
+      .where(
+        and(
+          eq(toolostConnection.connectedByUserId, userId),
+          eq(toolostConnection.environment, environment),
+        ),
+      )
+      .returning({ id: toolostConnection.id });
+    return result?.length > 0;
+  }
+
+  /**
+   * Unlike Too Lost, YouTube connections are per-user (each artist connects
+   * their own channel), so this takes a userId rather than returning a
+   * single platform-wide row.
+   */
+  async getYoutubeConnection(
+    userId: string,
+  ): Promise<YoutubeConnection | undefined> {
+    const [connection] = await dbRead
+      .select()
+      .from(youtubeConnections)
+      .where(eq(youtubeConnections.userId, userId))
+      .limit(1);
+    return connection || undefined;
+  }
+
+  async upsertYoutubeConnection(
+    userId: string,
+    data: Partial<InsertYoutubeConnection> & {
+      channelId: string;
+      accessToken: string;
+      refreshToken: string;
+      tokenExpiresAt: Date;
+    },
+  ): Promise<YoutubeConnection> {
+    const existing = await this.getYoutubeConnection(userId);
+    if (existing) {
+      const [updated] = await db
+        .update(youtubeConnections)
+        .set({ ...data, userId, updatedAt: new Date() })
+        .where(eq(youtubeConnections.id, existing.id))
+        .returning();
+      return updated;
+    }
+    const [created] = await db
+      .insert(youtubeConnections)
+      .values({ ...data, userId, connectedAt: new Date(), updatedAt: new Date() })
+      .returning();
+    return created;
+  }
+
+  async deleteYoutubeConnection(userId: string): Promise<boolean> {
+    const result = await db
+      .delete(youtubeConnections)
+      .where(eq(youtubeConnections.userId, userId))
+      .returning({ id: youtubeConnections.id });
+    return result?.length > 0;
+  }
+
+  async createYoutubeUpload(
+    data: InsertYoutubeUpload,
+  ): Promise<YoutubeUpload> {
+    const [created] = await db
+      .insert(youtubeUploads)
+      .values(data)
+      .returning();
+    return created;
+  }
+
+  async updateYoutubeUpload(
+    id: string,
+    updates: Partial<InsertYoutubeUpload>,
+  ): Promise<YoutubeUpload> {
+    const [updated] = await db
+      .update(youtubeUploads)
+      .set({ ...updates, updatedAt: new Date() })
+      .where(eq(youtubeUploads.id, id))
+      .returning();
+    return updated;
+  }
+
+  async getYoutubeUploadsByUser(userId: string): Promise<YoutubeUpload[]> {
+    return await dbRead
+      .select()
+      .from(youtubeUploads)
+      .where(eq(youtubeUploads.userId, userId))
+      .orderBy(desc(youtubeUploads.createdAt));
+  }
+
+  async getYoutubeUpload(id: string): Promise<YoutubeUpload | undefined> {
+    const [upload] = await dbRead
+      .select()
+      .from(youtubeUploads)
+      .where(eq(youtubeUploads.id, id))
+      .limit(1);
+    return upload || undefined;
+  }
+
+  async getProjectsByUserId(userId: string): Promise<Project[]> {
+    return await dbRead
+      .select()
+      .from(projects)
+      .where(eq(projects.userId, userId))
+      .orderBy(desc(projects.updatedAt))
+      .limit(500);
+  }
+
+  async createProject(insertProject: InsertProject): Promise<Project> {
+    const [project] = await db
+      .insert(projects)
+      .values(insertProject)
+      .returning();
+    return project;
+  }
+
+  async getReleasesByUserId(userId: string): Promise<Release[]> {
+    return await dbRead
+      .select()
+      .from(releases)
+      .where(eq(releases.userId, userId))
+      .orderBy(desc(releases.createdAt))
+      .limit(500);
+  }
+
+  async getAutopilotConfig(userId: string): Promise<any | undefined> {
+    const [user] = await db
+      .select({ preferences: users.preferences })
+      .from(users)
+      .where(eq(users.id, userId))
+      .limit(1);
+
+    if (!user) return undefined;
+    return (
+      (user?.preferences as Record<string, unknown>)?.autopilotConfig ||
+      undefined
+    );
+  }
+
+  async saveAutopilotConfig(
+    userId: string,
+    config: Record<string, unknown>,
+  ): Promise<Record<string, unknown>> {
+    const [user] = await dbRead
+      .select({ preferences: users.preferences })
+      .from(users)
+      .where(eq(users.id, userId));
+    const prefs = (user?.preferences as Record<string, unknown>) || {};
+    prefs.autopilotConfig = config;
+    await db
+      .update(users)
+      .set({ preferences: prefs })
+      .where(eq(users.id, userId));
+    return config;
+  }
+
+  async getAdvertisingAutopilotConfig(
+    userId: string,
+  ): Promise<any | undefined> {
+    const [user] = await db
+      .select()
+      .from(users)
+      .where(eq(users.id, userId))
+      .limit(1);
+
+    if (!user) return undefined;
+    return (
+      (user?.preferences as Record<string, unknown>)
+        ?.advertisingAutopilotConfig || undefined
+    );
+  }
+
+  async saveAdvertisingAutopilotConfig(
+    userId: string,
+    config: Record<string, unknown>,
+  ): Promise<Record<string, unknown>> {
+    const [user] = await dbRead
+      .select({ preferences: users.preferences })
+      .from(users)
+      .where(eq(users.id, userId));
+    const prefs = (user?.preferences as Record<string, unknown>) || {};
+    prefs.advertisingAutopilotConfig = config;
+    await db
+      .update(users)
+      .set({ preferences: prefs })
+      .where(eq(users.id, userId));
+    return config;
+  }
+
+  async getAllEnabledAdvertisingAutopilotConfigs(): Promise<any[]> {
+    const result = await dbRead?.execute(sql`
+      SELECT id, preferences
+      FROM users
+      WHERE (preferences->>'advertisingAutopilotConfig')::jsonb->>'isRunning' = 'true'
+      LIMIT 1000
+    `);
+    const rows = (result as { rows?: unknown[] }).rows ?? result;
+    return Array.isArray(rows)
+      ? rows?.map((row: unknown) => {
+          const user = row as Record<string, unknown>;
+          const prefs =
+            typeof user?.preferences === "string"
+              ? JSON.parse(user?.preferences)
+              : (user?.preferences ?? {});
+          const config = prefs?.advertisingAutopilotConfig;
+          return { userId: user.id, ...config };
+        })
+      : [];
+  }
+
+  async getAllEnabledAutopilotConfigs(): Promise<any[]> {
+    const result = await dbRead?.execute(sql`
+      SELECT id, preferences
+      FROM users
+      WHERE (preferences->>'autopilotConfig')::jsonb->>'enabled' = 'true'
+      LIMIT 1000
+    `);
+    const rows = (result as { rows?: unknown[] }).rows ?? result;
+    return Array.isArray(rows)
+      ? rows?.map((row: unknown) => {
+          const user = row as Record<string, unknown>;
+          const prefs =
+            typeof user?.preferences === "string"
+              ? JSON.parse(user?.preferences)
+              : (user?.preferences ?? {});
+          const config = prefs?.autopilotConfig;
+          return { userId: user.id, ...config };
+        })
+      : [];
+  }
+
+  async getUserAIModel(
+    userId: string,
+    modelType: string,
+  ): Promise<any | undefined> {
+    const [model] = await db
+      .select()
+      .from(aiModels)
+      .where(eq(aiModels.modelName, `${userId}-${modelType}`))
+      .limit(1);
+    return model || undefined;
+  }
+
+  async saveUserAIModel(
+    userId: string,
+    modelType: string,
+    weights: unknown,
+    metadata?: Record<string, unknown>,
+  ): Promise<void> {
+    const existing = await this.getUserAIModel(userId, modelType);
+    if (existing) {
+      await db
+        .update(aiModels)
+        .set({
+          parameters: weights,
+          performance: metadata,
+          lastTrainedAt: new Date(),
+          updatedAt: new Date(),
+        })
+        .where(eq(aiModels.id, existing?.id));
+    } else {
+      await db.insert(aiModels).values({
+        modelName: `${userId}-${modelType}`,
+        modelType,
+        parameters: weights,
+        performance: metadata,
+        lastTrainedAt: new Date(),
+      });
+    }
+  }
+
+  async getAIModelByName(modelName: string): Promise<any | undefined> {
+    const [model] = await db
+      .select()
+      .from(aiModels)
+      .where(eq(aiModels.modelName, modelName))
+      .limit(1);
+    return model || undefined;
+  }
+
+  async createInferenceRun(
+    data: Record<string, unknown>,
+  ): Promise<Record<string, unknown>> {
+    const [run] = await db.insert(inferenceRuns).values(data as any).returning();
+    return run;
+  }
+
+  async getSocialPosts(userId: string): Promise<Post[]> {
+    return await db
+      .select()
+      .from(posts)
+      .where(eq(posts.userId, userId))
+      .orderBy(desc(posts.createdAt))
+      .limit(100);
+  }
+
+  async getUserSocialPosts(userId: string): Promise<Post[]> {
+    return this.getSocialPosts(userId);
+  }
+
+  async getScheduledPosts(
+    input: string | { userId?: string; status?: string },
+  ): Promise<any[]> {
+    const conditions: import("drizzle-orm").SQL<unknown>[] = [];
+    if (typeof input === "string") {
+      conditions?.push(eq(posts.userId, input));
+      conditions?.push(sql`${posts.status} IN ('scheduled', 'pending')`);
+    } else {
+      if (input?.userId) conditions?.push(eq(posts.userId, input?.userId));
+      if (input?.status) {
+        conditions?.push(eq(posts.status, input?.status));
+      } else {
+        conditions?.push(sql`${posts.status} IN ('scheduled', 'pending')`);
+      }
+    }
+    return db
+      .select()
+      .from(posts)
+      .where(conditions?.length > 0 ? and(...conditions) : undefined)
+      .orderBy(asc(posts.scheduledAt))
+      .limit(500);
+  }
+
+  async createScheduledPost(
+    post: Record<string, unknown>,
+  ): Promise<Record<string, unknown>> {
+    const {
+      platforms,
+      content,
+      scheduledTime,
+      viralPrediction,
+      createdBy,
+      reviewRequired,
+    } = post;
+    const [newPost] = await db
+      .insert(posts)
+      .values({
+        id: post.id as string | undefined,
+        userId: post.userId as string,
+        platform:
+          Array.isArray(platforms) && platforms?.length > 0
+            ? platforms[0]
+            : "social",
+        content:
+          typeof content === "string" ? content : JSON.stringify(content),
+        scheduledAt: scheduledTime ? new Date(scheduledTime as any) : null,
+        status: post.status || "scheduled",
+        mediaUrls: Array.isArray((content as any)?.mediaUrls) ? (content as any)?.mediaUrls : [],
+        engagement: {
+          _autopilotMeta: true,
+          platforms: platforms || [],
+          viralPrediction: viralPrediction || null,
+          createdBy: createdBy || "manual",
+          ...(reviewRequired === true ? { reviewRequired: true } : {}),
+          ...(typeof content !== "string" ? { content } : {}),
+        },
+      })
+      .returning();
+    return newPost;
+  }
+
+  async getScheduledPostById(id: string): Promise<any | null> {
+    const [post] = await db
+      .select()
+      .from(posts)
+      .where(eq(posts.id, id))
+      .limit(1);
+    if (!post) return null;
+    const rawEngagement = post?.engagement;
+    const eng = rawEngagement && typeof rawEngagement === "object" &&
+      !Array.isArray(rawEngagement)
+      ? rawEngagement as Record<string, unknown>
+      : {};
+    // Both names have existed in production. A partially-normalized object can
+    // contain both, so expose every durable receipt until the next write
+    // canonicalizes the value under postingResults.
+    const postingResults = Array.isArray(eng.postingResults) ? eng.postingResults : [];
+    const legacyResults = Array.isArray(eng.results) ? eng.results : [];
+    const results = Array.isArray(rawEngagement)
+      ? rawEngagement
+      : [...postingResults, ...legacyResults];
+    return {
+      ...post,
+      // Prefer explicit engagement.platforms (set by beat-loop and autopilot),
+      // then fall back to the singular platform column so dispatchAutonomousContent
+      // always has a non-empty array to iterate.
+      platforms: (eng.platforms as string[] | undefined)?.length
+        ? eng.platforms
+        : [post?.platform].filter(Boolean),
+      content: eng.content !== undefined ? eng.content : post?.content,
+      scheduledTime: post.scheduledAt,
+      viralPrediction: eng.viralPrediction ?? null,
+      createdBy: eng.createdBy ?? "manual",
+      results,
+    };
+  }
+
+  // ── Social-post aliases used by autonomousService ──────────────────────────
+  // The posts table uses singular `platform`; these wrappers handle the
+  // mapping so autonomousService can call createSocialPost/getSocialPost/
+  // updateSocialPost without knowing the underlying column shape.
+
+  async createSocialPost(
+    post: Record<string, unknown>,
+  ): Promise<Record<string, unknown>> {
+    // Normalise: callers may pass either `scheduledAt` (Drizzle column name)
+    // or `scheduledTime` (createScheduledPost API).  Map both so the
+    // scheduled timestamp is never silently dropped.
+    const normalised = { ...post };
+    if (normalised.scheduledAt && !normalised.scheduledTime) {
+      normalised.scheduledTime = normalised.scheduledAt;
+    }
+    return this.createScheduledPost(normalised);
+  }
+
+  async getSocialPost(id: string): Promise<any | null> {
+    return this.getScheduledPostById(id);
+  }
+
+  async updateSocialPost(
+    id: string,
+    updates: Partial<Record<string, unknown>>,
+  ): Promise<unknown> {
+    // Same normalisation: map scheduledAt → scheduledTime for updateScheduledPost.
+    const normalised = { ...updates };
+    if (normalised.scheduledAt && !normalised.scheduledTime) {
+      normalised.scheduledTime = normalised.scheduledAt;
+      delete normalised.scheduledAt;
+    }
+    return this.updateScheduledPost(id, normalised);
+  }
+
+  async updateScheduledPost(
+    id: string,
+    updates: Partial<Record<string, unknown>>,
+  ): Promise<unknown> {
+    const {
+      platforms,
+      content,
+      scheduledTime,
+      viralPrediction,
+      createdBy,
+      results,
+      engagement,
+      ...rest
+    } = updates;
+    const updateValues: Record<string, unknown> = {
+      ...(rest as Record<string, unknown>),
+    };
+    if (platforms)
+      updateValues.platform = Array.isArray(platforms)
+        ? platforms[0]
+        : platforms;
+    if (content !== undefined)
+      updateValues.content =
+        typeof content === "string" ? content : JSON.stringify(content);
+    if (scheduledTime) updateValues.scheduledAt = new Date(scheduledTime as any);
+    if (engagement !== undefined) {
+      throw new Error("Scheduled-post engagement must be updated through named metadata fields");
+    }
+    if (results !== undefined && !Array.isArray(results)) {
+      throw new Error("Scheduled-post results must be an array");
+    }
+    const metadata: Record<string, unknown> = {};
+    if (platforms !== undefined) metadata.platforms = platforms;
+    if (viralPrediction !== undefined) metadata.viralPrediction = viralPrediction;
+    if (createdBy !== undefined) metadata.createdBy = createdBy;
+    if (content !== undefined) metadata.content = content;
+    if (Object.keys(metadata).length || results !== undefined) {
+      const incoming = JSON.stringify(results ?? []);
+      updateValues.engagement = sql`
+        (
+          WITH engagement_object AS (
+            SELECT CASE WHEN jsonb_typeof(${posts.engagement}::jsonb) = 'object'
+              THEN ${posts.engagement}::jsonb ELSE '{}'::jsonb END AS value
+          ), existing_receipts_raw AS (
+            SELECT DISTINCT receipt
+            FROM (
+              SELECT receipt FROM jsonb_array_elements(
+                CASE WHEN jsonb_typeof(${posts.engagement}->'postingResults') = 'array'
+                  THEN ${posts.engagement}->'postingResults' ELSE '[]'::jsonb END
+              ) receipt
+              UNION ALL
+              SELECT receipt FROM jsonb_array_elements(
+                CASE WHEN jsonb_typeof(${posts.engagement}->'results') = 'array'
+                  THEN ${posts.engagement}->'results' ELSE '[]'::jsonb END
+              ) receipt
+              UNION ALL
+              SELECT receipt FROM jsonb_array_elements(
+                CASE WHEN jsonb_typeof(${posts.engagement}::jsonb) = 'array'
+                  THEN ${posts.engagement}::jsonb ELSE '[]'::jsonb END
+              ) receipt
+            ) accepted_shapes
+          ), existing_receipts AS (
+            SELECT receipt,
+              receipt->>'platform' AS platform,
+              receipt->>'postedAt' AS operation_key,
+              CASE
+                WHEN receipt->>'outcome' = 'confirmed' OR receipt->>'success' = 'true' THEN 3
+                WHEN receipt->>'outcome' = 'unknown' THEN 2
+                WHEN receipt->>'outcome' = 'started' THEN 1
+                ELSE 0
+              END AS outcome_rank
+            FROM existing_receipts_raw
+          ), incoming_receipts AS (
+            SELECT replacement,
+              replacement->>'platform' AS platform,
+              replacement->>'postedAt' AS operation_key,
+              CASE
+                WHEN replacement->>'outcome' = 'confirmed' OR replacement->>'success' = 'true' THEN 3
+                WHEN replacement->>'outcome' = 'unknown' THEN 2
+                WHEN replacement->>'outcome' = 'started' THEN 1
+                ELSE 0
+              END AS outcome_rank
+            FROM jsonb_array_elements(${incoming}::jsonb) replacement
+          ), replaced_receipts AS (
+            SELECT receipt
+            FROM existing_receipts existing
+            WHERE EXISTS (
+              SELECT 1
+              FROM incoming_receipts incoming
+              WHERE incoming.platform IS NOT NULL
+                AND incoming.platform = existing.platform
+                AND (
+                  (existing.operation_key IS NOT NULL
+                    AND existing.operation_key = incoming.operation_key
+                    AND incoming.outcome_rank > existing.outcome_rank)
+                  OR (existing.outcome_rank = 0
+                    AND (existing.operation_key IS NULL
+                      OR incoming.operation_key IS NULL
+                      OR existing.operation_key = incoming.operation_key))
+                )
+            )
+          ), merged_receipts AS (
+            SELECT receipt FROM existing_receipts
+            WHERE receipt NOT IN (SELECT receipt FROM replaced_receipts)
+            UNION ALL
+            SELECT replacement FROM incoming_receipts
+            WHERE NOT EXISTS (
+              SELECT 1
+              FROM existing_receipts existing
+              WHERE existing.platform IS NOT NULL
+                AND existing.platform = incoming_receipts.platform
+                AND existing.outcome_rank > 0
+                AND NOT EXISTS (
+                  SELECT 1 FROM replaced_receipts
+                  WHERE replaced_receipts.receipt = existing.receipt
+                )
+            )
+          )
+          SELECT (value - 'results')
+            || ${JSON.stringify(metadata)}::jsonb
+            || jsonb_build_object(
+              'postingResults',
+              (SELECT COALESCE(jsonb_agg(receipt), '[]'::jsonb) FROM merged_receipts)
+            )
+          FROM engagement_object
+        )`;
+    }
+    if (
+      updateValues?.status === "completed" ||
+      updateValues?.status === "published"
+    ) {
+      updateValues.publishedAt = new Date();
+    }
+    const [updated] = await db
+      .update(posts)
+      .set(updateValues)
+      .where(eq(posts.id, id))
+      .returning();
+    return updated;
+  }
+
+  async updateScheduledPostStatus(
+    id: string,
+    status: string,
+    results?: unknown[],
+  ): Promise<void> {
+    await this.updateScheduledPost(id, { status, ...(results !== undefined ? { results } : {}) });
+  }
+
+  async getSocialMetrics(userId: string): Promise<unknown> {
+    const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
+    const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
+
+    const [accounts, recentPosts, weekPosts, autopilotContent] =
+      await Promise.all([
+        this.getSocialAccounts(userId),
+        db
+          .select()
+          .from(posts)
+          .where(
+            and(eq(posts.userId, userId), gte(posts.createdAt, thirtyDaysAgo)),
+          )
+          .limit(500),
+        db
+          .select()
+          .from(posts)
+          .where(
+            and(eq(posts.userId, userId), gte(posts.createdAt, sevenDaysAgo)),
+          )
+          .limit(200),
+        db
+          .select()
+          .from(socialAutopilotContent)
+          .where(
+            and(
+              eq(socialAutopilotContent.userId, userId),
+              gte(socialAutopilotContent.createdAt, thirtyDaysAgo),
+            ),
+          )
+          .limit(500),
+      ]);
+
+    const totalFollowers = accounts?.reduce(
+      (sum, acc) => sum + (acc?.followerCount || 0),
+      0,
+    );
+
+    let totalLikes = 0,
+      totalComments = 0,
+      totalShares = 0,
+      totalViews = 0;
+    let totalReach = 0,
+      totalImpressions = 0;
+
+    for (const post of recentPosts) {
+      const eng = post?.engagement as Record<string, unknown>;
+      if (eng) {
+        totalLikes += Number(eng?.likes) || 0;
+        totalComments += Number(eng?.comments) || 0;
+        totalShares += Number(eng?.shares) || Number(eng?.retweets) || 0;
+        totalViews += Number(eng?.views) || 0;
+        totalReach += Number(eng?.reach) || 0;
+        totalImpressions += Number(eng?.impressions) || 0;
+      }
+    }
+
+    for (const content of autopilotContent) {
+      const perf = content?.performance as Record<string, unknown>;
+      if (perf) {
+        totalLikes += Number(perf?.likes) || 0;
+        totalComments += Number(perf?.comments) || 0;
+        totalShares += Number(perf?.shares) || 0;
+        totalViews += Number(perf?.views) || 0;
+      }
+    }
+
+    const totalEngagement = totalLikes + totalComments + totalShares;
+    const avgEngagementRate =
+      totalViews > 0
+        ? Math.round((totalEngagement / (totalViews || 1)) * 10000) / 100
+        : 0;
+
+    const platformGrowth = accounts?.map((acc) => ({
+      platform: acc.platform,
+      followers: acc.followerCount || 0,
+      username: acc.username || "",
+    }));
+
+    // Compute follower growth as percentage change (using account-level data as proxy)
+    const accountsWithFollowers = accounts?.filter(
+      (a) => (a?.followerCount || 0) > 0,
+    );
+    const followersGrowth =
+      accountsWithFollowers?.length > 0
+        ? accountsWithFollowers?.map((acc) => ({
+            platform: acc.platform,
+            followers: acc.followerCount || 0,
+            change: 0,
+            changePercent: 0,
+          }))
+        : null;
+
+    // Compute content performance from posts
+    const contentPerformance =
+      recentPosts?.length > 0
+        ? recentPosts?.slice(0, 5).map((p) => {
+            const eng = p?.engagement as Record<string, unknown>;
+            return {
+              id: p.id,
+              platform: p.platform,
+              content: (p?.content || "").substring(0, 80),
+              likes: eng.likes || 0,
+              comments: eng.comments || 0,
+              shares: eng.shares || 0,
+              views: eng.views || 0,
+              publishedAt: p.publishedAt || p?.createdAt,
+            };
+          })
+        : null;
+
+    return {
+      totalFollowers,
+      totalEngagement,
+      totalReach: totalReach || totalViews,
+      totalImpressions: totalImpressions || totalViews,
+      postsThisWeek: weekPosts.length,
+      postsThisMonth: recentPosts.length,
+      avgEngagementRate,
+      totalLikes,
+      totalComments,
+      totalShares,
+      followersGrowth,
+      contentPerformance,
+      platformGrowth,
+      aiRecommendation: null,
+    };
+  }
+
+  async getSocialAccounts(userId: string): Promise<SocialAccount[]> {
+    return await db
+      .select()
+      .from(socialAccounts)
+      .where(eq(socialAccounts.userId, userId))
+      .limit(50);
+  }
+
+  async getUserSocialAccountDetails(
+    userId: string,
+    platform: string,
+  ): Promise<{ accessToken: string; platformUserId: string | null } | null> {
+    const rows = await db
+      .select({
+        accessToken: socialAccounts.accessToken,
+        tokenExpiresAt: socialAccounts.tokenExpiresAt,
+        platformUserId: socialAccounts.platformUserId,
+      })
+      .from(socialAccounts)
+      .where(
+        and(
+          eq(socialAccounts.userId, userId),
+          eq(socialAccounts.platform, platform),
+          eq(socialAccounts.isActive, true),
+        ),
+      )
+      .limit(1);
+
+    if (!rows[0]?.accessToken) return null;
+
+    const expires = rows[0]?.tokenExpiresAt;
+    if (expires && new Date(expires) < new Date()) {
+      logger.warn(
+        `[SocialAccounts] ${platform} OAuth token for user ${userId} expired at ${expires} — skipping (reconnect required)`,
+      );
+      return null;
+    }
+
+    return {
+      accessToken: decryptSocialCredential(rows[0].accessToken, `${userId}:${platform}:access`)!,
+      platformUserId: rows[0].platformUserId ?? null,
+    };
+  }
+
+  async getUserSocialToken(
+    userId: string,
+    platform: string,
+  ): Promise<string | null> {
+    const rows = await db
+      .select({
+        accessToken: socialAccounts.accessToken,
+        tokenExpiresAt: socialAccounts.tokenExpiresAt,
+      })
+      .from(socialAccounts)
+      .where(
+        and(
+          eq(socialAccounts.userId, userId),
+          eq(socialAccounts.platform, platform),
+          eq(socialAccounts.isActive, true),
+        ),
+      )
+      .limit(1);
+
+    if (!rows[0]?.accessToken) return null;
+
+    // Proactively reject expired tokens — returning null triggers the
+    // "not connected" path in publishContent, which logs clearly and skips
+    // the platform rather than wasting an API call that will 401.
+    const expires = rows[0]?.tokenExpiresAt;
+    if (expires && new Date(expires) < new Date()) {
+      logger.warn(
+        `[SocialAccounts] ${platform} OAuth token for user ${userId} expired at ${expires} — skipping (reconnect required)`,
+      );
+      return null;
+    }
+
+    return decryptSocialCredential(rows[0].accessToken, `${userId}:${platform}:access`);
+  }
+
+  async updateUserSocialToken(
+    userId: string,
+    platform: string,
+    tokenData: string,
+  ): Promise<void> {
+    const existing = await db
+      .select({ id: socialAccounts.id })
+      .from(socialAccounts)
+      .where(
+        and(
+          eq(socialAccounts.userId, userId),
+          eq(socialAccounts.platform, platform),
+        ),
+      )
+      .limit(1);
+
+    if (tokenData === "") {
+      if (existing?.length > 0) {
+        await db
+          .update(socialAccounts)
+          .set({ isActive: false, accessToken: null, refreshToken: null })
+          .where(eq(socialAccounts.id, existing[0].id));
+      }
+      return;
+    }
+
+    if (existing?.length > 0) {
+      await db
+        .update(socialAccounts)
+        .set({ accessToken: tokenData, isActive: true })
+        .where(eq(socialAccounts.id, existing[0].id));
+    } else {
+      await db.insert(socialAccounts).values({
+        userId,
+        platform,
+        accessToken: tokenData,
+        isActive: true,
+      });
+    }
+  }
+
+  async getSocialCalendarEvents(userId: string): Promise<any[]> {
+    const [calendarEntries, scheduledPosts] = await Promise.all([
+      db
+        .select()
+        .from(contentCalendar)
+        .where(eq(contentCalendar.userId, userId))
+        .orderBy(desc(contentCalendar.scheduledAt))
+        .limit(500),
+      db
+        .select()
+        .from(posts)
+        .where(
+          and(
+            eq(posts.userId, userId),
+            sql`${posts.status} IN ('draft', 'scheduled', 'pending', 'published', 'completed', 'failed')`,
+          ),
+        )
+        .orderBy(desc(sql`COALESCE(${posts.scheduledAt}, ${posts.createdAt})`))
+        .limit(500),
+    ]);
+
+    const calendarIds = new Set(calendarEntries?.map((e) => e?.id));
+
+    const normalizedPosts = scheduledPosts
+      .filter((p) => !calendarIds?.has(p?.id))
+      .map((p) => {
+        const eng = (p?.engagement as Record<string, unknown>) || {};
+        const meta = eng?._autopilotMeta ? eng : {};
+        const rawContent =
+          typeof p?.content === "string"
+            ? p?.content
+            : JSON.stringify(p?.content ?? "");
+        let parsedContent: Record<string, unknown> = {};
+        try {
+          parsedContent = JSON.parse(rawContent);
+        } catch {
+          parsedContent = {};
+        }
+        const contentObj = meta?.content || parsedContent || {};
+        const titleText =
+          (typeof contentObj === "object"
+            ? (contentObj as any)?.text || (contentObj as any)?.caption
+            : null) ||
+          rawContent ||
+          "Autopilot post";
+        const title =
+          String(titleText).slice(0, 80) +
+          (String(titleText).length > 80 ? "…" : "");
+        const resolvedStatus =
+          p?.status === "pending" || p?.status === "scheduled"
+            ? "scheduled"
+            : p?.status === "completed"
+              ? "published"
+              : (p?.status ?? "draft");
+        return {
+          id: p.id,
+          userId: p.userId,
+          title,
+          contentType: (contentObj as any).mediaType || "text",
+          platform: (meta.platforms as string[] | undefined)?.[0] || p?.platform || "social",
+          platforms: (meta.platforms as string[] | undefined) || [p?.platform].filter(Boolean),
+          scheduledAt: p.scheduledAt,
+          status: resolvedStatus,
+          content: meta.content || contentObj,
+          mediaUrls: p.mediaUrls || [],
+          tags: [],
+          campaignId: null,
+          publishedAt: p.publishedAt,
+          createdAt: p.createdAt,
+          source: "autopilot",
+          createdBy: meta.createdBy || "social_autopilot",
+        };
+      });
+
+    const merged = [...calendarEntries, ...normalizedPosts].sort((a, b) => {
+      const aTime = new Date(a?.scheduledAt || a?.createdAt || 0).getTime();
+      const bTime = new Date(b?.scheduledAt || b?.createdAt || 0).getTime();
+      return bTime - aTime;
+    });
+
+    return merged?.slice(0, 500);
+  }
+
+  async getSocialCalendarStats(userId: string): Promise<unknown> {
+    const sevenDaysFromNow = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
+    const [calendarRows, postRows, upcomingCalendarCount, upcomingPostCount] = await Promise.all([
+      db
+        .select({
+          status: contentCalendar.status,
+          count: sql<number>`COUNT(*)::int`,
+        })
+        .from(contentCalendar)
+        .where(eq(contentCalendar.userId, userId))
+        .groupBy(contentCalendar.status),
+      db
+        .select({
+          status: posts.status,
+          count: sql<number>`COUNT(*)::int`,
+        })
+        .from(posts)
+        .where(
+          and(
+            eq(posts.userId, userId),
+            sql`${posts.status} IN ('draft', 'scheduled', 'pending', 'published', 'completed', 'failed')`,
+          ),
+        )
+        .groupBy(posts.status),
+      db
+        .select({ count: sql<number>`COUNT(*)::int` })
+        .from(contentCalendar)
+        .where(
+          and(
+            eq(contentCalendar.userId, userId),
+            eq(contentCalendar.status, "scheduled"),
+            sql`${contentCalendar.scheduledAt} BETWEEN NOW() AND ${sevenDaysFromNow}`,
+          ),
+        ),
+      db
+        .select({ count: sql<number>`COUNT(*)::int` })
+        .from(posts)
+        .where(
+          and(
+            eq(posts.userId, userId),
+            sql`${posts.status} IN ('scheduled', 'pending')`,
+            sql`${posts.scheduledAt} BETWEEN NOW() AND ${sevenDaysFromNow}`,
+          ),
+        ),
+    ]);
+
+    const calendarCounts = Object.fromEntries(
+      calendarRows?.map((r) => [r?.status, r?.count]),
+    );
+    const postStatusMap: Record<string, string> = {
+      draft: "draft",
+      scheduled: "scheduled",
+      pending: "scheduled",
+      published: "published",
+      completed: "published",
+      failed: "failed",
+    };
+    const postCounts: Record<string, number> = {};
+    for (const row of postRows) {
+      const mapped = postStatusMap[row?.status ?? ""];
+      if (!mapped) continue;
+      postCounts[mapped] = (postCounts[mapped] ?? 0) + row?.count;
+    }
+
+    const totalPublished =
+      (calendarCounts["published"] ?? 0) + (postCounts["published"] ?? 0);
+    const upcomingThisWeek =
+      (upcomingCalendarCount?.[0]?.count ?? 0) + (upcomingPostCount?.[0]?.count ?? 0);
+
+    return {
+      totalScheduled:
+        (calendarCounts["scheduled"] ?? 0) + (postCounts["scheduled"] ?? 0),
+      pendingApproval: calendarCounts["pending_approval"] ?? 0,
+      published: totalPublished,
+      totalPublished,
+      upcomingThisWeek,
+      drafts: (calendarCounts["draft"] ?? 0) + (postCounts["draft"] ?? 0),
+    };
+  }
+
+  async getSocialActivity(userId: string): Promise<any[]> {
+    const recentPosts = await db
+      .select()
+      .from(posts)
+      .where(eq(posts.userId, userId))
+      .orderBy(desc(posts.createdAt))
+      .limit(20);
+
+    return recentPosts?.map((post) => ({
+      id: post.id,
+      type: "post",
+      platform: post.platform,
+      content: post.content,
+      createdAt: post.createdAt,
+    }));
+  }
+
+  async getSocialWeeklyStats(userId: string): Promise<any[]> {
+    const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
+
+    // Use SQL aggregation for both tables rather than fetching all rows into JS
+    // and filtering — this avoids the 500-row truncation problem and is O(1) network.
+    const [postRows, contentRows] = await Promise.all([
+      db.execute(sql`
+        SELECT
+          DATE(created_at) AS day,
+          COUNT(*)::int AS post_count,
+          COALESCE(SUM(
+            COALESCE((engagement->>'likes')::int, 0) +
+            COALESCE((engagement->>'comments')::int, 0) +
+            COALESCE((engagement->>'shares')::int, (engagement->>'retweets')::int, 0)
+          ), 0)::int AS engagement,
+          COALESCE(SUM(COALESCE((engagement->>'views')::int, 0)), 0)::int AS views,
+          COALESCE(SUM(COALESCE((engagement->>'impressions')::int, 0)), 0)::int AS impressions
+        FROM posts
+        WHERE user_id = ${userId} AND created_at >= ${sevenDaysAgo}
+        GROUP BY DATE(created_at)
+      `),
+      db.execute(sql`
+        SELECT
+          DATE(created_at) AS day,
+          COUNT(*)::int AS post_count,
+          COALESCE(SUM(
+            COALESCE((performance->>'likes')::int, 0) +
+            COALESCE((performance->>'comments')::int, 0) +
+            COALESCE((performance->>'shares')::int, 0)
+          ), 0)::int AS engagement,
+          COALESCE(SUM(COALESCE((performance->>'views')::int, 0)), 0)::int AS views
+        FROM social_autopilot_content
+        WHERE user_id = ${userId} AND created_at >= ${sevenDaysAgo}
+        GROUP BY DATE(created_at)
+      `),
+    ]);
+
+    // Index results by ISO date string for O(1) merge
+    const postMap = new Map<string, any>();
+    for (const row of ((postRows as { rows?: unknown[] }).rows ??
+      postRows) as Record<string, unknown>[]) {
+      postMap?.set(String(row?.day).substring(0, 10), row);
+    }
+    const contentMap = new Map<string, any>();
+    for (const row of ((contentRows as { rows?: unknown[] }).rows ??
+      contentRows) as Record<string, unknown>[]) {
+      contentMap?.set(String(row?.day).substring(0, 10), row);
+    }
+
+    const stats: Record<string, unknown>[] = [];
+    for (let i = 6; i >= 0; i--) {
+      const dayStart = new Date();
+      dayStart?.setHours(0, 0, 0, 0);
+      dayStart?.setDate(dayStart?.getDate() - i);
+      const dateKey = dayStart?.toISOString().split("T")[0];
+
+      const pr = postMap?.get(dateKey);
+      const cr = contentMap?.get(dateKey);
+
+      stats?.push({
+        date: dateKey,
+        day: dayStart.toLocaleDateString("en-US", { weekday: "short" }),
+        posts: (Number(pr?.post_count) || 0) + (Number(cr?.post_count) || 0),
+        engagement:
+          (Number(pr?.engagement) || 0) + (Number(cr?.engagement) || 0),
+        views: (Number(pr?.views) || 0) + (Number(cr?.views) || 0),
+        impressions: Number(pr?.impressions) || 0,
+      });
+    }
+    return stats;
+  }
+
+  async createAdCampaign(data: Record<string, unknown>): Promise<AdCampaign> {
+    const [campaign] = await db
+      .insert(adCampaigns)
+      .values(data as typeof adCampaigns.$inferInsert)
+      .returning();
+    return campaign;
+  }
+
+  async getAdvertisingCampaigns(userId: string): Promise<AdCampaign[]> {
+    return await db
+      .select()
+      .from(adCampaigns)
+      .where(eq(adCampaigns.userId, userId))
+      .orderBy(desc(adCampaigns.createdAt))
+      .limit(200);
+  }
+
+  async getAdvertisingInsights(userId: string): Promise<unknown> {
+    const campaigns = await this.getAdvertisingCampaigns(userId);
+    if (campaigns?.length === 0) return null;
+
+    const totalSpend = campaigns?.reduce((sum, c) => sum + (c?.budget || 0), 0);
+    return {
+      totalCampaigns: campaigns.length,
+      totalSpend,
+      activeCampaigns: campaigns.filter((c) => c?.status === "active").length,
+    };
+  }
+
+  async getAudienceSegments(userId: string): Promise<any[]> {
+    const campaigns = await db
+      .select()
+      .from(adCampaigns)
+      .where(eq(adCampaigns.userId, userId))
+      .limit(200);
+    const segments: Record<string, unknown>[] = [];
+    campaigns?.forEach((c) => {
+      const ta = c?.targetAudience as Record<string, any> | null;
+      if (ta && ta?.segment) {
+        segments?.push({
+          id: c.id,
+          name: ta.segment,
+          size: ta.audienceSize || 0,
+          campaignId: c.id,
+          platform: c.platform,
+        });
+      } else if (ta) {
+        segments?.push({
+          id: c.id,
+          name: `${c?.platform} – ${c?.objective || "general"}`,
+          size: ta.audienceSize || 0,
+          campaignId: c.id,
+          platform: c.platform,
+          ageMin: ta.ageMin,
+          ageMax: ta.ageMax,
+          interests: ta.interests,
+        });
+      }
+    });
+    return segments;
+  }
+
+  async getCreativeFatigue(userId: string): Promise<any[]> {
+    const creatives = await db
+      .select()
+      .from(adCreatives)
+      .where(eq(adCreatives.userId, userId))
+      .orderBy(desc(adCreatives.createdAt))
+      .limit(100);
+    return creatives?.map((c) => {
+      const perf = c?.performance as Record<string, any> | null;
+      const impressions = perf?.impressions || 0;
+      const clicks = perf?.clicks || 0;
+      const ctr = impressions > 0 ? (clicks / impressions) * 100 : 0;
+      const daysSinceCreated = Math.floor(
+        (Date.now() - new Date(c?.createdAt).getTime()) / 86400000,
+      );
+      const fatigueScore = Math.min(
+        100,
+        daysSinceCreated * 2 +
+          (impressions > 10000 ? 30 : 0) +
+          (ctr < 0.5 && impressions > 1000 ? 20 : 0),
+      );
+      return {
+        id: c.id,
+        name: c.name,
+        campaignId: c.campaignId,
+        impressions,
+        ctr,
+        fatigueScore,
+        daysRunning: daysSinceCreated,
+        status: c.status,
+      };
+    });
+  }
+
+  async getBiddingStrategies(userId: string): Promise<any[]> {
+    const campaigns = await db
+      .select()
+      .from(adCampaigns)
+      .where(eq(adCampaigns.userId, userId))
+      .limit(200);
+    return campaigns?.map((c) => {
+      const meta = c?.metadata as Record<string, any> | null;
+      const perf = c?.performance as Record<string, any> | null;
+      const rawStrategy = meta?.biddingStrategy || "manual";
+      const validTypes = [
+        "maximize_conversions",
+        "target_roas",
+        "target_cpa",
+        "maximize_clicks",
+        "manual",
+      ];
+      const type = validTypes?.includes(rawStrategy) ? rawStrategy : "manual";
+      const clicks = perf?.clicks || 0;
+      const impressions = perf?.impressions || 1;
+      const ctr = clicks / impressions;
+      const currentPerformance = Math.min(
+        100,
+        Math.round(ctr * 10000 + (perf?.roas || 0) * 10),
+      );
+      return {
+        id: c.id,
+        name: c.name || "Unnamed Campaign",
+        type,
+        currentPerformance,
+        recommendedAction:
+          currentPerformance < 60
+            ? "Switch to maximize_conversions for better ROI"
+            : currentPerformance < 80
+              ? "Optimise bid cap to improve CPA"
+              : "Maintain current strategy",
+        potentialImprovement: Math.max(
+          0,
+          Math.min(50, 90 - currentPerformance),
+        ),
+        confidence: Math.min(95, 60 + Math.round(clicks / 10)),
+      };
+    });
+  }
+
+  async getLookalikeAudiences(userId: string): Promise<any[]> {
+    const [row] = await db
+      .select()
+      .from(systemSettings)
+      .where(eq(systemSettings.key, `lookalike_audiences:${userId}`))
+      .limit(1);
+    if (!row) return [];
+    return (row?.value as unknown[]) || [];
+  }
+
+  async getAdvertisingForecasts(userId: string): Promise<unknown> {
+    const campaigns = await db
+      .select()
+      .from(adCampaigns)
+      .where(
+        and(eq(adCampaigns.userId, userId), eq(adCampaigns.status, "active")),
+      )
+      .limit(100);
+    if (!campaigns?.length) return null;
+    const totalBudget = campaigns?.reduce((s, c) => s + (c?.budget || 0), 0);
+    const totalDailyBudget = campaigns?.reduce(
+      (s, c) => s + (c?.dailyBudget || 0),
+      0,
+    );
+    const estReach = Math.round(totalDailyBudget * 400);
+    const estImpressions = Math.round(totalDailyBudget * 1200);
+    return {
+      activeCampaigns: campaigns.length,
+      totalBudget,
+      totalDailyBudget,
+      estimatedWeeklyReach: estReach * 7,
+      estimatedWeeklyImpressions: estImpressions * 7,
+      estimatedMonthlyCost: totalDailyBudget * 30,
+      forecastConfidence:
+        campaigns?.length >= 3
+          ? "high"
+          : campaigns?.length >= 1
+            ? "medium"
+            : "low",
+    };
+  }
+
+  async getCompetitorInsights(userId: string): Promise<any[]> {
+    const [row] = await db
+      .select()
+      .from(systemSettings)
+      .where(eq(systemSettings.key, `competitor_insights:${userId}`))
+      .limit(1);
+    if (!row) return [];
+    return (row?.value as unknown[]) || [];
+  }
+
+  async getABTests(userId: string): Promise<any[]> {
+    const creatives = await db
+      .select()
+      .from(adCreatives)
+      .where(and(eq(adCreatives.userId, userId)))
+      .orderBy(desc(adCreatives.createdAt))
+      .limit(100);
+    const byCampaign: Record<string, any[]> = {};
+    creatives?.forEach((c) => {
+      const key = c?.campaignId || "unassigned";
+      if (!byCampaign[key]) byCampaign[key] = [];
+      byCampaign[key].push(c);
+    });
+    return Object.entries(byCampaign)
+      .filter(([, variants]) => variants?.length >= 2)
+      .map(([campaignId, variants]) => {
+        variants?.map(
+          (v) => (v?.performance as Record<string, any>) || {},
+        );
+        const best = variants?.reduce((a, b) => {
+          const aRate =
+            Number((a?.performance as Record<string, unknown>)?.clicks || 0) /
+            Math.max(
+              1,
+              Number((a?.performance as Record<string, unknown>)?.impressions) || 1,
+            );
+          const bRate =
+            Number((b?.performance as Record<string, unknown>)?.clicks || 0) /
+            Math.max(
+              1,
+              Number((b?.performance as Record<string, unknown>)?.impressions) || 1,
+            );
+          return bRate > aRate ? b : a;
+        });
+        return {
+          id: campaignId,
+          campaignId,
+          name: `A/B Test – ${variants[0].name}`,
+          variants: variants.map((v) => ({
+            id: v.id,
+            name: v.name,
+            status: v.status,
+            performance: v.performance,
+          })),
+          winnerVariantId: best.id,
+          status: "running",
+          createdAt: variants[0].createdAt,
+        };
+      });
+  }
+
+  async getCreativeVariants(userId: string): Promise<any[]> {
+    const creatives = await db
+      .select()
+      .from(adCreatives)
+      .where(eq(adCreatives.userId, userId))
+      .orderBy(desc(adCreatives.createdAt))
+      .limit(100);
+    return creatives?.map((c) => ({
+      id: c.id,
+      campaignId: c.campaignId,
+      name: c.name,
+      type: c.type,
+      headline: c.headline,
+      description: c.description,
+      mediaUrl: c.mediaUrl,
+      thumbnailUrl: c.thumbnailUrl,
+      callToAction: c.callToAction,
+      status: c.status,
+      performance: c.performance,
+      variants: c.variants,
+      createdAt: c.createdAt,
+    }));
+  }
+
+  async getRoasCampaigns(userId: string): Promise<any[]> {
+    return this.getAdvertisingCampaigns(userId);
+  }
+
+  async getRoasAudienceSegments(userId: string): Promise<any[]> {
+    return this.getAudienceSegments(userId);
+  }
+
+  async getRoasForecast(userId: string): Promise<any[]> {
+    const campaigns = await db
+      .select()
+      .from(adCampaigns)
+      .where(
+        and(eq(adCampaigns.userId, userId), eq(adCampaigns.status, "active")),
+      )
+      .limit(100);
+    return campaigns?.map((c) => {
+      const perf = c?.performance as Record<string, any> | null;
+      const roas = perf?.roas || 0;
+      const spend = c?.budget || 0;
+      return {
+        campaignId: c.id,
+        campaignName: c.name,
+        platform: c.platform,
+        currentRoas: roas,
+        forecastedRoas: roas * 1.1,
+        spend,
+        forecastedRevenue: spend * roas * 1.1,
+        confidence: perf ? "medium" : "low",
+      };
+    });
+  }
+
+  async getBudgetOptimization(userId: string): Promise<any[]> {
+    const campaigns = await db
+      .select()
+      .from(adCampaigns)
+      .where(eq(adCampaigns.userId, userId))
+      .limit(200);
+    return campaigns?.map((c) => {
+      const perf = c?.performance as Record<string, any> | null;
+      const roas = perf?.roas || 0;
+      const spend = c?.budget || 0;
+      const efficiency = roas > 0 ? roas / Math.max(1, spend / 100) : 0;
+      const recommendation =
+        roas > 3
+          ? "increase"
+          : roas < 1 && spend > 50
+            ? "decrease"
+            : "maintain";
+      return {
+        campaignId: c.id,
+        campaignName: c.name,
+        platform: c.platform,
+        currentBudget: spend,
+        recommendedBudget:
+          recommendation === "increase"
+            ? spend * 1.2
+            : recommendation === "decrease"
+              ? spend * 0.7
+              : spend,
+        roas,
+        efficiency,
+        recommendation,
+      };
+    });
+  }
+
+  async getOrganicCampaigns(userId: string): Promise<any[]> {
+    const campaigns = await db
+      .select()
+      .from(adCampaigns)
+      .where(eq(adCampaigns.userId, userId))
+      .limit(200);
+    return campaigns?.filter((c) => !c?.budget || c?.budget === 0);
+  }
+
+  async getCreativeFatigueAnalysis(userId: string): Promise<any[]> {
+    return this.getCreativeFatigue(userId);
+  }
+
+  async getBudgetPacingCampaigns(userId: string): Promise<any[]> {
+    return this.getAdvertisingCampaigns(userId);
+  }
+
+  async getBudgetPacingHistory(userId: string): Promise<any[]> {
+    const campaigns = await db
+      .select()
+      .from(adCampaigns)
+      .where(eq(adCampaigns.userId, userId))
+      .orderBy(desc(adCampaigns.createdAt))
+      .limit(10);
+    const history: Record<string, unknown>[] = [];
+    campaigns?.forEach((c) => {
+      const perf = c?.performance as Record<string, any> | null;
+      if (c?.startDate) {
+        history?.push({
+          campaignId: c.id,
+          campaignName: c.name,
+          date: c.startDate,
+          budget: c.budget || 0,
+          spend: perf!.spend || 0,
+          pacing: perf!.spend && c?.budget ? (perf?.spend / c?.budget) * 100 : 0,
+        });
+      }
+    });
+    return history;
+  }
+
+  async getAttributionData(userId: string): Promise<any[]> {
+    const analyticsRows = await db
+      .select()
+      .from(analytics)
+      .where(eq(analytics.userId, userId))
+      .orderBy(desc(analytics.date))
+      .limit(90);
+    return analyticsRows?.map((a) => {
+      const meta = a?.metadata as Record<string, any> | null;
+      return {
+        date: a.date,
+        platform: a.platform || "unknown",
+        streams: a.streams || 0,
+        revenue: a.revenue || 0,
+        source: meta!.source || "organic",
+        campaign: meta!.campaign || null,
+      };
+    });
+  }
+
+  async getCrossChannelAttribution(userId: string): Promise<any[]> {
+    const analyticsRows = await db
+      .select({
+        platform: analytics.platform,
+        streams: sql<number>`COALESCE(SUM(${analytics.streams}), 0)`,
+        revenue: sql<number>`COALESCE(SUM(${analytics.revenue}), 0)`,
+      })
+      .from(analytics)
+      .where(eq(analytics.userId, userId))
+      .groupBy(analytics.platform);
+    const total = analyticsRows?.reduce((s, r) => s + (r?.streams || 0), 0);
+    return analyticsRows
+      .filter((r) => r?.platform)
+      .map((r) => ({
+        platform: r.platform!,
+        streams: r.streams,
+        revenue: r.revenue,
+        attributionShare:
+          total > 0 ? Math.round((r?.streams / (total || 1)) * 1000) / 10 : 0,
+      }));
+  }
+
+  async getSocialListeningKeywords(userId: string): Promise<any[]> {
+    const rows = await db
+      .select()
+      .from(socialKeywords)
+      .where(eq(socialKeywords.userId, userId))
+      .orderBy(desc(socialKeywords.createdAt))
+      .limit(100);
+    return rows.map((keyword) => ({
+      id: keyword.id,
+      keyword: keyword.keyword,
+      type: keyword.keyword.startsWith("#")
+        ? "hashtag"
+        : keyword.keyword.startsWith("@")
+          ? "mention"
+          : "keyword",
+      platforms: [],
+      alertsEnabled: keyword.isActive ?? true,
+      mentionCount: keyword.mentionCount ?? 0,
+      sentiment: { positive: 0, neutral: 100, negative: 0 },
+      recentMentions: [],
+      createdAt: keyword.createdAt?.toISOString() ?? new Date(0).toISOString(),
+    }));
+  }
+
+  async getSocialListeningTrending(userId: string): Promise<any[]> {
+    const rows = await db
+      .select()
+      .from(socialMentions)
+      .where(eq(socialMentions.userId, userId))
+      .orderBy(desc(socialMentions.engagement))
+      .limit(20);
+    return rows.map((mention, index) => {
+      const keywords = Array.isArray(mention.keywords)
+        ? mention.keywords.filter((keyword): keyword is string => typeof keyword === "string")
+        : [];
+      const volume = mention.reach ?? mention.engagement ?? 0;
+      return {
+        id: mention.id,
+        topic: keywords[0] ?? mention.content?.slice(0, 80) ?? `Mention ${index + 1}`,
+        volume,
+        volumeChange: 0,
+        sentiment: Math.round(((mention.sentimentScore ?? 0) + 1) * 50),
+        relevanceScore: Math.min(100, Math.max(0, volume > 0 ? 100 : 0)),
+        platforms: mention.platform ? [mention.platform] : [],
+      };
+    });
+  }
+
+  async getSocialListeningInfluencers(userId: string): Promise<any[]> {
+    const rows = await db
+      .select()
+      .from(socialMentions)
+      .where(
+        and(
+          eq(socialMentions.userId, userId),
+          eq(socialMentions.isInfluencer, true),
+        ),
+      )
+      .orderBy(desc(socialMentions.authorFollowers))
+      .limit(20);
+    return rows.map((mention) => ({
+      id: mention.id,
+      name: mention.author ?? mention.authorHandle ?? "Unknown influencer",
+      username: mention.authorHandle?.replace(/^@/, "") ?? "",
+      platform: mention.platform,
+      followers: mention.authorFollowers ?? 0,
+      engagement: mention.engagement ?? 0,
+      mentionedYou: 1,
+      sentiment:
+        mention.sentiment === "positive" || mention.sentiment === "negative"
+          ? mention.sentiment
+          : "neutral",
+      topics: Array.isArray(mention.keywords)
+        ? mention.keywords.filter((keyword): keyword is string => typeof keyword === "string")
+        : [],
+      avatar: mention.authorAvatar ?? undefined,
+      verified: false,
+    }));
+  }
+
+  async getSocialListeningAlerts(userId: string): Promise<any[]> {
+    const rows = await db
+      .select()
+      .from(socialMentions)
+      .where(
+        and(
+          eq(socialMentions.userId, userId),
+          eq(socialMentions.sentiment, "negative"),
+        ),
+      )
+      .orderBy(desc(socialMentions.createdAt))
+      .limit(20);
+    return rows.map((mention) => {
+      const sentimentScore = mention.sentimentScore ?? -1;
+      const mentions = mention.reach ?? mention.engagement ?? 1;
+      return {
+        id: mention.id,
+        type: mentions > 1000 ? "viral" : "negative",
+        severity: mentions > 10000 ? "critical" : mentions > 1000 ? "high" : "medium",
+        title: "Negative mention detected",
+        description: mention.content ?? "A negative mention requires review.",
+        mentions,
+        sentiment: Math.round(sentimentScore * 100),
+        keywords: Array.isArray(mention.keywords)
+          ? mention.keywords.filter((keyword): keyword is string => typeof keyword === "string")
+          : [],
+        createdAt: mention.createdAt?.toISOString() ?? new Date(0).toISOString(),
+        acknowledged: mention.responded ?? false,
+      };
+    });
+  }
+
+  async getSocialAIInsights(userId: string): Promise<any[]> {
+    const accounts = await this.getSocialAccounts(userId);
+    const recentContent = await db
+      .select()
+      .from(socialAutopilotContent)
+      .where(eq(socialAutopilotContent.userId, userId))
+      .orderBy(desc(socialAutopilotContent.createdAt))
+      .limit(10);
+
+    if (accounts?.length === 0 && recentContent?.length === 0) return [];
+
+    const insights: Record<string, unknown>[] = [];
+    if (recentContent?.length > 0) {
+      const topPerforming = recentContent?.filter((c) => {
+        const perf = c?.performance as Record<string, unknown>;
+        return perf && (Number(perf?.views) > 0 || Number(perf?.likes) > 0);
+      });
+      if (topPerforming?.length > 0) {
+        insights?.push({
+          type: "content_performance",
+          title: "Top performing content identified",
+          description: `${topPerforming?.length} pieces of content showing strong engagement`,
+          priority: "medium",
+          createdAt: new Date(),
+        });
+      }
+    }
+    return insights;
+  }
+
+  async getUserSocialStats(userId: string): Promise<any | null> {
+    const accounts = await this.getSocialAccounts(userId);
+    if (accounts?.length === 0) return null;
+
+    const totalFollowers = accounts?.reduce(
+      (sum, acc) => sum + (acc?.followerCount || 0),
+      0,
+    );
+    const recentPosts = await db
+      .select()
+      .from(posts)
+      .where(eq(posts.userId, userId))
+      .orderBy(desc(posts.createdAt))
+      .limit(50);
+
+    const totalEngagements = recentPosts?.reduce((sum, p) => {
+      const meta = (p as any)?.metadata as Record<string, any> | null;
+      return (
+        sum +
+        (meta?.likes || 0) +
+        (meta?.comments || 0) +
+        (meta?.shares || 0) +
+        (meta?.reactions || 0)
+      );
+    }, 0);
+    const totalReach = recentPosts?.reduce((sum, p) => {
+      const meta = (p as any)?.metadata as Record<string, any> | null;
+      return sum + (meta?.reach || meta?.impressions || 0);
+    }, 0);
+    const engagementRate =
+      recentPosts?.length > 0 && totalFollowers > 0
+        ? (totalEngagements /
+            recentPosts?.length /
+            Math.max(1, totalFollowers)) *
+          100
+        : 0;
+
+    return {
+      followers: totalFollowers,
+      posts: recentPosts.length,
+      engagement: Math.round(engagementRate * 100) / 100,
+      reach: totalReach,
+      totalEngagements,
+    };
+  }
+
+  async getCompetitors(userId: string): Promise<any[]> {
+    const [row] = await db
+      .select()
+      .from(systemSettings)
+      .where(eq(systemSettings.key, `competitors:${userId}`))
+      .limit(1);
+    if (!row) return [];
+    return (row?.value as unknown[]) || [];
+  }
+
+  async getRecentAnalyzedContent(
+    userId: string,
+    limit: number,
+  ): Promise<any[]> {
+    // posts table has no metadata column — engagement (JSONB) is the only structured field.
+    // Return recent posts; callers check features and handle empty gracefully.
+    const recentPosts = await db
+      .select()
+      .from(posts)
+      .where(eq(posts.userId, userId))
+      .orderBy(desc(posts.createdAt))
+      .limit(limit || 20);
+    return recentPosts?.map((p) => {
+      const eng = p?.engagement as Record<string, any> | null;
+      return {
+        id: p.id,
+        content: p.content,
+        platform: p.platform,
+        analyzedAt: p.createdAt,
+        features: eng!.features || {},
+        performance: eng || {},
+      };
+    });
+  }
+
+  async saveAnalyzedContentFeatures(
+    userId: string,
+    features: Record<string, unknown>,
+  ): Promise<string> {
+    const id = `feature-${Date.now()}-${userId?.slice(0, 8)}`;
+    try {
+      await db
+        .insert(systemSettings)
+        .values({
+          key: `analyzed_content:${id}`,
+          value: { userId, features, createdAt: new Date().toISOString() },
+          description: `Analyzed content features for user ${userId}`,
+        })
+        .onConflictDoNothing();
+    } catch {
+      // Non-critical; log silently
+    }
+    return id;
+  }
+
+  async getAllPosts(userId: string): Promise<Post[]> {
+    return this.getSocialPosts(userId);
+  }
+
+  async getAllCampaigns(userId: string): Promise<any[]> {
+    const results = await db
+      .select()
+      .from(socialCampaigns)
+      .where(eq(socialCampaigns.userId, userId))
+      .orderBy(desc(socialCampaigns.createdAt))
+      .limit(200);
+    return results;
+  }
+
+  async getAnalyzedContentForTraining(userId: string): Promise<any[]> {
+    const results = await db
+      .select()
+      .from(autopilotLearningData)
+      .where(eq(autopilotLearningData.userId, userId))
+      .orderBy(desc(autopilotLearningData.createdAt))
+      .limit(1000);
+    return results;
+  }
+
+  async getNotifications(userId: string): Promise<Notification[]> {
+    return await db
+      .select()
+      .from(notifications)
+      .where(eq(notifications.userId, userId))
+      .orderBy(desc(notifications.createdAt))
+      .limit(50);
+  }
+
+  async createNotification(data: {
+    userId: string;
+    type: string;
+    title: string;
+    message?: string;
+    actionUrl?: string;
+    metadata?: Record<string, unknown>;
+  }): Promise<Notification> {
+    const [notification] = await db
+      .insert(notifications)
+      .values({
+        userId: data.userId,
+        type: data.type,
+        title: data.title,
+        message: data.message,
+        actionUrl: data.actionUrl,
+        metadata: data.metadata,
+        isRead: false,
+      })
+      .returning();
+    return notification;
+  }
+
+  async markNotificationRead(id: string): Promise<void> {
+    await db
+      .update(notifications)
+      .set({ isRead: true })
+      .where(eq(notifications.id, id));
+  }
+
+  async markAllNotificationsRead(userId: string): Promise<void> {
+    await db
+      .update(notifications)
+      .set({ isRead: true })
+      .where(eq(notifications.userId, userId));
+  }
+
+  async getNotificationById(id: string): Promise<Notification | undefined> {
+    const [notification] = await db
+      .select()
+      .from(notifications)
+      .where(eq(notifications.id, id))
+      .limit(1);
+    return notification || undefined;
+  }
+
+  async deleteNotification(id: string): Promise<void> {
+    await db.delete(notifications).where(eq(notifications.id, id));
+  }
+
+  async deleteAllNotifications(userId: string): Promise<void> {
+    await db.delete(notifications).where(eq(notifications.userId, userId));
+  }
+
+  async deleteSession(sessionId: string): Promise<boolean> {
+    const result = await db
+      .delete(sessions)
+      .where(eq(sessions.id, sessionId))
+      .returning({ id: sessions.id });
+    return result?.length > 0;
+  }
+
+  async deleteSessionByToken(sessionToken: string): Promise<boolean> {
+    const result = await db
+      .delete(sessions)
+      .where(eq(sessions.sessionToken, sessionToken))
+      .returning({ id: sessions.id });
+    return result?.length > 0;
+  }
+
+  async getSessionById(
+    sessionId: string,
+  ): Promise<{ id: string; userId: string } | undefined> {
+    const [session] = await db
+      .select({ id: sessions.id, userId: sessions.userId })
+      .from(sessions)
+      .where(eq(sessions.id, sessionId))
+      .limit(1);
+    return session || undefined;
+  }
+
+  async getSessionsByUserId(userId: string): Promise<any[]> {
+    return await db
+      .select({
+        id: sessions.id,
+        lastActivity: sessions.lastActivity,
+        userAgent: sessions.userAgent,
+      })
+      .from(sessions)
+      .where(eq(sessions.userId, userId))
+      .orderBy(desc(sessions.lastActivity))
+      .limit(20);
+  }
+
+  async getAnalytics(
+    userId: string,
+    _startDate?: Date,
+    _endDate?: Date,
+  ): Promise<any[]> {
+    let query = dbRead
+      .select()
+      .from(analytics)
+      .where(eq(analytics.userId, userId));
+    return await query?.orderBy(desc(analytics.date)).limit(100);
+  }
+
+  async seedPluginCatalog(): Promise<void> {
+    const { ALL_PLUGINS } = await import("./services/plugins/index.js");
+    const { buildFactoryPresetRows } = await import(
+      "./services/plugins/pluginEnrichment.js"
+    );
+
+    // Bumped whenever the enrichment layer ships new reference parameters or
+    // genre presets. Forces an upsert across all rows (presets?._rev mismatch).
+    const MANIFEST_REV = "rev-enrich-v1";
+
+    // Bulk upsert via single round-trip. parameters/presets are jsonb columns.
+    const pluginRows = ALL_PLUGINS?.map((plugin) => ({
+      id: plugin.id,
+      name: plugin.name,
+      slug: plugin.slug,
+      type: plugin.type,
+      category: plugin.category,
+      vendor: plugin.author || "Max Booster",
+      version: plugin.version,
+      description: plugin.description,
+      parameters: plugin.parameters as unknown as Record<string, unknown>,
+      presets: {
+        _rev: MANIFEST_REV,
+        defaultPreset: plugin.defaultPreset ?? {},
+        genrePresets: plugin.genrePresets ?? {},
+        referenceNote: plugin.referenceNote ?? null,
+      } as Record<string, unknown>,
+      isBuiltIn: true,
+      isActive: true,
+    }));
+
+    const existingRows = await dbRead
+      .select({ slug: pluginCatalog.slug, presets: pluginCatalog.presets })
+      .from(pluginCatalog);
+    const existingBySlug = new Map<string, { presets: unknown }>(
+      existingRows?.map((r) => [r?.slug, { presets: r.presets }]),
+    );
+
+    const toInsert: typeof pluginRows = [];
+    const toUpdate: typeof pluginRows = [];
+    for (const row of pluginRows) {
+      const existing = existingBySlug?.get(row?.slug);
+      if (!existing) {
+        toInsert?.push(row);
+        continue;
+      }
+      const currentRev = (existing?.presets as { _rev?: string } | null)?._rev;
+      if (currentRev !== MANIFEST_REV) toUpdate?.push(row);
+    }
+
+    if (toInsert?.length > 0) {
+      await db.insert(pluginCatalog).values(toInsert).onConflictDoNothing();
+    }
+    for (const row of toUpdate) {
+      await db
+        .update(pluginCatalog)
+        .set({
+          name: row.name,
+          type: row.type,
+          category: row.category,
+          vendor: row.vendor,
+          version: row.version,
+          description: row.description,
+          parameters: row.parameters,
+          presets: row.presets,
+          isBuiltIn: true,
+          isActive: true,
+        })
+        .where(eq(pluginCatalog.slug, row?.slug));
+    }
+
+    if (toInsert?.length > 0 || toUpdate?.length > 0) {
+      logger.info(
+        `   ✓ Plugin catalog: ${toInsert?.length} inserted, ${toUpdate?.length} updated (rev ${MANIFEST_REV})`,
+      );
+    }
+
+    // Seed factory genre presets. pluginPresets.pluginId stores the catalog
+    // slug for portability across environments.
+    const presetRows = buildFactoryPresetRows(ALL_PLUGINS);
+    if (presetRows?.length === 0) return;
+
+    const existingPresets = await dbRead
+      .select({
+        id: pluginPresets.id,
+        pluginId: pluginPresets.pluginId,
+        name: pluginPresets.name,
+        metadata: pluginPresets.metadata,
+      })
+      .from(pluginPresets)
+      .where(eq(pluginPresets.isFactory, true));
+    const presetKey = (slug: string, name: string) => `${slug}::${name}`;
+    const existingPresetMap = new Map<
+      string,
+      { id: string; metadata: unknown }
+    >();
+    for (const p of existingPresets) {
+      existingPresetMap?.set(presetKey(p?.pluginId, p?.name), {
+        id: p.id,
+        metadata: p.metadata,
+      });
+    }
+
+    const presetInserts: Array<{
+      pluginId: string;
+      userId: string | null;
+      name: string;
+      isFactory: boolean;
+      parameters: Record<string, unknown>;
+      metadata: Record<string, unknown>;
+    }> = [];
+    let presetRefreshed = 0;
+    for (const row of presetRows) {
+      const metadata = { ...row?.metadata, _rev: MANIFEST_REV };
+      const existing = existingPresetMap?.get(
+        presetKey(row?.pluginSlug, row?.name),
+      );
+      if (!existing) {
+        presetInserts?.push({
+          pluginId: row.pluginSlug,
+          userId: null,
+          name: row.name,
+          isFactory: true,
+          parameters: row.parameters as Record<string, unknown>,
+          metadata,
+        });
+      } else {
+        const currentRev = (existing?.metadata as { _rev?: string } | null)
+          ?._rev;
+        if (currentRev !== MANIFEST_REV) {
+          await db
+            .update(pluginPresets)
+            .set({
+              parameters: row.parameters as Record<string, unknown>,
+              metadata,
+              isFactory: true,
+            })
+            .where(eq(pluginPresets.id, existing?.id));
+          presetRefreshed++;
+        }
+      }
+    }
+    if (presetInserts?.length > 0) {
+      // Insert in chunks to keep the parameterised statement size reasonable.
+      const CHUNK = 200;
+      for (let i = 0; i < presetInserts.length; i += CHUNK) {
+        await db
+          .insert(pluginPresets)
+          .values(presetInserts?.slice(i, i + CHUNK));
+      }
+    }
+    if (presetInserts?.length > 0 || presetRefreshed > 0) {
+      logger.info(
+        `   ✓ Factory genre presets: ${presetInserts?.length} inserted, ${presetRefreshed} refreshed (rev ${MANIFEST_REV})`,
+      );
+    }
+  }
+
+  async getProducers(): Promise<any[]> {
+    try {
+      const result = await dbRead?.execute(sql`
+        SELECT
+          u.id,
+          u.first_name,
+          u.last_name,
+          u.username,
+          u.artist_name,
+          u.avatar_url,
+          u.bio,
+          u.location,
+          u.website,
+          u.role,
+          u.subscription_tier,
+          COALESCE(l.beats_count, 0)::int        AS beats_count,
+          COALESCE(o.sales_count, 0)::int        AS sales_count,
+          COALESCE(sf.followers_count, 0)::int   AS followers_count,
+          COALESCE(ROUND(sr.avg_rating::numeric, 1), 0) AS avg_rating
+        FROM users u
+        LEFT JOIN LATERAL (
+          SELECT COUNT(*) AS beats_count FROM listings WHERE user_id = u.id
+        ) l ON true
+        LEFT JOIN LATERAL (
+          SELECT COUNT(*) AS sales_count FROM orders WHERE seller_id = u.id AND status = 'completed'
+        ) o ON true
+        LEFT JOIN LATERAL (
+          SELECT COUNT(*) AS followers_count
+          FROM storefront_follows sf2
+          JOIN storefronts s ON sf2.storefront_id = s.id
+          WHERE s.user_id = u.id
+        ) sf ON true
+        LEFT JOIN LATERAL (
+          SELECT COALESCE(AVG(sr2.rating), 0) AS avg_rating
+          FROM storefront_ratings sr2
+          JOIN storefronts s ON sr2.storefront_id = s.id
+          WHERE s.user_id = u.id
+        ) sr ON true
+        WHERE l.beats_count > 0
+           OR EXISTS (SELECT 1 FROM storefronts st WHERE st.user_id = u.id)
+        ORDER BY l.beats_count DESC, o.sales_count DESC
+        LIMIT 50
+      `);
+
+      const rows = (result as { rows?: unknown[] }).rows ?? result;
+      if (!Array.isArray(rows)) throw new Error("Invalid producer query result");
+
+      return rows?.map((row: unknown) => {
+        const u = row as Record<string, unknown>;
+        const displayName =
+          (u?.artist_name as string) ||
+          `${u?.first_name || ""} ${u?.last_name || ""}`.trim() ||
+          (u?.username as string) ||
+          "Producer";
+        return {
+          id: u.id,
+          username: u.username || displayName,
+          displayName,
+          avatar: u.avatar_url || "",
+          avatarUrl: u.avatar_url || "",
+          bio: u.bio || "",
+          location: u.location || "",
+          website: u.website || "",
+          verified: u.role === "admin" || u?.subscription_tier === "lifetime",
+          followers: Number(u?.followers_count) || 0,
+          following: 0,
+          sales: Number(u?.sales_count) || 0,
+          beats: Number(u?.beats_count) || 0,
+          rating: Number(u?.avg_rating) || 0,
+          joinedAt: "",
+          socialLinks: {},
+        };
+      });
+    } catch (error) {
+      logger.warn({ err: error }, "Error getting producers:");
+      throw error;
+    }
+  }
+
+  async createDistroRelease(
+    data: Record<string, unknown>,
+  ): Promise<DistroRelease> {
+    const [release] = await db.insert(distroReleases).values(data as any).returning();
+    return release;
+  }
+
+  async getDistroReleasesByArtist(artistId: string): Promise<DistroRelease[]> {
+    return await db
+      .select()
+      .from(distroReleases)
+      .where(eq(distroReleases.artistId, artistId))
+      .orderBy(desc(distroReleases.createdAt))
+      .limit(200);
+  }
+
+  /**
+   * Return only releases whose persisted artist name belongs to a registered
+   * artist profile owned by this user. Distro releases are user-owned for
+   * legacy distribution flows, so artistId alone is not an artist boundary.
+   *
+   * When artistName is supplied, this is the profile-specific variant used by
+   * artist catalog pages. If the user has no registered profiles, preserve the
+   * legacy behavior for the general releases list.
+   */
+  async getDistroReleasesForRegisteredArtists(
+    userId: string,
+    artistName?: string,
+  ): Promise<DistroRelease[]> {
+    const releases = await this.getDistroReleasesByArtist(userId);
+    const [profiles, userRows] = await Promise.all([
+      db
+        .select({ artistName: artistProfiles.artistName })
+        .from(artistProfiles)
+        .where(eq(artistProfiles.userId, userId)),
+      db
+        .select({ artistName: users.artistName })
+        .from(users)
+        .where(eq(users.id, userId))
+        .limit(1),
+    ]);
+
+    const normalizeArtistName = (value: unknown): string =>
+      String(value ?? "")
+        .normalize("NFD")
+        .replace(/[\u0300-\u036f]/g, "")
+        .toLowerCase()
+        .replace(/\s+(?:feat\.?|ft\.?|featuring)\b.*/i, "")
+        .replace(/\s*\([^)]{0,45}\)\s*/g, " ")
+        .replace(/[^a-z0-9]/g, "");
+
+    const allowedNames = new Set(
+      (artistName
+        ? [artistName]
+        : [userRows[0]?.artistName, ...profiles.map((p) => p.artistName)])
+        .map(normalizeArtistName)
+        .filter(Boolean),
+    );
+
+    // Users who have not created an artist profile yet still need to see
+    // their manually-created distribution drafts.
+    if (allowedNames.size === 0) return artistName ? [] : releases;
+
+    return releases.filter((release) => {
+      const metadata = (release.metadata || {}) as Record<string, unknown>;
+      return allowedNames.has(normalizeArtistName(metadata.artistName));
+    });
+  }
+
+  async getDistroRelease(id: string): Promise<DistroRelease | undefined> {
+    const [release] = await db
+      .select()
+      .from(distroReleases)
+      .where(eq(distroReleases.id, id))
+      .limit(1);
+    return release || undefined;
+  }
+
+  async updateDistroRelease(
+    id: string,
+    data: Record<string, unknown>,
+  ): Promise<DistroRelease | undefined> {
+    const [release] = await db
+      .update(distroReleases)
+      .set(data)
+      .where(eq(distroReleases.id, id))
+      .returning();
+    return release || undefined;
+  }
+
+  async getDistroTracksByRelease(releaseId: string): Promise<DistroTrack[]> {
+    return await db
+      .select()
+      .from(distroTracks)
+      .where(eq(distroTracks.releaseId, releaseId))
+      .limit(50);
+  }
+
+  async createDistroTrack(data: Record<string, unknown>): Promise<DistroTrack> {
+    const [track] = await db.insert(distroTracks).values(data as any).returning();
+    return track;
+  }
+
+  async getDistroTracks(releaseId: string): Promise<DistroTrack[]> {
+    return this.getDistroTracksByRelease(releaseId);
+  }
+
+  async updateDistroTrack(
+    trackId: string,
+    releaseId: string,
+    data: Record<string, unknown>,
+  ): Promise<DistroTrack | undefined> {
+    const [track] = await db
+      .update(distroTracks)
+      .set(data)
+      .where(
+        and(
+          eq(distroTracks.id, trackId),
+          eq(distroTracks.releaseId, releaseId),
+        ),
+      )
+      .returning();
+    return track || undefined;
+  }
+
+  async deleteDistroTrack(
+    trackId: string,
+    releaseId: string,
+  ): Promise<boolean> {
+    try {
+      const deleted = await db
+        .delete(distroTracks)
+        .where(
+          and(
+            eq(distroTracks.id, trackId),
+            eq(distroTracks.releaseId, releaseId),
+          ),
+        )
+        .returning({ id: distroTracks.id });
+      return deleted?.length > 0;
+    } catch (error) {
+      logger.warn({ err: error }, "Error deleting distro track:");
+      return false;
+    }
+  }
+
+  async deleteDistroRelease(id: string): Promise<boolean> {
+    try {
+      await db.delete(distroTracks).where(eq(distroTracks.releaseId, id));
+      await db.delete(distroReleases).where(eq(distroReleases.id, id));
+      return true;
+    } catch (error) {
+      logger.warn({ err: error }, "Error deleting distro release:");
+      return false;
+    }
+  }
+
+  async getDSPProviderBySlug(slug: string): Promise<any | null> {
+    try {
+      const [provider] = await db
+        .select()
+        .from(dspProviders)
+        .where(eq(dspProviders.slug, slug))
+        .limit(1);
+      return provider || null;
+    } catch (error) {
+      logger.warn({ err: error }, "Error fetching DSP provider by slug:");
+      return null;
+    }
+  }
+
+  async getAllDSPProviders(): Promise<any[]> {
+    try {
+      const providers = await dbRead?.select().from(dspProviders).limit(100);
+      return providers;
+    } catch (error) {
+      logger.warn({ err: error }, "Error fetching all DSP providers:");
+      return [];
+    }
+  }
+
+  async createDSPProvider(data: {
+    name: string;
+    slug: string;
+    isActive?: boolean;
+    logoUrl?: string;
+    metadata?: Record<string, unknown>;
+  }): Promise<unknown> {
+    try {
+      const [provider] = await db
+        .insert(dspProviders)
+        .values({
+          id: `dsp_${Date.now()}_${randomBytes(4).toString("hex")}`,
+          name: data.name,
+          slug: data.slug,
+          isActive: data.isActive ?? true,
+          logoUrl: data.logoUrl,
+          metadata: data.metadata,
+        })
+        .returning();
+      return provider;
+    } catch (error) {
+      logger.warn({ err: error }, "Error creating DSP provider:");
+      throw error;
+    }
+  }
+
+  async updateDSPProvider(
+    id: string,
+    data: {
+      name?: string;
+      isActive?: boolean;
+      metadata?: Record<string, unknown>;
+    },
+  ): Promise<any | null> {
+    try {
+      const [provider] = await db
+        .update(dspProviders)
+        .set({
+          ...data,
+        })
+        .where(eq(dspProviders.id, id))
+        .returning();
+      return provider || null;
+    } catch (error) {
+      logger.warn({ err: error }, "Error updating DSP provider:");
+      return null;
+    }
+  }
+
+  async deleteHyperFollowPage(id: string): Promise<boolean> {
+    try {
+      await db.delete(hyperFollowPages).where(eq(hyperFollowPages.id, id));
+      return true;
+    } catch (error) {
+      logger.warn({ err: error }, "Error deleting hyperfollow page:");
+      return false;
+    }
+  }
+
+  private _dispatchSettingKey(releaseId: string) {
+    return `distro_dispatch:${releaseId}`;
+  }
+
+  private async _loadDispatches(releaseId: string): Promise<any[]> {
+    const key = this._dispatchSettingKey(releaseId);
+    const [row] = await db
+      .select()
+      .from(systemSettings)
+      .where(eq(systemSettings.key, key))
+      .limit(1);
+    return (row?.value as unknown[]) || [];
+  }
+
+  private async _mutateDispatches<T>(
+    releaseId: string,
+    mutate: (dispatches: any[]) => T,
+  ): Promise<T> {
+    const key = this._dispatchSettingKey(releaseId);
+    return db.transaction(async (tx) => {
+    // Also serialize the first insert, when there is no row to lock yet.
+    await tx.execute(sql`SELECT pg_advisory_xact_lock(hashtextextended(${key}, 0))`);
+    const [stored] = await tx.select().from(systemSettings)
+      .where(eq(systemSettings.key, key)).limit(1);
+    const dispatches = stored?.value ?? [];
+    if (!Array.isArray(dispatches)) throw new Error("Invalid persisted distribution dispatch list");
+    const result = mutate(dispatches);
+    if (stored) {
+      await tx
+        .update(systemSettings)
+        .set({ value: dispatches, updatedAt: new Date() })
+        .where(eq(systemSettings.key, key));
+    } else {
+      await tx
+        .insert(systemSettings)
+        .values({
+          key,
+          value: dispatches,
+          description: `Distribution dispatches for release ${releaseId}`,
+        });
+    }
+    return result;
+    });
+  }
+
+  async createDistroDispatch(data: Record<string, unknown>): Promise<unknown> {
+    const dispatch = {
+      id: `dispatch_${Date.now()}_${randomBytes(4).toString("hex")}`,
+      ...data,
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+    };
+    return this._mutateDispatches(data.releaseId as string, dispatches => {
+      dispatches.push(dispatch);
+      return dispatch;
+    });
+  }
+
+  async getDistroDispatchStatuses(releaseId: string): Promise<any[]> {
+    return this._loadDispatches(releaseId);
+  }
+
+  async updateDistroDispatchStatus(
+    releaseId: string,
+    data: Record<string, unknown>,
+  ): Promise<Record<string, unknown> | null> {
+    return this._mutateDispatches(releaseId, dispatches => {
+    if (data?.platform || data?.providerId) {
+      const requestedPlatform = String(data.platform || data.providerId).replace(
+        /_/g,
+        "-",
+      );
+      const dispatch = dispatches?.find(
+        (d: Record<string, unknown>) =>
+          [d.platform, d.providerId].some(value =>
+            typeof value === "string" &&
+            value.replace(/_/g, "-") === requestedPlatform),
+      );
+      if (dispatch) {
+        Object.assign(dispatch, data, { updatedAt: new Date().toISOString() });
+        return dispatch;
+      }
+    }
+    return null;
+    });
+  }
+
+  async updateDistroDispatch(
+    dispatchId: string,
+    data: Record<string, unknown>,
+  ): Promise<Record<string, unknown> | null> {
+    const rows = await db
+      .select()
+      .from(systemSettings)
+      .where(and(
+        sql`${systemSettings.key} like ${"distro_dispatch:%"}`,
+        sql`${systemSettings.value} @> ${JSON.stringify([{ id: dispatchId }])}::jsonb`,
+      ));
+    for (const row of rows) {
+      const dispatches = (row?.value as Record<string, unknown>[]) || [];
+      const dispatch = dispatches?.find(
+        (d: Record<string, unknown>) => d?.id === dispatchId,
+      );
+      if (dispatch) {
+        const releaseId = row?.key.replace("distro_dispatch:", "");
+        return this._mutateDispatches(releaseId, current => {
+          const target = current.find(item => item.id === dispatchId);
+          if (!target) return null;
+          Object.assign(target, data, { updatedAt: new Date().toISOString() });
+          return target;
+        });
+      }
+    }
+    return null;
+  }
+
+  async createAuditLog(data: Record<string, unknown>): Promise<unknown> {
+    try {
+      const [entry] = await db
+        .insert(workspaceAuditLog)
+        .values({
+          workspaceId: String(data.workspaceId || data?.userId || "default"),
+          userId: String(data.userId),
+          action: String(data.action),
+          resourceType: (data.resourceType as string) || null,
+          resourceId: (data.resourceId as string) || null,
+          details: data.details || null,
+          changes: data.changes || null,
+          previousValues: data.previousValues || null,
+          newValues: data.newValues || null,
+          ipAddress: (data.ipAddress as string) || null,
+          userAgent: (data.userAgent as string) || null,
+        })
+        .returning();
+      return entry;
+    } catch (error) {
+      logger.warn({ err: error }, "Failed to persist audit log entry:");
+      return { id: `audit_${Date.now()}`, ...data, createdAt: new Date() };
+    }
+  }
+
+  async getDistroAnalytics(userId: string): Promise<unknown> {
+    const now = new Date();
+    const thisMonthStart = new Date(now?.getFullYear(), now?.getMonth(), 1);
+    const prevMonthStart = new Date(now?.getFullYear(), now?.getMonth() - 1, 1);
+    const threeMonthsAgo = new Date(now?.getFullYear(), now?.getMonth() - 3, 1);
+
+    const [allTimeAgg, thisMonthAgg, prevMonthAgg, txRow, recentAnalytics] =
+      await Promise.all([
+        db
+          .select({
+            totalStreams: sql<number>`COALESCE(SUM(${analytics.streams}), 0)`,
+            totalListeners: sql<number>`COALESCE(SUM(${analytics.totalListeners}), 0)`,
+            totalRevenue: sql<number>`COALESCE(SUM(${analytics.revenue}), 0)`,
+          })
+          .from(analytics)
+          .where(eq(analytics.userId, userId)),
+
+        db
+          .select({
+            streams: sql<number>`COALESCE(SUM(${analytics.streams}), 0)`,
+          })
+          .from(analytics)
+          .where(
+            and(
+              eq(analytics.userId, userId),
+              gte(analytics.date, thisMonthStart),
+            ),
+          ),
+
+        db
+          .select({
+            streams: sql<number>`COALESCE(SUM(${analytics.streams}), 0)`,
+          })
+          .from(analytics)
+          .where(
+            and(
+              eq(analytics.userId, userId),
+              gte(analytics.date, prevMonthStart),
+              lt(analytics.date, thisMonthStart),
+            ),
+          ),
+
+        db
+          .select({
+            totalRevenue: sql<number>`COALESCE(SUM(${royaltyTransactions.amount}), 0)`,
+            totalStreams: sql<number>`COALESCE(SUM(${royaltyTransactions.streamCount}), 0)`,
+          })
+          .from(royaltyTransactions)
+          .where(eq(royaltyTransactions.userId, userId)),
+
+        db
+          .select()
+          .from(analytics)
+          .where(
+            and(
+              eq(analytics.userId, userId),
+              gte(analytics.date, threeMonthsAgo),
+            ),
+          )
+          .orderBy(desc(analytics.date))
+          .limit(90),
+      ]);
+
+    const txRevenue = Number(txRow[0]?.totalRevenue ?? 0);
+    const txStreams = Number(txRow[0]?.totalStreams ?? 0);
+    const totalStreams = Number(allTimeAgg[0]?.totalStreams ?? 0) + txStreams;
+    const totalListeners = Number(allTimeAgg[0]?.totalListeners ?? 0);
+    const analyticsRevenue = Number(allTimeAgg[0]?.totalRevenue ?? 0);
+    const combinedRevenue = txRevenue || analyticsRevenue;
+
+    if (totalStreams === 0 && txStreams === 0 && txRevenue === 0) {
+      return null;
+    }
+
+    const thisMonthStreams = Number(thisMonthAgg[0]?.streams ?? 0);
+    const prevMonthStreams = Number(prevMonthAgg[0]?.streams ?? 0);
+    const streamGrowth =
+      prevMonthStreams > 0
+        ? Math.round(
+            ((thisMonthStreams - prevMonthStreams) / prevMonthStreams) * 100,
+          )
+        : 0;
+
+    return {
+      totalStreams,
+      streamGrowth,
+      monthlyListeners: totalListeners,
+      listenerGrowth: 0,
+      saves: 0,
+      saveGrowth: 0,
+      playlistAdds: 0,
+      playlistGrowth: 0,
+      totalRevenue: combinedRevenue,
+      downloads: 0,
+      revenue: combinedRevenue,
+      growth: streamGrowth,
+      rawData: recentAnalytics,
+    };
+  }
+
+  async getStreamingTrends(userId: string): Promise<any[]> {
+    const trends = await db
+      .select()
+      .from(analytics)
+      .where(eq(analytics.userId, userId))
+      .orderBy(desc(analytics.date))
+      .limit(90);
+
+    return trends?.map((t) => ({
+      date: t.date,
+      streams: t.streams || 0,
+      listeners: (t as any).listeners || 0,
+      saves: (t as any).saves || 0,
+    }));
+  }
+
+  async getGeographicData(userId: string): Promise<any[]> {
+    const data = await db
+      .select()
+      .from(analytics)
+      .where(eq(analytics.userId, userId))
+      .limit(1);
+
+    if (data?.length === 0 || (!data[0] as any).topCountries) {
+      return [];
+    }
+
+    return ((data[0] as any).topCountries as unknown[]) || [];
+  }
+
+  async getPayoutHistory(userId: string): Promise<any[]> {
+    try {
+      const payouts = await db
+        .select()
+        .from(instantPayouts)
+        .where(eq(instantPayouts.userId, userId))
+        .orderBy(desc(instantPayouts.createdAt))
+        .limit(50);
+
+      return payouts || [];
+    } catch (error) {
+      logger.warn({ err: error }, "Error fetching payout history:");
+      return [];
+    }
+  }
+
+  async getHyperFollowPages(userId: string): Promise<any[]> {
+    try {
+      const pages = await db
+        .select()
+        .from(hyperFollowPages)
+        .where(eq(hyperFollowPages.userId, userId))
+        .orderBy(desc(hyperFollowPages.createdAt))
+        .limit(50);
+      return pages || [];
+    } catch (error) {
+      logger.warn({ err: error }, "Error fetching hyperfollow pages:");
+      return [];
+    }
+  }
+
+  async getHyperFollowPage(id: string): Promise<any | null> {
+    try {
+      const pages = await db
+        .select()
+        .from(hyperFollowPages)
+        .where(eq(hyperFollowPages.id, id))
+        .limit(1);
+      return pages[0] || null;
+    } catch (error) {
+      logger.warn({ err: error }, "Error fetching hyperfollow page:");
+      return null;
+    }
+  }
+
+  async getHyperFollowPageBySlug(slug: string): Promise<any | null> {
+    try {
+      const pages = await db
+        .select()
+        .from(hyperFollowPages)
+        .where(eq(hyperFollowPages.slug, slug))
+        .limit(1);
+      return pages[0] || null;
+    } catch (error) {
+      logger.warn({ err: error }, "Error fetching hyperfollow page by slug:");
+      return null;
+    }
+  }
+
+  async getDSPProviders(): Promise<any[]> {
+    try {
+      const providers = await db
+        .select()
+        .from(dspProviders)
+        .orderBy(dspProviders.name)
+        .limit(100);
+      return providers || [];
+    } catch (error) {
+      logger.warn({ err: error }, "Error fetching DSP providers:");
+      return [];
+    }
+  }
+
+  async createHyperFollowPage(
+    data: Record<string, unknown>,
+  ): Promise<any | null> {
+    try {
+      const [page] = await db
+        .insert(hyperFollowPages)
+        .values({
+          userId: data.userId as string,
+          title: data.title as string,
+          slug: data.slug as string,
+          imageUrl: (data.imageUrl as string) || null,
+          links: data.links || {},
+        })
+        .returning();
+      return page;
+    } catch (error) {
+      logger.warn({ err: error }, "Error creating hyperfollow page:");
+      return null;
+    }
+  }
+
+  async updateHyperFollowPage(
+    id: string,
+    data: Record<string, unknown>,
+  ): Promise<Record<string, unknown> | null> {
+    try {
+      const [page] = await db
+        .update(hyperFollowPages)
+        .set({ ...data } as any)
+        .where(eq(hyperFollowPages.id, id))
+        .returning();
+      return page || null;
+    } catch (error) {
+      logger.warn({ err: error }, "Error updating hyperfollow page:");
+      return null;
+    }
+  }
+
+  async createListing(data: {
+    userId: string;
+    title: string;
+    description?: string;
+    priceCents: number;
+    category?: string;
+    audioUrl?: string;
+    artworkUrl?: string;
+    previewUrl?: string;
+    isPublished?: boolean;
+    metadata?: Record<string, unknown>;
+    tags?: string[];
+  }): Promise<unknown> {
+    try {
+      const [listing] = await db
+        .insert(listings)
+        .values({
+          userId: data.userId,
+          title: data.title,
+          description: data.description,
+          priceCents: data.priceCents,
+          category: data.category,
+          audioUrl: data.audioUrl,
+          artworkUrl: data.artworkUrl,
+          previewUrl: data.previewUrl,
+          isPublished: data.isPublished ?? true,
+          metadata: data.metadata,
+        })
+        .returning();
+      return listing;
+    } catch (error) {
+      logger.warn({ err: error }, "Error creating listing:");
+      throw error;
+    }
+  }
+
+  async getBeatListings(filters?: {
+    search?: string;
+    genre?: string;
+    minPrice?: number;
+    maxPrice?: number;
+    bpm?: number;
+    key?: string;
+    tags?: string[];
+    sortBy?: "recent" | "popular" | "price_low" | "price_high";
+    limit?: number;
+    offset?: number;
+    userId?: string;
+  }): Promise<any[]> {
+    try {
+      const conditions: import("drizzle-orm").SQL<unknown>[] = [];
+
+      if (filters?.userId) {
+        conditions?.push(eq(listings.userId, filters?.userId));
+      } else {
+        conditions?.push(eq(listings.isPublished, true));
+      }
+
+      if (filters?.search) {
+        const searchTerm = `%${filters?.search}%`;
+        conditions?.push(
+          or(
+            ilike(listings.title, searchTerm),
+            ilike(listings.description, searchTerm),
+            ilike(listings.category, searchTerm),
+            sql`${listings.metadata}::text ilike ${searchTerm}`,
+          ) as import("drizzle-orm").SQL<unknown>,
+        );
+      }
+
+      if (filters?.genre) {
+        conditions?.push(
+          or(
+            ilike(listings.category, `%${filters?.genre}%`),
+            sql`${listings.metadata}->>'genre' ilike ${`%${filters?.genre}%`}`,
+          ) as import("drizzle-orm").SQL<unknown>,
+        );
+      }
+
+      if (filters?.minPrice != null) {
+        conditions?.push(
+          gte(listings.priceCents, Math.round(filters?.minPrice * 100)),
+        );
+      }
+      if (filters?.maxPrice != null) {
+        conditions?.push(
+          lte(listings.priceCents, Math.round(filters?.maxPrice * 100)),
+        );
+      }
+
+      if (filters?.bpm != null) {
+        conditions?.push(
+          sql`(${listings.metadata}->>'bpm')::int = ${filters?.bpm}`,
+        );
+      }
+
+      if (filters?.key) {
+        conditions?.push(
+          sql`${listings.metadata}->>'key' ilike ${`%${filters?.key}%`}`,
+        );
+      }
+
+      const whereClause =
+        conditions?.length > 0 ? and(...conditions) : undefined;
+
+      let orderBy: import("drizzle-orm").SQL<unknown>[];
+      switch (filters?.sortBy) {
+        case "popular":
+          orderBy = [desc(sql`(${listings.metadata}->>'plays')::int`)];
+          break;
+        case "price_low":
+          orderBy = [asc(listings.priceCents)];
+          break;
+        case "price_high":
+          orderBy = [desc(listings.priceCents)];
+          break;
+        default:
+          orderBy = [desc(listings.createdAt)];
+      }
+
+      const limit = filters?.limit ?? 50;
+      const offset = filters?.offset ?? 0;
+
+      // Owner reads (My Beats) need read-your-writes consistency, so they go
+      // to the primary. Public reads can use the replica for scale.
+      const reader = filters?.userId ? db : dbRead;
+
+      const results = await reader
+        .select()
+        .from(listings)
+        .where(whereClause)
+        .orderBy(...orderBy)
+        .limit(limit)
+        .offset(offset);
+
+      const userIds = [...new Set(results?.map((l) => l?.userId))];
+      const userRows =
+        userIds?.length > 0
+          ? await dbRead
+              .select({
+                id: users.id,
+                username: users.username,
+                firstName: users.firstName,
+                lastName: users.lastName,
+              })
+              .from(users)
+              .where(inArray(users.id, userIds))
+          : [];
+      const userMap = new Map(userRows?.map((u) => [u?.id, u]));
+
+      return results?.map((listing) => {
+        const meta = (listing?.metadata as Record<string, unknown>) || {};
+        const publicPreviewUrl = getDistinctBeatMoneyLoopPreviewUrl(
+          meta.source,
+          listing.audioUrl,
+          listing.previewUrl,
+        );
+        const owner = userMap?.get(listing?.userId);
+        const producerName =
+          owner?.username ||
+          `${owner?.firstName || ""} ${owner?.lastName || ""}`.trim() ||
+          "Producer";
+        return {
+          id: listing.id,
+          userId: listing.userId,
+          producerId: listing.userId,
+          producer: producerName,
+          title: listing.title,
+          description: listing.description || "",
+          price: (listing?.priceCents || 0) / 100,
+          currency: listing.currency || "usd",
+          category: listing.category,
+          genre: meta.genre || listing?.category || "",
+          mood: meta.mood || "",
+          tempo: meta.bpm || 0,
+          bpm: meta.bpm || 0,
+          key: meta.key || "",
+          duration: meta.duration || 0,
+          // Public listing results use only the audition clip for Beat Money
+          // Loop inventory. Full audio is revealed by detail only to an owner
+          // or buyer with a completed order.
+          audioUrl:
+            meta.source === "beat-money-loop"
+              ? publicPreviewUrl
+              : listing.audioUrl,
+          artworkUrl: listing.artworkUrl,
+          coverArt: listing.artworkUrl,
+          previewUrl: publicPreviewUrl,
+          isPublished: listing.isPublished,
+          status: listing.isPublished ? "active" : "inactive",
+          isExclusive: meta.isExclusive || false,
+          isLease: meta.isLease !== false,
+          licenseType: meta.licenseType || "basic",
+          metadata: listing.metadata,
+          avgRating: meta.avgRating || 0,
+          ratingCount: meta.ratingCount || 0,
+          likes: meta.likes || 0,
+          plays: meta.plays || 0,
+          downloads: meta.downloads || 0,
+          tags: meta.tags || [],
+          waveformData: meta.waveformData || [],
+          createdAt: listing.createdAt,
+          updatedAt: listing.updatedAt ?? listing?.createdAt,
+          licenses: [
+            { type: "basic", price: (listing?.priceCents || 0) / 100 },
+            { type: "premium", price: ((listing?.priceCents || 0) / 100) * 2 },
+            { type: "exclusive", price: ((listing?.priceCents || 0) / 100) * 5 },
+          ],
+        };
+      });
+    } catch (error) {
+      logger.warn({ err: error }, "Error fetching beat listings:");
+      throw error;
+    }
+  }
+
+  async getBeatListing(id: string): Promise<any | null> {
+    try {
+      const [listing] = await db
+        .select()
+        .from(listings)
+        .where(eq(listings.id, id))
+        .limit(1);
+
+      if (!listing) return null;
+
+      return {
+        id: listing.id,
+        userId: listing.userId,
+        title: listing.title,
+        description: listing.description,
+        price: (listing?.priceCents || 0) / 100,
+        currency: listing.currency || "usd",
+        category: listing.category,
+        audioUrl: listing.audioUrl,
+        artworkUrl: listing.artworkUrl,
+        coverArt: listing.artworkUrl,
+        previewUrl: listing.previewUrl,
+        isPublished: listing.isPublished,
+        metadata: listing.metadata,
+        createdAt: listing.createdAt,
+        licenses: await (async () => {
+          const tiers = await db
+            .select()
+            .from(listingLicenseTiers)
+            .where(
+              and(
+                eq(listingLicenseTiers.listingId, id),
+                eq(listingLicenseTiers.isActive, true),
+              ),
+            )
+            .orderBy(asc(listingLicenseTiers.sortOrder))
+            .limit(20);
+          if (tiers?.length > 0)
+            return tiers?.map((t) => ({
+              id: t.id,
+              type: t.licenseType,
+              label: t.label,
+              price: (t?.priceCents || 0) / 100,
+              discountType: t.discountType,
+              discountPercent: t.discountPercent,
+              discountPrice: t.discountPriceCents
+                ? t?.discountPriceCents / 100
+                : null,
+              bogoEnabled: t.bogoEnabled,
+              fileFormats: t.fileFormats,
+            }));
+          const base = (listing?.priceCents || 0) / 100;
+          return [
+            { type: "basic", label: "Basic", price: base },
+            { type: "premium", label: "Premium", price: base * 2 },
+            { type: "exclusive", label: "Exclusive", price: base * 5 },
+          ];
+        })(),
+      };
+    } catch (error) {
+      logger.warn({ err: error }, "Error fetching beat listing:");
+      return null;
+    }
+  }
+
+  /**
+   * Public single-beat detail — mirrors getBeatListings()'s per-item shape
+   * (producer name, genre/mood/tempo, discount fields) plus the full
+   * licenseTiers array, so a beat reached via a deep link (e.g. from an ad)
+   * always renders with a complete, working buy flow even when it isn't in
+   * the caller's paginated/filtered browse feed.
+   */
+  async getBeatListingDetail(
+    id: string,
+    viewer?: { id: string; role?: string },
+  ): Promise<any | null> {
+    try {
+      const [listing] = await db
+        .select()
+        .from(listings)
+        .where(eq(listings.id, id))
+        .limit(1);
+      if (!listing) return null;
+
+      const [owner] = await db
+        .select({
+          id: users.id,
+          username: users.username,
+          firstName: users.firstName,
+          lastName: users.lastName,
+        })
+        .from(users)
+        .where(eq(users.id, listing.userId))
+        .limit(1);
+      const producerName =
+        owner?.username ||
+        `${owner?.firstName || ""} ${owner?.lastName || ""}`.trim() ||
+        "Producer";
+
+      const meta = (listing?.metadata as Record<string, unknown>) || {};
+      const safePreviewUrl = getDistinctBeatMoneyLoopPreviewUrl(
+        meta.source,
+        listing.audioUrl,
+        listing.previewUrl,
+      );
+      let canAccessFullAudio =
+        meta.source !== "beat-money-loop" ||
+        canAccessBeatMoneyLoopSourceAudio({
+          ownerId: listing.userId,
+          viewerId: viewer?.id,
+          viewerRole: viewer?.role,
+        });
+      if (
+        meta.source === "beat-money-loop" &&
+        viewer?.id &&
+        !canAccessFullAudio
+      ) {
+        const [purchase] = await db
+          .select({ id: orders.id })
+          .from(orders)
+          .where(
+            and(
+              eq(orders.listingId, listing.id),
+              eq(orders.userId, viewer.id),
+              eq(orders.status, "completed"),
+            ),
+          )
+          .limit(1);
+        canAccessFullAudio = canAccessBeatMoneyLoopSourceAudio({
+          ownerId: listing.userId,
+          viewerId: viewer.id,
+          viewerRole: viewer.role,
+          hasCompletedPurchase: Boolean(purchase),
+        });
+      }
+
+      const tiers = await db
+        .select()
+        .from(listingLicenseTiers)
+        .where(
+          and(
+            eq(listingLicenseTiers.listingId, id),
+            eq(listingLicenseTiers.isActive, true),
+          ),
+        )
+        .orderBy(asc(listingLicenseTiers.sortOrder))
+        .limit(20);
+
+      const licenseTiers = tiers?.map((t) => ({
+        id: t.id,
+        licenseType: t.licenseType,
+        label: t.label,
+        price: (t?.priceCents || 0) / 100,
+        discountType: t.discountType,
+        discountPercent: t.discountPercent,
+        discountPrice: t.discountPriceCents ? t.discountPriceCents / 100 : null,
+        bogoEnabled: t.bogoEnabled,
+        bogoGetType: t.bogoGetType,
+        bogoGetPercent: t.bogoGetPercent,
+        fileFormats: t.fileFormats,
+        audioUrls: t.audioUrls || {},
+        isActive: t.isActive,
+      }));
+
+      return {
+        id: listing.id,
+        userId: listing.userId,
+        producerId: listing.userId,
+        producer: producerName,
+        title: listing.title,
+        description: listing.description || "",
+        price: (listing?.priceCents || 0) / 100,
+        currency: listing.currency || "usd",
+        category: listing.category,
+        genre: meta.genre || listing?.category || "",
+        mood: meta.mood || "",
+        tempo: meta.bpm || 0,
+        bpm: meta.bpm || 0,
+        key: meta.key || "",
+        duration: meta.duration || 0,
+        audioUrl:
+          meta.source === "beat-money-loop" && !canAccessFullAudio
+            ? safePreviewUrl
+            : listing.audioUrl,
+        artworkUrl: listing.artworkUrl,
+        coverArt: listing.artworkUrl,
+        previewUrl: safePreviewUrl,
+        isPublished: listing.isPublished,
+        status: listing.isPublished ? "active" : "inactive",
+        isExclusive: meta.isExclusive || false,
+        isLease: meta.isLease !== false,
+        licenseType: meta.licenseType || "basic",
+        metadata: listing.metadata,
+        avgRating: meta.avgRating || 0,
+        ratingCount: meta.ratingCount || 0,
+        likes: meta.likes || 0,
+        plays: meta.plays || 0,
+        downloads: meta.downloads || 0,
+        tags: meta.tags || [],
+        waveformData: meta.waveformData || [],
+        discountPercent: listing.discountPercent ?? null,
+        discountPriceCents: listing.discountPriceCents ?? null,
+        discountExpiresAt: listing.discountExpiresAt ?? null,
+        createdAt: listing.createdAt,
+        updatedAt: listing.updatedAt ?? listing?.createdAt,
+        hasLicenseTiers: licenseTiers.length > 0,
+        licenseTiers,
+        licenses:
+          licenseTiers.length > 0
+            ? licenseTiers.map((t) => ({ type: t.licenseType, price: t.price }))
+            : [
+                { type: "basic", price: (listing?.priceCents || 0) / 100 },
+                {
+                  type: "premium",
+                  price: ((listing?.priceCents || 0) / 100) * 2,
+                },
+                {
+                  type: "exclusive",
+                  price: ((listing?.priceCents || 0) / 100) * 5,
+                },
+              ],
+      };
+    } catch (error) {
+      logger.warn({ err: error }, "Error fetching beat listing detail:");
+      return null;
+    }
+  }
+
+  async updateListing(
+    id: string,
+    data: Record<string, unknown>,
+  ): Promise<Record<string, unknown> | null> {
+    try {
+      const [listing] = await db
+        .update(listings)
+        .set({ ...data, updatedAt: new Date() })
+        .where(eq(listings.id, id))
+        .returning();
+
+      if (!listing) return null;
+
+      return {
+        id: listing.id,
+        userId: listing.userId,
+        title: listing.title,
+        description: listing.description,
+        priceCents: listing.priceCents,
+        currency: listing.currency || "usd",
+        category: listing.category,
+        audioUrl: listing.audioUrl,
+        artworkUrl: listing.artworkUrl,
+        previewUrl: listing.previewUrl,
+        isPublished: listing.isPublished,
+        metadata: listing.metadata,
+        createdAt: listing.createdAt,
+      };
+    } catch (error) {
+      logger.warn({ err: error }, "Error updating listing:");
+      throw error;
+    }
+  }
+
+  async deleteListing(id: string): Promise<boolean> {
+    try {
+      await db.delete(listings).where(eq(listings.id, id));
+      return true;
+    } catch (error) {
+      logger.warn({ err: error }, "Error deleting listing:");
+      throw error;
+    }
+  }
+
+  async getContractTemplates(userId: string): Promise<any[]> {
+    try {
+      const results = await db
+        .select()
+        .from(contractTemplates)
+        .where(eq(contractTemplates.userId, userId))
+        .orderBy(desc(contractTemplates.createdAt))
+        .limit(100);
+      return results;
+    } catch (error) {
+      logger.warn({ err: error }, "Error fetching contract templates:");
+      return [];
+    }
+  }
+
+  async getContractTemplate(id: string): Promise<any | null> {
+    try {
+      const [template] = await db
+        .select()
+        .from(contractTemplates)
+        .where(eq(contractTemplates.id, id))
+        .limit(1);
+      return template || null;
+    } catch (error) {
+      logger.warn({ err: error }, "Error fetching contract template:");
+      return null;
+    }
+  }
+
+  async getContractTemplateByUser(
+    id: string,
+    userId: string,
+  ): Promise<any | null> {
+    try {
+      const [template] = await db
+        .select()
+        .from(contractTemplates)
+        .where(
+          and(
+            eq(contractTemplates.id, id),
+            eq(contractTemplates.userId, userId),
+          ),
+        )
+        .limit(1);
+      return template || null;
+    } catch (error) {
+      logger.warn({ err: error }, "Error fetching contract template by user:");
+      return null;
+    }
+  }
+
+  async createContractTemplate(data: {
+    userId: string;
+    name: string;
+    description?: string;
+    content: string;
+    category?: string;
+    variables?: Record<string, unknown>[];
+  }): Promise<unknown> {
+    try {
+      const [template] = await db
+        .insert(contractTemplates)
+        .values({
+          userId: data.userId,
+          name: data.name,
+          description: data.description || "",
+          content: data.content,
+          category: data.category || "custom",
+          variables: data.variables || [],
+          isDefault: false,
+        })
+        .returning();
+      return template;
+    } catch (error) {
+      logger.warn({ err: error }, "Error creating contract template:");
+      throw error;
+    }
+  }
+
+  async updateContractTemplate(
+    id: string,
+    data: Record<string, unknown>,
+  ): Promise<Record<string, unknown> | null> {
+    try {
+      const [template] = await db
+        .update(contractTemplates)
+        .set({ ...data, updatedAt: new Date() })
+        .where(eq(contractTemplates.id, id))
+        .returning();
+      return template || null;
+    } catch (error) {
+      logger.warn({ err: error }, "Error updating contract template:");
+      throw error;
+    }
+  }
+
+  async deleteContractTemplate(id: string): Promise<boolean> {
+    try {
+      await db.delete(contractTemplates).where(eq(contractTemplates.id, id));
+      return true;
+    } catch (error) {
+      logger.warn({ err: error }, "Error deleting contract template:");
+      throw error;
+    }
+  }
+
+  async getUserOrders(userId: string): Promise<any[]> {
+    try {
+      const results = await db
+        .select({
+          id: orders.id,
+          userId: orders.userId,
+          sellerId: orders.sellerId,
+          listingId: orders.listingId,
+          amount: orders.amount,
+          currency: orders.currency,
+          status: orders.status,
+          licenseType: orders.licenseType,
+          licenseSnapshot: orders.licenseSnapshot,
+          licenseDocumentUrl: orders.licenseDocumentUrl,
+          stripePaymentIntentId: orders.stripePaymentIntentId,
+          metadata: orders.metadata,
+          createdAt: orders.createdAt,
+          beatTitle: listings.title,
+          beatArtworkUrl: listings.artworkUrl,
+          beatAudioUrl: listings.audioUrl,
+          beatMetadata: listings.metadata,
+          sellerName: users.username,
+        })
+        .from(orders)
+        .leftJoin(listings, eq(orders.listingId, listings.id))
+        .leftJoin(users, eq(orders.sellerId, users.id))
+        .where(eq(orders.userId, userId))
+        .orderBy(desc(orders.createdAt));
+      return results;
+    } catch (error) {
+      logger.warn({ err: error }, "Error fetching user orders:");
+      throw error;
+    }
+  }
+
+  async getSellerOrders(sellerId: string): Promise<any[]> {
+    try {
+      const results = await db
+        .select()
+        .from(orders)
+        .where(eq(orders.sellerId, sellerId))
+        .orderBy(desc(orders.createdAt))
+        .limit(200);
+      return results;
+    } catch (error) {
+      logger.warn({ err: error }, "Error fetching seller orders:");
+      throw error;
+    }
+  }
+
+  // ============================================================================
+  // COLLABORATION SNAPSHOTS - Real-time Yjs document persistence
+  // ============================================================================
+
+  async saveCollabSnapshot(
+    data: InsertCollabSnapshot,
+  ): Promise<CollabSnapshot> {
+    const [snapshot] = await db
+      .insert(collabSnapshots)
+      .values(data)
+      .returning();
+    return snapshot;
+  }
+
+  async getLatestCollabSnapshot(
+    projectId: string,
+  ): Promise<CollabSnapshot | null> {
+    const [snapshot] = await db
+      .select()
+      .from(collabSnapshots)
+      .where(eq(collabSnapshots.projectId, projectId))
+      .orderBy(desc(collabSnapshots.createdAt))
+      .limit(1);
+    return snapshot || null;
+  }
+
+  async getCollabSnapshots(
+    projectId: string,
+    limit: number = 10,
+  ): Promise<CollabSnapshot[]> {
+    return await db
+      .select()
+      .from(collabSnapshots)
+      .where(eq(collabSnapshots.projectId, projectId))
+      .orderBy(desc(collabSnapshots.createdAt))
+      .limit(limit);
+  }
+
+  async deleteOldCollabSnapshots(
+    projectId: string,
+    keepCount: number = 10,
+  ): Promise<void> {
+    const snapshots = await db
+      .select({ id: collabSnapshots.id })
+      .from(collabSnapshots)
+      .where(eq(collabSnapshots.projectId, projectId))
+      .orderBy(desc(collabSnapshots.createdAt))
+      .limit(500);
+
+    if (snapshots?.length > keepCount) {
+      const idsToDelete = snapshots?.slice(keepCount).map((s) => s?.id);
+      // Single bulk DELETE instead of N separate round-trips.
+      await db
+        .delete(collabSnapshots)
+        .where(inArray(collabSnapshots.id, idsToDelete));
+    }
+  }
+
+  async createJWTToken(data: Record<string, unknown>): Promise<string> {
+    const [token] = await db.insert(jwtTokens).values(data as any).returning();
+    return token as unknown as string;
+  }
+
+  async verifyJWTToken(jti: string): Promise<boolean> {
+    const [token] = await db
+      .select({
+        id: jwtTokens.id,
+        revoked: jwtTokens.revoked,
+        expiresAt: jwtTokens.expiresAt,
+      })
+      .from(jwtTokens)
+      .where(eq(jwtTokens.id, jti))
+      .limit(1);
+    if (!token) return false;
+    if (token?.revoked) return false;
+    if (token?.expiresAt < new Date()) return false;
+    return true;
+  }
+
+  async revokeJWTToken(id: string, reason: string): Promise<void> {
+    await db
+      .update(jwtTokens)
+      .set({ revoked: true, revokedAt: new Date(), revokedReason: reason })
+      .where(eq(jwtTokens.id, id));
+  }
+
+  async revokeAllJWTTokensForUser(
+    userId: string,
+    reason: string,
+  ): Promise<void> {
+    await db
+      .update(jwtTokens)
+      .set({ revoked: true, revokedAt: new Date(), revokedReason: reason })
+      .where(and(eq(jwtTokens.userId, userId), eq(jwtTokens.revoked, false)));
+  }
+
+  async createRefreshToken(data: Record<string, unknown>): Promise<string> {
+    const [token] = await db.insert(refreshTokens).values(data as any).returning();
+    return token as unknown as string;
+  }
+
+  async getRefreshToken(token: string): Promise<unknown> {
+    const [rt] = await db
+      .select()
+      .from(refreshTokens)
+      .where(eq(refreshTokens.token, token))
+      .limit(1);
+    return rt || null;
+  }
+
+  async revokeRefreshToken(id: string, reason: string): Promise<void> {
+    await db
+      .update(refreshTokens)
+      .set({ revoked: true, revokedAt: new Date(), revokedReason: reason })
+      .where(eq(refreshTokens.id, id));
+  }
+
+  async revokeAllRefreshTokensForUser(
+    userId: string,
+    reason: string,
+  ): Promise<void> {
+    await db
+      .update(refreshTokens)
+      .set({ revoked: true, revokedAt: new Date(), revokedReason: reason })
+      .where(
+        and(eq(refreshTokens.userId, userId), eq(refreshTokens.revoked, false)),
+      );
+  }
+
+  async createAdDeliveryLog(data: {
+    variantId: string;
+    platform: string;
+    platformAdId?: string;
+    deliveryStatus: string;
+    platformResponse?: Record<string, unknown>;
+    errorMessage?: string;
+    retryCount?: number;
+    deliveredAt?: Date;
+  }): Promise<unknown> {
+    const [log] = await db
+      .insert(adDeliveryLogs)
+      .values(data)
+      .returning();
+    return log;
+  }
+
+  /** Fetch a single marketplace order by id (used by payment processing). */
+  async getOrder(orderId: string): Promise<typeof orders.$inferSelect | undefined> {
+    const [order] = await db
+      .select()
+      .from(orders)
+      .where(eq(orders.id, orderId))
+      .limit(1);
+    return order;
+  }
+}
+
+export const storage = new DatabaseStorage();

@@ -16,7 +16,7 @@ var __export = (target, all) => {
 // server/logSanitizer.ts
 import { isIP } from "node:net";
 function sanitizeLogText(text3) {
-  return text3.replace(/\b(?:Bearer|Basic)\s+[A-Za-z0-9+/_.=~:-]+/gi, REDACTED).replace(/((?:password|secret|access[_-]?token|refresh[_-]?token|api[_-]?key)\s*[=:]\s*)[^\s,;&]+/gi, `$1${REDACTED}`).replace(/[A-Z0-9.!#$%&'*+/=?^_`{|}~-]+@[A-Z0-9.-]+\.[A-Z]{2,}/gi, REDACTED).replace(/\b(?:\d{1,3}\.){3}\d{1,3}\b/g, (value) => isIP(value) ? REDACTED : value).replace(
+  return text3.replace(/\b(?:Bearer|Basic)\s+[A-Za-z0-9+/_.=~:-]+/gi, REDACTED).replace(/\b(?:sk|rk)_(?:live|test)_[A-Za-z0-9]{8,}\b/gi, REDACTED).replace(/\bwhsec_[A-Za-z0-9]{8,}\b/gi, REDACTED).replace(/((?:password|secret|access[_-]?token|refresh[_-]?token|api[_-]?key)\s*[=:]\s*)[^\s,;&]+/gi, `$1${REDACTED}`).replace(/[A-Z0-9.!#$%&'*+/=?^_`{|}~-]+@[A-Z0-9.-]+\.[A-Z]{2,}/gi, REDACTED).replace(/\b(?:\d{1,3}\.){3}\d{1,3}\b/g, (value) => isIP(value) ? REDACTED : value).replace(
     /(?<![a-zA-Z0-9])(?:[a-fA-F0-9]*:){2,}[a-fA-F0-9:.]*(?:%[a-zA-Z0-9]+)?/g,
     (value) => isIP(value) ? REDACTED : value
   );
@@ -186,7 +186,7 @@ function assertUniquePorts(ports) {
 function loopbackUrl(port) {
   return `http://127.0.0.1:${port}`;
 }
-var MIN_PORT, MAX_PORT, defaultPorts, runtimePorts;
+var MIN_PORT, MAX_PORT, defaultPorts, runtimePorts, dnsNodeLocalHealthPort;
 var init_ports = __esm({
   "server/config/ports.ts"() {
     "use strict";
@@ -194,6 +194,9 @@ var init_ports = __esm({
     MAX_PORT = 65535;
     defaultPorts = Object.freeze({
       app: 5e3,
+      dnsAuthority: 53,
+      dnsNodeLocal: 5353,
+      dnsApi: 8080,
       localPdim: 5556,
       diffusionGateway: 8008,
       maxcoreApi: 8090,
@@ -204,6 +207,9 @@ var init_ports = __esm({
     });
     runtimePorts = assertUniquePorts({
       app: readPort("PORT", defaultPorts.app),
+      dnsAuthority: readPort("DNS_AUTHORITY_PORT", defaultPorts.dnsAuthority),
+      dnsNodeLocal: readPort("DNS_NODE_LOCAL_PORT", defaultPorts.dnsNodeLocal),
+      dnsApi: readPort("DNS_API_PORT", defaultPorts.dnsApi),
       localPdim: readPort("LOCAL_PDIM_PORT", defaultPorts.localPdim),
       diffusionGateway: readPort(
         "VIDEO_DIFFUSION_PORT",
@@ -224,6 +230,15 @@ var init_ports = __esm({
       ),
       legacyPythonAi: readPort("PYTHON_AI_PORT", defaultPorts.legacyPythonAi)
     });
+    dnsNodeLocalHealthPort = readPort(
+      "DNS_NODE_LOCAL_HEALTH_PORT",
+      5380
+    );
+    if (Object.values(runtimePorts).includes(dnsNodeLocalHealthPort)) {
+      throw new Error(
+        `[Ports] DNS_NODE_LOCAL_HEALTH_PORT collides with configured service port ${dnsNodeLocalHealthPort}`
+      );
+    }
   }
 });
 
@@ -4924,6 +4939,57 @@ try {
   }
 });
 
+// server/lib/transientStorageRetry.ts
+function isTransientStorageTransportError(error) {
+  const seen = /* @__PURE__ */ new Set();
+  let current = error;
+  while (current && !seen.has(current)) {
+    seen.add(current);
+    if (typeof current === "object") {
+      const candidate = current;
+      if (typeof candidate.code === "string" && TRANSIENT_CODES.has(candidate.code)) {
+        return true;
+      }
+      if (candidate.name === "AbortError" || candidate.name === "TimeoutError") {
+        return true;
+      }
+      current = candidate.cause;
+    } else {
+      break;
+    }
+  }
+  return false;
+}
+async function retryTransientStorageOperation(operation, options = {}) {
+  const delays = options.delaysMs ?? [100, 300];
+  for (let attempt = 0; ; attempt++) {
+    try {
+      return await operation();
+    } catch (error) {
+      if (attempt >= delays.length || !isTransientStorageTransportError(error)) {
+        throw error;
+      }
+      const delay = delays[attempt];
+      if (delay > 0) await new Promise((resolve) => setTimeout(resolve, delay));
+    }
+  }
+}
+var TRANSIENT_CODES;
+var init_transientStorageRetry = __esm({
+  "server/lib/transientStorageRetry.ts"() {
+    "use strict";
+    TRANSIENT_CODES = /* @__PURE__ */ new Set([
+      "ECONNRESET",
+      "ECONNREFUSED",
+      "EPIPE",
+      "ETIMEDOUT",
+      "EAI_AGAIN",
+      "UND_ERR_SOCKET",
+      "UND_ERR_CONNECT_TIMEOUT"
+    ]);
+  }
+});
+
 // server/lib/pdimClient.ts
 var pdimClient_exports = {};
 __export(pdimClient_exports, {
@@ -5131,6 +5197,101 @@ function _normalizeLuaResult(val) {
   for (const k of keys) out[k] = _normalizeLuaResult(obj[k]);
   return out;
 }
+function isTransientPdimReadinessError(error) {
+  if (!(error instanceof Error)) return false;
+  if (error.name === "TimeoutError" || error.name === "AbortError") return true;
+  if (error instanceof TypeError && /fetch failed|failed to fetch/i.test(error.message)) {
+    return true;
+  }
+  return /PDIM HTTP (?:3\d\d|429|5\d\d)|circuit open|ECONN(?:RESET|REFUSED)|EHOSTUNREACH|ETIMEDOUT/i.test(error.message);
+}
+async function probePdimQueueReadiness(execUrl, bearerToken, signal) {
+  const deadline = Date.now() + PDIM_QUEUE_READY_TIMEOUT_MS;
+  let attempts = 0;
+  let consecutiveSuccesses = 0;
+  let lastError;
+  while (Date.now() < deadline) {
+    attempts++;
+    try {
+      const response = await fetch(execUrl, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          ...bearerToken ? { Authorization: `Bearer ${bearerToken}` } : {}
+        },
+        body: JSON.stringify({ cmd: "PING", args: [] }),
+        signal: AbortSignal.any([signal, AbortSignal.timeout(5e3)]),
+        redirect: "manual"
+      });
+      if (!response.ok) {
+        const error = new Error(`PDIM readiness returned HTTP ${response.status}`);
+        if (!isTransientPdimReadinessError(error)) throw error;
+        lastError = error;
+        consecutiveSuccesses = 0;
+      } else {
+        const result = await response.json();
+        const pingResult = result && typeof result === "object" && "result" in result ? result.result : result;
+        if (pingResult !== "PONG") {
+          throw new Error("PDIM readiness returned an invalid PING response");
+        }
+        consecutiveSuccesses++;
+        if (consecutiveSuccesses >= 2) {
+          logger.info(
+            `[PDIM] Queue readiness confirmed by ${attempts} probes; BullMQ connections may start`
+          );
+          return;
+        }
+      }
+    } catch (error) {
+      if (signal.aborted) throw signal.reason ?? error;
+      if (!isTransientPdimReadinessError(error)) throw error;
+      lastError = error;
+      consecutiveSuccesses = 0;
+    }
+    const remainingMs = deadline - Date.now();
+    if (remainingMs <= 0) break;
+    await new Promise((resolve, reject) => {
+      const timer = setTimeout(() => {
+        signal.removeEventListener("abort", onAbort);
+        resolve();
+      }, Math.min(PDIM_QUEUE_READY_RETRY_MS, remainingMs));
+      timer.unref?.();
+      const onAbort = () => {
+        clearTimeout(timer);
+        reject(signal.reason ?? new Error("PDIM readiness probe was cancelled"));
+      };
+      if (signal.aborted) onAbort();
+      else signal.addEventListener("abort", onAbort, { once: true });
+    });
+  }
+  if (signal.aborted) {
+    throw signal.reason ?? new Error("PDIM readiness probe was cancelled");
+  }
+  throw new Error(
+    `PDIM did not become ready for BullMQ within ${PDIM_QUEUE_READY_TIMEOUT_MS / 1e3}s`,
+    { cause: lastError }
+  );
+}
+function waitForPdimQueueReadiness(context, execUrl, bearerToken) {
+  if (context.ready) return Promise.resolve();
+  if (!context.promise) {
+    context.controller = new AbortController();
+    const probe = probePdimQueueReadiness(
+      execUrl,
+      bearerToken,
+      context.controller.signal
+    ).then(() => {
+      context.ready = true;
+    }).finally(() => {
+      if (context.promise === probe) {
+        context.promise = null;
+        context.controller = null;
+      }
+    });
+    context.promise = probe;
+  }
+  return context.promise;
+}
 function getPdimClient() {
   if (!_pdimInstance) {
     _pdimInstance = new PdimRedisClient();
@@ -5200,7 +5361,7 @@ function startPdimDirectProber() {
   }, DIRECT_PROBE_INTERVAL_MS);
   _directProbeTimer.unref?.();
 }
-var clusterWorkers, cpuCores, autoMultiplier, _PDIM_GAP_FLOOR_BASE_MS, _PDIM_GAP_FLOOR_WORKER_MIN, _PDIM_GAP_FLOOR_MS, _PDIM_GAP_CEIL_MS, _PDIM_GAP_INIT_MS, _PDIM_MULT_429, _PDIM_JITTER_INIT_MS, _pdimGapMs, _pdimQueueDepth, _PDIM_DIRECT_LANES, _pdimDirectChains, _pdimDirectLaneRR, _pdimScriptChain, _directQueueDepth, _scriptQueueDepth, _MAX_DIRECT_WAIT_MS, _fastFailLoggedAt, _last429At, _PASSIVE_DECAY_INTERVAL_MS, _PASSIVE_DECAY_FACTOR, _PASSIVE_DECAY_IDLE_QUIET_MS, _SCRIPT_CALL_GAP_MS, _429_DEDUP_MS, _last429LoggedAt, _suppressed429Count, _EXEC_DEDUP_WINDOW_MS, _lastExecErrorStatus, _lastExecErrorLoggedAt, _suppressedExecErrors, _NET_ERROR_DEDUP_MS, _lastNetErrorMsg, _lastNetErrorLoggedAt, _suppressedNetErrors, L1_MAX_ENTRIES, L1_TTL_MS, _l1, PdimRedisClient, _pdimInstance, DIRECT_PROBE_INTERVAL_MS, DIRECT_PROBE_TIMEOUT_MS, PDIM_EXEC_TIMEOUT_MS, _directProbeTimer;
+var clusterWorkers, cpuCores, autoMultiplier, _PDIM_GAP_FLOOR_BASE_MS, _PDIM_GAP_FLOOR_WORKER_MIN, _PDIM_GAP_FLOOR_MS, _PDIM_GAP_CEIL_MS, _PDIM_GAP_INIT_MS, _PDIM_MULT_429, _PDIM_JITTER_INIT_MS, _pdimGapMs, _pdimQueueDepth, _PDIM_DIRECT_LANES, _pdimDirectChains, _pdimDirectLaneRR, _pdimScriptChain, _directQueueDepth, _scriptQueueDepth, _MAX_DIRECT_WAIT_MS, _fastFailLoggedAt, _last429At, _PASSIVE_DECAY_INTERVAL_MS, _PASSIVE_DECAY_FACTOR, _PASSIVE_DECAY_IDLE_QUIET_MS, _SCRIPT_CALL_GAP_MS, _429_DEDUP_MS, _last429LoggedAt, _suppressed429Count, _EXEC_DEDUP_WINDOW_MS, _lastExecErrorStatus, _lastExecErrorLoggedAt, _suppressedExecErrors, _NET_ERROR_DEDUP_MS, _lastNetErrorMsg, _lastNetErrorLoggedAt, _suppressedNetErrors, L1_MAX_ENTRIES, L1_TTL_MS, _l1, PDIM_QUEUE_READY_TIMEOUT_MS, PDIM_QUEUE_READY_RETRY_MS, PdimRedisClient, _pdimInstance, DIRECT_PROBE_INTERVAL_MS, DIRECT_PROBE_TIMEOUT_MS, PDIM_EXEC_TIMEOUT_MS, MAX_HTTP_BZPOP_WAIT_SECONDS, _directProbeTimer;
 var init_pdimClient = __esm({
   "server/lib/pdimClient.ts"() {
     "use strict";
@@ -5208,6 +5369,7 @@ var init_pdimClient = __esm({
     init_ports();
     init_luaExecutor();
     init_pdimCircuitBreaker();
+    init_transientStorageRetry();
     clusterWorkers = Math.max(
       1,
       parseInt(process.env.PDIM_CLUSTER_WORKERS ?? "1", 10)
@@ -5268,15 +5430,17 @@ var init_pdimClient = __esm({
     L1_MAX_ENTRIES = 2e3;
     L1_TTL_MS = 5 * 60 * 1e3;
     _l1 = /* @__PURE__ */ new Map();
+    PDIM_QUEUE_READY_TIMEOUT_MS = 18e4;
+    PDIM_QUEUE_READY_RETRY_MS = 1e3;
     PdimRedisClient = class _PdimRedisClient extends EventEmitter2 {
-      constructor(execUrl, bearerToken) {
+      constructor(execUrl, bearerToken, readinessContext) {
         super();
-        this.status = "ready";
+        this.status = "connecting";
         this.disconnected = false;
         this.lifecycleController = new AbortController();
         this.disconnectedError = Object.assign(
           new Error("[PDIM] Redis client disconnected"),
-          { name: "ConnectionError" }
+          { name: "ConnectionError", disconnectSource: "" }
         );
         this.pubSubChannels = /* @__PURE__ */ new Set();
         this.pubSubPatterns = /* @__PURE__ */ new Set();
@@ -5350,28 +5514,31 @@ var init_pdimClient = __esm({
         this.pTtl = (k) => this.pttl(k);
         this.execUrl = execUrl || process.env.PDIM_EXEC_URL || process.env.PDIM_HTTP_EXEC_URL || "";
         this.bearerToken = bearerToken || process.env.PDIM_EXEC_TOKEN || process.env.PDIM_BEARER_TOKEN || "";
+        this.readinessContext = readinessContext ?? {
+          promise: null,
+          controller: null,
+          ready: false,
+          waiters: 0
+        };
         if (!this.execUrl) {
           throw new Error("PDIM_HTTP_EXEC_URL is required for PdimRedisClient");
         }
-        setImmediate(() => {
-          if (this.disconnected) return;
-          this.emit("connect");
-          this.emit("ready");
-          logger.info("\u2705 [PDIM] Connected via HTTP exec endpoint");
-        });
       }
       assertConnected() {
-        if (this.disconnected) throw this.disconnectedError;
+        if (this.isDisconnected()) throw this.disconnectedError;
       }
-      requestSignal(timeoutMs = PDIM_EXEC_TIMEOUT_MS) {
-        if (timeoutMs === null) return this.lifecycleController.signal;
+      isDisconnected() {
+        return this.disconnected || this.status === "end";
+      }
+      requestSignal(timeoutMs = PDIM_EXEC_TIMEOUT_MS, lifecycleController = this.lifecycleController) {
+        if (timeoutMs === null) return lifecycleController.signal;
         return AbortSignal.any([
-          this.lifecycleController.signal,
+          lifecycleController.signal,
           AbortSignal.timeout(timeoutMs)
         ]);
       }
       awaitOrDisconnect(operation) {
-        if (this.disconnected) return Promise.reject(this.disconnectedError);
+        if (this.isDisconnected()) return Promise.reject(this.disconnectedError);
         return new Promise((resolve, reject) => {
           const cleanup = () => {
             this.lifecycleController.signal.removeEventListener("abort", onAbort);
@@ -5394,7 +5561,7 @@ var init_pdimClient = __esm({
         });
       }
       delay(ms) {
-        if (this.disconnected) return Promise.reject(this.disconnectedError);
+        if (this.isDisconnected()) return Promise.reject(this.disconnectedError);
         if (ms <= 0) return Promise.resolve();
         return new Promise((resolve, reject) => {
           const cleanup = () => {
@@ -5458,7 +5625,7 @@ var init_pdimClient = __esm({
       async runPubSubLoop(controller, generation, markReady, rejectBeforeReady) {
         let retryMs = 200;
         let initialReady = false;
-        const isCurrent = () => !this.disconnected && !controller.signal.aborted && !this.lifecycleController.signal.aborted && generation === this.pubSubGeneration;
+        const isCurrent = () => !this.isDisconnected() && !controller.signal.aborted && !this.lifecycleController.signal.aborted && generation === this.pubSubGeneration;
         while (isCurrent()) {
           let reader;
           try {
@@ -5587,8 +5754,12 @@ var init_pdimClient = __esm({
         }
       }
       exec(command, options = {}) {
-        if (this.disconnected) return Promise.reject(this.disconnectedError);
+        if (this.isDisconnected()) return Promise.reject(this.disconnectedError);
+        const requestLifecycle = this.lifecycleController;
         const [cmd, ...rawArgs] = command;
+        if (typeof cmd !== "string" || !cmd.trim()) {
+          throw new TypeError("[PDIM] command must be a non-empty string");
+        }
         if (rawArgs.some((arg) => arg === null || arg === void 0)) {
           throw new TypeError(`[PDIM] ${String(cmd)} received a nullish command argument`);
         }
@@ -5599,28 +5770,36 @@ var init_pdimClient = __esm({
           );
         }
         const run = async () => {
+          if (requestLifecycle.signal.aborted) {
+            throw requestLifecycle.signal.reason ?? this.disconnectedError;
+          }
           this.assertConnected();
           const rlWait = _PdimRedisClient?._rateLimitedUntil - Date?.now();
           if (rlWait > 0) {
             await this.delay(rlWait);
           }
+          if (requestLifecycle.signal.aborted) {
+            throw requestLifecycle.signal.reason ?? this.disconnectedError;
+          }
           this.assertConnected();
           let counted = false;
           try {
-            const res = await fetch(this.execUrl, {
+            const request = () => fetch(this.execUrl, {
               method: "POST",
               headers: {
                 "Content-Type": "application/json",
                 Authorization: `Bearer ${this.bearerToken}`
               },
               body: JSON.stringify({ cmd, args }),
-              signal: this.requestSignal(options.requestTimeoutMs),
+              signal: this.requestSignal(options.requestTimeoutMs, requestLifecycle),
               // Do not follow redirects automatically — if PDIM's proxy returns 302
               // (Replit redirecting to an error/login page when the service is down)
               // we need to see the raw 302 status so our 3xx handler can trip the
               // circuit breaker rather than silently following into an HTML page.
               redirect: "manual"
             });
+            const normalizedCommand = cmd.toUpperCase();
+            const res = normalizedCommand === "GET" || normalizedCommand === "HSET" ? await retryTransientStorageOperation(request, { delaysMs: [100] }) : await request();
             if (!res.ok) {
               const text3 = await res.text().catch(() => "");
               if (res.status === 429) {
@@ -5704,7 +5883,10 @@ var init_pdimClient = __esm({
             }
             return data;
           } catch (err) {
-            if (this.disconnected) throw this.disconnectedError;
+            if (requestLifecycle.signal.aborted) {
+              throw requestLifecycle.signal.reason ?? this.disconnectedError;
+            }
+            if (this.isDisconnected()) throw this.disconnectedError;
             const isTimeout = !counted && (err?.name === "TimeoutError" || err?.name === "AbortError");
             const isCircuitMsg = !counted && err?.message.startsWith("[PDIM] Circuit");
             if (!counted && !isTimeout && !isCircuitMsg) {
@@ -5870,22 +6052,86 @@ var init_pdimClient = __esm({
         return this.createPipeline(true);
       }
       duplicate() {
-        return new _PdimRedisClient(this.execUrl, this.bearerToken);
+        const connection = new _PdimRedisClient(
+          this.execUrl,
+          this.bearerToken,
+          this.readinessContext
+        );
+        queueMicrotask(() => {
+          void connection.connect().catch(async (error) => {
+            if (connection.status === "end") return;
+            logger.warn(
+              {
+                errorType: error instanceof Error ? error.name : typeof error
+              },
+              "[PDIM] Duplicated Redis connection failed its readiness probe"
+            );
+            if (connection.listenerCount("error") > 0) {
+              connection.emit("error", error);
+            }
+            await connection.quit();
+          });
+        });
+        return connection;
       }
       // Required by BullMQ's isRedisInstance() check: ['connect', 'disconnect', 'duplicate']
       async connect() {
-        this.assertConnected();
-        this.emit("connect");
-        this.emit("ready");
+        if (this.disconnected) throw this.disconnectedError;
+        if (this.status === "end") {
+          this.lifecycleController = new AbortController();
+          this.disconnectedError = Object.assign(
+            new Error("[PDIM] Redis client disconnected"),
+            { name: "ConnectionError", disconnectSource: "" }
+          );
+          this.status = "connecting";
+        }
+        const context = this.readinessContext;
+        if (context.ready) {
+          if (this.status !== "ready") {
+            this.status = "ready";
+            this.emit("connect");
+            this.emit("ready");
+          }
+          return;
+        }
+        context.waiters++;
+        try {
+          await this.awaitOrDisconnect(
+            waitForPdimQueueReadiness(context, this.execUrl, this.bearerToken)
+          );
+          this.assertConnected();
+          if (this.status !== "ready") {
+            this.status = "ready";
+            this.emit("connect");
+            this.emit("ready");
+          }
+        } finally {
+          context.waiters--;
+          if (!context.ready && context.waiters === 0) {
+            context.controller?.abort(this.disconnectedError);
+          }
+        }
       }
       async quit() {
-        await this.disconnect();
+        if (this.status !== "end") await this.disconnect();
+        this.disconnected = true;
+        this.disconnectedError = Object.assign(
+          new Error("[PDIM] Redis client disconnected"),
+          { name: "ConnectionError", disconnectSource: "" }
+        );
         return "OK";
       }
-      async disconnect() {
-        if (this.disconnected) return;
-        this.disconnected = true;
+      async disconnect(_reconnect = false) {
+        if (this.disconnected || this.status === "end") return;
         this.status = "end";
+        const disconnectSource = new Error("PDIM client disconnect origin").stack?.split("\n").slice(2, 8).join("\n") ?? "unavailable";
+        this.disconnectedError = Object.assign(
+          new Error("Connection is closed."),
+          {
+            name: "ConnectionClosedError",
+            disconnectSource
+          }
+        );
         this.pubSubGeneration++;
         this.pubSubController?.abort(this.disconnectedError);
         this.lifecycleController.abort(this.disconnectedError);
@@ -6039,7 +6285,7 @@ var init_pdimClient = __esm({
             }
             return data;
           } catch (err) {
-            if (this.disconnected) throw this.disconnectedError;
+            if (this.isDisconnected()) throw this.disconnectedError;
             const isTimeout = !counted && (err?.name === "TimeoutError" || err?.name === "AbortError");
             const isCircuitMsg = !counted && err?.message?.startsWith("[PDIM] Circuit");
             if (!counted && !isTimeout && !isCircuitMsg) {
@@ -6315,18 +6561,30 @@ var init_pdimClient = __esm({
         if (!Number.isFinite(timeout) || timeout < 0) {
           throw new TypeError("BZPOPMIN timeout must be a finite non-negative number");
         }
-        const result = await this.exec(
-          ["BZPOPMIN", key, String(timeout)],
-          {
-            blocking: true,
-            requestTimeoutMs: timeout === 0 ? null : timeout * 1e3 + PDIM_EXEC_TIMEOUT_MS
+        const deadline = timeout === 0 ? null : performance.now() + timeout * 1e3;
+        while (true) {
+          const remainingSeconds = deadline === null ? MAX_HTTP_BZPOP_WAIT_SECONDS : Math.max(0, (deadline - performance.now()) / 1e3);
+          if (remainingSeconds <= 0) return null;
+          const serverWaitSeconds = Math.min(MAX_HTTP_BZPOP_WAIT_SECONDS, remainingSeconds);
+          const startedAt = performance.now();
+          const result = await this.exec(
+            ["BZPOPMIN", key, String(serverWaitSeconds)],
+            {
+              blocking: true,
+              requestTimeoutMs: Math.ceil(serverWaitSeconds * 1e3) + PDIM_EXEC_TIMEOUT_MS
+            }
+          );
+          if (result !== null) {
+            if (!Array.isArray(result) || result.length !== 3) {
+              throw new Error("PDIM BZPOPMIN returned an invalid Redis response");
+            }
+            return [String(result[0]), String(result[1]), String(result[2])];
           }
-        );
-        if (result === null) return null;
-        if (!Array.isArray(result) || result.length !== 3) {
-          throw new Error("PDIM BZPOPMIN returned an invalid Redis response");
+          if (deadline !== null && performance.now() >= deadline) return null;
+          if (performance.now() - startedAt < serverWaitSeconds * 1e3 - 1e3) {
+            await this.delay(50);
+          }
         }
-        return [String(result[0]), String(result[1]), String(result[2])];
       }
       // ── List atomic move ───────────────────────────────────────────────────────
       async rpoplpush(src, dst) {
@@ -6473,10 +6731,23 @@ var init_pdimClient = __esm({
       }
       // ── Server commands ───────────────────────────────────────────────────────
       async ping() {
+        this.assertConnected();
         try {
-          return await this.exec(["PING"]);
-        } catch {
-          return "PONG";
+          const result = await this.exec(["PING"]);
+          this.assertConnected();
+          if (result !== "PONG") {
+            throw new Error("[PDIM] Health probe returned an invalid PING response");
+          }
+          if (this.status !== "ready") {
+            this.status = "ready";
+            this.emit("connect");
+            this.emit("ready");
+            logger.info("\u2705 [PDIM] Connected after a successful HTTP PING");
+          }
+          return result;
+        } catch (error) {
+          if (!this.isDisconnected()) this.status = "reconnecting";
+          throw error;
         }
       }
       async info(_section) {
@@ -6500,6 +6771,7 @@ var init_pdimClient = __esm({
     DIRECT_PROBE_INTERVAL_MS = 15e3;
     DIRECT_PROBE_TIMEOUT_MS = 5e3;
     PDIM_EXEC_TIMEOUT_MS = 4e3;
+    MAX_HTTP_BZPOP_WAIT_SECONDS = 240;
     _directProbeTimer = null;
   }
 });
@@ -6948,25 +7220,70 @@ function read(file) {
   try {
     return fs2.readFileSync(file, "utf8").trim();
   } catch (error) {
-    if (["ENOENT", "ENOTDIR"].includes(error.code)) return null;
+    if ([
+      "ENOENT",
+      "ENOTDIR",
+      "EACCES",
+      "EPERM"
+    ].includes(error.code)) {
+      return null;
+    }
     throw error;
   }
 }
-function effectiveCapacity() {
-  let cpus = os3.availableParallelism(), memory = os3.totalmem();
-  const max = read("/sys/fs/cgroup/cpu.max")?.split(/\s+/);
-  const quota = max ? Number(max[0]) : Number(read("/sys/fs/cgroup/cpu/cpu.cfs_quota_us"));
-  const period = max ? Number(max[1]) : Number(read("/sys/fs/cgroup/cpu/cpu.cfs_period_us"));
-  if (quota > 0 && period > 0) cpus = Math.min(cpus, quota / period);
-  for (const file of ["/sys/fs/cgroup/memory.max", "/sys/fs/cgroup/memory/memory.limit_in_bytes"]) {
-    const n = Number(read(file));
-    if (n > 0 && Number.isFinite(n)) memory = Math.min(memory, n);
+function nonnegative(value) {
+  if (value === null || value === void 0 || value === "" || value === "max") {
+    return null;
   }
-  return { cpus, memoryGB: memory / 1024 ** 3 };
+  const result = Number(value);
+  return Number.isFinite(result) && result >= 0 ? result : null;
 }
+function effectiveCapacity() {
+  let cpus = os3.availableParallelism();
+  let memory = os3.totalmem();
+  const max = read("/sys/fs/cgroup/cpu.max")?.split(/\s+/);
+  const quota = nonnegative(
+    max?.[0] ?? read("/sys/fs/cgroup/cpu/cpu.cfs_quota_us")
+  );
+  const period = nonnegative(
+    max?.[1] ?? read("/sys/fs/cgroup/cpu/cpu.cfs_period_us")
+  );
+  if (quota !== null && quota > 0 && period !== null && period > 0) {
+    cpus = Math.min(cpus, quota / period);
+  }
+  for (const file of [
+    "/sys/fs/cgroup/memory.max",
+    "/sys/fs/cgroup/memory/memory.limit_in_bytes"
+  ]) {
+    const limit = nonnegative(read(file));
+    if (limit !== null && limit > 0) {
+      memory = Math.min(memory, limit);
+    }
+  }
+  return {
+    cpus,
+    memoryGB: memory / GiB
+  };
+}
+function clampDeploymentCapacity({ cpus, memoryGB }) {
+  if (!Number.isFinite(cpus) || cpus <= 0 || !Number.isFinite(memoryGB) || memoryGB <= 0) {
+    throw new Error("Invalid detected deployment capacity");
+  }
+  return {
+    cpus: Math.min(cpus, DEDICATED_DEPLOYMENT_LIMITS.cpus),
+    memoryGB: Math.min(memoryGB, DEDICATED_DEPLOYMENT_LIMITS.memoryGB)
+  };
+}
+var MiB, GiB, DEDICATED_DEPLOYMENT_LIMITS;
 var init_capacity = __esm({
   "script/deployment/capacity.mjs"() {
     "use strict";
+    MiB = 1024 ** 2;
+    GiB = 1024 ** 3;
+    DEDICATED_DEPLOYMENT_LIMITS = Object.freeze({
+      cpus: 16,
+      memoryGB: 64
+    });
   }
 });
 
@@ -6978,7 +7295,7 @@ function positiveConfig(name, defaultValue) {
   return value;
 }
 function computeWorkerSizing(opts = {}) {
-  const capacity = effectiveCapacity();
+  const capacity = clampDeploymentCapacity(effectiveCapacity());
   const numCPUs = capacity.cpus;
   const local = process.env.MAXCORE_LOCAL !== "0";
   const maxcore = opts.envOverrideVar === "MAXCORE_LOCAL_CLUSTER_WORKERS";
@@ -8343,7 +8660,63 @@ var init_localPdimCapsuleJournal = __esm({
 // server/lib/localPdimAofJournal.ts
 import fs4 from "node:fs";
 import path6 from "node:path";
+import { createRequire as createRequire2 } from "node:module";
 import { createHash as createHash6, randomUUID as randomUUID3 } from "node:crypto";
+async function acquireLocalPdimAofOwnership(file, onCompromised) {
+  await ensureDurableDirectory(path6.dirname(file));
+  const staleMs = 6e4;
+  const heartbeatMs = 5e3;
+  const lockPath = `${file}.lock`;
+  const options = {
+    realpath: false,
+    retries: 0,
+    stale: staleMs,
+    update: heartbeatMs,
+    onCompromised
+  };
+  const readLockMtime = async () => {
+    try {
+      const stat = await fs4.promises.lstat(lockPath);
+      if (!stat.isDirectory()) {
+        throw new Error("Local PDIM AOF ownership lock is not a directory");
+      }
+      return stat.mtimeMs;
+    } catch (error) {
+      if (error.code === "ENOENT") return null;
+      throw error;
+    }
+  };
+  let releaseLock;
+  for (let vanishedLockRetries = 0; ; ) {
+    try {
+      releaseLock = await properLockfile.lock(file, options);
+      break;
+    } catch (error) {
+      if (error.code !== "ELOCKED") throw error;
+      let observedMtime = await readLockMtime();
+      if (observedMtime === null) {
+        if (++vanishedLockRetries > 8) throw error;
+        continue;
+      }
+      while (true) {
+        const remainingMs = staleMs - (Date.now() - observedMtime);
+        if (remainingMs <= 0) break;
+        await new Promise(
+          (resolve) => setTimeout(resolve, Math.min(heartbeatMs + 1e3, remainingMs))
+        );
+        const currentMtime = await readLockMtime();
+        if (currentMtime === null) break;
+        if (currentMtime !== observedMtime) throw error;
+      }
+    }
+  }
+  let released = false;
+  return async () => {
+    if (released) return;
+    released = true;
+    await releaseLock();
+  };
+}
 async function syncDirectory(directory) {
   const handle = await fs4.promises.open(directory, "r");
   try {
@@ -8363,7 +8736,7 @@ async function ensureDurableDirectory(directory) {
   }
   for (const created of missing.reverse()) {
     try {
-      await fs4.promises.mkdir(created);
+      await fs4.promises.mkdir(created, { mode: 448 });
     } catch (error) {
       if (error.code !== "EEXIST") throw error;
       const stat = await fs4.promises.stat(created);
@@ -8402,10 +8775,11 @@ function decode(line) {
   }
   return body;
 }
-var checksum2, LocalPdimAofJournal;
+var properLockfile, checksum2, LocalPdimAofJournal;
 var init_localPdimAofJournal = __esm({
   "server/lib/localPdimAofJournal.ts"() {
     "use strict";
+    properLockfile = createRequire2(import.meta.url)("proper-lockfile");
     checksum2 = (body) => createHash6("sha256").update(body).digest("hex");
     LocalPdimAofJournal = class {
       constructor(file) {
@@ -8426,29 +8800,30 @@ var init_localPdimAofJournal = __esm({
         const bytes = fs4.readFileSync(this.file);
         const end = bytes.lastIndexOf(10) + 1;
         const lines = bytes.subarray(0, end).toString("utf8").split("\n").filter(Boolean);
-        const records = [];
-        let previousFrameEnd = null;
+        const replayBySequence = /* @__PURE__ */ new Map();
+        let maximumFrameSequence = baseline;
         for (const line of lines) {
           const frame = decode(line);
-          const extendsPrevious = previousFrameEnd !== null && frame.from === previousFrameEnd + 1;
-          const beginsAfterSnapshot = previousFrameEnd !== null && previousFrameEnd <= baseline && frame.from === baseline + 1;
-          if (previousFrameEnd !== null && !extendsPrevious && !beginsAfterSnapshot) {
-            throw new Error("Local PDIM AOF frame sequence discontinuity");
+          maximumFrameSequence = Math.max(maximumFrameSequence, frame.through);
+          for (const record of frame.records) {
+            if (record.s <= baseline) continue;
+            const prior = replayBySequence.get(record.s);
+            if (prior && (prior.c !== record.c || prior.a.length !== record.a.length || prior.a.some((argument, index3) => argument !== record.a[index3]))) {
+              throw new Error("Local PDIM AOF has conflicting duplicate sequence");
+            }
+            if (!prior) replayBySequence.set(record.s, record);
           }
-          previousFrameEnd = frame.through;
-          records.push(...frame.records);
         }
         const replay = [];
         let replaySeq = baseline;
-        for (const record of records) {
-          if (record.s <= baseline) continue;
+        for (const record of [...replayBySequence.values()].sort((a, b) => a.s - b.s)) {
           if (record.s !== replaySeq + 1) {
             throw new Error("Local PDIM AOF sequence gap after snapshot watermark");
           }
           replay.push(record);
           replaySeq = record.s;
         }
-        this.publishedSeq = Math.max(baseline, previousFrameEnd ?? 0);
+        this.publishedSeq = maximumFrameSequence;
         if (end !== bytes.length) fs4.truncateSync(this.file, end);
         return replay;
       }
@@ -8737,107 +9112,32 @@ try {
   }
 });
 
-// scripts/recovery-private-store.mjs
-import { Storage, CRC32C } from "@google-cloud/storage";
-async function createRecoveryStorage({
-  bucketId,
-  fetchImpl = globalThis.fetch,
-  StorageClass = Storage
-} = {}) {
-  let selected = bucketId;
-  if (!selected) {
-    if (typeof fetchImpl !== "function") throw new Error("Sidecar default-bucket lookup is unavailable");
-    const response = await fetchImpl(DEFAULT_BUCKET_URL);
-    if (!response.ok) throw new Error(`Sidecar default-bucket lookup failed (${response.status})`);
-    const body = await response.json();
-    selected = body?.bucketId;
-  }
-  selected = assertSafeBucketId(selected);
-  const client = new StorageClass({ credentials: REPLIT_ADC, projectId: "" });
-  return { bucket: client.bucket(selected), bucketId: selected };
-}
-var SIDECAR, DEFAULT_BUCKET_URL, REPLIT_ADC, assertSafeBucketId, MANAGED_STORAGE_CONTRACT;
-var init_recovery_private_store = __esm({
-  "scripts/recovery-private-store.mjs"() {
-    "use strict";
-    SIDECAR = "http://127.0.0.1:1106";
-    DEFAULT_BUCKET_URL = `${SIDECAR}/object-storage/default-bucket`;
-    REPLIT_ADC = Object.freeze({
-      audience: "replit",
-      subject_token_type: "access_token",
-      token_url: `${SIDECAR}/token`,
-      type: "external_account",
-      credential_source: {
-        url: `${SIDECAR}/credential`,
-        format: { type: "json", subject_token_field_name: "access_token" }
-      },
-      universe_domain: "googleapis.com"
-    });
-    assertSafeBucketId = (value) => {
-      if (typeof value !== "string" || !/^[a-z0-9][a-z0-9._-]{1,221}[a-z0-9]$/.test(value)) {
-        throw new Error("Recovery bucket selection was missing or invalid");
-      }
-      return value;
-    };
-    MANAGED_STORAGE_CONTRACT = Object.freeze({
-      privacy: "private Replit App Storage; authenticated access required",
-      retention: "retained-until-explicit-delete",
-      fixedDurationLocked: false
-    });
-  }
-});
-
-// server/lib/pdimBucketObjects.ts
-async function configuredPdimBucketObjects() {
-  const bucketId = process.env.DATABASE_RECOVERY_BUCKET_ID || process.env.REPLIT_BUCKET_ID;
-  if (!bucketId) throw new Error("PDIM App Storage bucket is not configured");
-  const { bucket } = await createRecoveryStorage({ bucketId });
-  return new PdimBucketObjects(bucket);
-}
-var PdimBucketObjects;
-var init_pdimBucketObjects = __esm({
-  "server/lib/pdimBucketObjects.ts"() {
-    "use strict";
-    init_recovery_private_store();
-    PdimBucketObjects = class {
-      constructor(bucket) {
-        this.bucket = bucket;
-      }
-      async read(key) {
-        const file = this.bucket.file(key);
-        let generation;
-        try {
-          const [metadata] = await file.getMetadata();
-          if (typeof metadata.generation !== "string") throw new Error("Missing object generation");
-          generation = metadata.generation;
-        } catch (error) {
-          if (error.code === 404) return null;
-          throw error;
-        }
-        const [bytes] = await this.bucket.file(key, { generation }).download({ validation: "crc32c" });
-        return { bytes, generation };
-      }
-      async write(key, bytes, generation) {
-        const file = this.bucket.file(key);
-        await file.save(bytes, {
-          resumable: false,
-          validation: "crc32c",
-          preconditionOpts: { ifGenerationMatch: generation }
-        });
-        const published = file.metadata.generation;
-        if (typeof published !== "string") throw new Error("Upload returned no generation receipt");
-        return published;
-      }
-    };
-  }
-});
-
 // server/lib/pdimBucketJournal.ts
 import { createHash as createHash7, randomUUID as randomUUID4 } from "node:crypto";
-var digest2, hash, sequence, PdimBucketUnavailable, PdimBucketLeaseBusy, PdimBucketJournal;
+import { performance as performance2 } from "node:perf_hooks";
+function pdimBucketReadFailureCategory(error) {
+  if (error instanceof PdimBucketReadTimeout) return "timeout";
+  if (error instanceof PdimBucketReadFailure) return error.category;
+  const code = error && typeof error === "object" ? error.code : void 0;
+  if (typeof code === "string" && ["ETIMEDOUT", "ESOCKETTIMEDOUT", "ECONNABORTED", "ABORT_ERR"].includes(code)) {
+    return "timeout";
+  }
+  if (code === 401 || code === 403) return "access_denied";
+  if (code === 404) return "not_found";
+  if (code === 429) return "rate_limited";
+  if (typeof code === "number" && code >= 500 && code <= 599) return "service_unavailable";
+  if (error instanceof PdimBucketUnavailable) {
+    if (/missing/i.test(error.message)) return "missing";
+    if (/corrupt|integrity|discontinuity|truncated|ancestry/i.test(error.message)) return "integrity";
+    return "durability_failure";
+  }
+  return "storage_error";
+}
+var DEFAULT_PDIM_RECOVERY_TIMEOUT_MS, digest2, hash, sequence, PdimBucketUnavailable, PdimBucketReadTimeout, PdimBucketReadFailure, PdimBucketLeaseBusy, PdimBucketJournal;
 var init_pdimBucketJournal = __esm({
   "server/lib/pdimBucketJournal.ts"() {
     "use strict";
+    DEFAULT_PDIM_RECOVERY_TIMEOUT_MS = 18e4;
     digest2 = (bytes) => createHash7("sha256").update(bytes).digest("hex");
     hash = (value) => typeof value === "string" && /^[a-f0-9]{64}$/.test(value);
     sequence = (value) => Number.isSafeInteger(value) && Number(value) >= 0;
@@ -8845,6 +9145,25 @@ var init_pdimBucketJournal = __esm({
       constructor() {
         super(...arguments);
         this.code = "PDIM_DURABILITY_FAILURE";
+      }
+    };
+    PdimBucketReadTimeout = class extends PdimBucketUnavailable {
+      constructor(phase, sequence2, ordinal, elapsedMs = 0) {
+        super("Bucket PDIM read deadline exceeded");
+        this.phase = phase;
+        this.sequence = sequence2;
+        this.ordinal = ordinal;
+        this.elapsedMs = elapsedMs;
+        this.code = "PDIM_READ_TIMEOUT";
+        this.name = "PdimBucketReadTimeout";
+      }
+    };
+    PdimBucketReadFailure = class extends PdimBucketUnavailable {
+      constructor(category) {
+        super("Bucket PDIM object read failed");
+        this.category = category;
+        this.code = "PDIM_STORAGE_READ_FAILURE";
+        this.name = "PdimBucketReadFailure";
       }
     };
     PdimBucketLeaseBusy = class extends PdimBucketUnavailable {
@@ -8898,13 +9217,74 @@ var init_pdimBucketJournal = __esm({
         }
         return id;
       }
-      async readImmutable(id) {
+      async readImmutable(id, context) {
         if (!hash(id)) throw new PdimBucketUnavailable("Invalid bucket object reference");
-        const object = await this.objects.read(`${this.prefix}/objects/${id}`);
-        if (!object || digest2(object.bytes) !== id) {
-          throw new PdimBucketUnavailable("Bucket PDIM object missing or corrupt");
+        const startedAt = performance2.now();
+        let outcome = "failed";
+        let failureCategory;
+        let byteLength;
+        try {
+          const key = `${this.prefix}/objects/${id}`;
+          let object;
+          if (context?.deadlineAt !== void 0) {
+            const remainingMs = context.deadlineAt - performance2.now();
+            if (remainingMs <= 0) {
+              throw new PdimBucketReadTimeout(
+                context.phase,
+                context.sequence,
+                context.ordinal,
+                Math.max(0, Math.round(performance2.now() - startedAt))
+              );
+            }
+            let timer;
+            try {
+              object = await Promise.race([
+                this.objects.read(key, context),
+                new Promise((_resolve, reject) => {
+                  timer = setTimeout(() => reject(new PdimBucketReadTimeout(
+                    context.phase,
+                    context.sequence,
+                    context.ordinal,
+                    Math.max(0, Math.round(performance2.now() - startedAt))
+                  )), remainingMs);
+                })
+              ]);
+            } finally {
+              if (timer) clearTimeout(timer);
+            }
+            if (performance2.now() >= context.deadlineAt) {
+              throw new PdimBucketReadTimeout(
+                context.phase,
+                context.sequence,
+                context.ordinal,
+                Math.max(0, Math.round(performance2.now() - startedAt))
+              );
+            }
+          } else {
+            object = await this.objects.read(key, context);
+          }
+          if (!object) throw new PdimBucketReadFailure("missing");
+          byteLength = object.bytes.byteLength;
+          if (digest2(object.bytes) !== id) throw new PdimBucketReadFailure("integrity");
+          outcome = "ok";
+          return object.bytes;
+        } catch (error) {
+          failureCategory = pdimBucketReadFailureCategory(error);
+          outcome = failureCategory === "timeout" ? "timeout" : "failed";
+          throw error;
+        } finally {
+          if (context?.onRead) {
+            context.onRead({
+              phase: context.phase,
+              ...context.sequence === void 0 ? {} : { sequence: context.sequence },
+              ...context.ordinal === void 0 ? {} : { ordinal: context.ordinal },
+              elapsedMs: Math.max(0, Math.round(performance2.now() - startedAt)),
+              ...byteLength === void 0 ? {} : { byteLength },
+              outcome,
+              ...failureCategory ? { failureCategory } : {}
+            });
+          }
         }
-        return object.bytes;
       }
       async publish(next, expected) {
         const committed = { ...next, commit: randomUUID4() };
@@ -9011,29 +9391,61 @@ var init_pdimBucketJournal = __esm({
           }
         });
       }
-      async recover(onProgress) {
+      async recover(onProgress, options = {}) {
         this.assertOwned();
+        const startedAt = performance2.now();
+        if (options.timeoutMs !== void 0 && (!Number.isSafeInteger(options.timeoutMs) || options.timeoutMs < 1)) {
+          throw new Error("Invalid bucket PDIM recovery timeout");
+        }
+        const deadlineAt = options.deadlineAt ?? startedAt + (options.timeoutMs ?? DEFAULT_PDIM_RECOVERY_TIMEOUT_MS);
+        if (!Number.isFinite(deadlineAt) || deadlineAt <= startedAt) {
+          throw new PdimBucketReadTimeout("recovery", void 0, void 0, 0);
+        }
+        const readContext = (phase, sequence2, ordinal) => ({
+          phase,
+          sequence: sequence2,
+          ordinal,
+          deadlineAt,
+          onRead: options.onRead
+        });
+        const assertDeadline = (sequence2) => {
+          if (performance2.now() >= deadlineAt) {
+            throw new PdimBucketReadTimeout(
+              "journal_replay",
+              sequence2,
+              void 0,
+              Math.max(0, Math.round(performance2.now() - startedAt))
+            );
+          }
+        };
         const head = { ...this.head };
-        const snapshot = await this.readImmutable(head.snapshot);
+        const snapshot = await this.readImmutable(head.snapshot, readContext("snapshot_manifest"));
+        assertDeadline();
         const transactions = [];
         let tip = head.tip;
         let expected = head.sequence;
         onProgress?.(0, head.sequence - head.baseSequence);
         while (expected > head.baseSequence) {
+          assertDeadline(expected);
           if (!tip) throw new PdimBucketUnavailable("Bucket PDIM journal truncated");
-          const frame = JSON.parse((await this.readImmutable(tip)).toString());
+          const frame = JSON.parse((await this.readImmutable(
+            tip,
+            readContext("journal_frame", expected)
+          )).toString());
+          assertDeadline(expected);
           if (frame.version !== 1 || frame.sequence !== expected || !(frame.previous === null || hash(frame.previous)) || !this.validateValue(frame.value)) {
             throw new PdimBucketUnavailable("Bucket PDIM journal discontinuity or invalid transaction");
           }
           transactions.push(frame.value);
           tip = frame.previous;
           expected--;
-          if ((head.sequence - expected) % 32 === 0 || expected === head.baseSequence) {
+          if ((head.sequence - expected) % 8 === 0 || expected === head.baseSequence) {
             onProgress?.(head.sequence - expected, head.sequence - head.baseSequence);
           }
         }
         if (tip !== head.baseTip) throw new PdimBucketUnavailable("Bucket PDIM checkpoint ancestry mismatch");
         this.assertOwned();
+        assertDeadline();
         return { snapshot, transactions: transactions.reverse() };
       }
       checkpoint(snapshot, position) {
@@ -9065,6 +9477,249 @@ var init_pdimBucketJournal = __esm({
           this.assertOwned();
           await this.publish({ ...this.head, owner: null, leaseUntil: 0 }, this.generation);
         });
+      }
+    };
+  }
+});
+
+// scripts/recovery-private-store.mjs
+import { Storage, CRC32C } from "@google-cloud/storage";
+async function createRecoveryStorage({
+  bucketId,
+  fetchImpl = globalThis.fetch,
+  StorageClass = Storage,
+  timeoutMs,
+  retryOptions
+} = {}) {
+  let selected = bucketId;
+  if (!selected) {
+    if (typeof fetchImpl !== "function") throw new Error("Sidecar default-bucket lookup is unavailable");
+    const response = await fetchImpl(DEFAULT_BUCKET_URL);
+    if (!response.ok) throw new Error(`Sidecar default-bucket lookup failed (${response.status})`);
+    const body = await response.json();
+    selected = body?.bucketId;
+  }
+  selected = assertSafeBucketId(selected);
+  const clientOptions = { credentials: REPLIT_ADC, projectId: "" };
+  if (timeoutMs !== void 0) {
+    if (!Number.isSafeInteger(timeoutMs) || timeoutMs < 100 || timeoutMs > 12e4) {
+      throw new Error("Recovery storage request timeout is invalid");
+    }
+    clientOptions.timeout = timeoutMs;
+  }
+  if (retryOptions !== void 0) {
+    if (!retryOptions || typeof retryOptions !== "object" || Array.isArray(retryOptions)) {
+      throw new Error("Recovery storage retry options are invalid");
+    }
+    const allowedRetryOptions = /* @__PURE__ */ new Set([
+      "autoRetry",
+      "maxRetries",
+      "totalTimeout",
+      "maxRetryDelay",
+      "retryDelayMultiplier"
+    ]);
+    for (const [key, value] of Object.entries(retryOptions)) {
+      if (!allowedRetryOptions.has(key)) throw new Error("Recovery storage retry options are invalid");
+      if (key === "autoRetry" && typeof value !== "boolean") {
+        throw new Error("Recovery storage retry options are invalid");
+      }
+      if (key !== "autoRetry" && (!Number.isFinite(value) || value < 0)) {
+        throw new Error("Recovery storage retry options are invalid");
+      }
+    }
+    if (retryOptions.maxRetries !== void 0 && (!Number.isSafeInteger(retryOptions.maxRetries) || retryOptions.maxRetries > 5) || retryOptions.totalTimeout !== void 0 && retryOptions.totalTimeout > 120 || retryOptions.maxRetryDelay !== void 0 && retryOptions.maxRetryDelay > 30 || retryOptions.retryDelayMultiplier !== void 0 && retryOptions.retryDelayMultiplier > 10) {
+      throw new Error("Recovery storage retry options are invalid");
+    }
+    clientOptions.retryOptions = { ...retryOptions };
+  }
+  const client = new StorageClass(clientOptions);
+  return { bucket: client.bucket(selected), bucketId: selected };
+}
+var SIDECAR, DEFAULT_BUCKET_URL, REPLIT_ADC, assertSafeBucketId, MANAGED_STORAGE_CONTRACT;
+var init_recovery_private_store = __esm({
+  "scripts/recovery-private-store.mjs"() {
+    "use strict";
+    SIDECAR = "http://127.0.0.1:1106";
+    DEFAULT_BUCKET_URL = `${SIDECAR}/object-storage/default-bucket`;
+    REPLIT_ADC = Object.freeze({
+      audience: "replit",
+      subject_token_type: "access_token",
+      token_url: `${SIDECAR}/token`,
+      type: "external_account",
+      credential_source: {
+        url: `${SIDECAR}/credential`,
+        format: { type: "json", subject_token_field_name: "access_token" }
+      },
+      universe_domain: "googleapis.com"
+    });
+    assertSafeBucketId = (value) => {
+      if (typeof value !== "string" || !/^[a-z0-9][a-z0-9._-]{1,221}[a-z0-9]$/.test(value)) {
+        throw new Error("Recovery bucket selection was missing or invalid");
+      }
+      return value;
+    };
+    MANAGED_STORAGE_CONTRACT = Object.freeze({
+      privacy: "private Replit App Storage; authenticated access required",
+      retention: "retained-until-explicit-delete",
+      fixedDurationLocked: false
+    });
+  }
+});
+
+// server/lib/pdimBucketObjects.ts
+import { performance as performance3 } from "node:perf_hooks";
+function storageFailureCategory(error) {
+  if (error instanceof PdimBucketReadTimeout) return "timeout";
+  const code = error && typeof error === "object" ? error.code : void 0;
+  if (code === 401 || code === 403) return "access_denied";
+  if (code === 429) return "rate_limited";
+  if (code === 408 || code === 504) return "timeout";
+  if (typeof code === "number" && code >= 500 && code <= 599) return "service_unavailable";
+  if (typeof code === "string" && ["ETIMEDOUT", "ESOCKETTIMEDOUT", "ECONNABORTED", "ABORT_ERR"].includes(code)) {
+    return "timeout";
+  }
+  return "storage_error";
+}
+function throwSafeStorageFailure(error) {
+  throw new PdimBucketReadFailure(storageFailureCategory(error));
+}
+function awaitReadDeadline(operation, deadlineAt, context, startedAt) {
+  const remainingMs = deadlineAt - performance3.now();
+  if (remainingMs <= 0) {
+    return Promise.reject(new PdimBucketReadTimeout(
+      context?.phase ?? "object_read",
+      context?.sequence,
+      context?.ordinal,
+      Math.max(0, Math.round(performance3.now() - startedAt))
+    ));
+  }
+  let pending;
+  try {
+    pending = operation();
+  } catch (error) {
+    return Promise.reject(error);
+  }
+  let timer;
+  return Promise.race([
+    pending,
+    new Promise((_resolve, reject) => {
+      timer = setTimeout(() => reject(new PdimBucketReadTimeout(
+        context?.phase ?? "object_read",
+        context?.sequence,
+        context?.ordinal,
+        Math.max(0, Math.round(performance3.now() - startedAt))
+      )), remainingMs);
+    })
+  ]).finally(() => {
+    if (timer) clearTimeout(timer);
+  });
+}
+function configuredPdimBucketId(env2 = process.env) {
+  return env2.Replit_storage_bucket_id || env2.DATABASE_RECOVERY_BUCKET_ID || env2.REPLIT_BUCKET_ID;
+}
+async function configuredPdimBucketObjects({
+  storageFactory = createRecoveryStorage,
+  env: env2 = process.env
+} = {}) {
+  const bucketId = configuredPdimBucketId(env2);
+  if (!bucketId) throw new Error("PDIM App Storage bucket is not configured");
+  const { bucket } = await storageFactory({
+    bucketId,
+    timeoutMs: PDIM_GCS_WRITE_TIMEOUT_MS
+  });
+  const { bucket: readBucket } = await storageFactory({
+    bucketId,
+    timeoutMs: PDIM_GCS_READ_TIMEOUT_MS,
+    retryOptions: PDIM_GCS_READ_RETRY_OPTIONS
+  });
+  return new PdimBucketObjects(bucket, readBucket);
+}
+var PDIM_OBJECT_READ_DEADLINE_MS, PDIM_GCS_READ_TIMEOUT_MS, PDIM_GCS_WRITE_TIMEOUT_MS, PDIM_GCS_READ_RETRY_OPTIONS, PdimBucketObjects;
+var init_pdimBucketObjects = __esm({
+  "server/lib/pdimBucketObjects.ts"() {
+    "use strict";
+    init_pdimBucketJournal();
+    init_recovery_private_store();
+    PDIM_OBJECT_READ_DEADLINE_MS = 2e4;
+    PDIM_GCS_READ_TIMEOUT_MS = 5e3;
+    PDIM_GCS_WRITE_TIMEOUT_MS = 15e3;
+    PDIM_GCS_READ_RETRY_OPTIONS = Object.freeze({
+      autoRetry: true,
+      maxRetries: 1,
+      totalTimeout: 7,
+      maxRetryDelay: 1,
+      retryDelayMultiplier: 2
+    });
+    PdimBucketObjects = class {
+      constructor(bucket, recoveryReadBucket = bucket) {
+        this.bucket = bucket;
+        this.recoveryReadBucket = recoveryReadBucket;
+      }
+      async read(key, context) {
+        const startedAt = performance3.now();
+        const boundedRecoveryRead = context?.deadlineAt !== void 0;
+        const deadlineAt = boundedRecoveryRead ? Math.min(context.deadlineAt, startedAt + PDIM_OBJECT_READ_DEADLINE_MS) : Number.POSITIVE_INFINITY;
+        const readBucket = boundedRecoveryRead ? this.recoveryReadBucket : this.bucket;
+        const file = readBucket.file(key);
+        const readRequest = (operation) => boundedRecoveryRead ? awaitReadDeadline(operation, deadlineAt, context, startedAt) : operation();
+        const maxGenerationChanges = 3;
+        for (let attempt = 0; attempt < maxGenerationChanges; attempt += 1) {
+          let generation;
+          try {
+            const [metadata] = await readRequest(
+              () => file.getMetadata()
+            );
+            if (typeof metadata.generation !== "string") {
+              throw new PdimBucketReadFailure("invalid_metadata");
+            }
+            generation = metadata.generation;
+          } catch (error) {
+            if (error.code === 404) return null;
+            if (error instanceof PdimBucketReadFailure || error instanceof PdimBucketReadTimeout) throw error;
+            throwSafeStorageFailure(error);
+          }
+          try {
+            const [bytes] = await readRequest(
+              () => readBucket.file(key, { generation }).download({ validation: "crc32c" })
+            );
+            return { bytes, generation };
+          } catch (error) {
+            if (error.code !== 404) {
+              if (error instanceof PdimBucketReadFailure || error instanceof PdimBucketReadTimeout) throw error;
+              throwSafeStorageFailure(error);
+            }
+            let currentGeneration;
+            try {
+              const [current] = await readRequest(
+                () => file.getMetadata()
+              );
+              currentGeneration = current.generation;
+            } catch (metadataError) {
+              if (metadataError.code === 404) return null;
+              if (metadataError instanceof PdimBucketReadFailure || metadataError instanceof PdimBucketReadTimeout) throw metadataError;
+              throwSafeStorageFailure(metadataError);
+            }
+            if (typeof currentGeneration !== "string" || currentGeneration === generation) {
+              throw new PdimBucketReadFailure("not_found");
+            }
+            if (attempt === maxGenerationChanges - 1) {
+              throw new PdimBucketReadFailure("generation_conflict");
+            }
+          }
+        }
+        throw new PdimBucketReadFailure("generation_conflict");
+      }
+      async write(key, bytes, generation) {
+        const file = this.bucket.file(key);
+        await file.save(bytes, {
+          resumable: false,
+          validation: "crc32c",
+          timeout: PDIM_GCS_WRITE_TIMEOUT_MS,
+          preconditionOpts: { ifGenerationMatch: generation }
+        });
+        const published = file.metadata.generation;
+        if (typeof published !== "string") throw new Error("Upload returned no generation receipt");
+        return published;
       }
     };
   }
@@ -9124,6 +9779,7 @@ var init_pdimBucketRecovery = __esm({
 
 // server/lib/pdimBucketSnapshot.ts
 import { createHash as createHash8 } from "node:crypto";
+import { performance as performance4 } from "node:perf_hooks";
 async function writeBucketSnapshot(objects, entries, redisSequence, capsuleSequence, chunkBytes = 4 * 1024 * 1024) {
   if (!validSequence(redisSequence) || !validSequence(capsuleSequence) || !Number.isSafeInteger(chunkBytes) || chunkBytes < 1) throw new Error("Invalid snapshot limits");
   const chunks = [];
@@ -9159,15 +9815,40 @@ async function writeBucketSnapshot(objects, entries, redisSequence, capsuleSeque
   };
   return objects.putImmutable(Buffer.from(JSON.stringify(manifest)));
 }
-async function readBucketSnapshot(objects, manifestBytes, validate, onProgress) {
+async function readBucketSnapshot(objects, manifestBytes, validate, onProgress, options = {}) {
+  const startedAt = performance4.now();
+  if (options.timeoutMs !== void 0 && (!Number.isSafeInteger(options.timeoutMs) || options.timeoutMs < 1)) {
+    throw new Error("Invalid bucket PDIM snapshot read timeout");
+  }
+  const deadlineAt = options.deadlineAt ?? startedAt + (options.timeoutMs ?? DEFAULT_PDIM_RECOVERY_TIMEOUT_MS);
+  if (!Number.isFinite(deadlineAt) || deadlineAt <= startedAt) {
+    throw new PdimBucketReadTimeout("snapshot_shards", void 0, void 0, 0);
+  }
+  const assertDeadline = (ordinal) => {
+    if (performance4.now() >= deadlineAt) {
+      throw new PdimBucketReadTimeout(
+        "snapshot_shards",
+        void 0,
+        ordinal,
+        Math.max(0, Math.round(performance4.now() - startedAt))
+      );
+    }
+  };
+  assertDeadline();
   const manifest = JSON.parse(manifestBytes.toString());
   if (manifest.format !== "pdim-bucket-snapshot-v1" || !validSequence(manifest.redisSequence) || !validSequence(manifest.capsuleSequence) || !validSequence(manifest.count) || !Array.isArray(manifest.chunks) || manifest.chunks.some((id) => typeof id !== "string" || !/^[a-f0-9]{64}$/.test(id))) {
     throw new Error("Invalid bucket PDIM snapshot manifest");
   }
   const entries = /* @__PURE__ */ new Map();
   onProgress?.(0, manifest.chunks.length);
-  for (let offset = 0; offset < manifest.chunks.length; offset += 4) {
-    const buffers = await Promise.all(manifest.chunks.slice(offset, offset + 4).map((id) => objects.readImmutable(id)));
+  for (let offset = 0; offset < manifest.chunks.length; offset += SNAPSHOT_READ_CONCURRENCY) {
+    assertDeadline(offset + 1);
+    const buffers = await Promise.all(manifest.chunks.slice(offset, offset + SNAPSHOT_READ_CONCURRENCY).map((id, index3) => objects.readImmutable(id, {
+      phase: "snapshot_shard",
+      ordinal: offset + index3 + 1,
+      deadlineAt,
+      onRead: options.onRead
+    })));
     for (const buffer of buffers) {
       const rows = JSON.parse(buffer.toString());
       if (!Array.isArray(rows)) throw new Error("Invalid bucket PDIM snapshot chunk");
@@ -9178,11 +9859,13 @@ async function readBucketSnapshot(objects, manifestBytes, validate, onProgress) 
         entries.set(row[0], validate(row[0], row[1]));
       }
     }
-    const completed = Math.min(offset + 4, manifest.chunks.length);
+    const completed = Math.min(offset + SNAPSHOT_READ_CONCURRENCY, manifest.chunks.length);
+    assertDeadline(completed);
     if (completed % 32 === 0 || completed === manifest.chunks.length) {
       onProgress?.(completed, manifest.chunks.length);
     }
   }
+  assertDeadline(manifest.chunks.length || void 0);
   if (entries.size !== manifest.count) throw new Error("Bucket PDIM snapshot count mismatch");
   return { entries, redisSequence: manifest.redisSequence, capsuleSequence: manifest.capsuleSequence };
 }
@@ -9203,15 +9886,18 @@ async function verifyBucketSnapshot(objects, id, expected, redisSequence, capsul
   }
   if (seen.size !== expected.size) throw new Error("Imported snapshot missing entries");
 }
-var validSequence;
+var validSequence, SNAPSHOT_READ_CONCURRENCY;
 var init_pdimBucketSnapshot = __esm({
   "server/lib/pdimBucketSnapshot.ts"() {
     "use strict";
+    init_pdimBucketJournal();
     validSequence = (n) => Number.isSafeInteger(n) && Number(n) >= 0;
+    SNAPSHOT_READ_CONCURRENCY = 8;
   }
 });
 
 // server/lib/pdimBucketPersistence.ts
+import { performance as performance5 } from "node:perf_hooks";
 function captureEntry(entry) {
   const copy = (value) => {
     if (Array.isArray(value)) return value.map(copy);
@@ -9233,13 +9919,17 @@ var init_pdimBucketPersistence = __esm({
     };
     PdimBucketPersistence = class {
       constructor(objects, namespace, engine, entries, validate, onStage = () => {
-      }) {
+      }, recoveryTimeoutMs = DEFAULT_PDIM_RECOVERY_TIMEOUT_MS) {
         this.engine = engine;
         this.entries = entries;
         this.validate = validate;
         this.onStage = onStage;
+        this.recoveryTimeoutMs = recoveryTimeoutMs;
         this.capsuleSequence = 0;
         this.closing = false;
+        if (!Number.isSafeInteger(recoveryTimeoutMs) || recoveryTimeoutMs < 1) {
+          throw new Error("Invalid bucket PDIM recovery timeout");
+        }
         this.journal = new PdimBucketJournal(objects, namespace, isBucketTransaction);
       }
       assertHealthy() {
@@ -9267,16 +9957,34 @@ var init_pdimBucketPersistence = __esm({
           });
         }, 1e4);
         this.heartbeat.unref();
+        const recoveryStartedAt = performance5.now();
+        const deadlineAt = recoveryStartedAt + this.recoveryTimeoutMs;
+        const onRead = (event) => {
+          const details = [
+            `recovery-read phase=${event.phase}`,
+            ...event.sequence === void 0 ? [] : [`sequence=${event.sequence}`],
+            ...event.ordinal === void 0 ? [] : [`ordinal=${event.ordinal}`],
+            `elapsed_ms=${event.elapsedMs}`,
+            ...event.byteLength === void 0 ? [] : [`bytes=${event.byteLength}`],
+            `outcome=${event.outcome}`,
+            ...event.failureCategory ? [`category=${event.failureCategory}`] : []
+          ];
+          this.onStage(details.join(" "));
+        };
         try {
-          const recovered = await this.journal.recover((completed, total) => this.onStage(`journal:${completed}/${total}`));
+          this.onStage(`recovery-start deadline_ms=${this.recoveryTimeoutMs}`);
+          const recovered = await this.journal.recover((completed, total) => this.onStage(`journal:${completed}/${total}`), { deadlineAt, onRead });
           const snapshot = await readBucketSnapshot(
             this.journal,
             recovered.snapshot,
             this.validate,
-            (completed, total) => this.onStage(`snapshot-shards:${completed}/${total}`)
+            (completed, total) => this.onStage(`snapshot-shards:${completed}/${total}`),
+            { deadlineAt, onRead }
           );
           this.onStage("snapshot-verified");
+          this.onStage("lease-renew-start");
           await this.journal.renew();
+          this.onStage("lease-renew-complete");
           const ordered = orderedBucketRecovery(recovered.transactions, snapshot.redisSequence, snapshot.capsuleSequence);
           this.assertHealthy();
           this.entries.clear();
@@ -9293,6 +10001,9 @@ var init_pdimBucketPersistence = __esm({
         } catch (error) {
           if (this.heartbeat) clearInterval(this.heartbeat);
           this.engine.closeEmbedded();
+          this.onStage(
+            `recovery-failed elapsed_ms=${Math.max(0, Math.round(performance5.now() - recoveryStartedAt))} category=${pdimBucketReadFailureCategory(error)}`
+          );
           throw error;
         }
       }
@@ -9496,6 +10207,11 @@ import fs6 from "fs";
 import path7 from "path";
 import { tmpdir } from "node:os";
 import cluster from "node:cluster";
+function assertLocalAofOwnership() {
+  if (!bucketPersistence && (!localAofOwnershipRelease || !localAofOwnershipHealthy)) {
+    throw new Error("Local PDIM persistence ownership is unavailable");
+  }
+}
 function expired(e) {
   return e.expiresAt !== void 0 && Date.now() > e.expiresAt;
 }
@@ -9508,6 +10224,15 @@ function saveStoreAsync() {
       );
       return false;
     });
+  }
+  try {
+    assertLocalAofOwnership();
+  } catch (error) {
+    logger.error(
+      { errorType: error instanceof Error ? error.name : "unknown" },
+      "[LocalPDIM] Snapshot skipped because durable file ownership is unavailable"
+    );
+    return Promise.resolve(false);
   }
   const operation = snapshotTail.then(async () => {
     const publication = snapshotPublication;
@@ -9541,6 +10266,7 @@ function saveStoreAsync() {
       });
       await snapshot.writing;
       if (writeFailure) throw writeFailure;
+      assertLocalAofOwnership();
       if (snapshotPublication !== publication) {
         await fs6.promises.rm(temporaryFile, { force: true });
         return true;
@@ -9570,6 +10296,7 @@ function saveStoreAsync() {
 function saveStore() {
   const temporaryFile = `${PERSIST_FILE}.tmp-${process.pid}`;
   try {
+    assertLocalAofOwnership();
     fs6.mkdirSync(path7.dirname(PERSIST_FILE), { recursive: true });
     const redisBaseline = canonicalStore.getEmbeddedAofSequence();
     const obj = {};
@@ -9911,176 +10638,212 @@ function startLocalPdimServer() {
     return Promise.reject(new Error("Only the cluster primary may own local PDIM"));
   }
   if (_starting) return _starting;
-  _starting = prepareBucketOwner().then(() => new Promise((resolve, reject) => {
+  _starting = prepareBucketOwner().then(async () => {
     if (_server) {
-      resolve();
       return;
     }
     if (!bucketPersistence) {
-      loadStore();
-      const watermark = store.get(CAPSULE_WATERMARK);
-      const capsuleBaseline = watermark?.type === "string" ? Number(watermark.value) : 0;
-      if (!Number.isSafeInteger(capsuleBaseline) || capsuleBaseline < 0) {
-        throw new Error("Invalid capsule journal snapshot watermark");
-      }
-      store.delete(CAPSULE_WATERMARK);
-      capsuleJournal.recover(capsuleBaseline, (changes) => {
-        for (const [key, value] of Object.entries(changes)) {
-          if (value === null) store.delete(key);
-          else store.set(key, { type: "string", value });
-        }
-      });
-      for (const entry of store.values()) {
-        if (entry.type === "stream") {
-          const stream = entry;
-          stream.value = stream.value.map((message) => ({
-            id: message.id,
-            fields: normalizePersistedStreamFields(message.fields)
-          }));
-          stream.groups ??= {};
-        }
-      }
-      const redisAofRecords = redisAofJournal.recover(snapshotAofBaseline);
-      canonicalStore.attachEmbeddedSnapshot(
-        store,
-        {
-          baselineSequence: snapshotAofBaseline,
-          recoveryRecords: redisAofRecords,
-          appendAof: (records) => redisAofJournal.append(records)
+      localAofOwnershipHealthy = true;
+      localAofOwnershipRelease = await acquireLocalPdimAofOwnership(
+        redisAofJournal.file,
+        (error) => {
+          localAofOwnershipHealthy = false;
+          logger.error(
+            { errorType: error.name },
+            "[LocalPDIM] Disk persistence ownership was lost; writes are paused"
+          );
         }
       );
-      canonicalStore.on("durability-error", (error) => {
-        logger.error(
-          { err: error },
-          "[LocalPDIM] Durable Redis journal failed; the owner is unavailable"
+    }
+    return new Promise((resolve, reject) => {
+      if (!bucketPersistence) {
+        store.clear();
+        capsuleJournal = new LocalPdimCapsuleJournal(capsuleJournalFile);
+        redisAofJournal = new LocalPdimAofJournal(redisAofJournalFile);
+        loadStore();
+        const watermark = store.get(CAPSULE_WATERMARK);
+        const capsuleBaseline = watermark?.type === "string" ? Number(watermark.value) : 0;
+        if (!Number.isSafeInteger(capsuleBaseline) || capsuleBaseline < 0) {
+          throw new Error("Invalid capsule journal snapshot watermark");
+        }
+        store.delete(CAPSULE_WATERMARK);
+        capsuleJournal.recover(capsuleBaseline, (changes) => {
+          for (const [key, value] of Object.entries(changes)) {
+            if (value === null) store.delete(key);
+            else store.set(key, { type: "string", value });
+          }
+        });
+        for (const entry of store.values()) {
+          if (entry.type === "stream") {
+            const stream = entry;
+            stream.value = stream.value.map((message) => ({
+              id: message.id,
+              fields: normalizePersistedStreamFields(message.fields)
+            }));
+            stream.groups ??= {};
+          }
+        }
+        const redisAofRecords = redisAofJournal.recover(snapshotAofBaseline);
+        canonicalStore.attachEmbeddedSnapshot(
+          store,
+          {
+            baselineSequence: snapshotAofBaseline,
+            recoveryRecords: redisAofRecords,
+            appendAof: (records) => {
+              assertLocalAofOwnership();
+              return redisAofJournal.append(records);
+            }
+          }
         );
+        canonicalStore.on("durability-error", (error) => {
+          logger.error(
+            { err: error },
+            "[LocalPDIM] Durable Redis journal failed; the owner is unavailable"
+          );
+        });
+        if (redisAofRecords.length > 0) {
+          logger.info(
+            `[LocalPDIM] Replayed ${redisAofRecords.length} durable Redis mutation(s)`
+          );
+        }
+      }
+      _server = http.createServer((req, res) => {
+        if (process.env.PDIM_OFFLINE_MIGRATION === "1") {
+          res.writeHead(503, { "Content-Type": "application/json" });
+          res.end(JSON.stringify({ error: "PDIM is offline for verified migration" }));
+          return;
+        }
+        const token = process.env.PDIM_LOCAL_CHANNEL_TOKEN;
+        if (token && req.headers.authorization !== `Bearer ${token}`) {
+          res.writeHead(401, { "Content-Type": "application/json" });
+          res.end(JSON.stringify({ error: "Unauthorized private PDIM channel" }));
+          return;
+        }
+        if (req.url !== "/api/redis/instances/local/exec") {
+          res.writeHead(404).end();
+          return;
+        }
+        if (req.method !== "POST") {
+          res.writeHead(405, { "Content-Type": "text/plain" });
+          res.end("Method Not Allowed");
+          return;
+        }
+        const requestController = new AbortController();
+        req.on("aborted", () => {
+          requestController.abort(new Error("PDIM HTTP request aborted by client"));
+        });
+        res.on("close", () => {
+          if (!res.writableEnded) {
+            requestController.abort(new Error("PDIM HTTP response closed by client"));
+          }
+        });
+        let body = "";
+        let bytes = 0;
+        req.on("data", (chunk) => {
+          bytes += chunk.length;
+          if (bytes > 50 * 1024 * 1024) {
+            res.writeHead(413).end();
+            req.destroy();
+            return;
+          }
+          body += chunk;
+        });
+        req.on("end", async () => {
+          try {
+            bucketPersistence?.assertHealthy();
+            const {
+              cmd,
+              args = [],
+              stream = false,
+              patterns = []
+            } = JSON.parse(body);
+            if (typeof cmd !== "string" || !Array.isArray(args) || args.some((arg) => arg === null || arg === void 0 || typeof arg === "object")) {
+              throw new TypeError("PDIM requires a command and non-null scalar arguments");
+            }
+            if (stream) {
+              if (cmd.toUpperCase() !== "SUBSCRIBE" || args.some((channel) => typeof channel !== "string") || !Array.isArray(patterns) || patterns.some((pattern) => typeof pattern !== "string")) {
+                throw new TypeError("PDIM Pub/Sub requires string channels and patterns");
+              }
+              const channels = [...new Set(args)];
+              const uniquePatterns = [...new Set(patterns)];
+              if (channels.length + uniquePatterns.length === 0) {
+                throw new TypeError("PDIM Pub/Sub requires at least one subscription");
+              }
+              openLocalPubSubStream(res, requestController, channels, uniquePatterns);
+              return;
+            }
+            const result = bucketBatcher ? await bucketBatcher.exec(cmd, args.map(String), requestController.signal) : cmd.toUpperCase().startsWith("CAPSULE.") ? await capsuleStore.exec(cmd, args.map(String)) : await canonicalStore.exec(cmd, args.map(String), requestController.signal);
+            bucketPersistence?.assertHealthy();
+            if (requestController.signal.aborted || res.destroyed || res.writableEnded) return;
+            res.writeHead(200, { "Content-Type": "application/json" });
+            res.end(JSON.stringify(result));
+          } catch (err) {
+            if (requestController.signal.aborted || res.destroyed || res.writableEnded) return;
+            if (res.headersSent) {
+              res.destroy(err instanceof Error ? err : void 0);
+              return;
+            }
+            const status = ["PDIM_DURABILITY_FAILURE", "PDIM_BACKPRESSURE"].includes(String(err?.code)) ? 503 : 400;
+            res.writeHead(status, { "Content-Type": "application/json" });
+            res.end(
+              JSON.stringify({
+                error: err instanceof Error ? err.message : "Bad Request"
+              })
+            );
+          }
+        });
       });
-      if (redisAofRecords.length > 0) {
+      _server.listen(LOCAL_PORT, "127.0.0.1", () => {
         logger.info(
-          `[LocalPDIM] Replayed ${redisAofRecords.length} durable Redis mutation(s)`
+          `[LocalPDIM] Local PDIM exec server started on port ${LOCAL_PORT} (${bucketPersistence ? "App Storage journal and snapshots" : "local fsynced AOF and snapshots"})`
+        );
+        let periodicSavePending = false;
+        _persistTimer = setInterval(() => {
+          if (periodicSavePending) return;
+          periodicSavePending = true;
+          void saveStoreAsync().finally(() => {
+            periodicSavePending = false;
+          });
+        }, bucketPersistence ? 3e5 : PERSIST_INTERVAL_MS);
+        _persistTimer.unref();
+        const saveOnShutdown = () => {
+          if (!saveStore()) {
+            localPdimProcessExitState.finalSaveFailed = true;
+            process.exitCode = 1;
+          }
+        };
+        if (!bucketPersistence) {
+          _saveOnShutdown = saveOnShutdown;
+          process.on("SIGTERM", saveOnShutdown);
+          process.on("SIGINT", saveOnShutdown);
+        }
+        const exitHandler = localPdimProcessExitState.exitHandler ??= () => {
+          if (localPdimProcessExitState.finalSaveFailed) process.exitCode = 1;
+        };
+        if (!process.listeners("exit").includes(exitHandler)) {
+          process.on("exit", exitHandler);
+        }
+        resolve();
+      });
+      _server.on("error", (err) => {
+        _server = null;
+        reject(err);
+      });
+    });
+  }).catch(async (error) => {
+    const releaseAofOwnership = localAofOwnershipRelease;
+    localAofOwnershipRelease = null;
+    localAofOwnershipHealthy = true;
+    if (releaseAofOwnership) {
+      try {
+        await releaseAofOwnership();
+      } catch (releaseError) {
+        logger.error(
+          { errorType: releaseError instanceof Error ? releaseError.name : "unknown" },
+          "[LocalPDIM] Failed-start disk ownership release was not confirmed"
         );
       }
     }
-    _server = http.createServer((req, res) => {
-      if (process.env.PDIM_OFFLINE_MIGRATION === "1") {
-        res.writeHead(503, { "Content-Type": "application/json" });
-        res.end(JSON.stringify({ error: "PDIM is offline for verified migration" }));
-        return;
-      }
-      const token = process.env.PDIM_LOCAL_CHANNEL_TOKEN;
-      if (token && req.headers.authorization !== `Bearer ${token}`) {
-        res.writeHead(401, { "Content-Type": "application/json" });
-        res.end(JSON.stringify({ error: "Unauthorized private PDIM channel" }));
-        return;
-      }
-      if (req.url !== "/api/redis/instances/local/exec") {
-        res.writeHead(404).end();
-        return;
-      }
-      if (req.method !== "POST") {
-        res.writeHead(405, { "Content-Type": "text/plain" });
-        res.end("Method Not Allowed");
-        return;
-      }
-      const requestController = new AbortController();
-      req.on("aborted", () => {
-        requestController.abort(new Error("PDIM HTTP request aborted by client"));
-      });
-      res.on("close", () => {
-        if (!res.writableEnded) {
-          requestController.abort(new Error("PDIM HTTP response closed by client"));
-        }
-      });
-      let body = "";
-      let bytes = 0;
-      req.on("data", (chunk) => {
-        bytes += chunk.length;
-        if (bytes > 50 * 1024 * 1024) {
-          res.writeHead(413).end();
-          req.destroy();
-          return;
-        }
-        body += chunk;
-      });
-      req.on("end", async () => {
-        try {
-          bucketPersistence?.assertHealthy();
-          const {
-            cmd,
-            args = [],
-            stream = false,
-            patterns = []
-          } = JSON.parse(body);
-          if (typeof cmd !== "string" || !Array.isArray(args) || args.some((arg) => arg === null || arg === void 0 || typeof arg === "object")) {
-            throw new TypeError("PDIM requires a command and non-null scalar arguments");
-          }
-          if (stream) {
-            if (cmd.toUpperCase() !== "SUBSCRIBE" || args.some((channel) => typeof channel !== "string") || !Array.isArray(patterns) || patterns.some((pattern) => typeof pattern !== "string")) {
-              throw new TypeError("PDIM Pub/Sub requires string channels and patterns");
-            }
-            const channels = [...new Set(args)];
-            const uniquePatterns = [...new Set(patterns)];
-            if (channels.length + uniquePatterns.length === 0) {
-              throw new TypeError("PDIM Pub/Sub requires at least one subscription");
-            }
-            openLocalPubSubStream(res, requestController, channels, uniquePatterns);
-            return;
-          }
-          const result = bucketBatcher ? await bucketBatcher.exec(cmd, args.map(String), requestController.signal) : cmd.toUpperCase().startsWith("CAPSULE.") ? await capsuleStore.exec(cmd, args.map(String)) : await canonicalStore.exec(cmd, args.map(String), requestController.signal);
-          bucketPersistence?.assertHealthy();
-          if (requestController.signal.aborted || res.destroyed || res.writableEnded) return;
-          res.writeHead(200, { "Content-Type": "application/json" });
-          res.end(JSON.stringify(result));
-        } catch (err) {
-          if (requestController.signal.aborted || res.destroyed || res.writableEnded) return;
-          if (res.headersSent) {
-            res.destroy(err instanceof Error ? err : void 0);
-            return;
-          }
-          const status = ["PDIM_DURABILITY_FAILURE", "PDIM_BACKPRESSURE"].includes(String(err?.code)) ? 503 : 400;
-          res.writeHead(status, { "Content-Type": "application/json" });
-          res.end(
-            JSON.stringify({
-              error: err instanceof Error ? err.message : "Bad Request"
-            })
-          );
-        }
-      });
-    });
-    _server.listen(LOCAL_PORT, "127.0.0.1", () => {
-      logger.info(
-        `[LocalPDIM] Local PDIM exec server started on port ${LOCAL_PORT} (${bucketPersistence ? "App Storage journal and snapshots" : "local fsynced AOF and snapshots"})`
-      );
-      let periodicSavePending = false;
-      _persistTimer = setInterval(() => {
-        if (periodicSavePending) return;
-        periodicSavePending = true;
-        void saveStoreAsync().finally(() => {
-          periodicSavePending = false;
-        });
-      }, bucketPersistence ? 3e5 : PERSIST_INTERVAL_MS);
-      _persistTimer.unref();
-      const saveOnShutdown = () => {
-        if (!saveStore()) {
-          _finalSaveFailed = true;
-          process.exitCode = 1;
-        }
-      };
-      if (!bucketPersistence) {
-        _saveOnShutdown = saveOnShutdown;
-        process.on("SIGTERM", saveOnShutdown);
-        process.on("SIGINT", saveOnShutdown);
-      }
-      process.on("exit", () => {
-        if (_finalSaveFailed) process.exitCode = 1;
-      });
-      resolve();
-    });
-    _server.on("error", (err) => {
-      _server = null;
-      reject(err);
-    });
-  })).catch(async (error) => {
     if (bucketPersistence) {
       const failedOwner = bucketPersistence;
       bucketPersistence = void 0;
@@ -10120,9 +10883,16 @@ async function stopLocalPdimServer() {
     await closed;
   }
   await snapshotTail;
-  await bucketPersistence?.close();
-  bucketPersistence = void 0;
-  bucketBatcher = void 0;
+  try {
+    await bucketPersistence?.close();
+  } finally {
+    bucketPersistence = void 0;
+    bucketBatcher = void 0;
+    const releaseAofOwnership = localAofOwnershipRelease;
+    localAofOwnershipRelease = null;
+    localAofOwnershipHealthy = true;
+    if (releaseAofOwnership) await releaseAofOwnership();
+  }
 }
 async function prepareBucketOwner() {
   if (_server) return;
@@ -10155,6 +10925,7 @@ async function importOfflinePdimToBucket(namespace) {
   if (process.env.PDIM_OFFLINE_MIGRATION !== "1" || bucketPersistence || !_server?.listening) {
     throw new Error("Migration requires an offline local-only owner");
   }
+  assertLocalAofOwnership();
   const objects = await configuredPdimBucketObjects();
   const journal = new PdimBucketJournal(objects, namespace, isBucketTransaction);
   return canonicalStore.captureEmbeddedCheckpoint(async (redisSequence) => {
@@ -10175,7 +10946,7 @@ async function importOfflinePdimToBucket(namespace) {
     };
   });
 }
-var LOCAL_PORT, PERSIST_FILE, PERSIST_INTERVAL_MS, CAPSULE_WATERMARK, REDIS_AOF_WATERMARK, capsuleJournal, redisAofJournal, store, canonicalStore, bucketPersistence, bucketBatcher, snapshotAofBaseline, capsuleStore, snapshotPublication, asyncSnapshotSequence, snapshotTail, _server, _finalSaveFailed, _persistTimer, _saveOnShutdown, _starting;
+var LOCAL_PORT, PERSIST_FILE, PERSIST_INTERVAL_MS, CAPSULE_WATERMARK, REDIS_AOF_WATERMARK, capsuleJournalFile, redisAofJournalFile, capsuleJournal, redisAofJournal, localAofOwnershipRelease, localAofOwnershipHealthy, store, canonicalStore, bucketPersistence, bucketBatcher, snapshotAofBaseline, capsuleStore, snapshotPublication, asyncSnapshotSequence, snapshotTail, _server, processWithLocalPdimExitState, localPdimProcessExitState, _persistTimer, _saveOnShutdown, _starting;
 var init_localPdimServer = __esm({
   "server/lib/localPdimServer.ts"() {
     "use strict";
@@ -10200,20 +10971,25 @@ var init_localPdimServer = __esm({
     PERSIST_INTERVAL_MS = 3e4;
     CAPSULE_WATERMARK = "__local_pdim_capsule_journal_watermark__";
     REDIS_AOF_WATERMARK = "__local_pdim_redis_aof_watermark__";
-    capsuleJournal = new LocalPdimCapsuleJournal(`${PERSIST_FILE}.capsules.jsonl`);
-    redisAofJournal = new LocalPdimAofJournal(`${PERSIST_FILE}.aof.jsonl`);
+    capsuleJournalFile = `${PERSIST_FILE}.capsules.jsonl`;
+    redisAofJournalFile = `${PERSIST_FILE}.aof.jsonl`;
+    capsuleJournal = new LocalPdimCapsuleJournal(capsuleJournalFile);
+    redisAofJournal = new LocalPdimAofJournal(redisAofJournalFile);
+    localAofOwnershipRelease = null;
+    localAofOwnershipHealthy = true;
     store = /* @__PURE__ */ new Map();
     canonicalStore = new RedisStore("local", "Max Booster shared local owner");
     snapshotAofBaseline = 0;
     capsuleStore = new LocalPdimCapsules(
       canonicalStore,
-      (changes, publish) => bucketPersistence ? bucketPersistence.commitCapsule(changes, publish) : capsuleJournal.commit(changes, publish)
+      (changes, publish) => bucketPersistence ? bucketPersistence.commitCapsule(changes, publish) : (assertLocalAofOwnership(), capsuleJournal.commit(changes, publish))
     );
     snapshotPublication = 0;
     asyncSnapshotSequence = 0;
     snapshotTail = Promise.resolve();
     _server = null;
-    _finalSaveFailed = false;
+    processWithLocalPdimExitState = process;
+    localPdimProcessExitState = processWithLocalPdimExitState.__maxboosterLocalPdimExitState ??= { finalSaveFailed: false };
     _persistTimer = null;
     _saveOnShutdown = null;
     _starting = null;
@@ -10914,6 +11690,8 @@ __export(schema_exports, {
   collaborationAccessRequests: () => collaborationAccessRequests,
   collaborationComments: () => collaborationComments,
   collaborationProjects: () => collaborationProjects,
+  collaborationRoomMessages: () => collaborationRoomMessages,
+  collaborationRooms: () => collaborationRooms,
   collaborationVersions: () => collaborationVersions,
   commerceAllocations: () => commerceAllocations,
   commerceDraws: () => commerceDraws,
@@ -11039,6 +11817,8 @@ __export(schema_exports, {
   insertCollaborationAccessRequestSchema: () => insertCollaborationAccessRequestSchema,
   insertCollaborationCommentSchema: () => insertCollaborationCommentSchema,
   insertCollaborationProjectSchema: () => insertCollaborationProjectSchema,
+  insertCollaborationRoomMessageSchema: () => insertCollaborationRoomMessageSchema,
+  insertCollaborationRoomSchema: () => insertCollaborationRoomSchema,
   insertCollaborationVersionSchema: () => insertCollaborationVersionSchema,
   insertCompetitorProfileSchema: () => insertCompetitorProfileSchema,
   insertContentCalendarSchema: () => insertContentCalendarSchema,
@@ -11216,6 +11996,8 @@ __export(schema_exports, {
   markers: () => markers,
   marketplaceDisputes: () => marketplaceDisputes,
   marketplaceRecommendations: () => marketplaceRecommendations,
+  maxcoreCognitiveEntities: () => maxcoreCognitiveEntities,
+  maxcoreCognitiveRelationships: () => maxcoreCognitiveRelationships,
   membershipTiers: () => membershipTiers,
   merchItems: () => merchItems,
   merchOrders: () => merchOrders,
@@ -11383,11 +12165,12 @@ import {
   index as index2,
   unique as unique2,
   check as check2,
+  foreignKey as foreignKey2,
   primaryKey as primaryKey2
 } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
-var users, insertUserSchema, sessions, pgSessions2, insertSessionSchema, analytics, insertAnalyticsSchema, subscriptions, insertSubscriptionSchema, projects, insertProjectSchema, studioTemplates, insertStudioTemplateSchema, studioRecentFiles, insertStudioRecentFileSchema, studioPinnedFolders, insertStudioPinnedFolderSchema, studioProjects, insertStudioProjectSchema, releases, insertReleaseSchema, campaigns, insertCampaignSchema, socialCampaigns, insertSocialCampaignSchema, storefronts, insertStorefrontSchema, updateStorefrontSchema, dnsRecordCache, insertDnsRecordCacheSchema, storefrontDomains, insertStorefrontDomainSchema, storefrontHosts, insertStorefrontHostSchema, dnsTemplates, insertDnsTemplateSchema, dnsProviderCredentials, insertDnsProviderCredentialsSchema, dnsZones, insertDnsZoneSchema, dnsZoneRecords, insertDnsZoneRecordSchema, membershipTiers, insertMembershipTierSchema, updateMembershipTierSchema, beats, beatMoneyLoopState, beatMoneyLoopCycles, hyperFollowPages, distroReleases, distroTracks, dspProviders, customerMemberships, insertCustomerMembershipSchema, statusPageIncidents, statusPageIncidentServices, dmcaNotices, dmcaStrikes, listings, insertListingSchema, listingLicenseTiers, storefrontFollows, storefrontLikes, storefrontRatings, beatLikes, licenseTemplates, storefrontOrders, contractTemplates, insertContractTemplateSchema, generatedContracts, marketplaceDisputes, insertMarketplaceDisputeSchema, statusPageIncidentUpdates, statusPageServices, storefrontTemplates, storefrontsRelations, legalHolds, isrcRegistry, statusPageSubscribers, upcRegistry, statusPageUptimeMetrics, catalogImportJobs, catalogImportRows, releaseWorkflowRequests, releaseVersionHistory, releaseScheduledActions, preSaveCampaigns, insertPreSaveCampaignSchema, preSaveEntries, insertPreSaveEntrySchema, distributionSLAMetrics, insertDistributionSLAMetricSchema, contentIdRegistrations, insertContentIdRegistrationSchema, syncLicenses, insertSyncLicenseSchema, syncLicenseInquiries, insertSyncLicenseInquirySchema, royaltySplits, insertRoyaltySplitSchema, royaltyTransactions, insertRoyaltyTransactionSchema, revenueEvents, recoupmentAccounts, splitContracts, dspRates, exchangeRates, projectRoyaltySplits, instantPayouts, refunds, insertRefundSchema, ledgerEntries, insertLedgerEntrySchema, taxForms, insertTaxFormSchema, royaltyStatements, royaltyDisputes, disputeMessages, invoices, insertInvoiceSchema, splitPayments, insertSplitPaymentSchema, kycDocuments, notifications, pushSubscriptions, supportTickets, insertSupportTicketSchema, securityThreats, insertSecurityThreatSchema, ipBlacklist, insertIpBlacklistSchema, posts, audioClips, midiClips, midiNotes, markers, pluginCatalog, workspaceAuditLog, insertWorkspaceAuditLogSchema, apiKeys, dspAnalytics, orders, kycVerifications, approvalHistory, scheduledPostBatches, compVersions, pluginInstances, stemExports, warpMarkers, insertWarpMarkerSchema, workspaceCatalogs, insertWorkspaceCatalogSchema, apiUsage, alertIncidents, dspUserPlatformStatus, dspSyncStatus, toolostConnection, youtubeConnections, youtubeUploads, emailEvents, requestInstantPayoutSchema, approvePostSchema, bulkSchedulePostSchema, takeGroups, pluginPresets, studioTracks, workspaceInvitations, insertWorkspaceInvitationSchema, alertRules, playlistAttributions, insertPlaylistAttributionSchema, emailMessages, rejectPostSchema, bulkValidatePostSchema, takeLanes, updateWarpMarkerSchema, workspaceMembers, insertWorkspaceMemberSchema, systemMetrics, listenerCohorts, submitForReviewSchema, socialAccounts, takeSegments, workspaceRoles, revenueForecasts, workspaces, insertWorkspaceSchema, approvalRequests, approvalSteps, approvalWorkflows, ssoConfigs, platformApiConfigs, adCampaigns, insertAdCampaignSchema, adCreatives, insertAdCreativeSchema, adDeliveryLogs, contentCalendar, insertContentCalendarSchema, aiModels, insertAiModelSchema, userBrandVoices, insertUserBrandVoiceSchema, inferenceRuns, insertInferenceRunSchema, hashtagResearch, insertHashtagResearchSchema, explanationLogs, insertExplanationLogSchema, bestPostingTimes, insertBestPostingTimeSchema, aiModelVersions, insertAiModelVersionSchema, userTasteProfiles, insertUserTasteProfileSchema, beatInteractions, insertBeatInteractionSchema, userStorage, insertUserStorageSchema, userStorageFiles, insertUserStorageFileSchema, beatDiscoveryScores, insertBeatDiscoveryScoreSchema, playlistJourneys, insertPlaylistJourneySchema, syncPlacements, insertSyncPlacementSchema, historicalAnalytics, insertHistoricalAnalyticSchema, arDiscoveries, insertArDiscoverySchema, platformDataSources, insertPlatformDataSourceSchema, globalRankings, insertGlobalRankingSchema, nlpQueryLogs, insertNlpQueryLogSchema, preSavePages, insertPreSavePageSchema, promoCards, insertPromoCardSchema, miniVideos, insertMiniVideoSchema, spotifyCanvases, insertSpotifyCanvasSchema, lyricsSyncs, insertLyricsSyncSchema, artistScores, insertArtistScoreSchema, marketplaceRecommendations, insertMarketplaceRecommendationSchema, beatPromotions, insertBeatPromotionSchema, bogoPromotions, insertBogoPromotionSchema, systemSettings, insertSystemSettingSchema, socialAutopilotContent, insertSocialAutopilotContentSchema, fanSegments, insertFanSegmentSchema, musicImpactMetrics, insertMusicImpactMetricSchema, socialPatternAggregates, insertSocialPatternAggregateSchema, generationArmStats, insertGenerationArmStatSchema, generationHistory, insertGenerationHistorySchema, organicAssets, insertOrganicAssetSchema, organicChannels, insertOrganicChannelSchema, organicRoiSnapshots, insertOrganicRoiSnapshotSchema, organicAssetLifetime, insertOrganicAssetLifetimeSchema, autopilotCrossInsights, insertAutopilotCrossInsightSchema, socialMentions, insertSocialMentionSchema, socialKeywords, insertSocialKeywordSchema, competitorProfiles, insertCompetitorProfileSchema, socialInboxMessages, insertSocialInboxMessageSchema, socialReplyTemplates, insertSocialReplyTemplateSchema, onboardingTasks, insertOnboardingTaskSchema, userOnboarding, insertUserOnboardingSchema, artistProgressSnapshots, insertArtistProgressSnapshotSchema, achievements, insertAchievementSchema, userAchievements, insertUserAchievementSchema, userStreaks, insertUserStreakSchema, careerCoachRecommendations, insertCareerCoachRecommendationSchema, careerGoals, insertCareerGoalSchema, emailPreferences, insertEmailPreferenceSchema, sentEmails, insertSentEmailSchema, artistConnections, insertArtistConnectionSchema, collaborationProjects, insertCollaborationProjectSchema, projectMembers, insertProjectMemberSchema, collabSnapshots, insertCollabSnapshotSchema, releaseCountdowns, insertReleaseCountdownSchema, countdownTasks, insertCountdownTaskSchema, countdownAnalytics, insertCountdownAnalyticSchema, autopilotLearningData, insertAutopilotLearningDataSchema, autopilotInsights, insertAutopilotInsightSchema, autopilotPreferences, insertAutopilotPreferenceSchema, systemLogs, insertSystemLogSchema, auditLogs, insertAuditLogSchema, splitSheets, insertSplitSheetSchema, batchTemplates, insertBatchTemplateSchema, shareLinks, insertShareLinkSchema, collaborationComments, insertCollaborationCommentSchema, collaborationVersions, insertCollaborationVersionSchema, collaborationAccessRequests, insertCollaborationAccessRequestSchema, searchHistory, filterPresets, musicWorkflowAutomations, musicWorkflowExecutionLogs, artistProfiles, insertArtistProfileSchema, artistProfileReleases, profileClaimPipeline, profileClaimEvents, artistIdentityLinks, artistDnaSnapshots, profileSplitEvents, distributorHistoryImports, insertTakeGroupSchema, insertPluginPresetSchema, insertStudioTrackSchema, insertAlertRuleSchema, insertEmailMessageSchema, insertTakeLaneSchema, insertSystemMetricSchema, insertListenerCohortSchema, insertSocialAccountSchema, insertTakeSegmentSchema, insertWorkspaceRoleSchema, insertRevenueForecastSchema, insertApprovalRequestSchema, insertApprovalStepSchema, insertApprovalWorkflowSchema, insertSsoConfigSchema, fabricPockets, fabricVolumes, fabricStorageNodes, fabricObjects, fabricChunks, fabricCatalogFence, fabricObjectDependencies, fabricDeletionObjects, fabricDeletionChunks, fabricMigrationJobs, insertFabricPocketSchema, insertFabricVolumeSchema, insertFabricStorageNodeSchema, insertFabricObjectSchema, insertFabricChunkSchema, customerHealthScores, insertCustomerHealthScoreSchema, npsResponses, insertNpsResponseSchema, cancellationFeedback, insertCancellationFeedbackSchema, featureEvents, insertFeatureEventSchema, dunningState, insertDunningStateSchema, fanSubscribers, fanMessages, insertFanSubscriberSchema, insertFanMessageSchema, pressKits, insertPressKitSchema, playlistPitches, insertPlaylistPitchSchema, shows, setlists, insertShowSchema, insertSetlistSchema, merchItems, merchOrders, insertMerchItemSchema, insertMerchOrderSchema, syncSubmissions, insertSyncSubmissionSchema, publishingRights, insertPublishingRightSchema, labelSubmissions, insertLabelSubmissionSchema, radioPitches, insertRadioPitchSchema, venueContacts, insertVenueContactSchema, projectBudgets, insertProjectBudgetSchema, budgetLineItems, insertBudgetLineItemSchema, sampleClearances, insertSampleClearanceSchema, musicVideoProductions, insertMusicVideoProductionSchema, songwritingSessions, insertSongwritingSessionSchema, fanCampaigns, insertFanCampaignSchema, customWorkflows, insertCustomWorkflowSchema, jwtTokens, insertJwtTokenSchema, refreshTokens, insertRefreshTokenSchema, assistantConversations, insertAssistantConversationSchema, assistantMessages, insertAssistantMessageSchema, platformRoyaltyRates, insertPlatformRoyaltyRateSchema, taxTreatyRates, insertTaxTreatyRateSchema, studioSamples, insertStudioSampleSchema, labelSettings, insertLabelSettingSchema, listingStems, insertListingStemSchema, mobileDeviceTokens, insertMobileDeviceTokenSchema, claimedDomains, insertClaimedDomainSchema, domainContacts, insertDomainContactSchema, domainEvents, insertDomainEventSchema, dnssecKeys, insertDnssecKeySchema, hnsAuctions, insertHnsAuctionSchema, fanWallets, fanCreditTransactions, insertFanCreditTransactionSchema, fanLoyaltyConfigs, insertFanLoyaltyConfigSchema, outreachCampaigns, insertOutreachCampaignSchema, outreachPitches, insertOutreachPitchSchema, beatPricingSnapshots, insertBeatPricingSnapshotSchema, hybridStorageFiles, hybridStorageImports, socialMediaJobs;
+var users, insertUserSchema, sessions, pgSessions2, insertSessionSchema, analytics, insertAnalyticsSchema, subscriptions, insertSubscriptionSchema, projects, insertProjectSchema, studioTemplates, insertStudioTemplateSchema, studioRecentFiles, insertStudioRecentFileSchema, studioPinnedFolders, insertStudioPinnedFolderSchema, studioProjects, insertStudioProjectSchema, releases, insertReleaseSchema, campaigns, insertCampaignSchema, socialCampaigns, insertSocialCampaignSchema, storefronts, insertStorefrontSchema, updateStorefrontSchema, dnsRecordCache, insertDnsRecordCacheSchema, storefrontDomains, insertStorefrontDomainSchema, storefrontHosts, insertStorefrontHostSchema, dnsTemplates, insertDnsTemplateSchema, dnsProviderCredentials, insertDnsProviderCredentialsSchema, dnsZones, insertDnsZoneSchema, dnsZoneRecords, insertDnsZoneRecordSchema, membershipTiers, insertMembershipTierSchema, updateMembershipTierSchema, beats, beatMoneyLoopState, beatMoneyLoopCycles, hyperFollowPages, distroReleases, distroTracks, dspProviders, customerMemberships, insertCustomerMembershipSchema, statusPageIncidents, statusPageIncidentServices, dmcaNotices, dmcaStrikes, listings, insertListingSchema, listingLicenseTiers, storefrontFollows, storefrontLikes, storefrontRatings, beatLikes, licenseTemplates, storefrontOrders, contractTemplates, insertContractTemplateSchema, generatedContracts, marketplaceDisputes, insertMarketplaceDisputeSchema, statusPageIncidentUpdates, statusPageServices, storefrontTemplates, storefrontsRelations, legalHolds, isrcRegistry, statusPageSubscribers, upcRegistry, statusPageUptimeMetrics, catalogImportJobs, catalogImportRows, releaseWorkflowRequests, releaseVersionHistory, releaseScheduledActions, preSaveCampaigns, insertPreSaveCampaignSchema, preSaveEntries, insertPreSaveEntrySchema, distributionSLAMetrics, insertDistributionSLAMetricSchema, contentIdRegistrations, insertContentIdRegistrationSchema, syncLicenses, insertSyncLicenseSchema, syncLicenseInquiries, insertSyncLicenseInquirySchema, royaltySplits, insertRoyaltySplitSchema, royaltyTransactions, insertRoyaltyTransactionSchema, revenueEvents, recoupmentAccounts, splitContracts, dspRates, exchangeRates, projectRoyaltySplits, instantPayouts, refunds, insertRefundSchema, ledgerEntries, insertLedgerEntrySchema, taxForms, insertTaxFormSchema, royaltyStatements, royaltyDisputes, disputeMessages, invoices, insertInvoiceSchema, splitPayments, insertSplitPaymentSchema, kycDocuments, notifications, pushSubscriptions, supportTickets, insertSupportTicketSchema, securityThreats, insertSecurityThreatSchema, ipBlacklist, insertIpBlacklistSchema, posts, audioClips, midiClips, midiNotes, markers, pluginCatalog, workspaceAuditLog, insertWorkspaceAuditLogSchema, apiKeys, dspAnalytics, orders, kycVerifications, approvalHistory, scheduledPostBatches, compVersions, pluginInstances, stemExports, warpMarkers, insertWarpMarkerSchema, workspaceCatalogs, insertWorkspaceCatalogSchema, apiUsage, alertIncidents, dspUserPlatformStatus, dspSyncStatus, toolostConnection, youtubeConnections, youtubeUploads, emailEvents, requestInstantPayoutSchema, approvePostSchema, bulkSchedulePostSchema, takeGroups, pluginPresets, studioTracks, workspaceInvitations, insertWorkspaceInvitationSchema, alertRules, playlistAttributions, insertPlaylistAttributionSchema, emailMessages, rejectPostSchema, bulkValidatePostSchema, takeLanes, updateWarpMarkerSchema, workspaceMembers, insertWorkspaceMemberSchema, systemMetrics, listenerCohorts, submitForReviewSchema, socialAccounts, takeSegments, workspaceRoles, revenueForecasts, workspaces, insertWorkspaceSchema, approvalRequests, approvalSteps, approvalWorkflows, ssoConfigs, platformApiConfigs, adCampaigns, insertAdCampaignSchema, adCreatives, insertAdCreativeSchema, adDeliveryLogs, contentCalendar, insertContentCalendarSchema, aiModels, insertAiModelSchema, userBrandVoices, insertUserBrandVoiceSchema, inferenceRuns, insertInferenceRunSchema, hashtagResearch, insertHashtagResearchSchema, explanationLogs, insertExplanationLogSchema, bestPostingTimes, insertBestPostingTimeSchema, aiModelVersions, insertAiModelVersionSchema, userTasteProfiles, insertUserTasteProfileSchema, beatInteractions, insertBeatInteractionSchema, userStorage, insertUserStorageSchema, userStorageFiles, insertUserStorageFileSchema, beatDiscoveryScores, insertBeatDiscoveryScoreSchema, playlistJourneys, insertPlaylistJourneySchema, syncPlacements, insertSyncPlacementSchema, historicalAnalytics, insertHistoricalAnalyticSchema, arDiscoveries, insertArDiscoverySchema, platformDataSources, insertPlatformDataSourceSchema, globalRankings, insertGlobalRankingSchema, nlpQueryLogs, insertNlpQueryLogSchema, preSavePages, insertPreSavePageSchema, promoCards, insertPromoCardSchema, miniVideos, insertMiniVideoSchema, spotifyCanvases, insertSpotifyCanvasSchema, lyricsSyncs, insertLyricsSyncSchema, artistScores, insertArtistScoreSchema, marketplaceRecommendations, insertMarketplaceRecommendationSchema, beatPromotions, insertBeatPromotionSchema, bogoPromotions, insertBogoPromotionSchema, systemSettings, insertSystemSettingSchema, socialAutopilotContent, insertSocialAutopilotContentSchema, fanSegments, insertFanSegmentSchema, musicImpactMetrics, insertMusicImpactMetricSchema, socialPatternAggregates, insertSocialPatternAggregateSchema, generationArmStats, insertGenerationArmStatSchema, generationHistory, insertGenerationHistorySchema, organicAssets, insertOrganicAssetSchema, organicChannels, insertOrganicChannelSchema, organicRoiSnapshots, insertOrganicRoiSnapshotSchema, organicAssetLifetime, insertOrganicAssetLifetimeSchema, autopilotCrossInsights, insertAutopilotCrossInsightSchema, socialMentions, insertSocialMentionSchema, socialKeywords, insertSocialKeywordSchema, competitorProfiles, insertCompetitorProfileSchema, socialInboxMessages, insertSocialInboxMessageSchema, socialReplyTemplates, insertSocialReplyTemplateSchema, onboardingTasks, insertOnboardingTaskSchema, userOnboarding, insertUserOnboardingSchema, artistProgressSnapshots, insertArtistProgressSnapshotSchema, achievements, insertAchievementSchema, userAchievements, insertUserAchievementSchema, userStreaks, insertUserStreakSchema, careerCoachRecommendations, insertCareerCoachRecommendationSchema, careerGoals, insertCareerGoalSchema, emailPreferences, insertEmailPreferenceSchema, sentEmails, insertSentEmailSchema, artistConnections, insertArtistConnectionSchema, collaborationProjects, insertCollaborationProjectSchema, projectMembers, insertProjectMemberSchema, collabSnapshots, insertCollabSnapshotSchema, collaborationRooms, insertCollaborationRoomSchema, collaborationRoomMessages, insertCollaborationRoomMessageSchema, releaseCountdowns, insertReleaseCountdownSchema, countdownTasks, insertCountdownTaskSchema, countdownAnalytics, insertCountdownAnalyticSchema, autopilotLearningData, insertAutopilotLearningDataSchema, autopilotInsights, insertAutopilotInsightSchema, autopilotPreferences, insertAutopilotPreferenceSchema, systemLogs, insertSystemLogSchema, auditLogs, insertAuditLogSchema, splitSheets, insertSplitSheetSchema, batchTemplates, insertBatchTemplateSchema, shareLinks, insertShareLinkSchema, collaborationComments, insertCollaborationCommentSchema, collaborationVersions, insertCollaborationVersionSchema, collaborationAccessRequests, insertCollaborationAccessRequestSchema, searchHistory, filterPresets, musicWorkflowAutomations, musicWorkflowExecutionLogs, artistProfiles, insertArtistProfileSchema, artistProfileReleases, profileClaimPipeline, profileClaimEvents, artistIdentityLinks, artistDnaSnapshots, profileSplitEvents, distributorHistoryImports, insertTakeGroupSchema, insertPluginPresetSchema, insertStudioTrackSchema, insertAlertRuleSchema, insertEmailMessageSchema, insertTakeLaneSchema, insertSystemMetricSchema, insertListenerCohortSchema, insertSocialAccountSchema, insertTakeSegmentSchema, insertWorkspaceRoleSchema, insertRevenueForecastSchema, insertApprovalRequestSchema, insertApprovalStepSchema, insertApprovalWorkflowSchema, insertSsoConfigSchema, fabricPockets, fabricVolumes, fabricStorageNodes, fabricObjects, fabricChunks, fabricCatalogFence, fabricObjectDependencies, fabricDeletionObjects, fabricDeletionChunks, fabricMigrationJobs, insertFabricPocketSchema, insertFabricVolumeSchema, insertFabricStorageNodeSchema, insertFabricObjectSchema, insertFabricChunkSchema, customerHealthScores, insertCustomerHealthScoreSchema, npsResponses, insertNpsResponseSchema, cancellationFeedback, insertCancellationFeedbackSchema, featureEvents, insertFeatureEventSchema, dunningState, insertDunningStateSchema, fanSubscribers, fanMessages, insertFanSubscriberSchema, insertFanMessageSchema, pressKits, insertPressKitSchema, playlistPitches, insertPlaylistPitchSchema, shows, setlists, insertShowSchema, insertSetlistSchema, merchItems, merchOrders, insertMerchItemSchema, insertMerchOrderSchema, syncSubmissions, insertSyncSubmissionSchema, publishingRights, insertPublishingRightSchema, labelSubmissions, insertLabelSubmissionSchema, radioPitches, insertRadioPitchSchema, venueContacts, insertVenueContactSchema, projectBudgets, insertProjectBudgetSchema, budgetLineItems, insertBudgetLineItemSchema, sampleClearances, insertSampleClearanceSchema, musicVideoProductions, insertMusicVideoProductionSchema, songwritingSessions, insertSongwritingSessionSchema, fanCampaigns, insertFanCampaignSchema, customWorkflows, insertCustomWorkflowSchema, jwtTokens, insertJwtTokenSchema, refreshTokens, insertRefreshTokenSchema, assistantConversations, insertAssistantConversationSchema, assistantMessages, insertAssistantMessageSchema, platformRoyaltyRates, insertPlatformRoyaltyRateSchema, taxTreatyRates, insertTaxTreatyRateSchema, studioSamples, insertStudioSampleSchema, labelSettings, insertLabelSettingSchema, listingStems, insertListingStemSchema, mobileDeviceTokens, insertMobileDeviceTokenSchema, claimedDomains, insertClaimedDomainSchema, domainContacts, insertDomainContactSchema, domainEvents, insertDomainEventSchema, dnssecKeys, insertDnssecKeySchema, hnsAuctions, insertHnsAuctionSchema, fanWallets, fanCreditTransactions, insertFanCreditTransactionSchema, fanLoyaltyConfigs, insertFanLoyaltyConfigSchema, outreachCampaigns, insertOutreachCampaignSchema, outreachPitches, insertOutreachPitchSchema, beatPricingSnapshots, insertBeatPricingSnapshotSchema, hybridStorageFiles, hybridStorageImports, socialMediaJobs, maxcoreCognitiveEntities, maxcoreCognitiveRelationships;
 var init_schema = __esm({
   "shared/schema.ts"() {
     "use strict";
@@ -15753,6 +16536,63 @@ var init_schema = __esm({
     insertCollabSnapshotSchema = createInsertSchema(
       collabSnapshots
     ).omit({ id: true, createdAt: true });
+    collaborationRooms = pgTable2("collaboration_rooms", {
+      id: varchar2("id").primaryKey().default(sql2`gen_random_uuid()::text`),
+      projectId: varchar2("project_id").notNull().unique(),
+      state: text2("state").notNull().default("active"),
+      generation: integer2("generation").notNull().default(1),
+      mediaState: text2("media_state").notNull().default("unavailable"),
+      mediaRegion: varchar2("media_region"),
+      participantLimit: integer2("participant_limit"),
+      createdBy: varchar2("created_by").references(() => users.id, {
+        onDelete: "set null"
+      }),
+      createdAt: timestamp2("created_at").notNull().defaultNow(),
+      updatedAt: timestamp2("updated_at").notNull().defaultNow(),
+      endedAt: timestamp2("ended_at")
+    }, (table) => ({
+      stateCheck: check2(
+        "collaboration_rooms_state_check",
+        sql2`${table.state} IN ('active', 'closed')`
+      ),
+      generationCheck: check2(
+        "collaboration_rooms_generation_check",
+        sql2`${table.generation} > 0`
+      ),
+      mediaStateCheck: check2(
+        "collaboration_rooms_media_state_check",
+        sql2`${table.mediaState} IN ('unavailable', 'available', 'degraded')`
+      ),
+      participantLimitCheck: check2(
+        "collaboration_rooms_participant_limit_check",
+        sql2`${table.participantLimit} IS NULL OR ${table.participantLimit} > 0`
+      )
+    }));
+    insertCollaborationRoomSchema = createInsertSchema(
+      collaborationRooms
+    ).omit({ id: true, createdAt: true, updatedAt: true });
+    collaborationRoomMessages = pgTable2(
+      "collaboration_room_messages",
+      {
+        id: varchar2("id").primaryKey().default(sql2`gen_random_uuid()::text`),
+        roomId: varchar2("room_id").notNull().references(() => collaborationRooms.id, { onDelete: "cascade" }),
+        senderId: varchar2("sender_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+        clientMessageId: varchar2("client_message_id", { length: 36 }).notNull(),
+        content: text2("content").notNull(),
+        createdAt: timestamp2("created_at").notNull().defaultNow()
+      },
+      (table) => ({
+        roomCreatedAtIdx: index2("collaboration_room_messages_room_created_idx").on(table.roomId, table.createdAt),
+        idempotencyKey: unique2("collaboration_room_messages_idempotency_unique").on(table.roomId, table.senderId, table.clientMessageId),
+        contentCheck: check2(
+          "collaboration_room_messages_content_check",
+          sql2`length(btrim(${table.content})) BETWEEN 1 AND 4000`
+        )
+      })
+    );
+    insertCollaborationRoomMessageSchema = createInsertSchema(
+      collaborationRoomMessages
+    ).omit({ id: true, createdAt: true });
     releaseCountdowns = pgTable2("release_countdowns", {
       id: varchar2("id").primaryKey().default(sql2`gen_random_uuid()`),
       userId: varchar2("user_id").notNull(),
@@ -17535,6 +18375,98 @@ var init_schema = __esm({
         byUpdated: index2("social_media_jobs_updated_idx").on(table.updatedAt)
       })
     );
+    maxcoreCognitiveEntities = pgTable2(
+      "maxcore_cognitive_entities",
+      {
+        id: varchar2("id").primaryKey().default(sql2`gen_random_uuid()`),
+        ownerId: varchar2("owner_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+        entityType: text2("entity_type").notNull(),
+        payload: jsonb2("payload").$type().notNull(),
+        metadata: jsonb2("metadata").$type().notNull().default(sql2`'{}'::jsonb`),
+        tags: jsonb2("tags").$type().notNull().default(sql2`'[]'::jsonb`),
+        searchText: text2("search_text").notNull().default(""),
+        schemaVersion: integer2("schema_version").notNull().default(1),
+        createdAt: timestamp2("created_at", { withTimezone: true }).notNull().defaultNow(),
+        updatedAt: timestamp2("updated_at", { withTimezone: true }).notNull().defaultNow()
+      },
+      (table) => [
+        check2(
+          "maxcore_cognitive_entity_type_check",
+          sql2`${table.entityType} IN ('project','goal','task','agent','department','memory','tool','workflow','document','knowledge_node','event')`
+        ),
+        check2(
+          "maxcore_cognitive_schema_version_check",
+          sql2`${table.schemaVersion} > 0`
+        ),
+        index2("maxcore_cognitive_owner_type_updated_idx").on(
+          table.ownerId,
+          table.entityType,
+          table.updatedAt
+        ),
+        unique2("maxcore_cognitive_owner_id_id_unique").on(
+          table.ownerId,
+          table.id
+        ),
+        index2("maxcore_cognitive_search_idx").using(
+          "gin",
+          sql2`to_tsvector('simple', ${table.searchText})`
+        )
+      ]
+    );
+    maxcoreCognitiveRelationships = pgTable2(
+      "maxcore_cognitive_relationships",
+      {
+        id: varchar2("id").primaryKey().default(sql2`gen_random_uuid()`),
+        ownerId: varchar2("owner_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+        sourceId: varchar2("source_id").notNull(),
+        targetId: varchar2("target_id").notNull(),
+        relationType: text2("relation_type").notNull(),
+        metadata: jsonb2("metadata").$type().notNull().default(sql2`'{}'::jsonb`),
+        createdAt: timestamp2("created_at", { withTimezone: true }).notNull().defaultNow()
+      },
+      (table) => [
+        foreignKey2({
+          name: "maxcore_cognitive_relationship_source_owner_fk",
+          columns: [table.ownerId, table.sourceId],
+          foreignColumns: [
+            maxcoreCognitiveEntities.ownerId,
+            maxcoreCognitiveEntities.id
+          ]
+        }).onDelete("cascade"),
+        foreignKey2({
+          name: "maxcore_cognitive_relationship_target_owner_fk",
+          columns: [table.ownerId, table.targetId],
+          foreignColumns: [
+            maxcoreCognitiveEntities.ownerId,
+            maxcoreCognitiveEntities.id
+          ]
+        }).onDelete("cascade"),
+        check2(
+          "maxcore_cognitive_relationship_type_check",
+          sql2`${table.relationType} IN ('depends_on','created_by','assigned_to','related_to','improves','blocks','supports','owns','contains')`
+        ),
+        check2(
+          "maxcore_cognitive_relationship_no_self_edge",
+          sql2`${table.sourceId} <> ${table.targetId}`
+        ),
+        unique2("maxcore_cognitive_relationship_unique_edge").on(
+          table.ownerId,
+          table.sourceId,
+          table.targetId,
+          table.relationType
+        ),
+        index2("maxcore_cognitive_relationship_source_idx").on(
+          table.ownerId,
+          table.sourceId,
+          table.relationType
+        ),
+        index2("maxcore_cognitive_relationship_target_idx").on(
+          table.ownerId,
+          table.targetId,
+          table.relationType
+        )
+      ]
+    );
   }
 });
 
@@ -17568,13 +18500,18 @@ var init_env = __esm({
       NODE_ENV: z2.enum(["development", "production", "test", "staging"]).default("development"),
       PORT: z2.coerce.number().min(1).max(65535).default(5e3),
       // ── Database ──────────────────────────────────────────────────────────────
-      // Optional here — the app prefers NEON_DATABASE_URL (see config/defaults.ts).
-      // db.ts enforces that at least one is present at pool-creation time.
+      // Optional here — databaseTarget.ts selects the primary Neon URL first,
+      // followed by the app-specific Neon URL and the generic compatibility URL.
+      // db.ts enforces that a target is configured at pool-creation time.
       DATABASE_URL: z2.string().url().startsWith("postgresql://").optional(),
       // ── Session / Auth ────────────────────────────────────────────────────────
       SESSION_SECRET: z2.string().min(32),
       // ── Stripe ────────────────────────────────────────────────────────────────
       STRIPE_SECRET_KEY: z2.string().min(1).optional(),
+      STRIPE_TEST_SECRET: z2.string().min(1).optional(),
+      STRIPE_TEST_CLIENT: z2.string().min(1).optional(),
+      STRIPE_PUBLISHABLE_KEY: z2.string().min(1).optional(),
+      VITE_STRIPE_PUBLIC_KEY: z2.string().min(1).optional(),
       STRIPE_WEBHOOK_SECRET: z2.string().startsWith("whsec_").optional(),
       STRIPE_PRICE_ID_PRO_MONTHLY: z2.string().optional(),
       STRIPE_PRICE_ID_PRO_ANNUAL: z2.string().optional(),
@@ -17608,8 +18545,9 @@ var init_env = __esm({
       APP_URL: z2.string().optional(),
       DOMAIN: z2.string().optional(),
       CORS_ORIGIN: z2.string().optional(),
-      // ── Database aliases ──────────────────────────────────────────────────────
-      NEON_DATABASE_URL: z2.string().url().optional(),
+      // ── Database URLs ─────────────────────────────────────────────────────────
+      NEON_PRIMARY_URL: z2.string().url().startsWith("postgresql://").optional(),
+      NEON_DATABASE_URL: z2.string().url().startsWith("postgresql://").optional(),
       // ── Feature flags ─────────────────────────────────────────────────────────
       SKIP_BOOSTERSTATE: z2.string().optional(),
       DEPLOYMENT_PHASES: z2.string().optional(),
@@ -17618,6 +18556,16 @@ var init_env = __esm({
       POCKET_DIMENSION_KEY: z2.string().optional()
     });
     env = parseEnv();
+  }
+});
+
+// server/config/databaseTarget.ts
+function selectApplicationDatabaseUrl(environment) {
+  return environment.NEON_PRIMARY_URL?.trim() || environment.NEON_DATABASE_URL?.trim() || environment.DATABASE_URL?.trim() || "";
+}
+var init_databaseTarget = __esm({
+  "server/config/databaseTarget.ts"() {
+    "use strict";
   }
 });
 
@@ -17649,6 +18597,7 @@ var init_defaults = __esm({
     init_logger();
     init_env();
     init_ports();
+    init_databaseTarget();
     _vmCpuCount = Math.max(1, os5.cpus().length);
     _vmConcMult = Math.max(1, Math.floor(_vmCpuCount / 4));
     isReplitDeployment = process.env.REPLIT_DEPLOYMENT === "1";
@@ -17660,7 +18609,7 @@ var init_defaults = __esm({
       isReplitWorkspace,
       port: runtimePorts.app,
       database: {
-        url: env.NEON_DATABASE_URL || env.DATABASE_URL || "",
+        url: selectApplicationDatabaseUrl(env),
         // In production each worker creates its own pool.  With the default of 20
         // connections × N workers we easily exceed Neon's connection limit (53100).
         // Scale the per-worker pool so all workers combined stay ≤ 15 connections:
@@ -17774,6 +18723,18 @@ var init_defaults = __esm({
   }
 });
 
+// server/lib/databaseSession.ts
+async function configureApplicationDatabaseSession(client) {
+  await client.query(APPLICATION_DATABASE_SESSION_SQL);
+}
+var APPLICATION_DATABASE_SESSION_SQL;
+var init_databaseSession = __esm({
+  "server/lib/databaseSession.ts"() {
+    "use strict";
+    APPLICATION_DATABASE_SESSION_SQL = "SELECT set_config('search_path', 'public', false), set_config('statement_timeout', '30s', false)";
+  }
+});
+
 // server/db.ts
 var db_exports = {};
 __export(db_exports, {
@@ -17818,6 +18779,15 @@ function createInstrumentedPool(options) {
   });
   return pool2;
 }
+function configurePoolClient(client, source) {
+  void configureApplicationDatabaseSession(client).catch((err) => {
+    logger.error({
+      source,
+      err: err?.message,
+      message: "[DB] Failed to initialize application database session"
+    });
+  });
+}
 async function verifyReadReplica() {
   if (!replicaPool) return;
   try {
@@ -17843,6 +18813,7 @@ var init_db = __esm({
     init_schema();
     init_defaults();
     init_logger();
+    init_databaseSession();
     neonConfig.webSocketConstructor = ws;
     if (!config?.database.url) {
       throw new Error(
@@ -17980,14 +18951,10 @@ var init_db = __esm({
       idleTimeoutMillis: config.database.idleTimeout,
       connectionTimeoutMillis: config.database.connectionTimeout
     });
-    pool.on("connect", (client) => {
-      client.query("SET statement_timeout = '30000'").catch((err) => {
-        logger.warn({
-          err: err?.message,
-          message: "[DB] Failed to set statement_timeout on new connection"
-        });
-      });
-    });
+    pool.on(
+      "connect",
+      (client) => configurePoolClient(client, "primary")
+    );
     pool.on("error", (err) => {
       logger.warn({ value: err?.message, message: "[DB] Idle client error (pool)" });
     });
@@ -18003,6 +18970,10 @@ var init_db = __esm({
       connectionTimeoutMillis: config.database.connectionTimeout
     }) : null;
     if (replicaPool) {
+      replicaPool.on(
+        "connect",
+        (client) => configurePoolClient(client, "replica")
+      );
       replicaPool?.on("error", (err) => {
         logger.warn({
           value: err?.message,

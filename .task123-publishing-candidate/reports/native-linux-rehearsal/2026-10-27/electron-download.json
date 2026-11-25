@@ -1,0 +1,32 @@
+{
+  "command": [
+    "curl",
+    "--fail",
+    "--location",
+    "--retry",
+    "1",
+    "--connect-timeout",
+    "10",
+    "--max-time",
+    "180",
+    "--max-filesize",
+    "127277783",
+    "--output",
+    "/tmp/maxbooster-linux-u3f69z18/downloads/electron-v43.8.3-linux-x64.zip.partial",
+    "https://github.com/electron/electron/releases/download/v43.8.3/electron-v43.8.3-linux-x64.zip"
+  ],
+  "cwd": ".",
+  "startedAt": "2026-10-28T01:59:51.463329+00:00",
+  "durationSeconds": 3.177,
+  "exitCode": 0,
+  "timedOut": false,
+  "status": "passed",
+  "log": "reports/native-linux-rehearsal/2026-10-27/electron-download.txt",
+  "logSha256": "e931068b4f5222d9866ad731707f82c60bf2267f05af955b74c4932471f609a2",
+  "bytes": 127277783,
+  "sha256": "73d7d6fe120c998db75834c23c8ce7ce8390607c198b2e167a28acd7937bef22",
+  "expectedBytes": 127277783,
+  "expectedSha256": "73d7d6fe120c998db75834c23c8ce7ce8390607c198b2e167a28acd7937bef22",
+  "admitted": true,
+  "ownedArchive": "/tmp/maxbooster-linux-u3f69z18/downloads/electron-v43.8.3-linux-x64.zip"
+}

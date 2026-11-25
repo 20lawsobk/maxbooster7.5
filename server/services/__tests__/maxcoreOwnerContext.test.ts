@@ -9,8 +9,13 @@ vi.mock("../../config/index.js", () => ({ config: {
   maxcoreUrl: "http://private-maxcore", maxcoreGenerationKey: "private-channel",
 } }));
 vi.mock("../../logger.js", () => ({ logger: { info: vi.fn(), debug: vi.fn(), warn: vi.fn(), error: vi.fn() } }));
+vi.mock("../maxcoreCognitiveService.js", () => ({
+  searchCognitiveGraphContext: vi.fn(async () => ({ matches: [] })),
+  searchUserProjects: vi.fn(async () => []),
+}));
 import { MaxCoreAIClient } from "../maxcoreClient.js";
 import { maxCoreControlTransport } from "../maxcoreControlTransport.js";
+import { searchCognitiveGraphContext, searchUserProjects } from "../maxcoreCognitiveService.js";
 
 describe("public Node session -> private MaxCore ownership", () => {
   it("does not accept a background-owner argument while inside an unauthenticated public request", () => {
@@ -60,7 +65,15 @@ describe("public Node session -> private MaxCore ownership", () => {
       expect(pythonHeaders["X-MaxCore-User-Id"]).toBe("session-owner");
       expect(modelOwnedBody(JSON.parse(forwarded.body), pythonHeaders))
         .toEqual({ text: "music", userId: "session-owner", user_id: "session-owner", owner_id: "session-owner",
-          awareness: { snapshot_id: "canonical-public", awareness: "Public live signals", expires_at: expect.any(Number) } });
+          awareness: { snapshot_id: "canonical-public", awareness: "Public live signals", expires_at: expect.any(Number) },
+          maxbooster_cognitive_context: {
+            status: "empty",
+            retrievedAt: expect.any(String),
+            retrievalMethod: "owner_scoped_postgres_full_text_and_product_projects",
+            evidence: [],
+          } });
+      expect(searchCognitiveGraphContext).toHaveBeenCalledWith("session-owner", "music", 6);
+      expect(searchUserProjects).toHaveBeenCalledWith("session-owner", "music", 3);
     } finally {
       context.mockRestore();
       transport.mockRestore();

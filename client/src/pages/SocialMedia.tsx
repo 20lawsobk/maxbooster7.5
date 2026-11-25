@@ -1011,6 +1011,70 @@ export default function SocialMedia() {
     },
   });
 
+  const generateEnhancedDraftMutation = useMutation({
+    mutationFn: async () => {
+      const platforms = [
+        ...new Set(
+          selectedPlatforms.flatMap(expandPlatform).filter((platform) =>
+            MULTIMODAL_PLATFORMS.has(platform),
+          ),
+        ),
+      ];
+      if (platforms.length === 0) {
+        throw new Error("Select at least one supported platform.");
+      }
+      const tone = selectedTone === "funny"
+        ? "humorous"
+        : selectedTone === "energetic" || selectedTone === "promotional"
+          ? "inspirational"
+          : selectedTone;
+      const response = await apiRequest(
+        "POST",
+        "/api/social/generate-enhanced-content",
+        {
+          platforms,
+          topic: postContent.trim() || "Create a social post for my next release",
+          objective: "engagement",
+          tone,
+          targetAudience: targetAudience.trim() || undefined,
+          includeHashtags: true,
+        },
+      );
+      return response.json();
+    },
+    onSuccess: (data) => {
+      if (!data?.success || typeof data.body !== "string" || !data.body.trim()) {
+        toast({
+          title: "Enhanced generation failed",
+          description: data?.error || "MaxCore returned no usable draft.",
+          variant: "destructive",
+        });
+        return;
+      }
+      const hashtags = Array.isArray(data.hashtags)
+        ? data.hashtags.filter((tag: unknown): tag is string => typeof tag === "string")
+        : [];
+      setPostContent([data.headline, data.body, hashtags.join(" ")].filter(Boolean).join("\n\n"));
+      if (Array.isArray(data.platforms)) setSelectedPlatforms(data.platforms);
+      const suggested = new Date(data.optimalPostingTime);
+      if (Number.isFinite(suggested.getTime()) && suggested.getTime() > Date.now()) {
+        suggested.setMinutes(suggested.getMinutes() - suggested.getTimezoneOffset());
+        setScheduledTime(suggested.toISOString().slice(0, 16));
+      }
+      toast({
+        title: "Enhanced draft ready",
+        description: "Review the copy and suggested time, then choose Schedule to queue it.",
+      });
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Enhanced generation unavailable",
+        description: error.message || "MaxCore could not create the optimized draft.",
+        variant: "destructive",
+      });
+    },
+  });
+
   const schedulePostMutation = useMutation({
     mutationFn: async (postData: Partial<SocialPost>) => {
       const response = await apiRequest(
@@ -2628,6 +2692,30 @@ export default function SocialMedia() {
                             Schedule
                           </Button>
                         </div>
+                        {regularContentFormat === "text" && (
+                          <Button
+                            variant="secondary"
+                            className="w-full"
+                            onClick={() => generateEnhancedDraftMutation.mutate()}
+                            disabled={
+                              selectedPlatforms.length === 0 ||
+                              generateEnhancedDraftMutation.isPending
+                            }
+                            data-testid="button-generate-optimized-draft"
+                          >
+                            {generateEnhancedDraftMutation.isPending ? (
+                              <>
+                                <RefreshCw className="w-4 h-4 mr-2 animate-spin" />
+                                Optimizing draft...
+                              </>
+                            ) : (
+                              <>
+                                <Sparkles className="w-4 h-4 mr-2" />
+                                Generate optimized draft
+                              </>
+                            )}
+                          </Button>
+                        )}
                       </>
                     )}
                   </CardContent>

@@ -1,0 +1,94 @@
+TAP version 13
+# Subtest: stem entitlement requires listing ownership or a completed purchase
+ok 1 - stem entitlement requires listing ownership or a completed purchase
+  ---
+  duration_ms: 1.195241
+  type: 'test'
+  ...
+# Subtest: generic storage route denies anonymous and unrelated authenticated stem readers
+ok 2 - generic storage route denies anonymous and unrelated authenticated stem readers
+  ---
+  duration_ms: 221.196418
+  type: 'test'
+  ...
+# Subtest: generic storage route serves purchased stem bytes but not deleted uploads
+ok 3 - generic storage route serves purchased stem bytes but not deleted uploads
+  ---
+  duration_ms: 62.574584
+  type: 'test'
+  ...
+# Subtest: stem creation cannot turn another user's upload into a marketplace entitlement
+ok 4 - stem creation cannot turn another user's upload into a marketplace entitlement
+  ---
+  duration_ms: 24.450619
+  type: 'test'
+  ...
+# Subtest: actual stem detail endpoint retains seller and completed buyer access
+ok 5 - actual stem detail endpoint retains seller and completed buyer access
+  ---
+  duration_ms: 21.804096
+  type: 'test'
+  ...
+# Subtest: actual download endpoint preserves completed buyer access and rejects unpaid or mismatched tracks
+ok 6 - actual download endpoint preserves completed buyer access and rejects unpaid or mismatched tracks
+  ---
+  duration_ms: 24.936094
+  type: 'test'
+  ...
+# Subtest: access-sensitive endpoints bypass the real cache middleware before any cache read
+ok 7 - access-sensitive endpoints bypass the real cache middleware before any cache read
+  ---
+  duration_ms: 1028.182836
+  type: 'test'
+  ...
+# Subtest: stored URL encoding cannot bypass asset protection; unrelated previews remain public
+ok 8 - stored URL encoding cannot bypass asset protection; unrelated previews remain public
+  ---
+  duration_ms: 0.786551
+  type: 'test'
+  ...
+# Subtest: actual listing stems endpoint denies anonymous and unpaid callers
+ok 9 - actual listing stems endpoint denies anonymous and unpaid callers
+  ---
+  duration_ms: 24.137753
+  type: 'test'
+  ...
+# Subtest: actual public audio and cover aliases reject stem bytes before storage access
+ok 10 - actual public audio and cover aliases reject stem bytes before storage access
+  ---
+  duration_ms: 52.370735
+  type: 'test'
+  ...
+# Subtest: public storage image alias also enforces stem entitlements
+ok 11 - public storage image alias also enforces stem entitlements
+  ---
+  duration_ms: 11.347
+  type: 'test'
+  ...
+# Subtest: shared stem keys require access to every referencing listing
+ok 12 - shared stem keys require access to every referencing listing
+  ---
+  duration_ms: 0.189034
+  type: 'test'
+  ...
+# Subtest: database failures cannot become public access
+ok 13 - database failures cannot become public access
+  ---
+  duration_ms: 21.802014
+  type: 'test'
+  ...
+# Subtest: owner tier endpoint rejects cross-tenant reads and missing storefronts
+ok 14 - owner tier endpoint rejects cross-tenant reads and missing storefronts
+  ---
+  duration_ms: 128.153518
+  type: 'test'
+  ...
+1..14
+# tests 14
+# suites 0
+# pass 14
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 2310.918217

@@ -1,0 +1,5 @@
+
+> max-booster@3.0.0 release:verify
+> node --import tsx -e "import('./script/publish-release.ts').then(m=>m.verifyPreparedRelease(process.cwd())).then(()=>console.log('Prepared release is current')).catch(e=>{console.error(e.message);process.exitCode=1})"
+
+Prepared release is current

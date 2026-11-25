@@ -1,0 +1,17 @@
+{
+  "scope": "Synthetic gate regression only; no product or launch evidence",
+  "rootSourceRevision": "8a9b638c6c1ce1b46a19501ee4a48893497c2518",
+  "before": {
+    "measuredGreenPages": 80,
+    "summaryApproval": false,
+    "observedProductionReady": false,
+    "expectedProductionReady": true,
+    "defectReproduced": true
+  },
+  "candidate": {
+    "computedCompletedMasterGate": true,
+    "recordedLaunchMasterGate": true,
+    "observedProductionReady": true,
+    "expectedProductionReady": true
+  }
+}

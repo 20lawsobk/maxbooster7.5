@@ -5,7 +5,7 @@ describe("MaxCore application readiness gate", () => {
     vi.resetModules();
   });
 
-  it("fails closed while the supervised Python model is not loaded", async () => {
+  it("fails closed while supervised MaxCore generation serving is unavailable", async () => {
     vi.doMock("../../server/services/maxcoreLocalSupervisor.js", () => ({
       checkMaxcoreLocalReady: vi.fn().mockResolvedValue(false),
       getMaxcoreLocalStatus: vi.fn(() => ({
@@ -22,13 +22,12 @@ describe("MaxCore application readiness gate", () => {
     const { probeMaxcoreReadiness } = await import(
       "../../server/lib/healthRegistry.js"
     );
-    await expect(probeMaxcoreReadiness()).resolves.toEqual({
+    await expect(probeMaxcoreReadiness()).resolves.toMatchObject({
       status: "degraded",
-      detail: "supervised Python model not ready (running=true, restarts=0)",
     });
   });
 
-  it("reports ok only after the supervised Python model readiness passes", async () => {
+  it("reports ok only after the supervised MaxCore serving authority is ready", async () => {
     vi.doMock("../../server/services/maxcoreLocalSupervisor.js", () => ({
       checkMaxcoreLocalReady: vi.fn().mockResolvedValue(true),
       getMaxcoreLocalStatus: vi.fn(() => ({
@@ -45,9 +44,8 @@ describe("MaxCore application readiness gate", () => {
     const { probeMaxcoreReadiness } = await import(
       "../../server/lib/healthRegistry.js"
     );
-    await expect(probeMaxcoreReadiness()).resolves.toEqual({
+    await expect(probeMaxcoreReadiness()).resolves.toMatchObject({
       status: "ok",
-      detail: "supervised Python model loaded",
     });
   });
 

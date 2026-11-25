@@ -1,0 +1,91 @@
+F                                                                        [100%]
+=================================== FAILURES ===================================
+_ AwarenessImportTests.test_real_native_writer_does_not_initialize_model_runtime _
+
+self = <tests.test_awareness_native_import.AwarenessImportTests testMethod=test_real_native_writer_does_not_initialize_model_runtime>
+
+        def test_real_native_writer_does_not_initialize_model_runtime(self):
+            result = subprocess.run(
+                [sys.executable, "-c", """
+    import sys
+    from ai_model.agents.awareness_native_writer import generate_script
+    from ai_model.agents import (
+        ScriptAgent, ScriptRequest, ScriptResponse,
+        VisualSpecAgent, DistributionAgent, OptimizationAgent,
+    )
+    assert callable(generate_script)
+    assert ScriptRequest("new release", "instagram", "streams", "authentic").idea == "new release"
+    assert "torch" not in sys.modules, "awareness import initialized Torch"
+    assert "ai_model.model.creative_model" not in sys.modules, "awareness import initialized model implementation"
+    for cls in (ScriptAgent, VisualSpecAgent, DistributionAgent, OptimizationAgent):
+        supplied = object()
+        agent = cls(supplied)
+        assert agent.model is supplied, "model-backed agents must retain their supplied model"
+    """],
+                cwd=ROOT,
+                env={
+                    **os.environ,
+                    "PYTHONPATH": os.pathsep.join(
+                        part for part in (str(SERVICE), os.environ.get("PYTHONPATH", "")) if part
+                    ),
+                },
+                text=True, capture_output=True, timeout=15,
+            )
+>           self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+E           AssertionError: 1 != 0 : Traceback (most recent call last):
+E             File "<repo>/.pythonlibs/lib/python3.12/site-packages/numpy/_core/__init__.py", line 24, in <module>
+E               from . import multiarray
+E             File "<repo>/.pythonlibs/lib/python3.12/site-packages/numpy/_core/multiarray.py", line 11, in <module>
+E               from . import _multiarray_umath, overrides
+E           ImportError: libz.so.1: cannot open shared object file: No such file or directory
+E           
+E           The above exception was the direct cause of the following exception:
+E           
+E           Traceback (most recent call last):
+E             File "<string>", line 3, in <module>
+E             File "<repo>/external/maxcore/artifacts/ai-training-server/ai_model/agents/__init__.py", line 2, in <module>
+E               from .script_agent import ScriptAgent, ScriptRequest, ScriptResponse  # noqa: F401
+E               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E             File "<repo>/external/maxcore/artifacts/ai-training-server/ai_model/agents/script_agent.py", line 9, in <module>
+E               from ai_model.generation.awareness import generation_guard
+E             File "<repo>/external/maxcore/artifacts/ai-training-server/ai_model/generation/__init__.py", line 18, in <module>
+E               from .technique import TechniqueProfile, extract_technique
+E             File "<repo>/external/maxcore/artifacts/ai-training-server/ai_model/generation/technique.py", line 31, in <module>
+E               import numpy as np
+E             File "<repo>/.pythonlibs/lib/python3.12/site-packages/numpy/__init__.py", line 112, in <module>
+E               from numpy.__config__ import show_config
+E             File "<repo>/.pythonlibs/lib/python3.12/site-packages/numpy/__config__.py", line 4, in <module>
+E               from numpy._core._multiarray_umath import (
+E             File "<repo>/.pythonlibs/lib/python3.12/site-packages/numpy/_core/__init__.py", line 85, in <module>
+E               raise ImportError(msg) from exc
+E           ImportError: 
+E           
+E           IMPORTANT: PLEASE READ THIS FOR ADVICE ON HOW TO SOLVE THIS ISSUE!
+E           
+E           Importing the numpy C-extensions failed. This error can happen for
+E           many reasons, often due to issues with your setup or how NumPy was
+E           installed.
+E           
+E           We have compiled some common reasons and troubleshooting tips at:
+E           
+E               https://numpy.org/devdocs/user/troubleshooting-importerror.html
+E           
+E           Please note and check the following:
+E           
+E             * The Python version is: Python 3.12 from "/nix/store/h097imm3w6dpx10qynrd2sz9fks2wbq8-python3-3.12.11/bin/python3"
+E             * The NumPy version is: "2.4.4"
+E           
+E           and make sure that they are the versions you expect.
+E           
+E           Please carefully study the information and documentation linked above.
+E           This is unlikely to be a NumPy issue but will be caused by a bad install
+E           or environment on your machine.
+E           
+E           Original error was: libz.so.1: cannot open shared object file: No such file or directory
+
+tests/test_awareness_native_import.py:40: AssertionError
+=========================== short test summary info ============================
+FAILED tests/test_awareness_native_import.py::AwarenessImportTests::test_real_native_writer_does_not_initialize_model_runtime
+1 failed in 0.37s
+<repo>/.pythonlibs/lib/python3.12/site-packages/coverage/control.py:967: CoverageWarning: No data was collected. (no-data-collected); see https://coverage.readthedocs.io/en/7.17.0/messages.html#warning-no-data-collected
+  self._warn("No data was collected.", slug="no-data-collected")

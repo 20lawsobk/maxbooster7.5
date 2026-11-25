@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites name="pytest tests"><testsuite name="pytest" errors="0" failures="1" skipped="0" tests="1" time="0.130" timestamp="2026-10-25T22:43:49.919520+00:00" hostname="2fc971e77ddd"><testcase classname="tests.test_campaign_rollout" name="test_unverified_release_keeps_all_slots_without_invented_milestones" time="0.001"><failure message="AttributeError: &lt;module 'ai_model.generation.campaign' from '&lt;repo&gt;/external/maxcore/artifacts/ai-training-server/ai_model/generation/campaign.py'&gt; has no attribute '_compose_body_cta'">monkeypatch = &lt;_pytest.monkeypatch.MonkeyPatch object at 0x7fa4157e4ce0&gt;
+
+    def test_unverified_release_keeps_all_slots_without_invented_milestones(monkeypatch):
+        seen_themes = {}
+    
+        def compose(**kwargs):
+            seen_themes[kwargs["theme"]] = True
+            return {
+                "variants": [{"body": "Hear the new release.", "cta": "Tell us what you think."}],
+                "disclosure_brief": None,
+            }
+    
+&gt;       monkeypatch.setattr(campaign, "_compose_body_cta", compose)
+E       AttributeError: &lt;module 'ai_model.generation.campaign' from '&lt;repo&gt;/external/maxcore/artifacts/ai-training-server/ai_model/generation/campaign.py'&gt; has no attribute '_compose_body_cta'
+
+tests/test_campaign_rollout.py:16: AttributeError</failure></testcase></testsuite></testsuites>

@@ -28,6 +28,7 @@ import { notificationService } from "../../services/notificationService.js";
 import { dunningService } from "../../services/dunningService.js";
 import { instantPayoutService } from "../../services/instantPayoutService.js";
 import { env } from "../../config/env.js";
+import { getStripeSecretKey } from "../../lib/stripeClient.js";
 import { subscriptionPlan } from "../../services/commercePolicy";
 import { settleMerchantCheckout } from "../../services/commerce/merchant";
 import { consumeMarketplaceCheckout } from "../../services/commerce/marketplaceCheckout";
@@ -823,7 +824,7 @@ router.get("/health", (_req: Request, res: Response) => {
   res.json({
     status: "ok",
     webhookSecretConfigured: !!env?.STRIPE_WEBHOOK_SECRET,
-    stripeKeyConfigured: !!env?.STRIPE_SECRET_KEY,
+    stripeKeyConfigured: !!getStripeSecretKey(),
   });
 });
 

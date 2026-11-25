@@ -6,7 +6,8 @@ it does not establish the state of a running deployment.
 
 ## Development and ordinary production compilation
 
-Use Node 22 (at least 22.12) and the pinned npm 10.9.4 for the root checkout:
+Use the configured Node 24 runtime and pinned npm 11.19.1 for the root checkout.
+The source requires Node 22.12 or newer; Replit selects Node 24 in `.replit`:
 
 ```sh
 npm ci
@@ -21,13 +22,21 @@ The ordinary production commands are:
 
 ```sh
 npm run build
-npm run start
+npm run prod
 ```
 
 The build compiles the frontend and runtime entries and records source/artifact
 hashes. Start validates that record before handing off to `start.sh`. Runtime
 resources and services must also be provisioned; `dist` alone is not a complete
-installation. Read [npm-build-start.md](npm-build-start.md) for exact boundaries.
+installation. `npm run start` is an equivalent alias. Both production commands
+wait for the complete private listener set before reporting startup success.
+Read [npm-build-start.md](npm-build-start.md) for exact boundaries.
+
+`src/index.ts` is a thin compatibility entry for single-entry esbuild layouts;
+it forwards to the canonical `server/index.ts`. The production build still
+emits all runtime bundles and assets through `script/lib/serverBundles.ts`.
+Do not run a single-entry template that removes or replaces `dist`; that would
+discard required listeners and invalidate the build contract.
 
 The default model mode is `live-awareness`. Its model registry, candidate bundles
 and training audit are private runtime state under `MAXCORE_MODEL_STATE_DIR`,
@@ -68,17 +77,48 @@ Keep all dependency locks; there is no supported tar stub or lock-deletion repai
 
 ## Configured publishing
 
-The tracked `.replit` deployment invokes `bash build.sh`, then `bash start.sh`.
-The build delegates to the guarded deployment bootstrap/executive; its cleanup,
-packing and restoration are separate from an ordinary npm build. Do not execute
-destructive packing in the development checkout or infer successful publication
-from a GitHub push. The owner-defined target is a Replit Reserved VM; historical
-scaled tests do not measure that production VM's capacity.
+The tracked `.replit` deployment invokes `npm run deployment:build` and
+`npm run deployment:start`. The build alias delegates to `bash build.sh`, which
+runs the guarded bootstrap and sequential dependency-ordered Publishing build;
+its compilation phase uses the current `npm run build` → `script/build.ts`
+pipeline. The start alias delegates to `bash start.sh`, which restores verified
+capsules before starting the application. Replit runs build and start as
+separate ordered phases; do not combine them into one shell command or run
+destructive packing in the development checkout. A GitHub push does not prove
+a successful publication. The owner-defined target is a Replit Reserved VM;
+historical scaled tests do not measure that production VM's capacity.
+
+The Publishing tool currently selects a dedicated **16 vCPU / 64 GiB RAM**
+machine. Machine sizing is selected in Publishing and is not encoded in
+`.replit`; the build and startup commands are encoded there. Replit applies the
+selected machine configuration to those commands.
+The project requests a **16 vCPU / 64 GiB** Reserved VM. Confirm the selected
+machine size and region in Publishing settings; source configuration does not
+prove the live selection. The shared deployment capacity module is the source
+of the **16 vCPU / 64 GiB** ceiling used by startup execution,
+capsule/release helpers, and runtime worker sizing. The admin scaling metrics
+read cgroup CPU and memory usage against the same live capacity; host load
+average is labeled separately.
+The Publishing build runs one phase at a time without scheduler CPU/RAM
+reservations or an overall executor deadline. Phase-internal workers still
+respect their live cgroup limits and the shared CPU ceiling where applicable.
+The optional prepared-release path uses the same detected CPU budget by default.
+Scaling recommendations do not resize Replit's machine.
+Machine-setting changes require a new publish. See
+[Replit machine configuration](https://docs.replit.com/features/publishing/machine-configuration).
+
+Publishing build phases run serially, so this path does not perform parallel
+admission or dynamically rebalance phase-level resource reservations. Cleanup,
+dependency installation, Rust compilation, and compression use their own
+bounded worker sizing based on resources visible inside the running container.
+The startup executive continues to use live capacity admission for restore and
+application tasks.
 
 `.prepared-release` is optional tooling, not a dependency of this configured
 Publish path. See [prepared-production-releases.md](prepared-production-releases.md).
-The legacy `npm run deploy` points to an absent `scripts/deploy.ts`; use the
-configured host workflow rather than treating that script as operational.
+There is no `npm run deploy` command: Replit's Publish workflow is the only
+publication path. `npm run build` and `npm run start` remain the ordinary
+unpacked production compile/start pair for local validation and CI.
 
 Desktop/mobile packages, store uploads and multi-application workflows are
 excluded from this web/API readiness scope. Their statuses are not substitutes
@@ -86,15 +126,21 @@ for verification of the actual web runtime.
 
 ## Configuration and service authority
 
-- Public application: local port 5000, externally mapped according to the host
-  port contract. Keep sidecars private.
+- The strict launcher contract maps all ten configured listeners:
+  authoritative DNS 53, public application 5000, local DNS 5353, PDIM 5556,
+  diffusion gateway 8008, MaxCore API 8090, BoosterState 9877, model API 9878,
+  model health 9879, and the legacy MaxCore proxy 9880. DNS listeners use TCP
+  and UDP. Only application port 5000 maps externally (to port 80); the other
+  nine mappings remain private. The local DNS health probe uses private port
+  5380 and is not an additional published service mapping.
 - Canonical PDIM: local loopback port 5556, used for Redis-compatible state and
   storage through the application's real clients. Remote `STORAGE_*` credentials
   are not an automatic requirement for this local topology.
 - MaxCore: the local supervisor owns its imported API and Python processes.
   Running/model-loaded health is different from qualified generation capability.
 - Database: inspect the configured target before any operation. The application
-  prefers `NEON_DATABASE_URL` and supports its documented `DATABASE_URL` fallback.
+  prefers `NEON_PRIMARY_URL`, then `NEON_DATABASE_URL`, with `DATABASE_URL` as a
+  compatibility fallback.
   Never assume a development label means a disposable database.
 - Session/provider configuration: use environment secret bindings and `.env.example`.
   Do not copy credentials into source, logs or release notes.

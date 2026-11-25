@@ -8,7 +8,7 @@ import { insertUserSchema } from "../../shared/schema.js";
 describe("insertUserSchema", () => {
   const validUser = {
     email: "test@example.com",
-    password: "SecurePass123!",
+    password: "synthetic-test-password",
     firstName: "Alice",
     lastName: "Smith",
   };

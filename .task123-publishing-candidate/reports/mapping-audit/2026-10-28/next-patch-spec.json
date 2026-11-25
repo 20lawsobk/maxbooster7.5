@@ -1,0 +1,159 @@
+{
+  "schemaVersion": 1,
+  "status": "PLANNED_NOT_IMPLEMENTED",
+  "productionReady": false,
+  "scope": "Next narrow producer correction within the existing exhaustive plan; no production source changes were performed by this audit",
+  "criticalPath": [
+    "MAPPING-1",
+    "MAPPING-2",
+    "MAPPING-3",
+    "MAPPING-4",
+    "MAPPING-5",
+    "MAPPING-6",
+    "MAPPING-7"
+  ],
+  "parallelization": "After MAPPING-1's identity/output contract is fixed, middleware, finite expressions/helper cases, Python mounts and retained-legacy classification may be implemented in disjoint owned files/tests; integrated registry/plan acceptance remains serialized.",
+  "rollback": "Preserve the completed a160 master and current130-entry trace. Revert a producer regression without replacing historical evidence or weakening launch thresholds. Do not deploy, migrate or mutate provider state to test discovery.",
+  "steps": [
+    {
+      "id": "MAPPING-1",
+      "dependencies": [],
+      "deliverable": "Shared source/process/router identity",
+      "sourceTargets": [
+        "scripts/audit-endpoints.mjs:137",
+        "scripts/testing/platform-register.py:470"
+      ],
+      "implementationTask": "Represent application roots, router symbols, import/re-export edges and all mount prefixes separately. Preserve source declaration IDs and each expanded path/process; keep cycles/depth/size bounds explicit.",
+      "validationCases": [
+        "Nested empty child prefix composes with parent /api/export",
+        "Two mounts of one router retain both aliases",
+        "Identical relative paths in separate applications remain distinct",
+        "Mount cycles terminate with an explicit diagnostic"
+      ],
+      "productionAcceptance": "Current source-derived paths match controlled actual router topology; all existing behavior, coverage, accessibility and deployment gates still require their own passing evidence."
+    },
+    {
+      "id": "MAPPING-2",
+      "dependencies": [
+        "MAPPING-1"
+      ],
+      "deliverable": "Middleware classification and re-exports",
+      "sourceTargets": [
+        "scripts/testing/platform-register.py:470"
+      ],
+      "implementationTask": "Resolve all six proven middleware symbols including the safety re-exports. Retain their security/operations dependency records and exact registration order; remove a router warning only when its non-router identity is established.",
+      "validationCases": [
+        "All six current symbols classified as middleware",
+        "Actual Router-returning factories are not misclassified",
+        "Unknown/imported opaque functions stay unresolved",
+        "Security/operations work-item identities remain retained"
+      ],
+      "productionAcceptance": "Current source-derived paths match controlled actual router topology; all existing behavior, coverage, accessibility and deployment gates still require their own passing evidence."
+    },
+    {
+      "id": "MAPPING-3",
+      "dependencies": [
+        "MAPPING-1"
+      ],
+      "deliverable": "Finite literal arrays and loop templates",
+      "sourceTargets": [
+        "scripts/audit-endpoints.mjs:363",
+        "scripts/testing/platform-register.py:NODE_EXTRACTOR"
+      ],
+      "implementationTask": "Expand literal alias arrays and bounded const/readonly literal-loop templates with lexical scope. Keep original registration-to-expanded-route relationships; reconcile the existing45-path MaxCore loop diagnostic without losing any path.",
+      "validationCases": [
+        "MaxCore /api,/api/ and /uploads,/uploads/ aliases preserved",
+        "All10 durable export array aliases inherit /api/export",
+        "Four native-analysis paths inherit MaxCore /api",
+        "Fan Hub yields four concrete method/action combinations",
+        "All45 existing POST_PATHS paths retained exactly once",
+        "Unbounded/template shadowing/unsupported expressions remain explicit unknowns"
+      ],
+      "productionAcceptance": "Current source-derived paths match controlled actual router topology; all existing behavior, coverage, accessibility and deployment gates still require their own passing evidence."
+    },
+    {
+      "id": "MAPPING-4",
+      "dependencies": [
+        "MAPPING-1",
+        "MAPPING-3"
+      ],
+      "deliverable": "Bounded helper registration specialization",
+      "sourceTargets": [
+        "server/routes/distribution.ts:8327"
+      ],
+      "implementationTask": "Specialize the shared distribution registration helper at its three proven literal callsites without evaluating the application. Record both declaration and callsite provenance and apply /api/distribution.",
+      "validationCases": [
+        "Spotify/apple/youtube paths exactly represented",
+        "Calls with computed arguments remain unresolved",
+        "Helper parameter shadowing does not leak another call's value",
+        "Existing auth/mutation requirements remain attached"
+      ],
+      "productionAcceptance": "Current source-derived paths match controlled actual router topology; all existing behavior, coverage, accessibility and deployment gates still require their own passing evidence."
+    },
+    {
+      "id": "MAPPING-5",
+      "dependencies": [
+        "MAPPING-1"
+      ],
+      "deliverable": "Python factory/include_router topology",
+      "sourceTargets": [
+        "scripts/testing/platform-register.py:python_routes"
+      ],
+      "implementationTask": "Bind all19 factory-created route declarations to their canonical include_router calls, including factory APIRouter prefixes and the Director try/None availability conditions. Join private gateway/Node/UI consumers separately.",
+      "validationCases": [
+        "Analytics3 /api/analytics paths",
+        "Native analysis5 /api/analysis paths",
+        "Director6 /api/director paths retain conditional availability",
+        "Live/media training5 absolute paths unchanged",
+        "Unavailable conditional factory remains unavailable rather than fake-mounted",
+        "No model import, application startup or network during discovery"
+      ],
+      "productionAcceptance": "Current source-derived paths match controlled actual router topology; all existing behavior, coverage, accessibility and deployment gates still require their own passing evidence."
+    },
+    {
+      "id": "MAPPING-6",
+      "dependencies": [
+        "MAPPING-1"
+      ],
+      "deliverable": "Retained legacy/unmounted sources",
+      "sourceTargets": [
+        "AI enhancements/socialMedia.ts",
+        "external/pdim/artifacts/api-server/src/routes/index.ts"
+      ],
+      "implementationTask": "Keep all84 source declarations and existing full-source work. Record canonical non-mount evidence and separately inspect any supported alternate runtime; retirement requires caller/import/packaging proof and a reviewed change, not deletion for coverage.",
+      "validationCases": [
+        "73 legacy social declarations remain traceable",
+        "11 unmounted PDIM storage declarations remain traceable",
+        "Canonical social router is never aliased to the different root legacy file",
+        "No unmounted declaration is counted as a successful production endpoint"
+      ],
+      "productionAcceptance": "Current source-derived paths match controlled actual router topology; all existing behavior, coverage, accessibility and deployment gates still require their own passing evidence."
+    },
+    {
+      "id": "MAPPING-7",
+      "dependencies": [
+        "MAPPING-2",
+        "MAPPING-3",
+        "MAPPING-4",
+        "MAPPING-5",
+        "MAPPING-6"
+      ],
+      "deliverable": "Full registry/plan/evidence reconciliation",
+      "sourceTargets": [
+        "tests/platform-acceptance-map.json",
+        "scripts/testing/generate-platform-plan.py"
+      ],
+      "implementationTask": "Review semantic old-to-new identity relationships before regenerating the complete registry/80-page plan. Retain every section/dimension/control/backend/global work item; refresh only candidate hashes, then execute current-source exact cases and strict full gates.",
+      "validationCases": [
+        "All80 page aliases and2162 existing section identities retained",
+        "All12972 section dimension steps retained",
+        "Every old mapping work ID has an explicit retained/resolved relationship",
+        "Every original required behavior check preserved or explicitly mapped one-to-many",
+        "No old passing case is relabeled current by metadata regeneration",
+        "100% line/statement/function/branch targets unchanged",
+        "Passing source-resolution tests do not mark features or pages Green"
+      ],
+      "productionAcceptance": "Current source-derived paths match controlled actual router topology; all existing behavior, coverage, accessibility and deployment gates still require their own passing evidence."
+    }
+  ]
+}

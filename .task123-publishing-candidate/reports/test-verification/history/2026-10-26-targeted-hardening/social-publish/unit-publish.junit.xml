@@ -1,0 +1,63 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<testsuites name="vitest tests" tests="26" failures="0" errors="0" time="2.129915722">
+    <testsuite name="tests/unit/auto-posting-recovery.test.ts" timestamp="2026-10-26T12:30:51.064Z" hostname="2fc971e77ddd" tests="23" failures="0" errors="0" skipped="0" time="1.338851067">
+        <testcase classname="tests/unit/auto-posting-recovery.test.ts" name="scheduled social post recovery &gt; enqueues publish-now under a stable identity without resetting delivery or repeating a delayed job" time="0.082352244">
+        </testcase>
+        <testcase classname="tests/unit/auto-posting-recovery.test.ts" name="scheduled social post recovery &gt; refuses cross-owner publish-now and missing connections before queue or state mutations" time="0.003555132">
+        </testcase>
+        <testcase classname="tests/unit/auto-posting-recovery.test.ts" name="scheduled social post recovery &gt; never resets posting delivery for publish-now" time="0.001576638">
+        </testcase>
+        <testcase classname="tests/unit/auto-posting-recovery.test.ts" name="scheduled social post recovery &gt; never resets completed delivery for publish-now" time="0.001316715">
+        </testcase>
+        <testcase classname="tests/unit/auto-posting-recovery.test.ts" name="scheduled social post recovery &gt; never resets failed delivery for publish-now" time="0.001293601">
+        </testcase>
+        <testcase classname="tests/unit/auto-posting-recovery.test.ts" name="scheduled social post recovery &gt; preserves started receipts when publish-now is requested" time="0.001291448">
+        </testcase>
+        <testcase classname="tests/unit/auto-posting-recovery.test.ts" name="scheduled social post recovery &gt; preserves unknown receipts when publish-now is requested" time="0.001329115">
+        </testcase>
+        <testcase classname="tests/unit/auto-posting-recovery.test.ts" name="scheduled social post recovery &gt; preserves confirmed receipts when publish-now is requested" time="0.001267462">
+        </testcase>
+        <testcase classname="tests/unit/auto-posting-recovery.test.ts" name="scheduled social post recovery &gt; does not enqueue when a racing worker changed durable state before admission" time="0.002368482">
+        </testcase>
+        <testcase classname="tests/unit/auto-posting-recovery.test.ts" name="scheduled social post recovery &gt; repairs a persisted-but-unqueued idempotent post without creating another job" time="0.003738889">
+        </testcase>
+        <testcase classname="tests/unit/auto-posting-recovery.test.ts" name="scheduled social post recovery &gt; does not repair an idempotent post with an uncertain delivery receipt" time="0.002478167">
+        </testcase>
+        <testcase classname="tests/unit/auto-posting-recovery.test.ts" name="scheduled social post recovery &gt; retains successful delivery without a nonexistent secondary storage write" time="0.002341992">
+        </testcase>
+        <testcase classname="tests/unit/auto-posting-recovery.test.ts" name="scheduled social post recovery &gt; does not relabel confirmed delivery as failed when a follow-up throws" time="0.003879862">
+        </testcase>
+        <testcase classname="tests/unit/auto-posting-recovery.test.ts" name="scheduled social post recovery &gt; autonomous wrapper preserves the real delivery guard for {&quot;status&quot;:&quot;published&quot;,&quot;results&quot;:[]}" time="0.735448285">
+        </testcase>
+        <testcase classname="tests/unit/auto-posting-recovery.test.ts" name="scheduled social post recovery &gt; autonomous wrapper preserves the real delivery guard for {&quot;status&quot;:&quot;completed&quot;,&quot;results&quot;:[]}" time="0.097348496">
+        </testcase>
+        <testcase classname="tests/unit/auto-posting-recovery.test.ts" name="scheduled social post recovery &gt; autonomous wrapper preserves the real delivery guard for {&quot;status&quot;:&quot;posting&quot;,&quot;results&quot;:[]}" time="0.095876691">
+        </testcase>
+        <testcase classname="tests/unit/auto-posting-recovery.test.ts" name="scheduled social post recovery &gt; autonomous wrapper preserves the real delivery guard for {&quot;status&quot;:&quot;pending&quot;,&quot;results&quot;:[{&quot;outcome&quot;:&quot;unknown&quot;,&quot;success&quot;:false}]}" time="0.066876683">
+        </testcase>
+        <testcase classname="tests/unit/auto-posting-recovery.test.ts" name="scheduled social post recovery &gt; autonomous wrapper preserves the real delivery guard for {&quot;status&quot;:&quot;pending&quot;,&quot;results&quot;:[{&quot;outcome&quot;:&quot;started&quot;,&quot;success&quot;:false}]}" time="0.108406062">
+        </testcase>
+        <testcase classname="tests/unit/auto-posting-recovery.test.ts" name="scheduled social post recovery &gt; autonomous wrapper preserves the real delivery guard for {&quot;status&quot;:&quot;pending&quot;,&quot;results&quot;:[{&quot;outcome&quot;:&quot;confirmed&quot;,&quot;success&quot;:true}]}" time="0.054828022">
+        </testcase>
+        <testcase classname="tests/unit/auto-posting-recovery.test.ts" name="scheduled social post recovery &gt; autonomous wrapper rejects a missing persisted post" time="0.063801575">
+        </testcase>
+        <testcase classname="tests/unit/auto-posting-recovery.test.ts" name="scheduled social post recovery &gt; reloads a persisted pending post after a restart with its scheduled time and stable job ID" time="0.003091723">
+        </testcase>
+        <testcase classname="tests/unit/auto-posting-recovery.test.ts" name="scheduled social post recovery &gt; coalesces repeated initialization without adding a second job or worker" time="0.001136174">
+        </testcase>
+        <testcase classname="tests/unit/auto-posting-recovery.test.ts" name="scheduled social post recovery &gt; closes the worker, queue, and recovery interval during shutdown" time="0.001107411">
+        </testcase>
+    </testsuite>
+    <testsuite name="tests/unit/contract-template-catalog.test.ts" timestamp="2026-10-26T12:30:51.070Z" hostname="2fc971e77ddd" tests="1" failures="0" errors="0" skipped="0" time="0.261850914">
+        <testcase classname="tests/unit/contract-template-catalog.test.ts" name="lists the real built-in catalog on a fresh database, preserves stored overrides and category filters" time="0.260537713">
+        </testcase>
+    </testsuite>
+    <testsuite name="tests/unit/social-batch-publish-route.test.ts" timestamp="2026-10-26T12:30:51.071Z" hostname="2fc971e77ddd" tests="1" failures="0" errors="0" skipped="0" time="0.261401156">
+        <testcase classname="tests/unit/social-batch-publish-route.test.ts" name="routes batch publishing before post IDs, retains ownership and never claims unverified delivery" time="0.260007113">
+        </testcase>
+    </testsuite>
+    <testsuite name="tests/unit/social-hashtag-availability.test.ts" timestamp="2026-10-26T12:30:51.071Z" hostname="2fc971e77ddd" tests="1" failures="0" errors="0" skipped="0" time="0.267812585">
+        <testcase classname="tests/unit/social-hashtag-availability.test.ts" name="keeps unavailable hashtag generation retryable, unexpected failures500, and never fabricates trend metrics" time="0.266448988">
+        </testcase>
+    </testsuite>
+</testsuites>

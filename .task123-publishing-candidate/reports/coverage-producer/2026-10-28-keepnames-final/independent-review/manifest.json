@@ -1,0 +1,40 @@
+{
+  "schemaVersion": 1,
+  "recordedAt": "2026-10-28T12:57:25.589409+00:00",
+  "scope": "Independent outside-checkout review only; repository source and canonical counters unchanged",
+  "verdict": "APPROVE_FOR_CONTROLLED_INTEGRATION_RECHECK",
+  "artifacts": {
+    "README.md": {
+      "bytes": 3023,
+      "sha256": "ede1ca21bca781729c2dbc713728c5783c120a9b124b26312bee18a94fea2e55"
+    },
+    "admission-review.json": {
+      "bytes": 1421,
+      "sha256": "0843d0c1b3648a239f671cace9e13930d8d86a11d2d545094361bcfd984ee999"
+    },
+    "framework-receipt.json": {
+      "bytes": 531,
+      "sha256": "60c85d78b2283d94ec4d47891de7bb94850a5b72c6b3bb0e49bb2f6deb756caf"
+    },
+    "framework.txt": {
+      "bytes": 4867,
+      "sha256": "b0c0dc3bba7291f8c3d1cee4c3b2c66621ad526ce9c25d917807cfd4908a7e91"
+    },
+    "staged/scripts/testing/collect-node-coverage.mjs": {
+      "bytes": 7514,
+      "sha256": "df4c18686189623a3aed4093bc912283b73a1f908cd88ae932d69cbb0766c965"
+    },
+    "staged/scripts/testing/coverage-provenance.mjs": {
+      "bytes": 19616,
+      "sha256": "383546d025265e18e12f7ae81e412413133aebbc0297f23e5e3263528d78592c"
+    },
+    "staged/tests/database-backup-restore-postgres.test.mjs": {
+      "bytes": 11106,
+      "sha256": "152e20065c6d37035290e6786a22b8180fa0f1e80984a1b00bf72485616fc567"
+    },
+    "staged/tests/testing/coverage-provenance.test.mjs": {
+      "bytes": 20695,
+      "sha256": "e9241993e3e42b57912f6e8450969f92d2aef2ffa85419c85f48be79135e4bfb"
+    }
+  }
+}

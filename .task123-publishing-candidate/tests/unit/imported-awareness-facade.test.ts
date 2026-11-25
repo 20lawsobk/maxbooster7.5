@@ -1,0 +1,65 @@
+import { afterEach, describe, expect, it, vi } from "vitest";
+import { contentAwarenessService } from "../../external/maxcore/artifacts/api-server/src/services/contentAwarenessService.js";
+import { buildGenerationEnrichment } from "../../external/maxcore/artifacts/api-server/src/services/autoPostGenerator.js";
+import { getTrendingContext } from "../../external/maxcore/artifacts/api-server/src/services/trendingContextService.js";
+
+describe("imported application awareness integration", () => {
+  afterEach(() => { vi.unstubAllGlobals(); vi.unstubAllEnvs(); });
+  it("passes Python's full receipt and string awareness through both facades", async () => {
+    vi.stubEnv("PDIM_LOCAL_CHANNEL_TOKEN", "test-private-channel");
+    const receipt = { snapshot_id: "sha-snapshot", awareness: "UNTRUSTED observations", expires_at: Date.now() / 1000 + 60 };
+    const fetcher = vi.fn().mockImplementation(async () => new Response(JSON.stringify(receipt)));
+    vi.stubGlobal("fetch", fetcher);
+    const result = await getTrendingContext("instagram");
+    expect(result).toEqual({ ...receipt, contextString: receipt.awareness });
+    expect(result).not.toHaveProperty("confidence");
+    expect(JSON.parse(fetcher.mock.calls[0][1].body)).toEqual({ modality: "social", platform: "instagram" });
+  });
+  it("preserves structured awareness and its context string", async () => {
+    vi.stubEnv("PDIM_LOCAL_CHANNEL_TOKEN", "test-private-channel");
+    const receipt = {
+      snapshot_id: "sha-structured",
+      awareness: { contextString: "grounded context", sources: ["core"] },
+      expires_at: Date.now() / 1000 + 60,
+    };
+    vi.stubGlobal("fetch", vi.fn().mockResolvedValue(new Response(JSON.stringify(receipt))));
+    expect(await contentAwarenessService.getContextForMode("music")).toEqual({
+      ...receipt,
+      contextString: "grounded context",
+    });
+  });
+  it.each([
+    null,
+    [],
+    { snapshot_id: "sha-invalid", awareness: null },
+    { snapshot_id: "sha-invalid", awareness: "" },
+    { snapshot_id: "sha-invalid", awareness: [] },
+    { snapshot_id: "sha-invalid", awareness: { contextString: 123 } },
+  ])("rejects malformed awareness receipts rather than treating them as context (%j)", async (receipt) => {
+    vi.stubEnv("PDIM_LOCAL_CHANNEL_TOKEN", "test-private-channel");
+    vi.stubGlobal("fetch", vi.fn().mockResolvedValue(new Response(JSON.stringify(receipt))));
+    await expect(contentAwarenessService.getContextForMode("music")).rejects.toMatchObject({
+      status: 503,
+      cause: expect.objectContaining({ message: "Invalid awareness receipt" }),
+    });
+  });
+  it("never turns a Core 503 into empty enrichment or synthetic trends", async () => {
+    vi.stubEnv("PDIM_LOCAL_CHANNEL_TOKEN", "test-private-channel");
+    vi.stubGlobal("fetch", vi.fn().mockResolvedValue(new Response("unavailable", { status: 503 })));
+    const failure = await contentAwarenessService.getContextForMode("music").catch(error => error);
+    expect(failure.status).toBe(503);
+    await expect(getTrendingContext()).rejects.toThrow("snapshot unavailable");
+  });
+  it("loads only the live context endpoint and preserves caller direction", async () => {
+    vi.stubEnv("PDIM_LOCAL_CHANNEL_TOKEN", "test-private-channel");
+    const receipt = { snapshot_id: "live", awareness: "live signals", expires_at: Date.now() / 1000 + 60 };
+    const fetcher = vi.fn().mockResolvedValue(new Response(JSON.stringify(receipt)));
+    vi.stubGlobal("fetch", fetcher);
+    const context = "  user supplied\nexact context ";
+    const result = await buildGenerationEnrichment({ userId: "u", platforms: ["instagram"], context });
+    expect(result).toMatchObject({ awarenessBlock: "live signals\n" + context, hasData: true, receipt });
+    expect(fetcher).toHaveBeenCalledTimes(1);
+    expect(fetcher.mock.calls[0][0]).toContain("/api/awareness/unified/context");
+    expect(JSON.parse(fetcher.mock.calls[0][1].body)).toEqual({ modality: "content", platform: "instagram" });
+  });
+});

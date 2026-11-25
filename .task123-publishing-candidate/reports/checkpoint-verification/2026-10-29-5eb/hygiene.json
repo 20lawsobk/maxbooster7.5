@@ -1,0 +1,20 @@
+{
+  "status": "PASS",
+  "scope": "Known configured-value hygiene,regular-file/size and complete new archive-member inspection; not an unknown-secret detector",
+  "checkedFiles": 1609,
+  "archiveMembersScanned": 1202,
+  "knownCredentialMatches": [],
+  "symlinks": [],
+  "oversizeFiles": [],
+  "ignoredFilesToRetain": [
+    "reports/platform-evidence/2026-10-28-case-identity-repair-candidate/raw/framework/framework-sealed.log",
+    "reports/platform-evidence/2026-10-28-case-identity-repair-candidate/raw/vitest/after.log",
+    "reports/platform-evidence/2026-10-28-case-identity-repair-candidate/raw/vitest/before.log",
+    "reports/platform-evidence/2026-10-28-case-identity-repair-candidate/raw/vitest/config-runner-attempt.log",
+    "reports/platform-evidence/2026-10-29-access-policy-candidate/helper-sql-acceptance.log",
+    "reports/test-verification/history/2026-10-29-5eb416a0-master/launch-evidence.tar.gz",
+    "reports/test-verification/history/2026-10-29-5eb416a0-master/master-evidence.tar.gz",
+    "reports/test-verification/history/2026-10-29-8a9b638c-master/launch-evidence.tar.gz",
+    "reports/test-verification/history/2026-10-29-8a9b638c-master/master-evidence.tar.gz"
+  ]
+}

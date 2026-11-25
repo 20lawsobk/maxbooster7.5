@@ -1,0 +1,350 @@
+{
+  "schemaVersion": 1,
+  "scope": "Existing client-reachable creative content creation, rewriting, and rendering flows. This is a source inventory, not proof of live provider success.",
+  "liveE2ePrerequisite": "The generation reliability gate requires an isolated non-admin account, an exact development origin, a non-production provider receipt, and safe artifact cleanup for media.",
+  "surfaces": [
+    {
+      "id": "social-url-composer",
+      "productArea": "Social",
+      "clientFile": "client/src/pages/SocialMedia.tsx",
+      "action": "Generate social copy or media from a supplied public URL",
+      "backend": ["POST /api/social/generate-from-url", "POST /api/multimodal/generate"],
+      "maxCorePath": ["/api/platform/social/generate", "/api/generate/content", "/api/generate/image", "/api/generate/audio", "/api/generate-video"],
+      "modalities": ["text", "image", "audio", "video"],
+      "result": "Source-attributed copy and, when requested, a rendered media asset",
+      "ownerBound": true,
+      "verification": ["tests/e2e/generation-path-matrix.json", "scripts/testing/generation-reliability-gate.mjs"],
+      "liveE2e": "requires isolated account; media also requires advertised cleanup"
+    },
+    {
+      "id": "social-page-direct-copy",
+      "productArea": "Social",
+      "clientFile": "client/src/pages/SocialMedia.tsx",
+      "action": "Generate manual platform copy",
+      "backend": ["POST /api/social/generate-content"],
+      "maxCorePath": ["/api/platform/social/generate"],
+      "modalities": ["text"],
+      "result": "MaxCore-generated social copy",
+      "ownerBound": true,
+      "verification": ["scripts/testing/generation-reliability-gate.mjs"],
+      "liveE2e": "requires isolated account and non-production provider receipt"
+    },
+    {
+      "id": "social-optimized-draft",
+      "productArea": "Social",
+      "clientFile": "client/src/pages/SocialMedia.tsx",
+      "action": "Generate a quality-scored social draft, then review and schedule it",
+      "backend": ["POST /api/social/generate-enhanced-content", "POST /api/social/schedule-post"],
+      "maxCorePath": ["/api/platform/social/generate"],
+      "modalities": ["text"],
+      "result": "Owner-generated draft with recommendation metadata, scheduled only after user review",
+      "ownerBound": true,
+      "verification": ["tests/unit/social-enhanced-generation-contract.test.mjs"],
+      "liveE2e": "requires isolated account, connected provider, and non-production delivery receipt"
+    },
+    {
+      "id": "social-component-copy",
+      "productArea": "Social",
+      "clientFile": "client/src/components/social/ContentGenerator.tsx",
+      "action": "Generate social copy from the reusable content composer",
+      "backend": ["POST /api/social/generate"],
+      "maxCorePath": ["/api/platform/social/generate"],
+      "modalities": ["text"],
+      "result": "MaxCore-generated content for selected platforms",
+      "ownerBound": true,
+      "verification": ["source-traced"],
+      "liveE2e": "not independently executed in this revision"
+    },
+    {
+      "id": "social-image",
+      "productArea": "Social",
+      "clientFile": "client/src/components/content/AIImageGenerator.tsx",
+      "action": "Create an image for a social post",
+      "backend": ["POST /api/social/generate-image"],
+      "maxCorePath": ["/api/generate/image"],
+      "modalities": ["image"],
+      "result": "Validated image persisted under the requesting owner",
+      "ownerBound": true,
+      "verification": ["tests/e2e/generation-path-matrix.json", "scripts/testing/generation-reliability-gate.mjs"],
+      "liveE2e": "requires isolated account, media-write opt-in, and advertised cleanup"
+    },
+    {
+      "id": "social-multimodal",
+      "productArea": "Social",
+      "clientFile": "client/src/components/social/ContentGenerator.tsx",
+      "action": "Generate a text-led package with selected media assets",
+      "backend": ["POST /api/multimodal/generate"],
+      "maxCorePath": ["/api/generate/content", "/api/generate/image", "/api/generate/audio", "/api/generate-video"],
+      "modalities": ["text", "image", "audio", "video"],
+      "result": "Nonempty package with separately rendered modality outputs",
+      "ownerBound": true,
+      "verification": ["source-traced"],
+      "liveE2e": "requires isolated account and owner-scoped artifact cleanup"
+    },
+    {
+      "id": "social-ab-variants",
+      "productArea": "Social",
+      "clientFile": "client/src/components/social/ContentGenerator.tsx",
+      "action": "Create A/B copy variants",
+      "backend": ["POST /api/social/ai-content/ab-variants"],
+      "maxCorePath": ["/api/platform/social/generate"],
+      "modalities": ["text"],
+      "result": "MaxCore-generated variants with source metadata",
+      "ownerBound": true,
+      "verification": ["server/services/__tests__/maxcoreDomainAdapter.test.ts"],
+      "liveE2e": "requires isolated account and non-production provider receipt"
+    },
+    {
+      "id": "social-multilingual-copy",
+      "productArea": "Social",
+      "clientFile": "client/src/components/social/ContentGenerator.tsx",
+      "action": "Translate and culturally adapt user-supplied copy",
+      "backend": ["POST /api/social/ai-content/multilingual"],
+      "maxCorePath": ["/api/generate/content"],
+      "modalities": ["text"],
+      "result": "One bounded MaxCore translation per validated language code",
+      "ownerBound": true,
+      "verification": ["server/services/__tests__/aiContentMaxCoreRouting.test.ts"],
+      "liveE2e": "requires isolated account and non-production provider receipt"
+    },
+    {
+      "id": "social-audio-to-copy",
+      "productArea": "Social",
+      "clientFile": "client/src/components/content/ServerVideoGenerator.tsx",
+      "action": "Analyze uploaded audio and create social copy",
+      "backend": ["POST /api/social/analyze-audio"],
+      "maxCorePath": ["/api/generate/content"],
+      "modalities": ["text"],
+      "result": "Audio analysis plus MaxCore-generated post text",
+      "ownerBound": true,
+      "verification": ["source-traced"],
+      "liveE2e": "not independently executed in this revision"
+    },
+    {
+      "id": "social-image-to-copy",
+      "productArea": "Social",
+      "clientFile": "client/src/components/content/ServerVideoGenerator.tsx",
+      "action": "Analyze an uploaded image and create social copy",
+      "backend": ["POST /api/social/analyze-image"],
+      "maxCorePath": ["/api/generate/content"],
+      "modalities": ["text"],
+      "result": "Image analysis plus MaxCore-generated post text",
+      "ownerBound": true,
+      "verification": ["source-traced"],
+      "liveE2e": "not independently executed in this revision"
+    },
+    {
+      "id": "dashboard-copy-optimization",
+      "productArea": "Dashboard",
+      "clientFile": "client/src/pages/Dashboard.tsx",
+      "action": "Generate an improved unpublished draft",
+      "backend": ["POST /api/ai/optimize-content"],
+      "maxCorePath": ["/api/platform/social/generate"],
+      "modalities": ["text"],
+      "result": "Owner-scoped draft update after content-version validation",
+      "ownerBound": true,
+      "verification": ["source-traced"],
+      "liveE2e": "not independently executed in this revision"
+    },
+    {
+      "id": "advertising-copy",
+      "productArea": "Advertising",
+      "clientFile": "client/src/components/advertising/CreativeVariantGenerator.tsx",
+      "action": "Generate advertising copy variants",
+      "backend": ["POST /api/advertising/generate-content"],
+      "maxCorePath": ["/api/platform/ads/generate"],
+      "modalities": ["text"],
+      "result": "Requested nonempty MaxCore ad creatives",
+      "ownerBound": true,
+      "verification": ["tests/e2e/generation-path-matrix.json", "scripts/testing/generation-reliability-gate.mjs"],
+      "liveE2e": "requires isolated account and non-production provider receipt"
+    },
+    {
+      "id": "advertising-campaign-draft",
+      "productArea": "Advertising",
+      "clientFile": "client/src/pages/Advertisement.tsx",
+      "action": "Generate and save an advertising campaign draft",
+      "backend": ["POST /api/advertising/generate-campaign"],
+      "maxCorePath": ["/api/platform/ads/generate"],
+      "modalities": ["text"],
+      "result": "MaxCore-generated campaign content persisted as a draft, not launched",
+      "ownerBound": true,
+      "verification": ["source-traced"],
+      "liveE2e": "not run because the route persists user data"
+    },
+    {
+      "id": "advertising-image",
+      "productArea": "Advertising",
+      "clientFile": "client/src/pages/Advertisement.tsx",
+      "action": "Create an advertising image",
+      "backend": ["POST /api/advertising/generate-image"],
+      "maxCorePath": ["/api/generate/image"],
+      "modalities": ["image"],
+      "result": "Validated owner-scoped image artifact",
+      "ownerBound": true,
+      "verification": ["tests/e2e/generation-path-matrix.json", "scripts/testing/generation-reliability-gate.mjs"],
+      "liveE2e": "requires isolated account, media-write opt-in, and advertised cleanup"
+    },
+    {
+      "id": "advertising-video",
+      "productArea": "Advertising",
+      "clientFile": "client/src/pages/Advertisement.tsx",
+      "action": "Create an advertising video",
+      "backend": ["POST /api/advertising/generate-video"],
+      "maxCorePath": ["/api/generate-video"],
+      "modalities": ["video"],
+      "result": "Completed renderer artifact with actual renderer mode",
+      "ownerBound": true,
+      "verification": ["tests/e2e/generation-path-matrix.json", "scripts/testing/generation-reliability-gate.mjs"],
+      "liveE2e": "requires isolated account, media-write opt-in, and advertised cleanup"
+    },
+    {
+      "id": "songwriting-assist",
+      "productArea": "Songwriting",
+      "clientFile": "client/src/pages/ProjectsPageImpl.tsx",
+      "action": "Generate songwriting suggestions",
+      "backend": ["POST /api/songwriting/ai-assist"],
+      "maxCorePath": ["/api/generate/content"],
+      "modalities": ["text"],
+      "result": "MaxCore lyric suggestions and optional rhyme copy",
+      "ownerBound": true,
+      "verification": ["source-traced"],
+      "liveE2e": "not independently executed in this revision"
+    },
+    {
+      "id": "outreach-pitch",
+      "productArea": "Outreach",
+      "clientFile": "client/src/pages/OutreachCRM.tsx",
+      "action": "Draft an outreach pitch without sending it",
+      "backend": ["POST /api/outreach/generate-pitch"],
+      "maxCorePath": ["/api/generate/text"],
+      "modalities": ["text"],
+      "result": "Owner-bound MaxCore pitch returned to the composer",
+      "ownerBound": true,
+      "verification": ["source-traced"],
+      "liveE2e": "not independently executed in this revision"
+    },
+    {
+      "id": "studio-audio-from-text",
+      "productArea": "Studio",
+      "clientFile": "client/src/components/studio/AIMusicGenerator.tsx",
+      "action": "Generate audio from text and musical controls",
+      "backend": ["POST /api/studio/generation/text", "GET /api/audio-job/:jobId"],
+      "maxCorePath": ["/api/generate/audio"],
+      "modalities": ["audio"],
+      "result": "Completed MaxCore audio job persisted for the project owner",
+      "ownerBound": true,
+      "verification": ["server/services/__tests__/aiAudioGeneratorService.test.ts", "server/services/__tests__/studioMaxCoreTransport.test.ts"],
+      "liveE2e": "requires isolated account and verified artifact cleanup"
+    },
+    {
+      "id": "studio-pattern-generation",
+      "productArea": "Studio",
+      "clientFile": "client/src/components/studio/FlowStateLyricsToMelody.tsx",
+      "action": "Generate melody, chords, drums, and arrangement data",
+      "backend": ["POST /api/studio/generation/pattern/melody", "POST /api/studio/generation/pattern/chords", "POST /api/studio/generation/pattern/arrangement"],
+      "maxCorePath": ["/api/generate/audio"],
+      "modalities": ["audio"],
+      "result": "MaxCore audio job and parsed MIDI notes for the DAW",
+      "ownerBound": true,
+      "verification": ["server/services/__tests__/studioMaxCoreTransport.test.ts"],
+      "liveE2e": "requires isolated account and verified artifact cleanup"
+    },
+    {
+      "id": "social-video-and-music-video",
+      "productArea": "Social",
+      "clientFile": "client/src/components/content/ServerVideoGenerator.tsx",
+      "action": "Render a social video or beat-synced music video",
+      "backend": ["POST /api/social/generate-video", "POST /api/social/generate-music-video"],
+      "maxCorePath": ["/api/generate-video", "/api/generate/content"],
+      "modalities": ["video"],
+      "result": "Owner-bound background job with rendered output and job status",
+      "ownerBound": true,
+      "verification": ["tests/e2e/generation-path-matrix.json", "server/services/__tests__/imageToVideoMaxCore.test.ts"],
+      "liveE2e": "requires isolated account and verified job/artifact cleanup"
+    },
+    {
+      "id": "advertising-autopilot-media",
+      "productArea": "Advertising",
+      "clientFile": "client/src/pages/Advertisement.tsx",
+      "action": "Generate media for explicitly configured scheduled advertising drafts",
+      "backend": ["POST /api/advertising/start", "AdvertisingAutopilotRunner"],
+      "maxCorePath": ["/api/platform/ads/generate", "/api/generate/image", "/api/generate/audio", "/api/generate-video"],
+      "modalities": ["text", "image", "audio", "video"],
+      "result": "Owner-bound media is generated before draft persistence; publishing remains separate",
+      "ownerBound": true,
+      "verification": ["server/services/__tests__/aiContentMaxCoreRouting.test.ts"],
+      "liveE2e": "not run because it creates account drafts and scheduled jobs"
+    },
+    {
+      "id": "procedural-media-tool",
+      "productArea": "Shared generation",
+      "clientFile": "client/src/components/content/LocalMediaRenderer.tsx",
+      "action": "Create a controlled poster, instrumental, or promotional clip",
+      "backend": ["POST /api/generate/image", "POST /api/generate/audio", "POST /api/generate-video"],
+      "maxCorePath": ["/api/generate/image", "/api/generate/audio", "/api/generate-video"],
+      "modalities": ["image", "audio", "video"],
+      "result": "MaxCore procedural render with validated persisted artifact; this is not evidence of trained media weights",
+      "ownerBound": true,
+      "verification": ["client/src/components/content/LocalMediaRenderer.tsx"],
+      "liveE2e": "requires isolated account, media-write opt-in, and advertised cleanup"
+    }
+  ],
+  "nonCreativeOperations": [
+    {
+      "clientFile": "client/src/pages/Contracts.tsx",
+      "backend": "POST /api/contracts/generate",
+      "classification": "Deterministic template merge and draft persistence; not model-generated content"
+    },
+    {
+      "clientFile": "client/src/components/distribution/ContentIDManager.tsx",
+      "productArea": "Distribution",
+      "backend": "POST /api/distribution/content-id/generate",
+      "classification": "Exact file SHA-256 digest; not Content ID registration or generative AI"
+    },
+    {
+      "clientFile": "client/src/components/distribution/ISRCManager.tsx",
+      "productArea": "Distribution",
+      "backend": "POST /api/distribution/codes/generate",
+      "classification": "Identifier creation; not generative AI"
+    },
+    {
+      "clientFile": "client/src/pages/Distribution.tsx",
+      "productArea": "Distribution",
+      "backend": "POST /api/distribution/releases/:id/ddex/preview and GET /api/distribution/releases/:id/ddex/download",
+      "classification": "Owner-scoped DDEX XML preview and ZIP package; not schema certification or distributor acceptance"
+    },
+    {
+      "clientFile": "client/src/components/distribution/AutomatedQC.tsx",
+      "productArea": "Distribution",
+      "backend": "POST /api/distribution/qc/analyze and POST /api/distribution/qc/fix",
+      "classification": "Persisted QC report and individually acknowledged fixes"
+    },
+    {
+      "clientFile": "client/src/pages/Distribution.tsx",
+      "productArea": "Distribution",
+      "backend": "POST /api/distribution/export-report and client PDF report export",
+      "classification": "CSV and PDF exports of actual account release records"
+    },
+    {
+      "clientFile": "client/src/pages/Royalties.tsx",
+      "backend": "POST /api/payouts/statements/generate",
+      "classification": "Financial statement output; not creative generation"
+    },
+    {
+      "clientFile": "client/src/components/dashboard/RevenueForecast.tsx",
+      "backend": "POST /api/revenue-forecast/generate",
+      "classification": "Analytics forecast; not creative generation"
+    },
+    {
+      "clientFile": "client/src/components/marketplace/StorefrontBuilder.tsx",
+      "backend": "GET /api/storefront/generate-slug and GET /api/storefront/suggest-url",
+      "classification": "Slug/URL suggestions; not model-generated creative content"
+    },
+    {
+      "clientFile": "client/src/components/social/ContentGenerator.tsx",
+      "backend": "GET /api/social/ai-content/trending-topics, GET /api/social/ai-content/posting-times, POST /api/social/ai-content/optimize-hashtags",
+      "classification": "Recommendations and metadata; not rendered content artifacts"
+    }
+  ]
+}

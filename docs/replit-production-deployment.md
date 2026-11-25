@@ -28,14 +28,18 @@ Nix channel selection rather than inventing an unverified channel pin.
 
 ## Editor and Publishing commands
 
-The editor **Run** action executes `npm run dev`. Publishing builds with
-`bash build.sh` and starts with `bash start.sh`. The build command packs runtime
-capsules and removes build inputs in Replit's disposable Publishing copy.
+The editor **Run** action executes `npm run dev`. Publishing runs
+`npm run deployment:build` and `npm run deployment:start`. The build alias
+delegates to `bash build.sh`; its compile phase uses the adapted
+`script/build.ts`, then the outer pipeline packs runtime capsules and removes
+build inputs in Replit's disposable Publishing copy. The start alias delegates
+to `bash start.sh`.
 **Do not run `build.sh` in the editor checkout or a source workspace.** Normal
 source builds use `npm run build`.
 
-The Node 22 and Python 3.11 modules supply editor/build tools. `replit.nix` also
-declares `nodejs_22` (including npm), a `nodejs` executable alias, and `nix`
+The Node 24, Python 3.12, and .NET 10 modules supply editor/build tools. The portable
+deployed Node runtime is pinned to Node 24.22.1; root package installation uses
+npm 11.19.1. `replit.nix` also declares `nodejs_24` and `nix`
 (including `nix-shell`). Run `npm run check:tools` to verify all five requested
 commands, matching Node aliases, Nix expression evaluation and shell execution.
 Publishing carries
@@ -45,8 +49,8 @@ before installation. `start.sh` explicitly selects production mode; the editor's
 
 Select **Reserved VM** and the **web server** application type in
 **Publishing → Adjust settings**. The repository's owner-requested target is
-**North America, 16 vCPU / 64 GiB**; select the corresponding available machine
-and region in that UI. Machine availability, resource allocation, region and
+**North America, 16 vCPU / 64 GiB**; confirm the actual available machine and
+region in that UI. Machine availability, resource allocation, region and
 billing are not established by these files. Replit documents Reserved VM as an
 always-on server suited to background work and memory-intensive applications.
 
@@ -58,7 +62,7 @@ by the production supervisor. Do not add public port mappings for them.
 
 | Setting | Where to configure it | Requirement |
 | --- | --- | --- |
-| `NEON_DATABASE_URL` or `DATABASE_URL` | Secrets / Production app secrets | The existing Neon PostgreSQL connection string. `NEON_DATABASE_URL` takes precedence. Do not replace it with a newly provisioned Replit database. |
+| `NEON_PRIMARY_URL`, `NEON_DATABASE_URL`, or `DATABASE_URL` | Secrets / Production app secrets | The app selects `NEON_PRIMARY_URL` first, then `NEON_DATABASE_URL`; `DATABASE_URL` is a compatibility fallback. Do not replace the configured Neon database with a newly provisioned Replit database. |
 | `SESSION_SECRET` | Secrets / Production app secrets | A stable random secret of at least 32 characters. |
 | `MAXCORE_LOCAL=1`, `PDIM_FORCE_REMOTE=0` | Committed non-sensitive `.replit` defaults | Use the imported local implementations. |
 | `MAXCORE_SERVING_RELEASE=live-awareness` | Committed non-sensitive `.replit` default | Select the public live-awareness lifecycle. This setting does not certify inference quality. |

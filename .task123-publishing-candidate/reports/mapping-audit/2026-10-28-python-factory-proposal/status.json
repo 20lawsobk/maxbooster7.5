@@ -1,0 +1,11 @@
+{
+  "recordedAt": "2026-10-28T18:05:33.279109+00:00",
+  "status": "UNREVIEWED_NOT_LANDED",
+  "productionReady": false,
+  "tests": "NOT_RUN_AS_COMPLETED_CANDIDATE",
+  "sourceBaseAtPersistence": "10d192675beefcf1b7beef3ce47c271db0cc17cf",
+  "canonicalChanges": false,
+  "intendedFactoryDeclarations": 19,
+  "intendedUnconditional": 13,
+  "intendedConditional": 6
+}

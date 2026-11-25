@@ -32,9 +32,17 @@ interface ContentIdRegistration {
   trackId: string;
   trackTitle: string;
   fingerprint: string;
-  status: "pending" | "generating" | "registered" | "conflict" | "failed";
+  fingerprintAlgorithm?: string | null;
+  fingerprintByteLength?: number | null;
+  status:
+    | "pending"
+    | "fingerprint_generated"
+    | "unverified_legacy"
+    | "registered"
+    | "conflict"
+    | "failed";
   registeredAt?: string;
-  platforms: string[];
+  platforms?: string[];
   conflictDetails?: ContentConflict;
 }
 
@@ -71,7 +79,7 @@ interface ContentIDManagerProps {
 export function ContentIDManager({
   releaseId,
   tracks,
-  _onComplete,
+  onComplete,
 }: ContentIDManagerProps) {
   const { toast } = useToast();
   const queryClient = useQueryClient();
@@ -103,9 +111,9 @@ export function ContentIDManager({
     },
     onSuccess: (data) => {
       toast({
-        title: "Fingerprint Generated",
+        title: "Exact file digest saved",
         description:
-          data.message || "Audio fingerprint has been generated successfully.",
+          data.message || "The exact audio file digest was saved.",
       });
       queryClient.invalidateQueries({
         queryKey: [`/api/distribution/releases/${releaseId}/content-id`],
@@ -133,9 +141,10 @@ export function ContentIDManager({
     },
     onSuccess: (data) => {
       toast({
-        title: "Fingerprints Generated",
-        description: `Generated fingerprints for ${data.count} tracks.`,
+        title: "Exact file digests saved",
+        description: data.message,
       });
+      onComplete?.();
       queryClient.invalidateQueries({
         queryKey: [`/api/distribution/releases/${releaseId}/content-id`],
       });
@@ -143,38 +152,6 @@ export function ContentIDManager({
     onError: (error: Error) => {
       toast({
         title: "Generation Failed",
-        description: error.message,
-        variant: "destructive",
-      });
-    },
-  });
-
-  const registerMutation = useMutation({
-    mutationFn: async (trackId: string) => {
-      const response = await apiRequest(
-        "POST",
-        `/api/distribution/content-id/register`,
-        {
-          releaseId,
-          trackId,
-        },
-      );
-      return response.json();
-    },
-    onSuccess: (data) => {
-      toast({
-        title: "Content ID Registered",
-        description:
-          data.message ||
-          "Your track has been registered for Content ID protection.",
-      });
-      queryClient.invalidateQueries({
-        queryKey: [`/api/distribution/releases/${releaseId}/content-id`],
-      });
-    },
-    onError: (error: Error) => {
-      toast({
-        title: "Registration Failed",
         description: error.message,
         variant: "destructive",
       });
@@ -227,14 +204,15 @@ export function ContentIDManager({
   const registeredCount = registrations.filter(
     (r) => r.status === "registered",
   ).length;
-  const pendingCount = registrations.filter(
-    (r) => r.status === "pending" || r.status === "generating",
+  const digestCount = registrations.filter(
+    (r) => r.status === "fingerprint_generated",
   ).length;
-  const conflictCount = registrations.filter(
-    (r) => r.status === "conflict",
+  const pendingCount = tracks.length - digestCount;
+  const legacyCount = registrations.filter(
+    (r) => r.status === "unverified_legacy",
   ).length;
   const progress =
-    tracks.length > 0 ? (registeredCount / (tracks.length || 1)) * 100 : 0;
+    tracks.length > 0 ? (digestCount / tracks.length) * 100 : 0;
 
   const getStatusConfig = (status: string) => {
     switch (status) {
@@ -243,7 +221,7 @@ export function ContentIDManager({
           icon: CheckCircle2,
           color: "text-green-500",
           bg: "bg-green-500/10",
-          label: "Registered",
+          label: "Provider-confirmed registration",
         };
       case "generating":
         return {
@@ -251,6 +229,20 @@ export function ContentIDManager({
           color: "text-blue-500",
           bg: "bg-blue-500/10",
           label: "Generating",
+        };
+      case "fingerprint_generated":
+        return {
+          icon: CheckCircle2,
+          color: "text-blue-500",
+          bg: "bg-blue-500/10",
+          label: "Exact file digest saved",
+        };
+      case "unverified_legacy":
+        return {
+          icon: AlertTriangle,
+          color: "text-orange-500",
+          bg: "bg-orange-500/10",
+          label: "Unverified old status",
         };
       case "pending":
         return {
@@ -301,11 +293,12 @@ export function ContentIDManager({
             <div>
               <CardTitle className="flex items-center gap-2">
                 <Fingerprint className="h-5 w-5 text-primary" />
-                Content ID Protection
+                Track File Integrity
               </CardTitle>
               <CardDescription>
-                Generate audio fingerprints and register for Content ID
-                protection across platforms.
+                Save exact-file SHA-256 digests for file integrity. This is not
+                an acoustic fingerprint and does not register content with any
+                platform.
               </CardDescription>
             </div>
             <div className="flex gap-2">
@@ -331,10 +324,10 @@ export function ContentIDManager({
           <div className="space-y-2">
             <div className="flex items-center justify-between text-sm">
               <span className="text-muted-foreground">
-                Registration Progress
+                Exact File Digest Coverage
               </span>
               <span className="font-medium">
-                {registeredCount} / {tracks.length} tracks protected
+                  {digestCount} / {tracks.length} track files hashed
               </span>
             </div>
             <Progress value={progress} className="h-2" />
@@ -345,7 +338,7 @@ export function ContentIDManager({
               <p className="text-2xl font-bold text-green-500">
                 {registeredCount}
               </p>
-              <p className="text-xs text-muted-foreground">Registered</p>
+              <p className="text-xs text-muted-foreground">Platform-registered</p>
             </div>
             <div className="text-center p-3 bg-yellow-500/10 rounded-lg">
               <p className="text-2xl font-bold text-yellow-500">
@@ -355,19 +348,20 @@ export function ContentIDManager({
             </div>
             <div className="text-center p-3 bg-orange-500/10 rounded-lg">
               <p className="text-2xl font-bold text-orange-500">
-                {conflictCount}
+                {legacyCount}
               </p>
-              <p className="text-xs text-muted-foreground">Conflicts</p>
+              <p className="text-xs text-muted-foreground">Unverified old status</p>
             </div>
           </div>
 
-          {conflictCount > 0 && (
-            <Alert variant="destructive">
-              <AlertTriangle className="h-4 w-4" />
-              <AlertTitle>Content Conflicts Detected</AlertTitle>
+          {tracks.length > 0 && (
+            <Alert>
+              <Info className="h-4 w-4" />
+              <AlertTitle>Platform registration is unavailable</AlertTitle>
               <AlertDescription>
-                {conflictCount} track(s) have potential conflicts with existing
-                content. Please review and resolve.
+                No Content ID provider is connected. Hashing records the exact
+                file bytes only; it does not create claims or protection on
+                YouTube, Meta, or another service.
               </AlertDescription>
             </Alert>
           )}
@@ -376,7 +370,7 @@ export function ContentIDManager({
 
       <Card>
         <CardHeader>
-          <CardTitle>Track Registration Status</CardTitle>
+          <CardTitle>Track File Digest Status</CardTitle>
         </CardHeader>
         <CardContent>
           <div className="space-y-3">
@@ -402,7 +396,7 @@ export function ContentIDManager({
                     {registration?.fingerprint && (
                       <div className="flex items-center gap-2 mt-1">
                         <Waves className="h-3 w-3 text-muted-foreground" />
-                        <span className="text-xs text-muted-foreground font-mono truncate">
+                      <span className="text-xs text-muted-foreground font-mono truncate">
                           {registration.fingerprint.substring(0, 24)}...
                         </span>
                       </div>
@@ -433,32 +427,27 @@ export function ContentIDManager({
                       </Button>
                     )}
 
-                    {status === "generating" && registration?.fingerprint && (
-                      <Button
-                        size="sm"
-                        onClick={() => registerMutation.mutate(track.id)}
-                        disabled={registerMutation.isPending}
-                      >
-                        <Shield className="h-3 w-3 mr-1" />
-                        Register
-                      </Button>
-                    )}
-
                     {status === "conflict" && (
                       <Button
                         size="sm"
                         variant="destructive"
                         onClick={() => {
-                          setSelectedTrack(registration!);
-                          setShowResolutionDialog(true);
+                          toast({
+                            title: "Provider action unavailable",
+                            description:
+                              "No connected Content ID provider can verify or resolve this status.",
+                            variant: "destructive",
+                          });
                         }}
                       >
                         <AlertTriangle className="h-3 w-3 mr-1" />
-                        Resolve
+                        Details
                       </Button>
                     )}
 
-                    {status === "registered" && (
+                    {(status === "registered" ||
+                      status === "fingerprint_generated" ||
+                      status === "unverified_legacy") && (
                       <Button
                         size="sm"
                         variant="ghost"
@@ -484,7 +473,7 @@ export function ContentIDManager({
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <Fingerprint className="h-5 w-5" />
-              Content ID Details
+              File Integrity Details
             </DialogTitle>
             <DialogDescription>{selectedTrack?.trackTitle}</DialogDescription>
           </DialogHeader>
@@ -501,8 +490,14 @@ export function ContentIDManager({
                 {selectedTrack.fingerprint && (
                   <div>
                     <span className="text-sm text-muted-foreground">
-                      Fingerprint
+                      Exact-file SHA-256 digest
                     </span>
+                    <p className="text-xs text-muted-foreground mt-1">
+                      {selectedTrack.fingerprintAlgorithm || "Unverified algorithm"}
+                      {selectedTrack.fingerprintByteLength
+                        ? ` · ${selectedTrack.fingerprintByteLength.toLocaleString()} bytes`
+                        : ""}
+                    </p>
                     <div className="flex items-center gap-2 mt-1">
                       <code className="text-xs bg-background p-2 rounded flex-1 truncate">
                         {selectedTrack.fingerprint}
@@ -532,13 +527,13 @@ export function ContentIDManager({
                     </span>
                   </div>
                 )}
-                {selectedTrack.platforms.length > 0 && (
+                {(selectedTrack.platforms || []).length > 0 && (
                   <div>
                     <span className="text-sm text-muted-foreground">
-                      Protected On
+                      Provider-confirmed platforms
                     </span>
                     <div className="flex flex-wrap gap-2 mt-1">
-                      {selectedTrack.platforms.map((platform) => (
+                      {(selectedTrack.platforms || []).map((platform) => (
                         <Badge key={platform} variant="outline">
                           {platform}
                         </Badge>

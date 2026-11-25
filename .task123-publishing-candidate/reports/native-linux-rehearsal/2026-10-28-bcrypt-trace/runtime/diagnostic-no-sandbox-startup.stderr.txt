@@ -1,0 +1,27 @@
+[118:1028/090515.628627:ERROR:dbus/bus.cc:406] Failed to connect to the bus: Failed to connect to socket /run/dbus/system_bus_socket: No such file or directory
+[118:1028/090515.839524:ERROR:dbus/bus.cc:406] Failed to connect to the bus: Could not parse server address: Unknown address type (examples of valid types are "tcp" and on UNIX "unix")
+[118:1028/090515.839617:ERROR:dbus/bus.cc:406] Failed to connect to the bus: Failed to connect to socket /run/dbus/system_bus_socket: No such file or directory
+[118:1028/090515.839634:ERROR:dbus/bus.cc:406] Failed to connect to the bus: Failed to connect to socket /run/dbus/system_bus_socket: No such file or directory
+[118:1028/090515.882121:ERROR:dbus/object_proxy.cc:572] Failed to call method: org.freedesktop.DBus.NameHasOwner: object_path= /org/freedesktop/DBus: unknown error type: 
+[118:1028/090515.882252:ERROR:dbus/bus.cc:406] Failed to connect to the bus: Could not parse server address: Unknown address type (examples of valid types are "tcp" and on UNIX "unix")
+[118:1028/090515.957133:ERROR:dbus/object_proxy.cc:572] Failed to call method: org.freedesktop.DBus.NameHasOwner: object_path= /org/freedesktop/DBus: unknown error type: 
+[server] file:///artifact/resources/app.asar/dist/index.mjs:33
+      throw new Error(
+            ^
+
+Error: [env] Critical environment variables missing:
+  SESSION_SECRET: Invalid input: expected string, received undefined
+    at parseEnv (file:///artifact/resources/app.asar/dist/index.mjs:33:13)
+    at server/config/env.ts (file:///artifact/resources/app.asar/dist/index.mjs:101:11)
+    at __init (file:///artifact/resources/app.asar/dist/index.mjs:12:58)
+    at server/config/index.ts (file:///artifact/resources/app.asar/dist/index.mjs:502:5)
+    at __init (file:///artifact/resources/app.asar/dist/index.mjs:12:58)
+    at file:///artifact/resources/app.asar/dist/index.mjs:345060:1
+    at ModuleJob.run (node:internal/modules/esm/module_job:561:25)
+    at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+    at async node:internal/modules/esm/loader:647:26
+    at async asyncRunEntryPointWithESMLoader (node:internal/modules/run_main:116:5)
+
+Node.js v24.22.0
+[electron] Bundled server exited code=1 signal=null
+[118:1028/090525.619548:ERROR:content/common/zygote/zygote_communication_linux.cc:291] Failed to send GetTerminationStatus message to zygote

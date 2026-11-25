@@ -16,6 +16,7 @@ import { DistributedRateLimiter, SlidingWindowRedis } from "../middleware/scalab
 import { getRedisClient } from "../lib/redisClient.js";
 import { env } from "../config/env.js";
 import { isProductionEnv } from "../lib/envHelpers.js";
+import { classifyRequestLogLevel } from "../lib/requestLogLevel.js";
 
 function isInternalIp(ip: string): boolean {
   if (!ip) return false;
@@ -229,15 +230,13 @@ export function requestLoggingMiddleware(
     // 404s during the boot window (before registerRoutes() completes) are startup
     // races — the route is not yet mounted, not a real missing-endpoint error.
     const isBootWindow404 = res.statusCode === 404 && !isRoutesReady();
-    const level =
-      res.statusCode >= 500
-        ? "error"
-        : res.statusCode >= 400 &&
-            !isAuthStatus &&
-            !isAsset404 &&
-            !isBootWindow404
-          ? "warn"
-          : "info";
+    const level = classifyRequestLogLevel({
+      statusCode: res.statusCode,
+      path: req.path,
+      isAuthStatus,
+      isAsset404,
+      isBootWindow404,
+    });
 
     logger[level](
       `[${requestId}] ${req.method} ${req.path} - ${res.statusCode} (${duration}ms)`,

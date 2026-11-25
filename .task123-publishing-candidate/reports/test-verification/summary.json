@@ -1,0 +1,121 @@
+{
+  "generatedAt": "2026-11-10T14:49:25.906864+00:00",
+  "sourceBaseline": "d33649d75e7a0dffc80adf40fa410f4ee66b1984",
+  "scope": "Final canonical evidence only; initial failures retained separately; no invented aggregate case total",
+  "status": "executed_groups_passed",
+  "productionReady": false,
+  "inventory": {
+    "canonicalTestFiles": 698,
+    "supportSourceFiles": 89,
+    "retainedSnapshotFiles": 220,
+    "nonExecutableSupportFiles": 12,
+    "byGroup": {
+      "commerce": 22,
+      "integration-browser": 11,
+      "manual-destructive-provider": 37,
+      "python": 149,
+      "root-node": 139,
+      "root-unit": 335,
+      "runner-support": 89,
+      "subsystems": 5
+    }
+  },
+  "groups": [
+    {
+      "group": "python",
+      "status": "passed",
+      "files": {
+        "passed": 133,
+        "failed": 0,
+        "timeout": 0,
+        "skipped": 2,
+        "blocked": 19,
+        "empty": 0
+      },
+      "counts": {
+        "tests": 1881,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 17
+      },
+      "countScope": "JUnit suite counters, including unittest subtests; helper/operational inventory is separate"
+    },
+    {
+      "group": "master-commands",
+      "status": "passed",
+      "commands": [
+        {
+          "group": "python",
+          "id": "python",
+          "exitCode": 0,
+          "status": "passed"
+        }
+      ]
+    },
+    {
+      "group": "source-integrity",
+      "status": "passed",
+      "sha256": "5803f221f48017a278b3f24419c8a7664f08c1954ced02e888730e37395d5442",
+      "changedFiles": [],
+      "scope": "Git-visible code/configuration inputs remained unchanged throughout execution"
+    },
+    {
+      "group": "evidence-gates",
+      "status": "passed",
+      "commands": [
+        {
+          "id": "platform",
+          "exitCode": 0,
+          "status": "passed"
+        },
+        {
+          "id": "remediation",
+          "exitCode": 0,
+          "status": "passed"
+        },
+        {
+          "id": "completion-plan",
+          "exitCode": 0,
+          "status": "passed"
+        }
+      ]
+    }
+  ],
+  "fileStatusCounts": {
+    "not_run": 547,
+    "support": 89,
+    "executed": 133,
+    "blocked_or_skipped": 18
+  },
+  "limits": [
+    "Group counts overlap; Node parent tests differ from JUnit leaf cases",
+    "Operational/provider/hardware tests without disposable prerequisites were not run",
+    "Passing page renders and fixture journeys do not certify production quality or Replit deployment"
+  ],
+  "platform": {
+    "routedPageDeclarations": 80,
+    "uiInteractionDeclarations": 8431,
+    "backendRegistrations": 2994,
+    "frontendApiContracts": 934,
+    "scannedTypeScriptJavaScriptFiles": 3466,
+    "actualCoverageFiles": 2663,
+    "requiredChecks": 34180,
+    "unverifiedChecks": 34180,
+    "unknownMappings": 173,
+    "invalidEvidenceLinks": 9
+  },
+  "remediation": {
+    "status": "needs_work",
+    "countsByKind": {
+      "missing_evidence": 1,
+      "command_failure": 1,
+      "assertion_failure": 1,
+      "missing_execution": 547,
+      "blocked_check": 20,
+      "coverage_gap": 2500,
+      "skipped_case": 18,
+      "feature_acceptance_gap": 838,
+      "mapping_gap": 20
+    }
+  }
+}

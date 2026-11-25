@@ -1,14 +1,23 @@
 import { defineConfig } from "vite";
+import type { UserConfig } from "vite";
 import react from "@vitejs/plugin-react";
 import tailwindcss from "@tailwindcss/vite";
 import path from "path";
 import { fileURLToPath } from "url";
+import { selectStripePublishableKey } from "./shared/stripeCredentials.ts";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
-export default defineConfig({
+export function createClientViteConfig(mode: string): UserConfig {
+  const stripePublishableKey =
+    selectStripePublishableKey(process.env, mode === "production") ?? "";
+
+  const config: UserConfig = {
   base: "/",
   plugins: [react(), tailwindcss()],
+  define: {
+    "import.meta.env.VITE_STRIPE_PUBLIC_KEY": JSON.stringify(stripePublishableKey),
+  },
   resolve: {
     alias: {
       "@": path.resolve(__dirname, "client", "src"),
@@ -39,70 +48,58 @@ export default defineConfig({
         entryFileNames: "assets/[name]-[hash].js",
         assetFileNames: "assets/[name]-[hash].[ext]",
         manualChunks: (id) => {
+          const moduleId = id.replaceAll("\\", "/");
+
           // Studio chunk (heaviest page) — includes DSP plugin processors
           if (
-            id.includes("/studio/") ||
-            id.includes("built-in plugins dsp") ||
-            id.includes("@plugins/")
+            moduleId.includes("/studio/") ||
+            moduleId.includes("built-in plugins dsp") ||
+            moduleId.includes("@plugins/")
           ) {
             return "studio";
           }
 
-          if (id.includes("node_modules/")) {
-            // React packages - check specific ones before generic 'react'
-            if (
-              id.includes("react/jsx-runtime") ||
-              id.includes("react/jsx-dev-runtime")
-            ) {
-              return "vendor-react";
-            }
-            if (id.includes("react-dom")) {
-              return "vendor-react";
-            }
-            if (id.includes("@tanstack/react-query")) {
-              return "vendor-react";
-            }
-            if (id.includes("wouter")) {
-              return "vendor-react";
-            }
-            if (id.includes("react")) {
-              return "vendor-react";
+          if (moduleId.includes("/node_modules/")) {
+            // Keep optional telemetry out of the shared React runtime chunk.
+            if (moduleId.includes("/node_modules/@sentry/")) {
+              return "vendor-telemetry";
             }
 
-            // UI packages
-            if (id.includes("@radix-ui")) {
+            // Package-specific checks must precede core React matching. Many
+            // unrelated package names contain the substring "react".
+            if (moduleId.includes("/node_modules/@radix-ui/")) {
               return "vendor-ui";
             }
             if (
-              id.includes("class-variance-authority") ||
-              id.includes("clsx") ||
-              id.includes("tailwind-merge") ||
-              id.includes("lucide-react") ||
-              id.includes("cmdk")
+              moduleId.includes("/node_modules/class-variance-authority/") ||
+              moduleId.includes("/node_modules/clsx/") ||
+              moduleId.includes("/node_modules/tailwind-merge/") ||
+              moduleId.includes("/node_modules/lucide-react/") ||
+              moduleId.includes("/node_modules/cmdk/")
             ) {
               return "vendor-ui";
             }
 
             // Animation
-            if (id.includes("framer-motion")) {
+            if (moduleId.includes("/node_modules/framer-motion/")) {
               return "vendor-animation";
             }
 
             // State management
             if (
-              id.includes("zustand") ||
-              id.includes("i18next") ||
-              id.includes("react-i18next") ||
-              id.includes("immer")
+              moduleId.includes("/node_modules/zustand/") ||
+              moduleId.includes("/node_modules/i18next/") ||
+              moduleId.includes("/node_modules/react-i18next/") ||
+              moduleId.includes("/node_modules/immer/")
             ) {
               return "vendor-state";
             }
 
             // Charts (depends on React, must be separate)
             if (
-              id.includes("recharts") ||
-              id.includes("d3-") ||
-              id.includes("victory")
+              moduleId.includes("/node_modules/recharts/") ||
+              /\/node_modules\/d3-[^/]+\//.test(moduleId) ||
+              moduleId.includes("/node_modules/victory")
             ) {
               return "vendor-charts";
             }
@@ -110,21 +107,26 @@ export default defineConfig({
             // Audio engine — Tone.js and Howler are heavy (~600KB+); isolate so
             // users who never visit the Studio page don't pay the download cost.
             if (
-              id.includes("/tone/") ||
-              id.includes("tone/build") ||
-              id.includes("howler")
+              moduleId.includes("/node_modules/tone/") ||
+              moduleId.includes("/node_modules/howler/")
             ) {
               return "vendor-audio-engine";
             }
 
             // Canvas / WebGL — Pixi.js is very large (~1MB+); lazy-loaded only
             // by the visualizer/studio canvas pages.
-            if (id.includes("pixi.js") || id.includes("@pixi/")) {
+            if (
+              moduleId.includes("/node_modules/pixi.js/") ||
+              moduleId.includes("/node_modules/@pixi/")
+            ) {
               return "vendor-canvas";
             }
 
             // Forms — react-hook-form is medium weight, standalone
-            if (id.includes("react-hook-form") || id.includes("@hookform")) {
+            if (
+              moduleId.includes("/node_modules/react-hook-form/") ||
+              moduleId.includes("/node_modules/@hookform/")
+            ) {
               return "vendor-forms";
             }
 
@@ -132,15 +134,30 @@ export default defineConfig({
             // brand icons and is only used on specific pages (social, marketplace).
             // Isolating it prevents it from bloating any route chunk.
             if (
-              id.includes("@icons-pack/react-simple-icons") ||
-              id.includes("simple-icons")
+              moduleId.includes("/node_modules/@icons-pack/react-simple-icons/") ||
+              moduleId.includes("/node_modules/simple-icons/")
             ) {
               return "vendor-icons";
             }
 
             // Utils (no React dependency)
-            if (id.includes("date-fns") || id.includes("zod")) {
+            if (
+              moduleId.includes("/node_modules/date-fns/") ||
+              moduleId.includes("/node_modules/zod/")
+            ) {
               return "vendor-utils";
+            }
+
+            // Only the actual core packages belong in the shared React chunk.
+            if (
+              moduleId.includes("/node_modules/react/") ||
+              moduleId.includes("/node_modules/react-dom/") ||
+              moduleId.includes("/node_modules/scheduler/") ||
+              moduleId.includes("/node_modules/@tanstack/react-query/") ||
+              moduleId.includes("/node_modules/wouter/") ||
+              moduleId.includes("/node_modules/use-sync-external-store/")
+            ) {
+              return "vendor-react";
             }
           }
         },
@@ -246,4 +263,8 @@ export default defineConfig({
     // Exclude server-only or native packages from browser pre-bundling
     exclude: ["@tensorflow/tfjs-node", "sharp", "bcrypt", "pg", "drizzle-orm"],
   },
-});
+  };
+  return config;
+}
+
+export default defineConfig(({ mode }) => createClientViteConfig(mode));

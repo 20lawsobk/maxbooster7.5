@@ -1,0 +1,30 @@
+repository MaxBooster
+
+audit repository {
+    scan repository
+    discover components
+    map dependencies
+    map features
+    detect missing
+    detect unfinished
+    analyze intent
+    draft repair plans
+    write private report
+    verify completeness
+    verify security
+    verify performance
+    verify architecture
+    verify production
+    recurse max 2
+}
+
+policy ProductionReady {
+    noCriticalIssues
+    noDeadCode
+    coverage > 95%
+    documentation > 90%
+    security > 95%
+    performance > 90%
+}
+
+verify ProductionReady

@@ -1,5 +1,5 @@
 import { FastifyInstance } from "fastify";
-import { pool } from "../db/pool.js";
+import { pool, schema } from "../db/pool.js";
 
 const VALID_TYPES = [
   "A",
@@ -98,7 +98,7 @@ export default async function recordsRoutes(app: FastifyInstance) {
         await client.query("BEGIN");
 
         await client.query(
-          `INSERT INTO records (zone_id, name, type, ttl, priority, weight, port, data)
+          `INSERT INTO ${schema}.records (zone_id, name, type, ttl, priority, weight, port, data)
          VALUES ($1, $2, upper($3), $4, $5, $6, $7, $8)
          ON CONFLICT (zone_id, name, type, data)
          DO UPDATE SET ttl = EXCLUDED.ttl,
@@ -118,7 +118,12 @@ export default async function recordsRoutes(app: FastifyInstance) {
           ],
         );
 
-        await client.query(`SELECT bump_zone_serial($1)`, [zone_id]);
+        await client.query(
+          `UPDATE ${schema}.zones
+           SET serial = serial + 1, updated_at = now()
+           WHERE id = $1`,
+          [zone_id],
+        );
 
         await client.query("COMMIT");
         return reply.code(201).send({ ok: true });
@@ -136,7 +141,7 @@ export default async function recordsRoutes(app: FastifyInstance) {
     async (req, reply) => {
       const { rows } = await pool.query(
         `SELECT id, name, type, ttl, priority, weight, port, data, created_at, updated_at
-       FROM records WHERE zone_id = $1 ORDER BY type, name`,
+       FROM ${schema}.records WHERE zone_id = $1 ORDER BY type, name`,
         [req.params.zone_id],
       );
       return reply.send(rows);
@@ -151,14 +156,19 @@ export default async function recordsRoutes(app: FastifyInstance) {
       try {
         await client.query("BEGIN");
         const { rowCount } = await client.query(
-          `DELETE FROM records WHERE id = $1 AND zone_id = $2`,
+          `DELETE FROM ${schema}.records WHERE id = $1 AND zone_id = $2`,
           [record_id, zone_id],
         );
         if (!rowCount) {
           await client.query("ROLLBACK");
           return reply.code(404).send({ error: "not_found" });
         }
-        await client.query(`SELECT bump_zone_serial($1)`, [zone_id]);
+        await client.query(
+          `UPDATE ${schema}.zones
+           SET serial = serial + 1, updated_at = now()
+           WHERE id = $1`,
+          [zone_id],
+        );
         await client.query("COMMIT");
         return reply.code(204).send();
       } catch (err) {

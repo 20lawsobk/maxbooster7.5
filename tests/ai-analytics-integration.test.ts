@@ -14,7 +14,7 @@ let csrfToken = "";
 const testUser = {
   birthdate: "1990-01-01",
   email: `ai_analytics_test_${Date.now()}@maxbooster-test.invalid`,
-  password: "SecurePass123!@#",
+  password: process.env.PASSWORD as string,
   username: `AIAnalyticsTest_${Date.now()}`,
   firstName: "AI",
   lastName: "Tester",

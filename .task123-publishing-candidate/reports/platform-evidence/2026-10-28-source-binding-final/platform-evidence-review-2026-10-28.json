@@ -1,0 +1,32 @@
+{
+  "schemaVersion": 1,
+  "recordedAt": "2026-10-28T13:23:34.890706+00:00",
+  "scope": "Two-file current-execution source binding repair; no canonical report mutation, no launch approval",
+  "sourceFiles": {
+    "scripts/testing/platform-register.py": {
+      "bytes": 63145,
+      "sha256": "a4441e012b4ad5cf5e4423cf8d343c1188462d10e438336c884fcc10a93ce547"
+    },
+    "tests/testing/test_platform_evidence.py": {
+      "bytes": 21657,
+      "sha256": "8010c9d63951be119df0deaf194e34428877989203e353f2f3f9b03f3af9a37c"
+    }
+  },
+  "tests": {
+    "command": "/workspace/.cloud-python/bin/python -m pytest tests/testing/test_platform_evidence.py tests/testing/test_endpoint_mount_resolution.py tests/testing/test_launch_readiness_audit.py tests/testing/test_platform_plan.py -q --junitxml=/workspace/onboarding-results/platform-evidence-reviewed-final-2026-10-28.xml",
+    "exitCode": 0,
+    "counts": {
+      "tests": 130,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    "log": "/workspace/onboarding-results/platform-evidence-reviewed-final-2026-10-28.txt",
+    "junit": "/workspace/onboarding-results/platform-evidence-reviewed-final-2026-10-28.xml",
+    "junitSha256": "5b1b098e81067743e6d17f6289ec1157f3dda540a86039c3bffc5747dcf2f4ba"
+  },
+  "baseline": "platform-evidence-stale-baseline-2026-10-28.txt preserves actual expected UNVERIFIED versus actual PASS assertion before repair; two earlier fixture-construction errors were corrected before that actual red proof",
+  "runnerSelectionNotes": "Two nonexistent related test paths caused collection errors (no product tests ran); corrected using actual rg --files paths. Initial local selection-error log was replaced by successful scoped run; tool responses retain the initial diagnostics.",
+  "sourceFrozen": true,
+  "productionReady": false
+}

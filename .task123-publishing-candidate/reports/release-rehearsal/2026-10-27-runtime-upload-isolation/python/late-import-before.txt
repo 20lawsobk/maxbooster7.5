@@ -1,0 +1,5 @@
+Traceback (most recent call last):
+  File "/workspace/maxbooster7.5/reports/release-rehearsal/2026-10-27-runtime-upload-isolation/python/late-import-probe.py", line 10, in <module>
+    assert rcgs._UPLOADS_DIR==original, 'Late-import reader must restore its original source path'
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: Late-import reader must restore its original source path

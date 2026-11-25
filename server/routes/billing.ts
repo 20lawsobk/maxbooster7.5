@@ -27,7 +27,7 @@
 import { Router, Request, Response, NextFunction } from "express";
 import { billingAccountStatus } from "../services/billingAccountStatus";
 import Stripe from "stripe";
-import { createStripeClient } from "../lib/stripeClient";
+import { createStripeClient, getStripeSecretKey } from "../lib/stripeClient";
 import { db, pool } from "../db";
 import { users, workspaceAuditLog } from "@shared/schema";
 import { eq } from "drizzle-orm";
@@ -56,7 +56,7 @@ const router = Router();
 // Per-user billing limits run after authentication resolves session or JWT.
 // Public plan discovery has the application IP limiter.
 
-const stripeSecretKey = env?.STRIPE_SECRET_KEY;
+const stripeSecretKey = getStripeSecretKey();
 if (!stripeSecretKey) {
   logger.warn(
     "[Billing] STRIPE_SECRET_KEY not configured. Billing endpoints will return errors.",
@@ -724,29 +724,47 @@ router.get(
       }
 
       if (!stripe) {
-        return res.json({ last4: null, expiry: null, brand: null });
+        return res.status(503).json({
+          error: "Billing provider is not configured",
+          code: "BILLING_PROVIDER_UNAVAILABLE",
+        });
       }
 
       try {
-        const paymentMethods = await stripe?.paymentMethods?.list({
+        const paymentMethods = await stripe.paymentMethods.list({
           customer: user.stripeCustomerId,
           type: "card",
           limit: 1,
         });
 
-        if (paymentMethods?.data?.length > 0) {
-          const pm = paymentMethods?.data[0];
+        if (!Array.isArray(paymentMethods?.data)) {
+          throw new Error("Billing provider returned an invalid payment-method list");
+        }
+        if (paymentMethods.data.length > 0) {
+          const pm = paymentMethods.data[0];
+          if (
+            typeof pm?.card?.last4 !== "string" ||
+            typeof pm?.card?.exp_month !== "number" ||
+            typeof pm?.card?.exp_year !== "number" ||
+            typeof pm?.card?.brand !== "string"
+          ) {
+            throw new Error("Billing provider returned an invalid card summary");
+          }
           return res.json({
-            last4: pm.card?.last4,
-            expiry: `${pm?.card?.exp_month}/${pm?.card?.exp_year}`,
-            brand: pm.card?.brand,
+            last4: pm.card.last4,
+            expiry: `${pm.card.exp_month}/${pm.card.exp_year}`,
+            brand: pm.card.brand,
           });
         }
       } catch (err) {
         logger.warn({ err: err }, "[Billing] Failed to fetch payment methods:");
+        return res.status(502).json({
+          error: "Payment method details are temporarily unavailable",
+          code: "PAYMENT_METHOD_UNAVAILABLE",
+        });
       }
 
-      res.json({ last4: null, expiry: null, brand: null });
+      return res.json({ last4: null, expiry: null, brand: null });
     } catch (error) {
       logger.warn({ err: error }, "[Billing] Failed to get payment method:");
       res.status(500).json({ error: "Failed to get payment method" });
@@ -769,17 +787,26 @@ router.get(
         .limit(1);
 
       // No Stripe customer yet — user has no billing history
-      if (!user?.stripeCustomerId || !stripe) {
+      if (!user?.stripeCustomerId) {
         return res.json([]);
+      }
+      if (!stripe) {
+        return res.status(503).json({
+          error: "Billing provider is not configured",
+          code: "BILLING_PROVIDER_UNAVAILABLE",
+        });
       }
 
       try {
-        const invoices = await stripe?.invoices?.list({
+        const invoices = await stripe.invoices.list({
           customer: user.stripeCustomerId,
           limit: 24,
         });
+        if (!Array.isArray(invoices?.data)) {
+          throw new Error("Billing provider returned an invalid invoice list");
+        }
 
-        const history = invoices?.data?.map((invoice) => ({
+        const history = invoices.data.map((invoice) => ({
           id: invoice.id,
           invoiceId: invoice.number || invoice?.id,
           date: new Date(invoice?.created * 1000).toISOString(),
@@ -793,7 +820,10 @@ router.get(
         return res.json(history);
       } catch (err) {
         logger.warn({ err: err }, "[Billing] Failed to fetch invoices:");
-        return res.json([]);
+        return res.status(502).json({
+          error: "Billing history is temporarily unavailable",
+          code: "BILLING_HISTORY_UNAVAILABLE",
+        });
       }
     } catch (error) {
       logger.warn({ err: error }, "[Billing] Failed to get billing history:");
@@ -2174,22 +2204,31 @@ router.get(
         .where(eq(users.id, userId))
         .limit(1);
 
-      if (!user?.stripeCustomerId || !stripe) {
+      if (!user?.stripeCustomerId) {
         return res.json({ disputes: [], hasMore: false });
+      }
+      if (!stripe) {
+        return res.status(503).json({
+          error: "Billing provider is not configured",
+          code: "BILLING_PROVIDER_UNAVAILABLE",
+        });
       }
 
       try {
-        const charges = await stripe?.charges?.list({
+        const charges = await stripe.charges.list({
           customer: user.stripeCustomerId,
           limit: 100,
         });
+        if (!Array.isArray(charges?.data)) {
+          throw new Error("Billing provider returned an invalid charge list");
+        }
 
         const disputedCharges = charges?.data?.filter((charge) => (charge as any)?.dispute);
         const disputes: unknown[] = [];
 
         for (const charge of disputedCharges) {
           if ((charge as any)?.dispute) {
-            const dispute = await stripe?.disputes?.retrieve(
+            const dispute = await stripe.disputes.retrieve(
               (charge as any)?.dispute as string,
             );
             disputes?.push({
@@ -2241,13 +2280,16 @@ router.get(
 
         return res.json({
           disputes: disputes.slice(0, 20),
-          hasMore: disputes.length > 20,
+          hasMore: charges.has_more === true || disputes.length > 20,
         });
       } catch (err) {
         logger.warn({ err: err }, "[Billing] Failed to fetch disputes:");
+        return res.status(502).json({
+          error: "Dispute information is temporarily unavailable",
+          code: "BILLING_DISPUTES_UNAVAILABLE",
+        });
       }
 
-      res.json({ disputes: [], hasMore: false });
     } catch (error) {
       logger.warn({ err: error }, "[Billing] Failed to get disputes:");
       res.status(500).json({ error: "Failed to get disputes" });
@@ -2270,21 +2312,63 @@ router.get(
         .where(eq(users.id, userId))
         .limit(1);
 
-      if (!user?.stripeCustomerId || !stripe) {
+      if (!user?.stripeCustomerId) {
         return res.json({ invoices: [], hasMore: false });
+      }
+      if (!stripe) {
+        return res.status(503).json({
+          error: "Invoice history is temporarily unavailable",
+          code: "STRIPE_NOT_CONFIGURED",
+        });
       }
 
       try {
+        const parsedLimit =
+          typeof limit === "number"
+            ? limit
+            : typeof limit === "string" && /^\d+$/.test(limit)
+              ? Number(limit)
+              : Number.NaN;
+        if (!Number.isInteger(parsedLimit) || parsedLimit < 1 || parsedLimit > 100) {
+          return res.status(400).json({
+            error: "limit must be an integer between 1 and 100",
+            code: "INVALID_INVOICE_LIMIT",
+          });
+        }
+        const allowedStatuses = new Set<Stripe.InvoiceListParams.Status>([
+          "draft",
+          "open",
+          "paid",
+          "uncollectible",
+          "void",
+        ]);
+        if (
+          status !== undefined &&
+          (typeof status !== "string" ||
+            !allowedStatuses.has(status as Stripe.InvoiceListParams.Status))
+        ) {
+          return res.status(400).json({
+            error: "status is not a supported invoice status",
+            code: "INVALID_INVOICE_STATUS",
+          });
+        }
         const invoiceParams: Stripe.InvoiceListParams = {
           customer: user.stripeCustomerId,
-          limit: Math.min(Number(limit), 100),
+          limit: parsedLimit,
         };
 
         if (status && typeof status === "string") {
           invoiceParams.status = status as Stripe.InvoiceListParams.Status;
         }
 
-        const invoices = await stripe?.invoices?.list(invoiceParams);
+        const invoices = await stripe.invoices.list(invoiceParams);
+        if (
+          !invoices ||
+          !Array.isArray(invoices.data) ||
+          typeof invoices.has_more !== "boolean"
+        ) {
+          throw new Error("Stripe returned an invalid invoice-list response");
+        }
 
         const now = new Date();
         const invoiceList = invoices?.data?.map((invoice) => {
@@ -2330,7 +2414,7 @@ router.get(
                         : "red",
             isOverdue,
             created: new Date(invoice?.created * 1000).toISOString(),
-            dueDate: dueDate!.toISOString() || null,
+            dueDate: dueDate?.toISOString() ?? null,
             paidAt: invoice.status_transitions?.paid_at
               ? new Date(
                   invoice?.status_transitions?.paid_at * 1000,
@@ -2352,13 +2436,28 @@ router.get(
           hasMore: invoices.has_more,
         });
       } catch (err) {
-        logger.warn({ err: err }, "[Billing] Failed to fetch invoices:");
+        logger.warn(
+          {
+            errorType: err instanceof Error ? err.name : "unknown",
+          },
+          "[Billing] Invoice history provider request failed",
+        );
+        return res.status(502).json({
+          error: "Invoice history is temporarily unavailable",
+          code: "INVOICE_HISTORY_UNAVAILABLE",
+        });
       }
-
-      res.json({ invoices: [], hasMore: false });
     } catch (error) {
-      logger.warn({ err: error }, "[Billing] Failed to get invoices:");
-      res.status(500).json({ error: "Failed to get invoices" });
+      logger.warn(
+        {
+          errorType: error instanceof Error ? error.name : "unknown",
+        },
+        "[Billing] Failed to read invoice history",
+      );
+      res.status(500).json({
+        error: "Invoice history could not be loaded",
+        code: "INVOICE_HISTORY_READ_FAILED",
+      });
     }
   },
 );
@@ -2377,15 +2476,27 @@ router.get(
         .where(eq(users.id, userId))
         .limit(1);
 
-      if (!user?.stripeCustomerId || !stripe) {
+      if (!user?.stripeCustomerId) {
         return res.json({ refunds: [], hasMore: false });
+      }
+      if (!stripe?.charges?.list) {
+        return res.status(503).json({
+          error: "Refund history is temporarily unavailable",
+          code: "REFUND_HISTORY_UNAVAILABLE",
+        });
       }
 
       try {
-        const charges = await stripe?.charges?.list({
+        const charges = await stripe.charges.list({
           customer: user.stripeCustomerId,
           limit: 50,
         });
+        if (!charges || !Array.isArray(charges.data)) {
+          return res.status(502).json({
+            error: "Refund history is temporarily unavailable",
+            code: "REFUND_HISTORY_UNAVAILABLE",
+          });
+        }
 
         const refunds: unknown[] = [];
 
@@ -2431,10 +2542,15 @@ router.get(
           hasMore: refunds.length > 20,
         });
       } catch (err) {
-        logger.warn({ err: err }, "[Billing] Failed to fetch refunds:");
+        logger.warn(
+          { errorType: err instanceof Error ? err.name : "unknown" },
+          "[Billing] Failed to fetch refund history",
+        );
+        return res.status(502).json({
+          error: "Refund history could not be loaded",
+          code: "REFUND_HISTORY_UNAVAILABLE",
+        });
       }
-
-      res.json({ refunds: [], hasMore: false });
     } catch (error) {
       logger.warn({ err: error }, "[Billing] Failed to get refunds:");
       res.status(500).json({ error: "Failed to get refunds" });

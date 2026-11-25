@@ -1,0 +1,112 @@
+{
+  "schemaVersion": 1,
+  "startedAt": "2026-10-29T08:49:34.799536+00:00",
+  "scope": "Owned framework selection tests; intercepted SQL/process transports are not product money-loop evidence",
+  "sourceRevision": "d9d04498a02c25a1b6ce03306adc20727e9aa2d1",
+  "nodeVersion": "v22.23.3",
+  "originalHashes": {
+    "scripts/testing/commerce-legacy-fixture.mjs": "da438be7781b009932e7ce5d6606f0697b48ed6c484071dc45a2bf38b6f668ad",
+    "scripts/testing/run-commerce.py": "c4d9a0b188f5e1eae9eaed3e0b56a9b1ac02bd7222f4cc7df60f78cc9c027919",
+    "vitest.beat-loop.config.ts": "b0845cd81cbc43beb3fad1605078e2859850276b26f1083e24c5da2e6a1d2529",
+    "tests/unit/beat-sale-money-loop.test.ts": "eb04b25a174f22841a6ad5feffc57733dc3804476fa4e662769569dce81e2367",
+    "tests/payment-processing/helpers-database-postgres.mjs": "a3d990b93434c3e00083d96cddca8ece319604f923c62e6d45fa5f192e831f9e"
+  },
+  "candidateHashes": {
+    "scripts/testing/commerce-legacy-fixture.mjs": "035f06113c85eeb27f2fcae51719de68ddb5c00512ae3cd774ba68ad093fc6ee",
+    "scripts/testing/run-commerce.py": "3f28e1853e0f2b39e3008e801829a267ca7333baeb603871e4147dff319c2479",
+    "tests/testing/test_commerce_subject_selector.py": "53bb5f75f101a39dc40e2eb412520a2d1eefd82db46fac0b399d3fc14e70dff7"
+  },
+  "commands": [
+    {
+      "id": "baseline",
+      "command": [
+        "/workspace/.cloud-python/bin/python",
+        "-m",
+        "pytest",
+        "/workspace/onboarding-results/commerce-catalog-repairs/selector/candidate/tests/testing/test_commerce_subject_selector.py",
+        "-q",
+        "--tb=short",
+        "--junitxml=/workspace/onboarding-results/commerce-catalog-repairs/selector/receipts/framework-baseline.xml",
+        "-p",
+        "no:cacheprovider"
+      ],
+      "selectionSource": "/workspace/maxbooster7.5",
+      "exitCode": 1,
+      "expectedExitCode": 1,
+      "passed": true,
+      "durationSeconds": 1.482,
+      "log": "framework-baseline.pytest.txt",
+      "logSha256": "3ddcc4dc21ac89e5f17d4fa955dd694b3a0851f788fc4ea03b216f256e32f42d",
+      "junit": "framework-baseline.xml",
+      "junitSha256": "7572cd8bb06f6c2f8b475c4c6c14b22a997c540384c4da7e2113e761d7121300"
+    },
+    {
+      "id": "candidate",
+      "command": [
+        "/workspace/.cloud-python/bin/python",
+        "-m",
+        "pytest",
+        "/workspace/onboarding-results/commerce-catalog-repairs/selector/candidate/tests/testing/test_commerce_subject_selector.py",
+        "-q",
+        "--tb=short",
+        "--junitxml=/workspace/onboarding-results/commerce-catalog-repairs/selector/receipts/framework-candidate.xml",
+        "-p",
+        "no:cacheprovider"
+      ],
+      "selectionSource": "/workspace/onboarding-results/commerce-catalog-repairs/selector/candidate",
+      "exitCode": 0,
+      "expectedExitCode": 0,
+      "passed": true,
+      "durationSeconds": 4.642,
+      "log": "framework-candidate.pytest.txt",
+      "logSha256": "dd9e141cc85901fb10175abc207988e3f4aa5c23dfbd3caf34a8645e81b32b77",
+      "junit": "framework-candidate.xml",
+      "junitSha256": "e3fde793e963e99d0f30a317494b56a69a1801933f946df71ad3497e917014ca"
+    }
+  ],
+  "syntax": {
+    "nodeExitCode": 0,
+    "nodeOutput": "",
+    "python": [
+      {
+        "path": "scripts/testing/run-commerce.py",
+        "passed": true
+      },
+      {
+        "path": "tests/testing/test_commerce_subject_selector.py",
+        "passed": true
+      }
+    ]
+  },
+  "protectedRootBefore": {
+    "scripts/testing/commerce-legacy-fixture.mjs": "da438be7781b009932e7ce5d6606f0697b48ed6c484071dc45a2bf38b6f668ad",
+    "scripts/testing/run-commerce.py": "c4d9a0b188f5e1eae9eaed3e0b56a9b1ac02bd7222f4cc7df60f78cc9c027919",
+    "vitest.beat-loop.config.ts": "b0845cd81cbc43beb3fad1605078e2859850276b26f1083e24c5da2e6a1d2529",
+    "tests/unit/beat-sale-money-loop.test.ts": "eb04b25a174f22841a6ad5feffc57733dc3804476fa4e662769569dce81e2367",
+    "tests/payment-processing/helpers-database-postgres.mjs": "a3d990b93434c3e00083d96cddca8ece319604f923c62e6d45fa5f192e831f9e",
+    "reports/test-verification/case-results.json": "b6cf277968c736fce979393a217ff78645aa39ec2da83e973e595f4813724fa8",
+    "reports/test-verification/platform-register.json": "68a06c3ab09afd93260341d4f0e005d00761827e79e9d39773dc5e0bef3d7ba6",
+    "reports/test-verification/completion-plan.json": "c552bc303dbe773a0e4606e1e79a1981c8c846cc97a8dfb5c6c6c2c8243e13ff",
+    "reports/test-verification/commerce/results.json": "8b0a136474b4007b80e6e43fb09f0a419cde209ae273c5f3736cfa3508b86930",
+    "reports/test-verification/commerce/legacy-beat.xml": "aca4036d093a42f5afe1129036e20d4b1bf3296147c726d8402978c0b9c66237",
+    "reports/test-verification/coverage/coverage-final.json": "3a4baa7bdb84c4863c60801782a09aae05a129a71d9e0bb9334a2e7baf7990f8"
+  },
+  "protectedRootAfter": {
+    "scripts/testing/commerce-legacy-fixture.mjs": "da438be7781b009932e7ce5d6606f0697b48ed6c484071dc45a2bf38b6f668ad",
+    "scripts/testing/run-commerce.py": "c4d9a0b188f5e1eae9eaed3e0b56a9b1ac02bd7222f4cc7df60f78cc9c027919",
+    "vitest.beat-loop.config.ts": "b0845cd81cbc43beb3fad1605078e2859850276b26f1083e24c5da2e6a1d2529",
+    "tests/unit/beat-sale-money-loop.test.ts": "eb04b25a174f22841a6ad5feffc57733dc3804476fa4e662769569dce81e2367",
+    "tests/payment-processing/helpers-database-postgres.mjs": "a3d990b93434c3e00083d96cddca8ece319604f923c62e6d45fa5f192e831f9e",
+    "reports/test-verification/case-results.json": "b6cf277968c736fce979393a217ff78645aa39ec2da83e973e595f4813724fa8",
+    "reports/test-verification/platform-register.json": "68a06c3ab09afd93260341d4f0e005d00761827e79e9d39773dc5e0bef3d7ba6",
+    "reports/test-verification/completion-plan.json": "c552bc303dbe773a0e4606e1e79a1981c8c846cc97a8dfb5c6c6c2c8243e13ff",
+    "reports/test-verification/commerce/results.json": "8b0a136474b4007b80e6e43fb09f0a419cde209ae273c5f3736cfa3508b86930",
+    "reports/test-verification/commerce/legacy-beat.xml": "aca4036d093a42f5afe1129036e20d4b1bf3296147c726d8402978c0b9c66237",
+    "reports/test-verification/coverage/coverage-final.json": "3a4baa7bdb84c4863c60801782a09aae05a129a71d9e0bb9334a2e7baf7990f8"
+  },
+  "protectedRootUnchanged": true,
+  "finishedAt": "2026-10-29T08:49:41.139672+00:00",
+  "frameworkPassed": true,
+  "productCasesRerun": 0,
+  "productionReady": false
+}

@@ -1,0 +1,89 @@
+TAP version 13
+# Subtest: both independent subsystem locks drive frozen installs in their own directories
+not ok 1 - both independent subsystem locks drive frozen installs in their own directories
+  ---
+  duration_ms: 49.038928
+  type: 'test'
+  location: '/workspace/maxbooster7.5/tests/build-dependency-inputs.test.mjs:38:1'
+  failureType: 'testCodeFailure'
+  error: |-
+    ERROR: external/maxcore installed dependency lock is absent or stale. Run SUBSYSTEM_INSTALL=1 bash script/sync-subsystem-dependencies.sh with the required packages cached.
+    
+    
+    1 !== 0
+    
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected: 0
+  actual: 1
+  operator: 'strictEqual'
+  stack: |-
+    TestContext.<anonymous> (file:///workspace/maxbooster7.5/tests/build-dependency-inputs.test.mjs:41:10)
+    Test.runInAsyncScope (node:async_hooks:214:14)
+    Test.run (node:internal/test_runner/test:1047:25)
+    Test.start (node:internal/test_runner/test:944:17)
+    startSubtestAfterBootstrap (node:internal/test_runner/harness:296:17)
+  ...
+# Subtest: a failed frozen install prevents packaging and cannot be treated as success
+not ok 2 - a failed frozen install prevents packaging and cannot be treated as success
+  ---
+  duration_ms: 26.818112
+  type: 'test'
+  location: '/workspace/maxbooster7.5/tests/build-dependency-inputs.test.mjs:49:1'
+  failureType: 'testCodeFailure'
+  error: |-
+    Expected values to be strictly equal:
+    
+    1 !== 7
+    
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected: 7
+  actual: 1
+  operator: 'strictEqual'
+  stack: |-
+    TestContext.<anonymous> (file:///workspace/maxbooster7.5/tests/build-dependency-inputs.test.mjs:52:10)
+    Test.runInAsyncScope (node:async_hooks:214:14)
+    Test.run (node:internal/test_runner/test:1047:25)
+    Test.processPendingSubtests (node:internal/test_runner/test:744:18)
+    Test.postRun (node:internal/test_runner/test:1173:19)
+    Test.run (node:internal/test_runner/test:1101:12)
+    async startSubtestAfterBootstrap (node:internal/test_runner/harness:296:3)
+  ...
+# Subtest: missing corrected lock input aborts instead of retaining a stale installed tree
+ok 3 - missing corrected lock input aborts instead of retaining a stale installed tree
+  ---
+  duration_ms: 10.919621
+  type: 'test'
+  ...
+# Subtest: historical fast build and compiling build refresh subsystem dependencies before packaging
+not ok 4 - historical fast build and compiling build refresh subsystem dependencies before packaging
+  ---
+  duration_ms: 0.677282
+  type: 'test'
+  location: '/workspace/maxbooster7.5/tests/build-dependency-inputs.test.mjs:65:1'
+  failureType: 'testCodeFailure'
+  error: 'false == true'
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected: true
+  actual: false
+  operator: '=='
+  stack: |-
+    TestContext.<anonymous> (file:///workspace/maxbooster7.5/tests/build-dependency-inputs.test.mjs:73:10)
+    Test.runInAsyncScope (node:async_hooks:214:14)
+    Test.run (node:internal/test_runner/test:1047:25)
+    Test.processPendingSubtests (node:internal/test_runner/test:744:18)
+    Test.postRun (node:internal/test_runner/test:1173:19)
+    Test.run (node:internal/test_runner/test:1101:12)
+    async Test.processPendingSubtests (node:internal/test_runner/test:744:7)
+  ...
+1..4
+# tests 4
+# suites 0
+# pass 1
+# fail 3
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 309.233144

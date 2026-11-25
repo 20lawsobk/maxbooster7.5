@@ -200,6 +200,21 @@ export function AutonomousDashboard() {
     meta: { silentError: true },
   });
 
+  const {
+    data: generationCapabilities,
+    isLoading: generationCapabilitiesLoading,
+    isError: generationCapabilitiesError,
+  } = useQuery({
+    queryKey: ["/api/generation/capabilities"],
+    queryFn: async () => {
+      const response = await apiRequest("GET", "/api/generation/capabilities");
+      return response.json();
+    },
+    refetchInterval: 30_000,
+    retry: false,
+    meta: { silentError: true },
+  });
+
   useEffect(() => {
     if (autopilotData?.config) {
       const serverConfig = autopilotData.config;
@@ -322,7 +337,13 @@ export function AutonomousDashboard() {
 
   const isRunning = autopilotData?.isRunning || false;
   const status = autopilotData?.status || {};
-  const modelStatus = autopilotData?.modelStatus || {};
+  const serving = generationCapabilities?.serving;
+  const servingReady = serving?.generation_ready === true;
+  const servingMode = serving?.generation_mode;
+  const awarenessReady = serving?.awareness_ready === true;
+  const renderers = generationCapabilities?.renderers || {};
+  const awarenessModalities =
+    generationCapabilities?.awareness_conditioning?.modalities || [];
   const canStart =
     !hasUnsavedChanges &&
     !saveConfigMutation.isPending &&
@@ -864,23 +885,68 @@ export function AutonomousDashboard() {
             <CardHeader>
               <CardTitle className="text-lg flex items-center gap-2">
                 <Brain className="h-5 w-5" />
-                MaxCore Model Status
+                MaxCore Generation &amp; Model Status
               </CardTitle>
             </CardHeader>
             <CardContent>
               <div className="space-y-3">
-                <Badge variant={modelStatus.trained ? "default" : "secondary"}>
-                  {modelStatus.trained ? "Model ready" : "Model not trained"}
-                </Badge>
+                {generationCapabilitiesLoading ? (
+                  <Badge variant="secondary">Checking MaxCore</Badge>
+                ) : generationCapabilitiesError ? (
+                  <Badge variant="destructive">Status unavailable</Badge>
+                ) : (
+                  <Badge variant={servingReady ? "default" : "destructive"}>
+                    {servingReady
+                      ? servingMode === "live_awareness"
+                        ? "Live awareness model serving"
+                        : servingMode === "trained_checkpoint"
+                          ? "Trained checkpoint serving"
+                          : "Generation ready"
+                      : "Generation unavailable"}
+                  </Badge>
+                )}
                 <p className="text-sm text-muted-foreground">
-                  Authority: {modelStatus.authority || "MaxCore"}
+                  Authority: MaxCore
                 </p>
                 <p className="text-sm text-muted-foreground">
-                  Version: {modelStatus.version || "Not reported"}
+                  Unified awareness:{" "}
+                  {generationCapabilitiesLoading
+                    ? "checking"
+                    : awarenessReady
+                      ? "ready"
+                      : "unavailable"}
                 </p>
+                <p className="text-sm text-muted-foreground">
+                  Trained checkpoint:{" "}
+                  {serving?.model_loaded === true ? "loaded" : "not loaded"}
+                </p>
+                <div className="space-y-1 border-t pt-3">
+                  <p className="text-xs font-medium">Generation paths</p>
+                  <p className="text-xs text-muted-foreground">
+                    Text: {servingReady ? servingMode : "unavailable"};{" "}
+                    {awarenessReady && awarenessModalities.includes("text")
+                      ? "awareness context ready"
+                      : "awareness context unavailable"}
+                  </p>
+                  {(["image", "audio", "video"] as const).map((modality) => {
+                    const renderer = renderers[modality];
+                    const modalityAwarenessReady =
+                      awarenessReady && awarenessModalities.includes(modality);
+                    return (
+                      <p key={modality} className="text-xs text-muted-foreground">
+                        {modality[0].toUpperCase() + modality.slice(1)}:{" "}
+                        {renderer
+                          ? `${renderer.renderer} renderer; ${renderer.trained ? "trained" : "not trained"}; ${modalityAwarenessReady ? "awareness context ready" : "awareness context unavailable"}`
+                          : "capability not reported"}
+                      </p>
+                    );
+                  })}
+                </div>
                 <p className="text-xs text-muted-foreground">
-                  No quality, reach, or viral-prediction percentages are shown
-                  unless MaxCore provides measured results.
+                  Live awareness can serve before a trained checkpoint. Its use
+                  signals MaxCore’s existing learner to check for new eligible
+                  observations; it does not itself prove an optimizer update or
+                  candidate acceptance.
                 </p>
               </div>
             </CardContent>

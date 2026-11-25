@@ -1,0 +1,63 @@
+{
+  "checks": {
+    "ci-config": {
+      "required": true,
+      "weight": 2
+    },
+    "dependency-audit": {
+      "config": {
+        "maxCritical": 0,
+        "maxHigh": 0
+      },
+      "required": true,
+      "weight": 4
+    },
+    "env-config": {
+      "config": {
+        "maxUndocumented": 0
+      },
+      "required": true,
+      "weight": 4
+    },
+    "health-endpoint": {
+      "required": true,
+      "weight": 3
+    },
+    "migrations": {
+      "required": true,
+      "weight": 3
+    },
+    "production-build": {
+      "required": true,
+      "weight": 2
+    },
+    "readme": {
+      "required": true,
+      "weight": 3
+    },
+    "secrets-scan": {
+      "required": true,
+      "weight": 5
+    },
+    "typecheck": {
+      "required": true,
+      "weight": 3
+    },
+    "unit-tests": {
+      "required": true,
+      "weight": 3
+    }
+  },
+  "description": "For systems handling protected health information. Security, configuration discipline, and documented operations are paramount.",
+  "displayName": "Healthcare",
+  "name": "healthcare",
+  "notes": [
+    "This gauge checks code hygiene, not HIPAA compliance itself.",
+    "Pair with access-log, encryption-at-rest, and BAA reviews before handling real PHI."
+  ],
+  "thresholds": {
+    "conditionalGo": 78,
+    "go": 92
+  },
+  "version": "1.0.0"
+}

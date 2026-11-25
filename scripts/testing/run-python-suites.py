@@ -11,6 +11,7 @@ import argparse
 import ast
 from concurrent.futures import ThreadPoolExecutor, as_completed
 import datetime as dt
+from functools import lru_cache
 import hashlib
 import json
 import os
@@ -120,6 +121,9 @@ def discover():
     suites, duplicates = [], []
     for name in tracked:
         path = Path(name)
+        if name.startswith(('.task123-publishing-candidate/', 'maxbooster7.5/')):
+            duplicates.append(name)
+            continue
         if name.startswith(('.pdim-', 'reports/')):
             if path.name.startswith(('test_', 'test-')) or '/tests/' in name:
                 duplicates.append(name)
@@ -145,13 +149,49 @@ def discover():
     return suites, duplicates
 
 
-def clean_environment(home, guard, suite):
+def default_interpreter(root=None, fallback=None):
+    """Match the packaged runtime used by production Python services."""
+    root = ROOT if root is None else root
+    fallback = sys.executable if fallback is None else fallback
+    packaged = root / 'python_runtime' / 'bin' / 'python3'
+    return str(packaged) if packaged.is_file() and os.access(packaged, os.X_OK) else fallback
+
+
+@lru_cache(maxsize=8)
+def python_package_paths(interpreter, root_path):
+    """Expose only this interpreter's app and test packages in isolated children."""
+    root = Path(root_path)
+    try:
+        result = subprocess.run(
+            [interpreter, '-I', '-c', 'import sys; print(f"{sys.version_info.major}.{sys.version_info.minor}")'],
+            cwd=root,
+            env={'PATH': os.environ.get('PATH', '/usr/bin:/bin'), 'HOME': '/tmp', 'LANG': 'C'},
+            text=True,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.STDOUT,
+            timeout=15,
+        )
+    except (OSError, subprocess.TimeoutExpired) as error:
+        raise RuntimeError(f'Cannot resolve selected Python interpreter: {type(error).__name__}') from error
+    version = result.stdout.strip()
+    if result.returncode or not re.fullmatch(r'\d+\.\d+', version):
+        raise RuntimeError('Cannot resolve selected Python version for isolated package paths')
+    paths = [
+        root / 'python_runtime' / 'lib' / f'python{version}' / 'site-packages',
+        root / '.pythonlibs' / 'lib' / f'python{version}' / 'site-packages',
+    ]
+    return tuple(str(path) for path in paths if path.is_dir())
+
+
+def clean_environment(home, guard, suite, interpreter):
     paths = [str(guard), str(ROOT), str(ROOT / 'tests')]
     if suite['file'].startswith('external/maxcore/'):
         paths = [str(guard), str(MAXCORE), str(MAXCORE / 'tests'), str(ROOT)]
+    paths.extend(python_package_paths(interpreter, str(ROOT)))
     return {
         'PATH': os.environ.get('PATH', '/usr/bin:/bin'), 'HOME': str(home), 'TMPDIR': str(home),
         'LANG': 'C.UTF-8', 'TZ': 'UTC', 'PYTHONPATH': os.pathsep.join(paths),
+        'MAXBOOSTER_TEST_PYTHON': interpreter,
         'PYTHONDONTWRITEBYTECODE': '1', 'PYTEST_DISABLE_PLUGIN_AUTOLOAD': '1',
         'MAXCORE_PRIVATE_STATE_DIR': str(home / 'state'), 'STORAGE_HTTP_URL': 'http://127.0.0.1:1',
         'MAXCORE_SERVING_RELEASE': 'live-awareness', 'HF_HUB_OFFLINE': '1', 'TRANSFORMERS_OFFLINE': '1',
@@ -188,7 +228,7 @@ def run_suite(suite, output, interpreter, timeout, coverage_config=None, coverag
     with tempfile.TemporaryDirectory(prefix='maxbooster-python-test-') as temporary:
         home = Path(temporary)
         guard = home / 'guard'; guard.mkdir(); (guard / 'sitecustomize.py').write_text(GUARD)
-        env = clean_environment(home, guard, suite)
+        env = clean_environment(home, guard, suite, interpreter)
         started = time.monotonic()
         child = subprocess.Popen(args, cwd=ROOT if not relative.startswith('external/maxcore/') else MAXCORE,
                                  env=env, stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
@@ -242,10 +282,11 @@ def execute_suites(suites, output, interpreter, timeout, workers, coverage_confi
     return results
 
 
-def coverage_environment(home):
+def coverage_environment(home, interpreter):
     """Coverage reads local measurement files; no application configuration."""
     return {'PATH': os.environ.get('PATH', '/usr/bin:/bin'), 'HOME': str(home),
             'TMPDIR': str(home), 'LANG': 'C.UTF-8', 'PYTHONDONTWRITEBYTECODE': '1',
+            'PYTHONPATH': os.pathsep.join(python_package_paths(interpreter, str(ROOT))),
             **({'LD_LIBRARY_PATH': os.environ['LD_LIBRARY_PATH']} if os.environ.get('LD_LIBRARY_PATH') else {})}
 
 
@@ -268,7 +309,7 @@ def coverage_configuration(directory):
 def coverage_preflight(interpreter, home):
     try:
         result = subprocess.run([interpreter, '-c', 'import coverage; print(coverage.__version__)'],
-                                env=coverage_environment(home), cwd=ROOT, text=True,
+                                env=coverage_environment(home, interpreter), cwd=ROOT, text=True,
                                 stdout=subprocess.PIPE, stderr=subprocess.STDOUT, timeout=15)
     except (OSError, subprocess.TimeoutExpired) as error:
         return {'enabled': True, 'status': 'blocked', 'reason': type(error).__name__ + ': coverage interpreter preflight failed'}
@@ -309,7 +350,7 @@ def export_coverage(interpreter, workspace, config, data_file, output, suites, c
     logs = []
     for name, command in jobs:
         try:
-            result = subprocess.run(command, cwd=ROOT, env=coverage_environment(workspace),
+            result = subprocess.run(command, cwd=ROOT, env=coverage_environment(workspace, interpreter),
                                     text=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, timeout=90)
         except (OSError, subprocess.TimeoutExpired) as error:
             coverage.update(status='failed', reason=f'{name}: {type(error).__name__}')
@@ -359,7 +400,7 @@ def write_documentation(report, target):
     counts = report['counts']
     lines = ['# Python tests', '',
              'These instructions cover canonical MaxCore, application security, evaluator-contract and Sophia runner tests. '
-             'Report-owned copies under `reports/` and generated state copies under `.pdim-*/` are retained snapshots, not independent current suites. They remain listed in `duplicateSnapshots`; select the canonical source instead.', '',
+             'Report-owned copies under `reports/`, generated state copies under `.pdim-*/`, isolated task candidates under `.task123-publishing-candidate/`, and the nested `maxbooster7.5/` duplicate are retained snapshots, not independent current suites. They remain listed in `duplicateSnapshots`; select the canonical source instead.', '',
              '## Setup', '',
              'Use Python 3.12 with the application dependencies from '
              '`external/maxcore/artifacts/ai-training-server/pyproject.toml` and its frozen `uv.lock`. '
@@ -374,7 +415,8 @@ def write_documentation(report, target):
              '```sh', 'python3 scripts/testing/run-python-suites.py --list',
              'python3 scripts/testing/run-python-suites.py --output /tmp/maxbooster-python-results --docs /tmp/maxbooster-python-results.md',
              'python3 scripts/testing/run-python-suites.py --file tests/test_secure_http.py --output /tmp/maxbooster-python-single', '```', '',
-             'Use `--python /path/to/python` to select another prepared interpreter, '
+              'The runner defaults to `python_runtime/bin/python3` when the packaged application runtime is present; '
+              'otherwise it uses the current Python. Use `--python /path/to/python` to select another prepared interpreter, '
              '`--workers 1` to run serially, or `--timeout 180` to change the per-file timeout. '
              'The default is two workers and 120 seconds per file. Full-repository read-only checks run after all ordinary workers and their report writes finish; no selected suite is skipped. A selected run writes only its selected suites; '
              'use a fresh output directory to preserve earlier reports.', '',
@@ -438,7 +480,8 @@ def write_documentation(report, target):
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument('--python', default=sys.executable, help='Interpreter with pytest and application dependencies installed')
+    parser.add_argument('--python', default=default_interpreter(),
+                        help='Interpreter with pytest and application dependencies installed (defaults to packaged Python when present)')
     parser.add_argument('--file', action='append', help='Exact tracked path; repeat to select multiple suites')
     parser.add_argument('--output', type=Path, default=ROOT / 'reports/test-verification/python')
     parser.add_argument('--timeout', type=float, default=120, help='Per-file process-group timeout in seconds')

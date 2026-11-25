@@ -8,7 +8,8 @@ from common import ROOT, run_command, source_revision, write_json
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--output', type=Path, default=ROOT / 'reports/test-verification/operations')
-    parser.add_argument('--python', default=sys.executable)
+    packaged_python = ROOT / 'python_runtime' / 'bin' / 'python3'
+    parser.add_argument('--python', default=str(packaged_python if packaged_python.is_file() else sys.executable))
     args = parser.parse_args()
     rows = []
     for file, command in (

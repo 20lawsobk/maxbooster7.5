@@ -1,0 +1,92 @@
+{
+  "schemaVersion": 1,
+  "kind": "Historical evidence persistence verification",
+  "productionReady": false,
+  "sourceRevision": "d9d04498a02c25a1b6ce03306adc20727e9aa2d1",
+  "workingBranch": "main",
+  "cohorts": [
+    {
+      "id": "identity",
+      "source": "/workspace/onboarding-results/case-identity-repairs/reports/platform-evidence/2026-10-28-case-identity-repair-candidate",
+      "destination": "reports/platform-evidence/2026-10-28-case-identity-repair-candidate",
+      "files": 59,
+      "bytes": 850761
+    },
+    {
+      "id": "commerce",
+      "source": "/workspace/onboarding-results/commerce-catalog-repairs",
+      "destination": "reports/platform-evidence/2026-10-29-commerce-catalog-repairs",
+      "files": 40,
+      "bytes": 767314
+    },
+    {
+      "id": "access",
+      "source": "/workspace/onboarding-results/access-policy-candidate",
+      "destination": "reports/platform-evidence/2026-10-29-access-policy-candidate",
+      "files": 11,
+      "bytes": 75619
+    }
+  ],
+  "originalManifestMembersVerified": 89,
+  "copiedFiles": 110,
+  "copiedBytes": 1693694,
+  "knownCredentialMatches": 0,
+  "symlinksCopied": 0,
+  "filesAtOrOver100MiB": 0,
+  "independentRetainedExecutionObservations": {
+    "mainHttp": {
+      "passed": 110,
+      "failed": 0,
+      "skipped": 0,
+      "newSessionPolicyCases": 10,
+      "sourceInputsUnchanged": true,
+      "cleanupRemaining": 0
+    },
+    "legacyBeat": {
+      "passed": 14,
+      "failed": 0,
+      "skipped": 0,
+      "ownedPostgresRedisCleanupObserved": true
+    }
+  },
+  "referencedReceiptHashes": [
+    {
+      "path": "reports/platform-evidence/2026-10-29-main-access-policy/receipt.json",
+      "bytes": 970,
+      "sha256": "e160fa6d9c2145b0978a4c6629bea488feef85605e62bb192e53d868d3bd9d44"
+    },
+    {
+      "path": "reports/platform-evidence/2026-10-29-main-access-policy/http/summary.json",
+      "bytes": 4247,
+      "sha256": "62c5203b70ae6a74a7afa852d6039bd819184e456819fa85ca216263220b24f4"
+    },
+    {
+      "path": "reports/platform-evidence/2026-10-29-main-access-policy/http/integration.junit.xml",
+      "bytes": 22217,
+      "sha256": "8ee6c1cc67b9bfb9f3556aef3e4241a8b30f60c6bd451f4f882a4c3a85341117"
+    },
+    {
+      "path": "reports/platform-evidence/2026-10-29-integration-rechecks/commerce/results.json",
+      "bytes": 2582,
+      "sha256": "8451575f9c9fc948ddb4fd99864b665527d1dcb64a7de88c109b7143ebfe58fd"
+    },
+    {
+      "path": "reports/platform-evidence/2026-10-29-integration-rechecks/commerce/legacy-beat.xml",
+      "bytes": 3507,
+      "sha256": "fb6e152da41c08fc85531826fd7dc1022f553ec7b8c571d059c9b03fd15d0bcf"
+    },
+    {
+      "path": "reports/platform-evidence/2026-10-29-integration-rechecks/commerce/legacy-beat.txt",
+      "bytes": 9690,
+      "sha256": "d96becdadde20b1e07bc7c219221d1bcb6d1c1587273adfaa1c4bfeb72242c48"
+    }
+  ],
+  "ignoredEvidenceToRetainExplicitly": [
+    "reports/platform-evidence/2026-10-28-case-identity-repair-candidate/raw/framework/framework-sealed.log",
+    "reports/platform-evidence/2026-10-28-case-identity-repair-candidate/raw/vitest/after.log",
+    "reports/platform-evidence/2026-10-28-case-identity-repair-candidate/raw/vitest/before.log",
+    "reports/platform-evidence/2026-10-28-case-identity-repair-candidate/raw/vitest/config-runner-attempt.log",
+    "reports/platform-evidence/2026-10-29-access-policy-candidate/helper-sql-acceptance.log"
+  ],
+  "acceptanceBoundary": "Parent landed source changes on local main; these candidate receipts remain historical and preserve their original NOT_LANDED/NOT_RUN fields. The separate actual SQL/HTTP receipts prove only their executed subsets. No whole page Green or new canonical feature PASS is granted here."
+}

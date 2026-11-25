@@ -1,0 +1,30 @@
+{
+  "scope": "Current writer-drained SQL+canonical-PDIM joint recovery and existing real pg_dump/psql regression; synthetic owned fixtures only",
+  "commandReceipt": {
+    "command": [
+      "node",
+      "--import",
+      "tsx",
+      "--test",
+      "--test-concurrency=1",
+      "--test-reporter=junit",
+      "tests/current-storage-joint-recovery.test.mjs",
+      "tests/database-backup-restore-postgres.test.mjs"
+    ],
+    "cwd": ".",
+    "startedAt": "2026-10-27T22:26:22.475933+00:00",
+    "durationSeconds": 6.209,
+    "exitCode": 0,
+    "timedOut": false,
+    "status": "passed",
+    "log": "reports/recovery-acceptance/2026-10-27-current-sql-pdim/acceptance-222622.xml",
+    "logSha256": "8701e5c5d8fd0689d46dbae58ebe9468c589d307c00dad996228d9cc0b114089"
+  },
+  "junitLeafCases": 9,
+  "status": "passed",
+  "sourceFiles": {
+    "tests/current-storage-joint-recovery.test.mjs": "a81efb35a6b1ba981d6223a5ba4988c6ae9da436e493d51a8adc26896571a85e",
+    "tests/contracts/helpers-current-storage-joint-worker.ts": "5f7845044acc1db1b4d98e53e3484e0f86a171c46f0669b552e69881059d146b",
+    "tests/database-backup-restore-postgres.test.mjs": "152e20065c6d37035290e6786a22b8180fa0f1e80984a1b00bf72485616fc567"
+  }
+}

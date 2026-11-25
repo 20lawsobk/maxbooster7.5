@@ -18,9 +18,25 @@ import { assertPublishingPayloadClean, measurePublishingPayload } from "./lib/pu
 import { inspectArtifacts, inspectRestored } from "../scripts/verify-runtime-artifacts.mjs";
 import { releaseCapsuleThreads } from "./lib/releaseThreads.mjs";
 import { NODE_MODULE_CAPSULE_EXCLUDE_PATHS } from "./lib/releaseCapsuleInputs.mjs";
+import { deploymentWorkerBudget, liveCapacity } from "./deployment/capacity.mjs";
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
-const capsuleThreads = releaseCapsuleThreads(process.env.RELEASE_CAPSULE_THREADS);
+const detectedCpuBudget = liveCapacity().cpus;
+const releaseBuildJobs = deploymentWorkerBudget(
+  process.env.RELEASE_BUILD_JOBS,
+  detectedCpuBudget,
+  "RELEASE_BUILD_JOBS",
+);
+const capsuleThreads = releaseCapsuleThreads(
+  process.env.RELEASE_CAPSULE_THREADS,
+  detectedCpuBudget,
+);
+const releaseBuildEnv = {
+  ...process.env,
+  CARGO_BUILD_JOBS: String(releaseBuildJobs),
+  GOMAXPROCS: String(releaseBuildJobs),
+  npm_config_jobs: String(releaseBuildJobs),
+};
 const destination = path.join(root, ".prepared-release");
 const parent = path.join(root, ".local/prepared-releases");
 fs.mkdirSync(parent, { recursive: true });
@@ -63,7 +79,7 @@ try {
   const policyKey = identity({ policies, platform: process.platform, arch: process.arch, version: 2 });
   const model = modelReleaseRequirements(root);
   if ((process.env.MAXCORE_SERVING_RELEASE || "live-awareness") === "legacy") assertNoSelectedMaxCoreCandidate(root);
-  await runBuildProcess(process.execPath, ["scripts/verify-runtime-artifacts.mjs", "deployment-dependencies", root], root);
+  await runBuildProcess(process.execPath, ["scripts/verify-runtime-artifacts.mjs", "deployment-dependencies", root], root, releaseBuildEnv);
   fs.mkdirSync(payload, { recursive: true });
   fs.mkdirSync(app);
 
@@ -74,7 +90,7 @@ try {
     copy(path.join(root, member), path.join(app, member));
   }
   await runBuildProcess(process.execPath, ["node_modules/vite/bin/vite.js", "build",
-    "--outDir", path.join(app, "dist/public")], root);
+    "--outDir", path.join(app, "dist/public")], root, releaseBuildEnv);
   await buildServerBundles(root, path.join(app, "dist"));
 
   // Native outputs have their own verified identity, independent of application
@@ -91,9 +107,9 @@ try {
     const tools = path.join(work, "native-tools");
     try {
       await runBuildProcess("bash", ["scripts/build-boosterstate.sh"], root, {
-        ...process.env, BOOSTERSTATE_OUTPUT_DIR: path.join(building, "bin"),
+        ...releaseBuildEnv, BOOSTERSTATE_OUTPUT_DIR: path.join(building, "bin"),
         BOOSTERSTATE_TARGET_DIR: path.join(tools, "target"), BOOSTERSTATE_CARGO_HOME: path.join(tools, "cargo"),
-        CARGO_BUILD_JOBS: "1",
+        CARGO_BUILD_JOBS: String(releaseBuildJobs),
       });
     } finally { fs.rmSync(tools, { recursive: true, force: true }); }
     const check = inspectRestored(building, [".node_bin/node", ".node_bin/provenance.json", "bin/boosterstate"]);

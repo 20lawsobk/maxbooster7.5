@@ -1,6 +1,7 @@
 // @ts-nocheck
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { trainingApiFetch as apiFetch } from "@/lib/trainingApi";
 import { AppLayout } from "@/components/layout/AppLayout";
 import {
   Card,
@@ -97,19 +98,6 @@ interface ScheduleInfo {
   };
 }
 
-async function apiFetch(url: string, options?: RequestInit) {
-  const res = await fetch(url, {
-    headers: { "Content-Type": "application/json" },
-    credentials: "include",
-    ...options,
-  });
-  if (!res.ok) {
-    const err = await res.json().catch(() => ({ error: res.statusText }));
-    throw new Error((err as Record<string, unknown>).error || res.statusText);
-  }
-  return res.json();
-}
-
 function formatDuration(seconds: number): string {
   const h = Math.floor(seconds / 3600);
   const m = Math.floor((seconds % 3600) / 60);
@@ -117,6 +105,12 @@ function formatDuration(seconds: number): string {
   if (h > 0) return `${h}h ${m}m`;
   if (m > 0) return `${m}m ${s}s`;
   return `${s}s`;
+}
+
+function formatEpochTimestamp(value: unknown): string {
+  if (typeof value !== "number" || !Number.isFinite(value)) return "Not recorded";
+  const date = new Date(value * 1000);
+  return Number.isNaN(date.getTime()) ? "Not recorded" : date.toLocaleString();
 }
 
 function StatusBadge({ status }: { status: TrainStatus["status"] }) {
@@ -227,6 +221,95 @@ export default function TrainingDashboard() {
       query.state.data?.status === "stopping"
         ? 3000
         : 15000,
+    retry: false,
+  });
+
+  const {
+    data: liveLearning,
+    error: liveLearningQueryError,
+    isError: liveLearningError,
+    isLoading: liveLearningLoading,
+    refetch: refetchLiveLearning,
+  } = useQuery({
+    queryKey: ["maxcore-live-learning-status"],
+    queryFn: () => apiFetch("/api/training/live/status"),
+    refetchInterval: 10_000,
+    retry: false,
+  });
+
+  const {
+    data: internalCandidates,
+    error: internalCandidatesError,
+  } = useQuery({
+    queryKey: ["maxcore-internal-learning-candidates"],
+    queryFn: () => apiFetch("/api/training/candidates/internal"),
+    refetchInterval: 15_000,
+    retry: false,
+  });
+
+  const {
+    data: generationCapabilities,
+    error: generationCapabilitiesQueryError,
+    isError: generationCapabilitiesError,
+    isLoading: generationCapabilitiesLoading,
+    refetch: refetchGenerationCapabilities,
+  } = useQuery({
+    queryKey: ["maxcore-generation-endpoints"],
+    queryFn: async () => {
+      const data = await apiFetch("/api/generation/capabilities");
+      if (
+        !data?.endpoint_routes?.generation ||
+        !data?.endpoint_routes?.readiness?.paths?.length
+      ) {
+        throw new Error("MaxCore did not return its readiness and generation endpoint catalog.");
+      }
+      return data;
+    },
+    refetchInterval: 15_000,
+    retry: false,
+  });
+
+  const {
+    data: maxcoreRuntimeEndpoints,
+    isLoading: maxcoreRuntimeEndpointsLoading,
+    refetch: refetchMaxcoreRuntimeEndpoints,
+  } = useQuery({
+    queryKey: ["maxcore-runtime-endpoint-status"],
+    queryFn: async () => {
+      const endpoints = [
+        {
+          id: "health",
+          label: "Liveness",
+          serverPath: "/health",
+          proxyPath: "/api/admin/maxcore/health",
+        },
+        {
+          id: "readiness",
+          label: "Readiness",
+          serverPath: "/ready",
+          proxyPath: "/api/admin/maxcore/readiness",
+        },
+        {
+          id: "warm",
+          label: "Warm status",
+          serverPath: "/api/warm/status",
+          proxyPath: "/api/admin/maxcore/warm/status",
+        },
+      ];
+      return Promise.all(endpoints.map(async (endpoint) => {
+        try {
+          const response = await apiFetch(endpoint.proxyPath);
+          return { ...endpoint, httpStatus: 200, response };
+        } catch (error) {
+          return {
+            ...endpoint,
+            httpStatus: Number((error as any)?.status) || null,
+            error: (error as Error)?.message || "No response from MaxCore",
+          };
+        }
+      }));
+    },
+    refetchInterval: 15_000,
     retry: false,
   });
 
@@ -343,6 +426,355 @@ export default function TrainingDashboard() {
             </AlertDescription>
           </Alert>
         )}
+
+        <Card className="bg-gray-900 border-gray-700" data-testid="maxcore-live-learning-progress">
+          <CardHeader className="pb-3">
+            <div className="flex items-start justify-between gap-3">
+              <div>
+                <CardTitle className="text-white text-sm font-medium">
+                  MaxCore Live-Awareness Model Progress
+                </CardTitle>
+                <CardDescription className="mt-1 text-gray-400 text-xs">
+                  Awareness-backed serving is the active pre-checkpoint mode.
+                  Checkpoint training and certification remain separate.
+                </CardDescription>
+              </div>
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                onClick={() => void refetchLiveLearning()}
+                disabled={liveLearningLoading}
+                aria-label="Refresh MaxCore live-learning status"
+              >
+                <RefreshCw className={`h-4 w-4 ${liveLearningLoading ? "animate-spin" : ""}`} />
+              </Button>
+            </div>
+          </CardHeader>
+          <CardContent className="grid grid-cols-1 gap-3 text-sm sm:grid-cols-2 lg:grid-cols-3">
+            {liveLearningError ? (
+              <Alert className="border-yellow-500/30 bg-yellow-500/10 sm:col-span-2 lg:col-span-3">
+                <AlertTriangle className="h-4 w-4 text-yellow-400" />
+                <AlertDescription className="text-yellow-300 text-xs">
+                  Live-learning status is unavailable:{" "}
+                  {(liveLearningQueryError as Error)?.message || "MaxCore did not return status"}
+                </AlertDescription>
+              </Alert>
+            ) : liveLearningLoading ? (
+              <p role="status" className="text-xs text-gray-400">Loading MaxCore status…</p>
+            ) : (
+              <>
+                <div>
+                  <div className="text-xs text-gray-400">Serving mode</div>
+                  <div className="mt-1 text-white">
+                    {liveLearning?.generation_ready
+                      ? liveLearning.generation_mode === "live_awareness"
+                        ? "Live awareness serving"
+                        : liveLearning.generation_mode === "trained_checkpoint"
+                          ? "Trained checkpoint serving"
+                          : "Generation ready"
+                      : "Unavailable"}
+                  </div>
+                </div>
+                <div>
+                  <div className="text-xs text-gray-400">Checkpoint loaded</div>
+                  <div className="mt-1 text-white">
+                    {liveLearning?.model_loaded === true ? "Yes" : "No"}
+                  </div>
+                </div>
+                <div>
+                  <div className="text-xs text-gray-400">Awareness snapshot</div>
+                  <div className="mt-1 text-white">
+                    {liveLearning?.awareness_ready === true ? "Ready" : "Not ready"}
+                  </div>
+                </div>
+                <div>
+                  <div className="text-xs text-gray-400">Learning loop</div>
+                  <div className="mt-1 text-white">
+                    {liveLearning?.learning?.running === true ? "Running" : "Not running"}
+                    {" · "}
+                    {liveLearning?.learning?.training || "state not reported"}
+                  </div>
+                </div>
+                <div>
+                  <div className="text-xs text-gray-400">Ten-year simulation source</div>
+                  <div className="mt-1 text-white">
+                    {liveLearning?.learning?.internal_source?.simulation_cycle
+                      ? `Cycle ${liveLearning.learning.internal_source.simulation_cycle} · ` +
+                        `${liveLearning.learning.internal_source.simulation_horizon_days_per_track} days per track`
+                      : liveLearning?.learning?.internal_source_error
+                        ? `Unavailable · ${liveLearning.learning.internal_source_error}`
+                        : "Waiting for first persisted cycle"}
+                  </div>
+                </div>
+                <div>
+                  <div className="text-xs text-gray-400">Internal training data</div>
+                  <div className="mt-1 text-white">
+                    {liveLearning?.learning?.internal_source?.training_records_selected ?? "—"}
+                    {" selected · "}
+                    {liveLearning?.learning?.internal_source?.owner_admin_records_eligible ?? 0}
+                    {" owner-admin"}
+                  </div>
+                </div>
+                <div>
+                  <div className="text-xs text-gray-400">Internal candidates</div>
+                  <div className="mt-1 text-white">
+                    {internalCandidatesError
+                      ? "Status unavailable"
+                      : `${internalCandidates?.runs?.length ?? 0} · ` +
+                        `${internalCandidates?.runs?.[0]?.status ?? "no candidate"}`}
+                  </div>
+                </div>
+                <div className="sm:col-span-2 lg:col-span-3">
+                  <div className="text-xs text-gray-400">Simulation durability</div>
+                  <div className="mt-1 break-all text-white">
+                    {liveLearning?.learning?.internal_source?.storage_authority ??
+                      "Canonical PDIM status not yet verified"}
+                  </div>
+                </div>
+                <div>
+                  <div className="text-xs text-gray-400">Awareness endpoint use</div>
+                  <div className="mt-1 text-white">
+                    {liveLearning?.learning?.awareness_endpoint_usage?.uses ?? "—"} uses
+                    {" · "}
+                    {liveLearning?.learning?.awareness_endpoint_usage?.learning_check_signals ?? "—"} learning checks
+                  </div>
+                </div>
+                <div>
+                  <div className="text-xs text-gray-400">Latest learning run</div>
+                  <div className="mt-1 break-all text-white">
+                    {liveLearning?.learning?.last_run_id || "No run reported"}
+                  </div>
+                </div>
+                <div>
+                  <div className="text-xs text-gray-400">Last awareness use</div>
+                  <div className="mt-1 text-white">
+                    {formatEpochTimestamp(
+                      liveLearning?.learning?.awareness_endpoint_usage?.last_used_at,
+                    )}
+                  </div>
+                </div>
+                <div>
+                  <div className="text-xs text-gray-400">Candidate evaluation</div>
+                  <div className="mt-1 text-white">
+                    {liveLearning?.serving?.candidate_quality ||
+                      "No candidate quality reported"}
+                  </div>
+                </div>
+                <div className="sm:col-span-2 lg:col-span-3 text-xs text-gray-400">
+                  Endpoint use requests a bounded learner check. Candidate creation,
+                  review, and serving promotion are reported separately and are not
+                  inferred from request counts.
+                </div>
+              </>
+            )}
+          </CardContent>
+        </Card>
+
+        <Card className="bg-gray-900 border-gray-700" data-testid="maxcore-server-endpoints">
+          <CardHeader className="pb-3">
+            <div className="flex items-start justify-between gap-3">
+              <div>
+                <CardTitle className="text-white text-sm font-medium">
+                  MaxCore Server Endpoints
+                </CardTitle>
+                <CardDescription className="mt-1 text-gray-400 text-xs">
+                  Live MaxCore routes through the authenticated Max Booster proxy.
+                  The private service address and credentials stay server-side.
+                </CardDescription>
+              </div>
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                onClick={() => void refetchGenerationCapabilities()}
+                disabled={generationCapabilitiesLoading}
+                aria-label="Refresh MaxCore server endpoint status"
+              >
+                <RefreshCw className={`h-4 w-4 ${generationCapabilitiesLoading ? "animate-spin" : ""}`} />
+              </Button>
+            </div>
+          </CardHeader>
+          <CardContent className="space-y-3 text-sm">
+            {generationCapabilitiesError ? (
+              <Alert className="border-yellow-500/30 bg-yellow-500/10">
+                <AlertTriangle className="h-4 w-4 text-yellow-400" />
+                <AlertDescription className="text-yellow-300 text-xs">
+                  MaxCore endpoint status unavailable:{" "}
+                  {(generationCapabilitiesQueryError as Error)?.message ||
+                    "No capability response was received"}
+                </AlertDescription>
+              </Alert>
+            ) : generationCapabilitiesLoading ? (
+              <p role="status" className="text-xs text-gray-400">
+                Loading MaxCore endpoint status…
+              </p>
+            ) : generationCapabilities?.endpoint_routes ? (
+              <>
+                <div className="flex flex-wrap items-center gap-2 rounded-md border border-gray-700 p-3">
+                  <Badge variant="default">Connected</Badge>
+                  <span className="text-gray-300">
+                    {generationCapabilities.endpoint_routes.capabilities.method}{" "}
+                    {generationCapabilities.endpoint_routes.capabilities.path}
+                  </span>
+                  <span className="text-xs text-gray-400">
+                    MaxCore capability response received
+                  </span>
+                </div>
+                <div className="flex flex-wrap items-center justify-between gap-2 rounded-md border border-gray-700 p-3">
+                  <div className="flex flex-wrap gap-2">
+                    {generationCapabilities.endpoint_routes.readiness.paths.map(
+                      (path: string) => (
+                        <code key={path} className="text-xs text-gray-200">
+                          GET {path}
+                        </code>
+                      ),
+                    )}
+                  </div>
+                  <Badge
+                    variant={
+                      generationCapabilities.endpoint_routes.readiness.ready
+                        ? "default"
+                        : "destructive"
+                    }
+                  >
+                    {generationCapabilities.endpoint_routes.readiness.ready
+                      ? "All generation routes ready"
+                      : "Generation readiness blocked"}
+                  </Badge>
+                </div>
+                <div className="rounded-md border border-gray-700 p-3">
+                  <div className="flex flex-wrap items-center justify-between gap-2">
+                    <code className="text-xs text-gray-200">
+                      {generationCapabilities.endpoint_routes.awareness_status.method}{" "}
+                      {generationCapabilities.endpoint_routes.awareness_status.path}
+                    </code>
+                    <Badge
+                      variant={
+                        generationCapabilities.endpoint_routes.awareness_status.ready
+                          ? "default"
+                          : "destructive"
+                      }
+                    >
+                      {generationCapabilities.endpoint_routes.awareness_status.ready
+                        ? "Awareness ready"
+                        : "Awareness unavailable"}
+                    </Badge>
+                  </div>
+                </div>
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between">
+                    <p className="text-xs font-medium uppercase tracking-wide text-gray-400">
+                      MaxCore runtime checks
+                    </p>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => void refetchMaxcoreRuntimeEndpoints()}
+                      disabled={maxcoreRuntimeEndpointsLoading}
+                      aria-label="Refresh MaxCore runtime checks"
+                    >
+                      <RefreshCw className={`h-3.5 w-3.5 ${maxcoreRuntimeEndpointsLoading ? "animate-spin" : ""}`} />
+                    </Button>
+                  </div>
+                  {maxcoreRuntimeEndpointsLoading && !maxcoreRuntimeEndpoints ? (
+                    <p role="status" className="text-xs text-gray-400">
+                      Checking MaxCore liveness, readiness, and warm status…
+                    </p>
+                  ) : maxcoreRuntimeEndpoints?.map((endpoint: any) => {
+                    const reachable = endpoint.httpStatus >= 200 && endpoint.httpStatus < 300;
+                    const detail = endpoint.id === "health"
+                      ? endpoint.response?.status || endpoint.error
+                      : endpoint.id === "readiness"
+                        ? endpoint.response?.ready
+                          ? "Generation readiness passed"
+                          : endpoint.error || "Generation readiness is blocked"
+                        : endpoint.response?.deep_warm?.state ||
+                          endpoint.response?.warm_start?.state ||
+                          endpoint.error ||
+                          "Warm status returned";
+                    return (
+                      <div
+                        key={endpoint.id}
+                        className="flex flex-wrap items-center justify-between gap-2 rounded-md border border-gray-700 px-3 py-2"
+                        data-testid={`maxcore-runtime-${endpoint.id}`}
+                      >
+                        <div className="min-w-0">
+                          <div className="font-medium text-gray-200">{endpoint.label}</div>
+                          <code className="break-all text-xs text-gray-400">
+                            GET {endpoint.serverPath}
+                          </code>
+                        </div>
+                        <div className="flex flex-wrap items-center gap-2">
+                          <Badge variant={reachable ? "default" : "destructive"}>
+                            {endpoint.httpStatus === null
+                              ? "Unavailable"
+                              : `HTTP ${endpoint.httpStatus}`}
+                          </Badge>
+                          <span className="text-xs text-gray-400">{detail}</span>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+                <div className="space-y-2">
+                  {Object.entries(
+                    generationCapabilities.endpoint_routes.generation,
+                  ).map(([modality, endpoint]: [string, any]) => (
+                    <div
+                      key={modality}
+                      className="flex flex-wrap items-center justify-between gap-2 rounded-md border border-gray-700 px-3 py-2"
+                    >
+                      <div className="min-w-0">
+                        <div className="font-medium capitalize text-gray-200">
+                          {modality}
+                        </div>
+                        <code className="break-all text-xs text-gray-400">
+                          {endpoint.method} {endpoint.path}
+                        </code>
+                      </div>
+                      <div className="flex flex-wrap items-center gap-2">
+                        <Badge
+                          variant={
+                            endpoint.online
+                              ? "default"
+                              : "destructive"
+                          }
+                        >
+                          {endpoint.online ? "Online" : "Blocked"}
+                        </Badge>
+                        <span className="text-xs text-gray-400">
+                          {endpoint.trained
+                            ? "trained checkpoint"
+                            : modality === "text" &&
+                                generationCapabilities.serving?.generation_mode ===
+                                  "live_awareness"
+                              ? "live-awareness text serving"
+                              : endpoint.renderer
+                                ? `${endpoint.renderer} · procedural, not trained`
+                                : "not trained"}
+                        </span>
+                        {!endpoint.online && endpoint.readiness_reason && (
+                          <span className="text-xs text-red-300">
+                            {endpoint.readiness_reason}
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+                <p className="text-xs text-gray-400">
+                  {generationCapabilities.endpoint_routes.note}
+                </p>
+              </>
+            ) : (
+              <p role="status" className="text-xs text-gray-400">
+                MaxCore endpoint catalog is not available.
+              </p>
+            )}
+          </CardContent>
+        </Card>
 
         {/* Top stats row */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">

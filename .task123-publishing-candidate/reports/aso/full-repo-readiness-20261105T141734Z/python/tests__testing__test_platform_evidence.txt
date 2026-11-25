@@ -1,0 +1,5 @@
+........................................................................ [ 86%]
+...........                                                              [100%]
+83 passed in 15.15s
+<repo>/.pythonlibs/lib/python3.12/site-packages/coverage/control.py:967: CoverageWarning: No data was collected. (no-data-collected); see https://coverage.readthedocs.io/en/7.17.0/messages.html#warning-no-data-collected
+  self._warn("No data was collected.", slug="no-data-collected")

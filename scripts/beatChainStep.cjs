@@ -12,7 +12,12 @@
 const { neon } = require('@neondatabase/serverless');
 const http = require('http');
 
-const s = neon(process.env.NEON_DATABASE_URL);
+const databaseUrl =
+  process.env.NEON_PRIMARY_URL ||
+  process.env.NEON_DATABASE_URL ||
+  process.env.DATABASE_URL;
+if (!databaseUrl) throw new Error("No application database URL configured");
+const s = neon(databaseUrl);
 const API_HOST = '127.0.0.1';
 const API_PORT = 5000;
 const API_PATH = '/api/dev/trigger-beat';

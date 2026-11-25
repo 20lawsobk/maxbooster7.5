@@ -1,6 +1,6 @@
 import { billingAccountStatus } from "./billingAccountStatus";
 import Stripe from "stripe";
-import { lazyStripeClient, hasStripeCredential } from "../lib/stripeClient";
+import { getStripeSecretKey, lazyStripeClient } from "../lib/stripeClient";
 import { validateCustomerRefund } from "./commercePolicy";
 import { initiateCommerceRefund } from "./commerce/compensation";
 import { storage } from "../storage";
@@ -11,31 +11,12 @@ import { db } from "../db.js";
 import { users, orders, refunds, taxForms } from "@shared/schema";
 import { eq, and, desc, sql } from "drizzle-orm";
 import { instantPayoutService } from "./instantPayoutService";
-import { env } from "../config/env.js";
-import { isProductionEnv } from "../lib/envHelpers.js";
-
-// Support both production and testing Stripe keys (same logic as routes.ts)
-let actualStripeKey: string | undefined;
-if (isProductionEnv()) {
-  // Production: Only use STRIPE_SECRET_KEY
-  if (hasStripeCredential(env?.STRIPE_SECRET_KEY)) {
-    actualStripeKey = env?.STRIPE_SECRET_KEY;
-  }
-} else {
-  // Development: Try TESTING_STRIPE_SECRET_KEY first, then STRIPE_SECRET_KEY
-  if (hasStripeCredential(env?.TESTING_STRIPE_SECRET_KEY)) {
-    actualStripeKey = env?.TESTING_STRIPE_SECRET_KEY;
-  } else if (hasStripeCredential(env?.STRIPE_SECRET_KEY)) {
-    actualStripeKey = env?.STRIPE_SECRET_KEY;
-  }
-}
+const actualStripeKey = getStripeSecretKey();
 
 if (!actualStripeKey) {
   logger.warn("❌ STRIPE CONFIGURATION ERROR in stripeService.ts:");
   logger.warn("   Missing or invalid Stripe secret key.");
-  logger.warn(
-    "   Expected: STRIPE_SECRET_KEY (production) or TESTING_STRIPE_SECRET_KEY (development)",
-  );
+  logger.warn("   Production requires STRIPE_SECRET_KEY; development requires STRIPE_TEST_SECRET or TESTING_STRIPE_SECRET_KEY.");
   logger.warn("   Configure a Stripe secret key or supported proxy credential binding.");
 }
 

@@ -96,6 +96,13 @@ describe("MaxCore public proxy contract", () => {
     ["post", "/api/optimize/ad"],
     ["post", "/api/audio/mastering-recommendation"],
     ["post", "/api/audio/mixing-recommendation"],
+    ["get", "/api/awareness/unified/admin/source-status"],
+    ["get", "/api/awareness/unified/ready"],
+    ["get", "/api/generation/capabilities"],
+    ["get", "/api/admin/maxcore/health"],
+    ["get", "/api/admin/maxcore/readiness"],
+    ["get", "/api/admin/maxcore/warm/status"],
+    ["post", "/api/awareness/unified/profile-discover"],
     ["get", "/api/models/social/state"],
     ["post", "/api/train/feedback"],
     ["get", "/api/training/status"],
@@ -103,6 +110,15 @@ describe("MaxCore public proxy contract", () => {
     ["post", "/api/audio/upload"],
   ])("registers %s %s", (method, path) => {
     routeHandler(method, path);
+  });
+
+  it("registers the generation capability proxy exactly once", () => {
+    const matches = (router as unknown as { stack: Layer[] }).stack.filter(
+      (candidate) =>
+        candidate.route?.path === "/api/generation/capabilities" &&
+        candidate.route.methods.get,
+    );
+    expect(matches).toHaveLength(1);
   });
 
   it("forwards authenticated identity and preserves the MaxCore response", async () => {
@@ -159,6 +175,161 @@ describe("MaxCore public proxy contract", () => {
     );
     expect(res.statusCode).toBe(200);
     expect(res.payload).toEqual({ score: 91, reasoning: ["model"] });
+  });
+
+  it("forwards local profile discovery through the authenticated app proxy", async () => {
+    const payload = {
+      mode: "native_local_profile_observatory",
+      indexed_observation_count: 12,
+    };
+    const transport = vi.spyOn(globalThis, "fetch").mockResolvedValue(
+      new Response(JSON.stringify(payload), {
+        status: 200,
+        headers: { "content-type": "application/json" },
+      }),
+    );
+    const path = "/api/awareness/unified/profile-discover";
+    const res = responseDouble();
+
+    await routeHandler("post", path)({
+      method: "POST",
+      originalUrl: path,
+      path,
+      params: {},
+      body: { query: "classical violinist", platforms: ["youtube"] },
+      user: { id: "admin-7", role: "admin" },
+      headers: {},
+    }, res);
+
+    expect(transport).toHaveBeenCalledWith(
+      "http://maxcore.internal/api/awareness/unified/profile-discover",
+      expect.objectContaining({
+        method: "POST",
+        headers: expect.objectContaining({ Authorization: "Bearer service" }),
+      }),
+    );
+    expect(res.statusCode).toBe(200);
+    expect(res.payload).toEqual(payload);
+  });
+
+  it("forwards generation capabilities through the authenticated app proxy", async () => {
+    const payload = {
+      serving: {
+        generation_ready: true,
+        generation_mode: "live_awareness",
+        model_loaded: false,
+        awareness_ready: true,
+      },
+      awareness_conditioning: {
+        ready: true,
+        modalities: ["text", "image", "audio", "video"],
+      },
+    };
+    const transport = vi.spyOn(globalThis, "fetch").mockResolvedValue(
+      new Response(JSON.stringify(payload), {
+        status: 200,
+        headers: { "content-type": "application/json" },
+      }),
+    );
+    const path = "/api/generation/capabilities";
+    const res = responseDouble();
+
+    await routeHandler("get", path)({
+      method: "GET",
+      originalUrl: path,
+      path,
+      params: {},
+      user: { id: "artist-7", role: "artist" },
+      headers: {},
+    }, res);
+
+    expect(transport).toHaveBeenCalledWith(
+      "http://maxcore.internal/api/generation/capabilities",
+      expect.objectContaining({
+        method: "GET",
+        headers: expect.objectContaining({ Authorization: "Bearer service" }),
+      }),
+    );
+    expect(res.statusCode).toBe(200);
+    expect(res.payload).toEqual(payload);
+  });
+
+  it.each([
+    ["/api/admin/maxcore/health", "/health", 200],
+    ["/api/admin/maxcore/readiness", "/ready", 503],
+    ["/api/admin/maxcore/warm/status", "/api/warm/status", 200],
+  ])("admin proxy maps %s to the actual MaxCore route and preserves status", async (
+    proxyPath,
+    serverPath,
+    upstreamStatus,
+  ) => {
+    const payload = { status: "healthy", ready: upstreamStatus === 200 };
+    const transport = vi.spyOn(globalThis, "fetch").mockResolvedValue(
+      new Response(JSON.stringify(payload), {
+        status: upstreamStatus,
+        headers: { "content-type": "application/json" },
+      }),
+    );
+    const res = responseDouble();
+
+    await routeHandler("get", proxyPath)({
+      method: "GET",
+      originalUrl: `${proxyPath}?probe=admin`,
+      path: proxyPath,
+      params: {},
+      user: { id: "admin-7", role: "admin" },
+      headers: {},
+    }, res);
+
+    expect(transport).toHaveBeenCalledWith(
+      `http://maxcore.internal${serverPath}?probe=admin`,
+      expect.objectContaining({
+        method: "GET",
+        headers: expect.objectContaining({ "X-Admin-Key": "admin" }),
+      }),
+    );
+    expect(res.statusCode).toBe(upstreamStatus);
+    expect(res.payload).toEqual(payload);
+  });
+
+  it("uses the admin MaxCore credential for the protected source-status route", async () => {
+    const payload = {
+      ready: false,
+      source_scan_state: "complete",
+      platforms: {},
+    };
+    const transport = vi.spyOn(globalThis, "fetch").mockResolvedValue(
+      new Response(JSON.stringify(payload), {
+        status: 200,
+        headers: { "content-type": "application/json" },
+      }),
+    );
+    const path = "/api/awareness/unified/admin/source-status";
+    const res = responseDouble();
+
+    await routeHandler("get", path)({
+      method: "GET",
+      originalUrl: path,
+      path,
+      params: {},
+      body: undefined,
+      user: { id: "admin-7", role: "admin" },
+      headers: {},
+    }, res);
+
+    expect(transport).toHaveBeenCalledWith(
+      `http://maxcore.internal${path}`,
+      expect.objectContaining({
+        method: "GET",
+        headers: expect.objectContaining({ "X-Admin-Key": "admin" }),
+      }),
+    );
+    const forwardedHeaders = vi.mocked(transport).mock.calls[0]?.[1]?.headers as
+      | Record<string, string>
+      | undefined;
+    expect(forwardedHeaders?.Authorization).toBeUndefined();
+    expect(res.statusCode).toBe(200);
+    expect(res.payload).toEqual(payload);
   });
 
   it("returns an explicit error when MaxCore is unavailable", async () => {

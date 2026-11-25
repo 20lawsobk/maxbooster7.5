@@ -1,0 +1,12 @@
+import fs from 'node:fs';
+import crypto from 'node:crypto';
+import path from 'node:path';
+import vm from 'node:vm';
+import { resolveFiniteTemplatePath as resolve } from '../scripts/lib/finite-route-paths.mjs';
+const source='for(const action of ["outer"]){const x=class action {static {router.get(`/${action}`,h)}}}';
+const actualRegistration=[];
+vm.runInNewContext(source,{router:{get:value=>actualRegistration.push(value)},h:()=>{}},{timeout:1000});
+const helperPath=path.resolve(import.meta.dirname,'../scripts/lib/finite-route-paths.mjs');
+const result={schemaVersion:1,observedAt:new Date().toISOString(),source,actualRegistration,candidateResult:resolve(source,'fixture.ts',source.indexOf('router.get')),helperSha256:crypto.createHash('sha256').update(fs.readFileSync(helperPath)).digest('hex'),scope:'credential-free synthetic VM fixture only; no application source execution'};
+fs.writeFileSync(path.join(import.meta.dirname,'class-static-result.json'),JSON.stringify(result,null,2)+'\n');
+console.log(JSON.stringify(result));

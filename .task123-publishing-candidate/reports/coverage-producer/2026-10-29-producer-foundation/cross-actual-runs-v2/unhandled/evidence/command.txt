@@ -1,0 +1,12 @@
+JUNIT report written to /tmp/c5-bound-21t62okv/evidence/root/coverage-unit.junit.xml
+ % Coverage report from v8
+------------|---------|----------|---------|---------|-------------------
+File        | % Stmts | % Branch | % Funcs | % Lines | Uncovered Line #s 
+------------|---------|----------|---------|---------|-------------------
+All files   |       0 |        0 |       0 |       0 |                   
+ subject.ts |       0 |        0 |       0 |       0 | 2-3               
+------------|---------|----------|---------|---------|-------------------
+ERROR: Coverage for lines (0%) does not meet global threshold (100%)
+ERROR: Coverage for functions (0%) does not meet global threshold (100%)
+ERROR: Coverage for statements (0%) does not meet global threshold (100%)
+ERROR: Coverage for branches (0%) does not meet global threshold (100%)

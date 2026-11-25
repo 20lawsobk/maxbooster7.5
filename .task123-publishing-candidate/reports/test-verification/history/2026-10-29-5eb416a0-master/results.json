@@ -1,0 +1,462 @@
+{
+  "sourceRevision": "5eb416a04021f66c9bfc8af93997ec9fe8a55e31",
+  "startedAt": "2026-10-29T23:02:12.027944+00:00",
+  "scope": "Isolated groups; live provider, destructive, long-running and hardware checks remain explicit in the catalog",
+  "selectedGroups": [
+    "browser",
+    "checks",
+    "commerce",
+    "coverage",
+    "http",
+    "load",
+    "node",
+    "operations",
+    "pages",
+    "python",
+    "root",
+    "subsystems"
+  ],
+  "runs": [
+    {
+      "command": [
+        "npm",
+        "run",
+        "build"
+      ],
+      "cwd": ".",
+      "startedAt": "2026-10-29T23:02:14.144149+00:00",
+      "durationSeconds": 19.488,
+      "exitCode": 0,
+      "timedOut": false,
+      "status": "passed",
+      "log": "reports/test-verification/orchestration/build.txt",
+      "logSha256": "3beb2b04d1e47232b23d90ce6c7f0ddda6699bdfd434262a741b80cbf48cfddf",
+      "group": "checks",
+      "id": "build"
+    },
+    {
+      "command": [
+        "npm",
+        "run",
+        "test:ci"
+      ],
+      "cwd": ".",
+      "startedAt": "2026-10-29T23:02:33.632855+00:00",
+      "durationSeconds": 166.697,
+      "exitCode": 0,
+      "timedOut": false,
+      "status": "passed",
+      "log": "reports/test-verification/orchestration/ci.txt",
+      "logSha256": "54cb2345b3622d58eb69ad18f8f9088d121c2c03cd98cd24de9a9097de22b99f",
+      "group": "root",
+      "id": "ci",
+      "unitReportFresh": true
+    },
+    {
+      "command": [
+        "node",
+        "node_modules/vitest/vitest.mjs",
+        "run",
+        "--config",
+        "vitest.additional.config.ts",
+        "--reporter=verbose",
+        "--reporter=junit",
+        "--outputFile=/workspace/maxbooster7.5/reports/test-verification/root/additional.junit.xml"
+      ],
+      "cwd": ".",
+      "startedAt": "2026-10-29T23:05:20.334133+00:00",
+      "durationSeconds": 0.817,
+      "exitCode": 0,
+      "timedOut": false,
+      "status": "passed",
+      "log": "reports/test-verification/orchestration/additional.txt",
+      "logSha256": "182d7f7dedbc6c292cf448eca8c9971101889796b197325dcc8072026e5893c7",
+      "group": "root",
+      "id": "additional"
+    },
+    {
+      "command": [
+        "node",
+        "node_modules/vitest/vitest.mjs",
+        "run",
+        "--config",
+        "vitest.platform.config.ts",
+        "--reporter=junit",
+        "--outputFile=/workspace/maxbooster7.5/reports/test-verification/root/coverage-unit.junit.xml"
+      ],
+      "cwd": ".",
+      "startedAt": "2026-10-29T23:05:21.151584+00:00",
+      "durationSeconds": 220.157,
+      "exitCode": 1,
+      "timedOut": false,
+      "status": "failed",
+      "log": "reports/test-verification/orchestration/coverage.txt",
+      "logSha256": "510bfbecf30ec08c175f1d1859d13165a3905467c6ed854c3b0fb0564e957e66",
+      "group": "coverage",
+      "id": "coverage",
+      "coverageParseExclusions": []
+    },
+    {
+      "command": [
+        "node",
+        "scripts/patch-electron-builder-transport.mjs"
+      ],
+      "cwd": ".",
+      "startedAt": "2026-10-29T23:09:01.312502+00:00",
+      "durationSeconds": 0.065,
+      "exitCode": 0,
+      "timedOut": false,
+      "status": "passed",
+      "log": "reports/test-verification/orchestration/desktop-transport-setup.txt",
+      "logSha256": "34e4c21cd6741e6d6f5bf648ac28f51444d3f7b339423e1e8eec658260a43cbc",
+      "group": "node",
+      "id": "desktop-transport-setup"
+    },
+    {
+      "command": [
+        "/workspace/.cloud-python/bin/python",
+        "scripts/testing/run-node-suites.py",
+        "--output",
+        "/workspace/maxbooster7.5/reports/test-verification/node"
+      ],
+      "cwd": ".",
+      "startedAt": "2026-10-29T23:09:01.377831+00:00",
+      "durationSeconds": 133.206,
+      "exitCode": 0,
+      "timedOut": false,
+      "status": "passed",
+      "log": "reports/test-verification/orchestration/node.txt",
+      "logSha256": "3da488d383caac42967fc369d1969a400d5d8734ddc3b9df90ae5a8b6eb25c13",
+      "group": "node",
+      "id": "node"
+    },
+    {
+      "command": [
+        "/workspace/.cloud-python/bin/python",
+        "scripts/testing/run-python-suites.py",
+        "--python",
+        "/workspace/.cloud-python/bin/python",
+        "--coverage",
+        "--output",
+        "/workspace/maxbooster7.5/reports/test-verification/python",
+        "--docs",
+        "/workspace/maxbooster7.5/reports/test-verification/python/suites.md"
+      ],
+      "cwd": ".",
+      "startedAt": "2026-10-29T23:11:14.584683+00:00",
+      "durationSeconds": 219.801,
+      "exitCode": 0,
+      "timedOut": false,
+      "status": "passed",
+      "log": "reports/test-verification/orchestration/python.txt",
+      "logSha256": "0e2843b56615ae3c86bd879f166b0dd8080492271fc2a6d43e2f365d39b04ed0",
+      "group": "python",
+      "id": "python"
+    },
+    {
+      "command": [
+        "/workspace/.cloud-python/bin/python",
+        "scripts/testing/run-commerce.py",
+        "--output",
+        "/workspace/maxbooster7.5/reports/test-verification/commerce"
+      ],
+      "cwd": ".",
+      "startedAt": "2026-10-29T23:14:54.385631+00:00",
+      "durationSeconds": 41.656,
+      "exitCode": 0,
+      "timedOut": false,
+      "status": "passed",
+      "log": "reports/test-verification/orchestration/commerce.txt",
+      "logSha256": "ccac9fe51bac3132654d091c7702cfdc4565ec86fec43090118e7aa818814422",
+      "group": "commerce",
+      "id": "commerce"
+    },
+    {
+      "command": [
+        "/workspace/.cloud-python/bin/python",
+        "scripts/testing/run-subsystems.py",
+        "--output",
+        "/workspace/maxbooster7.5/reports/test-verification/subsystems",
+        "--include-pdim-smoke",
+        "--include-rust-concurrency",
+        "--rust-toolchain",
+        "/workspace/.rust-toolchain/1.93.1",
+        "--go-path",
+        "/workspace/.go",
+        "--go-cache",
+        "/workspace/.go/cache"
+      ],
+      "cwd": ".",
+      "startedAt": "2026-10-29T23:15:36.042195+00:00",
+      "durationSeconds": 40.874,
+      "exitCode": 0,
+      "timedOut": false,
+      "status": "passed",
+      "log": "reports/test-verification/orchestration/subsystems.txt",
+      "logSha256": "f2e88a26e56443c650eba9080c8f2bcf1c76fce617af2f7e519512b4e4b179fe",
+      "group": "subsystems",
+      "id": "subsystems"
+    },
+    {
+      "command": [
+        "node",
+        "--test",
+        "--test-concurrency=1",
+        "tests/auth-session-transient-browser.test.mjs",
+        "tests/local-media-renderer-browser.test.mjs",
+        "tests/storefront-hook-transition.test.mjs",
+        "tests/studio-load-save-guard.test.mjs",
+        "tests/studio-plugin-audio-browser.test.mjs"
+      ],
+      "cwd": ".",
+      "startedAt": "2026-10-29T23:16:16.916987+00:00",
+      "durationSeconds": 7.657,
+      "exitCode": 0,
+      "timedOut": false,
+      "status": "passed",
+      "log": "reports/test-verification/orchestration/browser.txt",
+      "logSha256": "93cfa5a7fc8d7cd50f6341af77b22cab03e6245e431c32d9f2e28b508fdc447e",
+      "group": "browser",
+      "id": "browser"
+    },
+    {
+      "command": [
+        "node",
+        "scripts/testing/integration-browser.mjs"
+      ],
+      "cwd": ".",
+      "startedAt": "2026-10-29T23:16:24.576863+00:00",
+      "durationSeconds": 152.59,
+      "exitCode": 0,
+      "timedOut": false,
+      "status": "passed",
+      "log": "reports/test-verification/orchestration/http.txt",
+      "logSha256": "e0a8552b83bcbf5fe9a4f92de2df4141e856cdb6edc40d6220c5e07a51d27bad",
+      "group": "http",
+      "id": "http"
+    },
+    {
+      "command": [
+        "node",
+        "scripts/testing/page80-acceptance.mjs"
+      ],
+      "cwd": ".",
+      "startedAt": "2026-10-29T23:18:57.167743+00:00",
+      "durationSeconds": 147.67,
+      "exitCode": 0,
+      "timedOut": false,
+      "status": "passed",
+      "log": "reports/test-verification/orchestration/pages.txt",
+      "logSha256": "560814112826e265e0a2411fd91b94c63f721fc60a7687e8503ae376a4f610b0",
+      "group": "pages",
+      "id": "pages"
+    },
+    {
+      "command": [
+        "node",
+        "scripts/testing/page80-acceptance.mjs",
+        "--http-load"
+      ],
+      "cwd": ".",
+      "startedAt": "2026-10-29T23:21:24.838991+00:00",
+      "durationSeconds": 50.712,
+      "exitCode": 0,
+      "timedOut": false,
+      "status": "passed",
+      "log": "reports/test-verification/orchestration/bounded-http-load.txt",
+      "logSha256": "79131120cd417d72a6039857c8a731895434640d05bcd1fb721693c123d678c2",
+      "group": "load",
+      "id": "bounded-http-load"
+    },
+    {
+      "command": [
+        "/workspace/.cloud-python/bin/python",
+        "scripts/testing/run-operations.py",
+        "--python",
+        "/workspace/.cloud-python/bin/python",
+        "--output",
+        "/workspace/maxbooster7.5/reports/test-verification/operations"
+      ],
+      "cwd": ".",
+      "startedAt": "2026-10-29T23:22:15.551434+00:00",
+      "durationSeconds": 20.307,
+      "exitCode": 0,
+      "timedOut": false,
+      "status": "passed",
+      "log": "reports/test-verification/orchestration/operations.txt",
+      "logSha256": "5ee83fb149ba3c9a89025e85887183f982402c500ead4587898efcbd116d0549",
+      "group": "operations",
+      "id": "operations"
+    },
+    {
+      "command": [
+        "npm",
+        "run",
+        "check"
+      ],
+      "cwd": ".",
+      "startedAt": "2026-10-29T23:22:35.858481+00:00",
+      "durationSeconds": 22.684,
+      "exitCode": 0,
+      "timedOut": false,
+      "status": "passed",
+      "log": "reports/test-verification/orchestration/types.txt",
+      "logSha256": "2ffa91ca4d46f5e0ba57779604229aa88b9399d80e7e811d7627a6db927afa94",
+      "group": "checks",
+      "id": "types"
+    },
+    {
+      "command": [
+        "npm",
+        "run",
+        "lint"
+      ],
+      "cwd": ".",
+      "startedAt": "2026-10-29T23:22:58.542649+00:00",
+      "durationSeconds": 47.74,
+      "exitCode": 0,
+      "timedOut": false,
+      "status": "passed",
+      "log": "reports/test-verification/orchestration/lint.txt",
+      "logSha256": "06da543667ff102b992477b32f1825628ff2dfc482d6132e417c6e1e0c4501cb",
+      "group": "checks",
+      "id": "lint"
+    },
+    {
+      "command": [
+        "npm",
+        "audit",
+        "--omit=dev",
+        "--audit-level=high",
+        "--json"
+      ],
+      "cwd": ".",
+      "startedAt": "2026-10-29T23:23:46.282850+00:00",
+      "durationSeconds": 0.82,
+      "exitCode": 0,
+      "timedOut": false,
+      "status": "passed",
+      "log": "reports/test-verification/orchestration/audit.txt",
+      "logSha256": "7747caf3fd124cefaf3022a5be83f36e73c0e0b8c0ab951d263cbcb931728855",
+      "group": "checks",
+      "id": "audit"
+    }
+  ],
+  "productionReady": false,
+  "sourceInputsSha256": "1331649284d57675d1b1c078e4dafcbe93dff87f92021c2f2ff8a3bf288f71de",
+  "catalog": {
+    "command": [
+      "/workspace/.cloud-python/bin/python",
+      "scripts/testing/generate-catalog.py"
+    ],
+    "cwd": ".",
+    "startedAt": "2026-10-29T23:02:12.323370+00:00",
+    "durationSeconds": 1.821,
+    "exitCode": 0,
+    "timedOut": false,
+    "status": "passed",
+    "log": "reports/test-verification/orchestration/catalog.txt",
+    "logSha256": "e20206970e58b7486e2cc2422e988bef0350c817a43cb10c8f9a8b0511293142"
+  },
+  "sourceInputsUnchanged": true,
+  "changedSourceInputs": [],
+  "postprocessing": [
+    {
+      "command": [
+        "/workspace/.cloud-python/bin/python",
+        "scripts/testing/summarize-results.py",
+        "--input",
+        "/workspace/maxbooster7.5/reports/test-verification"
+      ],
+      "cwd": ".",
+      "startedAt": "2026-10-29T23:23:47.337936+00:00",
+      "durationSeconds": 4.378,
+      "exitCode": 0,
+      "timedOut": false,
+      "status": "passed",
+      "log": "reports/test-verification/orchestration/summary.txt",
+      "logSha256": "f74d2c45d021b75a4d0c872df199a818dc8c25bdf5a2ad176010dbe4ef2aa95b",
+      "id": "summary"
+    },
+    {
+      "command": [
+        "/workspace/.cloud-python/bin/python",
+        "scripts/testing/platform-register.py",
+        "--input",
+        "/workspace/maxbooster7.5/reports/test-verification",
+        "--output",
+        "/workspace/maxbooster7.5/reports/test-verification",
+        "--strict"
+      ],
+      "cwd": ".",
+      "startedAt": "2026-10-29T23:23:51.716664+00:00",
+      "durationSeconds": 17.03,
+      "exitCode": 1,
+      "timedOut": false,
+      "status": "failed",
+      "log": "reports/test-verification/orchestration/platform.txt",
+      "logSha256": "b8f09b87d861635a5ecefced682ff72b185e57544e4b2ee4a21a4070ce8635a5",
+      "id": "platform"
+    },
+    {
+      "command": [
+        "/workspace/.cloud-python/bin/python",
+        "scripts/testing/remediation.py",
+        "--input",
+        "/workspace/maxbooster7.5/reports/test-verification",
+        "--output",
+        "/workspace/maxbooster7.5/reports/test-verification",
+        "--strict"
+      ],
+      "cwd": ".",
+      "startedAt": "2026-10-29T23:24:08.746886+00:00",
+      "durationSeconds": 3.225,
+      "exitCode": 1,
+      "timedOut": false,
+      "status": "failed",
+      "log": "reports/test-verification/orchestration/remediation.txt",
+      "logSha256": "bee2ab364bd702ae28eabeeaf3b241daa24ba452b1c6f99eaa664c3dde16a765",
+      "id": "remediation"
+    },
+    {
+      "command": [
+        "/workspace/.cloud-python/bin/python",
+        "scripts/testing/generate-platform-plan.py",
+        "--input",
+        "/workspace/maxbooster7.5/reports/test-verification/platform-register.json",
+        "--output",
+        "/workspace/maxbooster7.5/reports/test-verification/completion-plan.json",
+        "--require-page-work"
+      ],
+      "cwd": ".",
+      "startedAt": "2026-10-29T23:24:11.972795+00:00",
+      "durationSeconds": 10.519,
+      "exitCode": 0,
+      "timedOut": false,
+      "status": "passed",
+      "log": "reports/test-verification/orchestration/completion-plan.txt",
+      "logSha256": "4fc63ebb72be6137dc531cb7b86a2222a26e9f58be91c08c0e7092f3d20026cb",
+      "id": "completion-plan"
+    },
+    {
+      "command": [
+        "/workspace/.cloud-python/bin/python",
+        "scripts/testing/summarize-results.py",
+        "--input",
+        "/workspace/maxbooster7.5/reports/test-verification"
+      ],
+      "cwd": ".",
+      "startedAt": "2026-10-29T23:24:22.492880+00:00",
+      "durationSeconds": 3.877,
+      "exitCode": 0,
+      "timedOut": false,
+      "status": "passed",
+      "log": "reports/test-verification/orchestration/final-summary.txt",
+      "logSha256": "0ed6f4d592b4985cb2dc12463d31bc68e9e99417336ac1a730efcc48f528f8ca",
+      "id": "final-summary"
+    }
+  ],
+  "status": "failed",
+  "allTestsPassed": false,
+  "finishedAt": "2026-10-29T23:24:26.370918+00:00"
+}

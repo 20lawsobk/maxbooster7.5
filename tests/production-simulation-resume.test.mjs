@@ -56,7 +56,7 @@ function fixture(t) {
       "external/pdim/.pdim-restored-pdim",
     ]) write(file, sha);
     for (const file of [
-      "dist/index.mjs", "dist/cluster.mjs", "dist/gateway.mjs", "dist/compute-sizing.mjs",
+      "dist/index.mjs", "dist/cluster.mjs", "dist/gateway.mjs", "dist/compute-sizing.mjs", "dist/dns-api.mjs",
       "dist/retained-pdim-recovery-worker.mjs", "dist/public/index.html",
       "node_modules/tsx/package.json", "python_runtime/bin/python3.12",
       "external/maxcore/artifacts/ai-training-server/server.py",

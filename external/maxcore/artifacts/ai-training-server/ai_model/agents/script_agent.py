@@ -2,10 +2,12 @@ from __future__ import annotations
 import json
 import logging
 import re
+import threading
 from dataclasses import dataclass
 from typing import Dict, List, Optional
 from ..model.creative_model import CreativeModel
 from ai_model.generation.awareness import generation_guard
+from ai_model.generation.live_serving import LiveModelUnavailable
 
 logger = logging.getLogger("script_agent")
 
@@ -967,6 +969,8 @@ class ScriptAgent:
     def __init__(self, model: CreativeModel):
         self.model = model
         self._garble_probe_done = False
+        self._live_model_unavailable_logged = False
+        self._live_model_unavailable_log_lock = threading.Lock()
 
     @generation_guard
     def run(self, req: ScriptRequest) -> ScriptResponse:
@@ -1067,11 +1071,46 @@ class ScriptAgent:
                 response.hook = enforce(response.hook)
                 response.body = enforce(response.body)
                 response.cta = enforce(response.cta)
+                with self._live_model_unavailable_log_lock:
+                    self._live_model_unavailable_logged = False
                 return response
+        except LiveModelUnavailable:
+            # Live awareness is the active pre-checkpoint serving mode, not a
+            # template fallback. It composes from the caller's authored brief
+            # and a currently bound awareness snapshot; it never copies source
+            # post text or claims checkpoint inference.
+            response = self._validated_live_awareness_script(req)
+            with self._live_model_unavailable_log_lock:
+                self._live_model_unavailable_logged = False
+            return response
         except Exception:
             logger.exception("ScriptAgent checkpoint generation failed")
             raise
         raise ValueError("Checkpoint did not generate a meaningful script")
+
+    @generation_guard
+    def run_live_awareness(self, req: ScriptRequest) -> ScriptResponse:
+        """Compose only from caller input and the request's fresh snapshot."""
+        from dataclasses import replace
+        from ai_model.generation.awareness import ensure_context_once
+
+        req = replace(
+            req,
+            awareness=ensure_context_once(req.awareness, req.platform, "text"),
+        )
+        return self._validated_live_awareness_script(req)
+
+    def _validated_live_awareness_script(self, req: ScriptRequest) -> ScriptResponse:
+        response = self._awareness_compose(req)
+        from ai_model.safety import enforce
+
+        response.hook = enforce(response.hook)
+        response.body = enforce(response.body)
+        response.cta = enforce(response.cta)
+        if not all(self._is_meaningful(value) for value in
+                   (response.hook, response.body, response.cta)):
+            raise ValueError("Live-awareness composition failed copy validation")
+        return response
 
     def _is_meaningful(self, text: str) -> bool:
         if not text or len(text) < 10:
@@ -1088,7 +1127,84 @@ class ScriptAgent:
         return True
 
     def _awareness_compose(self, req: ScriptRequest) -> ScriptResponse:
-        raise RuntimeError("Awareness/template composition cannot substitute for model generation")
+        from ai_model.awareness import bound_snapshot
+
+        # A fresh bound receipt is mandatory. This path is only available when
+        # the awareness service has established the same snapshot used by the
+        # request's immutable generation plan.
+        snapshot = bound_snapshot()
+        if snapshot is None:
+            raise LiveModelUnavailable("Live awareness snapshot is unavailable")
+
+        idea = _clean_text((req.idea or "").strip())[:180].strip()
+        if not idea:
+            raise ValueError("Live-awareness text generation requires a caller-authored topic")
+
+        platform = (req.platform or "general").strip().lower().replace("-", "_")
+        if platform in {"x", "twitter"}:
+            platform = "twitter"
+        tone = _clean_text((req.tone or "authentic").strip())[:32] or "authentic"
+        tone_article = "an" if tone[0].lower() in "aeiou" else "a"
+        genre = _clean_text(
+            (req.genre or _detect_genre_from_awareness(req.awareness)).strip()
+        )[:32]
+        audience = _clean_text((req.target_audience or "").strip())[:80]
+
+        # Awareness contributes only a bounded strategy class, never verbatim
+        # third-party observations. The snapshot provides the live signal
+        # boundary; user-authored topic/tone/audience remain the copy inputs.
+        context = (req.awareness or "").lower()
+        if any(term in context for term in ("short-form", "short form", "reels", "shorts")):
+            strategy = "Open with a clear musical idea that reads quickly in a short-form post."
+        elif any(term in context for term in ("playlist", "listening mood", "discovery")):
+            strategy = "Make the listening mood and musical identity clear from the start."
+        elif any(term in context for term in ("community", "creator", "conversation")):
+            strategy = "Invite listeners to share their own response to the music."
+        else:
+            strategy = "Keep the focus on the musical idea and the feeling behind it."
+
+        if genre:
+            hook = f"{idea} — {tone_article} {tone} point of view on {genre}."
+            audience_line = (
+                f"Made for {audience} who connect with {genre}."
+                if audience
+                else (
+                    f"For listeners drawn to {genre} and "
+                    f"{tone_article} {tone} feel."
+                )
+            )
+            body = (
+                f"{idea} puts {genre} at the center, with "
+                f"{tone_article} {tone} direction. {audience_line} {strategy}"
+            )
+        else:
+            hook = f"{idea} — expressed with {tone_article} {tone} point of view."
+            audience_line = (
+                f"Made for {audience}."
+                if audience else "Made for listeners who value a distinct musical point of view."
+            )
+            body = f"{idea} keeps the focus on the idea and its {tone} feel. {audience_line} {strategy}"
+
+        ctas = {
+            "instagram": "Save this and share the part you connect with.",
+            "instagram_reels": "Share the moment that stays with you.",
+            "tiktok": "Tell us which moment you would replay.",
+            "youtube": "Leave your first reaction in the comments.",
+            "youtube_shorts": "Share your first reaction.",
+            "facebook": "Share it with someone who would connect with the sound.",
+            "twitter": "Quote-post the moment that stays with you.",
+            "linkedin": "Share the musical idea and the process behind it.",
+            "threads": "Reply with the detail that stood out.",
+            "google_business": "Listen and let us know what you think.",
+        }
+        cta = ctas.get(platform, "Listen and tell us what you connect with.")
+        response = ScriptResponse(
+            hook=hook,
+            body=body,
+            cta=cta,
+            source="live_awareness",
+        )
+        return _apply_direction(req.awareness, response)
 
     def _template_fallback(self, req: ScriptRequest) -> ScriptResponse:
         raise RuntimeError("Template fallback generation is disabled")

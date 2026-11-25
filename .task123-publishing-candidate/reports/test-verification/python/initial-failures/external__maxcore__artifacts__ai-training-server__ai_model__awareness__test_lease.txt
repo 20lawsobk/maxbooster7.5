@@ -1,0 +1,259 @@
+.FFFFF                                                                   [100%]
+=================================== FAILURES ===================================
+_____ AtomicLeaseTests.test_lost_lease_cannot_overwrite_successor_pointer ______
+
+self = <ai_model.awareness.test_lease.AtomicLeaseTests testMethod=test_lost_lease_cannot_overwrite_successor_pointer>
+
+    def setUp(self):
+        self.cmd("FLUSHDB")  # Isolated test socket only.
+        storage = types.SimpleNamespace(_ns=lambda key: key)
+        module = types.SimpleNamespace(get_storage=lambda: storage)
+        self.patcher = patch.dict("sys.modules", {"storage_client": module})
+        self.patcher.start()
+        self.store = PDIM()
+        self.store._command = self.cmd
+        self.addCleanup(self.patcher.stop)
+>       self.snapshot = Engine(sources=sources(), store=MemoryStore()).refresh()
+                        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+ai_model/awareness/test_lease.py:57: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+ai_model/awareness/engine.py:531: in __init__
+    from .sources import configured_sources
+ai_model/awareness/sources.py:15: in <module>
+    from workers import quality_harvester as legacy
+workers/quality_harvester.py:17: in <module>
+    from ai_model.native_analysis.safe_http import fetch_bytes
+ai_model/native_analysis/__init__.py:3: in <module>
+    from .media import (
+ai_model/native_analysis/media.py:18: in <module>
+    import numpy as np
+/workspace/.cloud-python/lib/python3.12/site-packages/numpy/__init__.py:112: in <module>
+    from numpy.__config__ import show_config
+/workspace/.cloud-python/lib/python3.12/site-packages/numpy/__config__.py:4: in <module>
+    from numpy._core._multiarray_umath import (
+/workspace/.cloud-python/lib/python3.12/site-packages/numpy/_core/__init__.py:24: in <module>
+    from . import multiarray
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+    """
+    Create the numpy._core.multiarray namespace for backward compatibility.
+    In v1.16 the multiarray and umath c-extension modules were merged into
+    a single _multiarray_umath extension module. So we replicate the old
+    namespace by importing from the extension module.
+    
+    """
+    
+    import functools
+    
+>   from . import _multiarray_umath, overrides
+E   ImportError: cannot load module more than once per process
+
+/workspace/.cloud-python/lib/python3.12/site-packages/numpy/_core/multiarray.py:11: ImportError
+__ AtomicLeaseTests.test_previous_id_only_pointer_migrates_without_regression __
+
+self = <ai_model.awareness.test_lease.AtomicLeaseTests testMethod=test_previous_id_only_pointer_migrates_without_regression>
+
+    def setUp(self):
+        self.cmd("FLUSHDB")  # Isolated test socket only.
+        storage = types.SimpleNamespace(_ns=lambda key: key)
+        module = types.SimpleNamespace(get_storage=lambda: storage)
+        self.patcher = patch.dict("sys.modules", {"storage_client": module})
+        self.patcher.start()
+        self.store = PDIM()
+        self.store._command = self.cmd
+        self.addCleanup(self.patcher.stop)
+>       self.snapshot = Engine(sources=sources(), store=MemoryStore()).refresh()
+                        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+ai_model/awareness/test_lease.py:57: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+ai_model/awareness/engine.py:531: in __init__
+    from .sources import configured_sources
+ai_model/awareness/sources.py:15: in <module>
+    from workers import quality_harvester as legacy
+workers/quality_harvester.py:17: in <module>
+    from ai_model.native_analysis.safe_http import fetch_bytes
+ai_model/native_analysis/__init__.py:3: in <module>
+    from .media import (
+ai_model/native_analysis/media.py:18: in <module>
+    import numpy as np
+/workspace/.cloud-python/lib/python3.12/site-packages/numpy/__init__.py:112: in <module>
+    from numpy.__config__ import show_config
+/workspace/.cloud-python/lib/python3.12/site-packages/numpy/__config__.py:4: in <module>
+    from numpy._core._multiarray_umath import (
+/workspace/.cloud-python/lib/python3.12/site-packages/numpy/_core/__init__.py:24: in <module>
+    from . import multiarray
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+    """
+    Create the numpy._core.multiarray namespace for backward compatibility.
+    In v1.16 the multiarray and umath c-extension modules were merged into
+    a single _multiarray_umath extension module. So we replicate the old
+    namespace by importing from the extension module.
+    
+    """
+    
+    import functools
+    
+>   from . import _multiarray_umath, overrides
+E   ImportError: cannot load module more than once per process
+
+/workspace/.cloud-python/lib/python3.12/site-packages/numpy/_core/multiarray.py:11: ImportError
+_ AtomicLeaseTests.test_published_snapshot_loads_into_follower_without_ingest __
+
+self = <ai_model.awareness.test_lease.AtomicLeaseTests testMethod=test_published_snapshot_loads_into_follower_without_ingest>
+
+    def setUp(self):
+        self.cmd("FLUSHDB")  # Isolated test socket only.
+        storage = types.SimpleNamespace(_ns=lambda key: key)
+        module = types.SimpleNamespace(get_storage=lambda: storage)
+        self.patcher = patch.dict("sys.modules", {"storage_client": module})
+        self.patcher.start()
+        self.store = PDIM()
+        self.store._command = self.cmd
+        self.addCleanup(self.patcher.stop)
+>       self.snapshot = Engine(sources=sources(), store=MemoryStore()).refresh()
+                        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+ai_model/awareness/test_lease.py:57: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+ai_model/awareness/engine.py:531: in __init__
+    from .sources import configured_sources
+ai_model/awareness/sources.py:15: in <module>
+    from workers import quality_harvester as legacy
+workers/quality_harvester.py:17: in <module>
+    from ai_model.native_analysis.safe_http import fetch_bytes
+ai_model/native_analysis/__init__.py:3: in <module>
+    from .media import (
+ai_model/native_analysis/media.py:18: in <module>
+    import numpy as np
+/workspace/.cloud-python/lib/python3.12/site-packages/numpy/__init__.py:112: in <module>
+    from numpy.__config__ import show_config
+/workspace/.cloud-python/lib/python3.12/site-packages/numpy/__config__.py:4: in <module>
+    from numpy._core._multiarray_umath import (
+/workspace/.cloud-python/lib/python3.12/site-packages/numpy/_core/__init__.py:24: in <module>
+    from . import multiarray
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+    """
+    Create the numpy._core.multiarray namespace for backward compatibility.
+    In v1.16 the multiarray and umath c-extension modules were merged into
+    a single _multiarray_umath extension module. So we replicate the old
+    namespace by importing from the extension module.
+    
+    """
+    
+    import functools
+    
+>   from . import _multiarray_umath, overrides
+E   ImportError: cannot load module more than once per process
+
+/workspace/.cloud-python/lib/python3.12/site-packages/numpy/_core/multiarray.py:11: ImportError
+______ AtomicLeaseTests.test_same_owner_out_of_order_publication_rejected ______
+
+self = <ai_model.awareness.test_lease.AtomicLeaseTests testMethod=test_same_owner_out_of_order_publication_rejected>
+
+    def setUp(self):
+        self.cmd("FLUSHDB")  # Isolated test socket only.
+        storage = types.SimpleNamespace(_ns=lambda key: key)
+        module = types.SimpleNamespace(get_storage=lambda: storage)
+        self.patcher = patch.dict("sys.modules", {"storage_client": module})
+        self.patcher.start()
+        self.store = PDIM()
+        self.store._command = self.cmd
+        self.addCleanup(self.patcher.stop)
+>       self.snapshot = Engine(sources=sources(), store=MemoryStore()).refresh()
+                        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+ai_model/awareness/test_lease.py:57: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+ai_model/awareness/engine.py:531: in __init__
+    from .sources import configured_sources
+ai_model/awareness/sources.py:15: in <module>
+    from workers import quality_harvester as legacy
+workers/quality_harvester.py:17: in <module>
+    from ai_model.native_analysis.safe_http import fetch_bytes
+ai_model/native_analysis/__init__.py:3: in <module>
+    from .media import (
+ai_model/native_analysis/media.py:18: in <module>
+    import numpy as np
+/workspace/.cloud-python/lib/python3.12/site-packages/numpy/__init__.py:112: in <module>
+    from numpy.__config__ import show_config
+/workspace/.cloud-python/lib/python3.12/site-packages/numpy/__config__.py:4: in <module>
+    from numpy._core._multiarray_umath import (
+/workspace/.cloud-python/lib/python3.12/site-packages/numpy/_core/__init__.py:24: in <module>
+    from . import multiarray
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+    """
+    Create the numpy._core.multiarray namespace for backward compatibility.
+    In v1.16 the multiarray and umath c-extension modules were merged into
+    a single _multiarray_umath extension module. So we replicate the old
+    namespace by importing from the extension module.
+    
+    """
+    
+    import functools
+    
+>   from . import _multiarray_umath, overrides
+E   ImportError: cannot load module more than once per process
+
+/workspace/.cloud-python/lib/python3.12/site-packages/numpy/_core/multiarray.py:11: ImportError
+________ AtomicLeaseTests.test_server_clock_rejects_expired_publication ________
+
+self = <ai_model.awareness.test_lease.AtomicLeaseTests testMethod=test_server_clock_rejects_expired_publication>
+
+    def setUp(self):
+        self.cmd("FLUSHDB")  # Isolated test socket only.
+        storage = types.SimpleNamespace(_ns=lambda key: key)
+        module = types.SimpleNamespace(get_storage=lambda: storage)
+        self.patcher = patch.dict("sys.modules", {"storage_client": module})
+        self.patcher.start()
+        self.store = PDIM()
+        self.store._command = self.cmd
+        self.addCleanup(self.patcher.stop)
+>       self.snapshot = Engine(sources=sources(), store=MemoryStore()).refresh()
+                        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+ai_model/awareness/test_lease.py:57: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+ai_model/awareness/engine.py:531: in __init__
+    from .sources import configured_sources
+ai_model/awareness/sources.py:15: in <module>
+    from workers import quality_harvester as legacy
+workers/quality_harvester.py:17: in <module>
+    from ai_model.native_analysis.safe_http import fetch_bytes
+ai_model/native_analysis/__init__.py:3: in <module>
+    from .media import (
+ai_model/native_analysis/media.py:18: in <module>
+    import numpy as np
+/workspace/.cloud-python/lib/python3.12/site-packages/numpy/__init__.py:112: in <module>
+    from numpy.__config__ import show_config
+/workspace/.cloud-python/lib/python3.12/site-packages/numpy/__config__.py:4: in <module>
+    from numpy._core._multiarray_umath import (
+/workspace/.cloud-python/lib/python3.12/site-packages/numpy/_core/__init__.py:24: in <module>
+    from . import multiarray
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+    """
+    Create the numpy._core.multiarray namespace for backward compatibility.
+    In v1.16 the multiarray and umath c-extension modules were merged into
+    a single _multiarray_umath extension module. So we replicate the old
+    namespace by importing from the extension module.
+    
+    """
+    
+    import functools
+    
+>   from . import _multiarray_umath, overrides
+E   ImportError: cannot load module more than once per process
+
+/workspace/.cloud-python/lib/python3.12/site-packages/numpy/_core/multiarray.py:11: ImportError
+=========================== short test summary info ============================
+FAILED ai_model/awareness/test_lease.py::AtomicLeaseTests::test_lost_lease_cannot_overwrite_successor_pointer
+FAILED ai_model/awareness/test_lease.py::AtomicLeaseTests::test_previous_id_only_pointer_migrates_without_regression
+FAILED ai_model/awareness/test_lease.py::AtomicLeaseTests::test_published_snapshot_loads_into_follower_without_ingest
+FAILED ai_model/awareness/test_lease.py::AtomicLeaseTests::test_same_owner_out_of_order_publication_rejected
+FAILED ai_model/awareness/test_lease.py::AtomicLeaseTests::test_server_clock_rejects_expired_publication
+5 failed, 1 passed in 3.18s

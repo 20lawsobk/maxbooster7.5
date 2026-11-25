@@ -315,7 +315,7 @@ export async function provisionCertificate(
   // stores the issued cert would silently no-op and we'd lose the cert.
   const { rows: existingRows } = (await (pool as any).query(
     `SELECT cert_provision_attempts, cert_last_attempt_at
-     FROM storefront_hosts WHERE host = $1`,
+     FROM public.storefront_hosts WHERE host = $1`,
     [normalized],
   )) as { rows: Array<{ cert_provision_attempts: number; cert_last_attempt_at: Date | null }> };
   const existing = existingRows[0];
@@ -369,7 +369,7 @@ export async function provisionCertificate(
     }
 
     await pool.query(
-      `UPDATE storefront_hosts
+      `UPDATE public.storefront_hosts
        SET cert_status = 'renewing',
            cert_provision_attempts = cert_provision_attempts + 1,
            cert_last_attempt_at = now(),
@@ -431,7 +431,7 @@ async function issueAndStore(normalized: string): Promise<ProvisionResult> {
     const chainPem = pemBlocks.slice(1).join("\n") || null;
 
     const updateRes = await pool.query(
-      `UPDATE storefront_hosts
+      `UPDATE public.storefront_hosts
        SET cert_status = 'issued',
            cert_pem = $1,
            cert_key_encrypted = $2,
@@ -477,7 +477,7 @@ async function issueAndStore(normalized: string): Promise<ProvisionResult> {
   } catch (err) {
     const msg = err instanceof Error ? err.message : String(err);
     await pool.query(
-      `UPDATE storefront_hosts
+      `UPDATE public.storefront_hosts
        SET cert_status = 'failed', cert_last_error = $1, updated_at = now()
        WHERE host = $2`,
       [msg.slice(0, 1000), normalized],
@@ -536,7 +536,7 @@ async function runRenewalSweep(): Promise<void> {
     }
 
     const { rows } = (await (pool as any).query(
-      `SELECT host FROM storefront_hosts
+      `SELECT host FROM public.storefront_hosts
        WHERE cert_status IN ('issued', 'failed', 'pending')
          AND (cert_renewal_after IS NULL OR cert_renewal_after <= now())
          AND cert_provision_attempts < $1

@@ -16,6 +16,7 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import { useToast } from "@/hooks/use-toast";
 import { Logo } from "@/components/ui/Logo";
 import { getCsrfTokenFromCookie } from "@/lib/queryClient";
+import { isPublicRegistrationEnabled } from "@/lib/authPolicy";
 import {
   Eye,
   EyeOff,
@@ -154,6 +155,8 @@ export default function Login() {
     password?: string;
   }>({});
   const [isDemoLoading, setIsDemoLoading] = useState(false);
+  const [publicRegistrationEnabled, setPublicRegistrationEnabled] =
+    useState(false);
   const requestInFlight = useRef(false);
   const [_location, navigate] = useLocation();
   const { toast } = useToast();
@@ -167,6 +170,21 @@ export default function Login() {
   useEffect(() => {
     if (!authLoading && authenticatedUser) navigate(redirectAfterLogin);
   }, [authenticatedUser, authLoading, navigate, redirectAfterLogin]);
+
+  useEffect(() => {
+    const controller = new AbortController();
+    fetch("/api/auth/public-policy", {
+      credentials: "include",
+      cache: "no-store",
+      signal: controller.signal,
+    })
+      .then((response) => (response.ok ? response.json() : null))
+      .then((policy) =>
+        setPublicRegistrationEnabled(isPublicRegistrationEnabled(policy)),
+      )
+      .catch(() => setPublicRegistrationEnabled(false));
+    return () => controller.abort();
+  }, []);
 
   useEffect(() => {
     const urlParams = new URLSearchParams(window.location.search);
@@ -674,40 +692,44 @@ export default function Login() {
             Continue with Google
           </Button>
 
-          <Button
-            type="button"
-            variant="ghost"
-            className="w-full border border-dashed border-gray-300 dark:border-gray-600 hover:bg-amber-50 dark:hover:bg-amber-900/20"
-            onClick={handleDemoLogin}
-            disabled={isLoading || isDemoLoading}
-            data-testid="button-demo-login"
-          >
-            {isDemoLoading ? (
-              <>
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                Starting Demo...
-              </>
-            ) : (
-              <>
-                <Play className="mr-2 h-4 w-4" />
-                Try Demo Mode
-              </>
-            )}
-          </Button>
-
-          <div className="text-center text-sm text-gray-600 dark:text-gray-400">
-            Don't have an account?{" "}
-            <Link href="/pricing">
+          {publicRegistrationEnabled && (
+            <>
               <Button
-                variant="link"
-                size="sm"
-                className="p-0"
-                data-testid="link-signup"
+                type="button"
+                variant="ghost"
+                className="w-full border border-dashed border-gray-300 dark:border-gray-600 hover:bg-amber-50 dark:hover:bg-amber-900/20"
+                onClick={handleDemoLogin}
+                disabled={isLoading || isDemoLoading}
+                data-testid="button-demo-login"
               >
-                Sign up here
+                {isDemoLoading ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Starting Demo...
+                  </>
+                ) : (
+                  <>
+                    <Play className="mr-2 h-4 w-4" />
+                    Try Demo Mode
+                  </>
+                )}
               </Button>
-            </Link>
-          </div>
+
+              <div className="text-center text-sm text-gray-600 dark:text-gray-400">
+                Don't have an account?{" "}
+                <Link href="/pricing">
+                  <Button
+                    variant="link"
+                    size="sm"
+                    className="p-0"
+                    data-testid="link-signup"
+                  >
+                    Sign up here
+                  </Button>
+                </Link>
+              </div>
+            </>
+          )}
         </CardContent>
       </Card>
     </div>

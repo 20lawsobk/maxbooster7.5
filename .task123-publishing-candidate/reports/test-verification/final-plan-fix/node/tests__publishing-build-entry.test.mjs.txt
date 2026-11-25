@@ -1,0 +1,64 @@
+TAP version 13
+# Subtest: Replit publishing selects the current guarded bootstrap executive shell
+ok 1 - Replit publishing selects the current guarded bootstrap executive shell
+  ---
+  duration_ms: 79.643973
+  type: 'test'
+  ...
+# Subtest: legacy recovery publishing helper packs and reenters with indicators {}
+ok 2 - legacy recovery publishing helper packs and reenters with indicators {}
+  ---
+  duration_ms: 1495.7256
+  type: 'test'
+  ...
+# Subtest: legacy recovery publishing helper packs and reenters with indicators {"REPLIT_DEPLOYMENT":"","REPLIT_DEPLOYMENT_ID":""}
+ok 3 - legacy recovery publishing helper packs and reenters with indicators {"REPLIT_DEPLOYMENT":"","REPLIT_DEPLOYMENT_ID":""}
+  ---
+  duration_ms: 1176.160624
+  type: 'test'
+  ...
+# Subtest: legacy recovery publishing helper packs and reenters with indicators {"REPLIT_DEPLOYMENT":"1","REPLIT_DEPLOYMENT_ID":"runtime-present"}
+ok 4 - legacy recovery publishing helper packs and reenters with indicators {"REPLIT_DEPLOYMENT":"1","REPLIT_DEPLOYMENT_ID":"runtime-present"}
+  ---
+  duration_ms: 1168.9251
+  type: 'test'
+  ...
+# Subtest: legacy recovery publishing helper rejects inherited authorization without npm or filesystem mutation
+ok 5 - legacy recovery publishing helper rejects inherited authorization without npm or filesystem mutation
+  ---
+  duration_ms: 274.11162
+  type: 'test'
+  ...
+# Subtest: legacy recovery publishing diagnostics retain npm failure and never claim successful completion
+ok 6 - legacy recovery publishing diagnostics retain npm failure and never claim successful completion
+  ---
+  duration_ms: 279.64752
+  type: 'test'
+  ...
+# Subtest: interrupted publishing recovers before npm and preserves later edits
+ok 7 - interrupted publishing recovers before npm and preserves later edits
+  ---
+  duration_ms: 1032.208715
+  type: 'test'
+  ...
+# Subtest: partial, mismatched and ambiguous contexts leave source and recovery bytes unchanged
+ok 8 - partial, mismatched and ambiguous contexts leave source and recovery bytes unchanged
+  ---
+  duration_ms: 654.354672
+  type: 'test'
+  ...
+# Subtest: conflicting local and publishing journals reject before any restore
+ok 9 - conflicting local and publishing journals reject before any restore
+  ---
+  duration_ms: 462.099662
+  type: 'test'
+  ...
+1..9
+# tests 9
+# suites 0
+# pass 9
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 6747.016277

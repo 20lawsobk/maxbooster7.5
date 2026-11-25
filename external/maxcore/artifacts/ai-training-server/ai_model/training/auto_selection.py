@@ -134,6 +134,22 @@ def _rank(evidence, fingerprints):
     return sum(sum(row.values()) for row in scores) / (3 * len(scores))
 
 
+def _reviewed_release_fields(evidence):
+    run_name = Path(evidence["run"]).name
+    if run_name.startswith("internal-"):
+        source = "owner_and_simulation"
+    elif run_name.startswith("live-"):
+        source = "reviewed_live_observations"
+    else:
+        raise ValueError("Reviewed candidate has an unsupported run identity")
+    return {
+        "eligibility_policy": "signed-review-v1",
+        "release_source": source,
+        "trained_checkpoint_loaded": True,
+        "validated_selected": True,
+    }
+
+
 def _reviewed_selection():
     """Process bounded operator submissions, atomically retaining a valid incumbent.
 
@@ -153,14 +169,28 @@ def _reviewed_selection():
         except BlockingIOError:
             return {"state": "another_selector_running"}
         incumbent = None
+        invalid_incumbent = False
         pointer = registry.REGISTRY / "selected.json"
         if pointer.exists():
             if pointer.is_symlink():
                 raise ValueError("Selected pointer must not be a symlink")
-            selected = json.loads(pointer.read_text())
-            decision = registry.eligibility(**selected["evidence"])
-            if decision["eligible"] and decision["fingerprints"] == selected["fingerprints"]:
-                incumbent = (selected["evidence"], decision, _rank(selected["evidence"], decision["fingerprints"]))
+            try:
+                selected = json.loads(pointer.read_text())
+                if selected.get("eligibility_policy") == "signed-review-v1":
+                    evidence = selected["evidence"]
+                    decision = registry.eligibility(**evidence)
+                    if (decision["eligible"]
+                            and decision["fingerprints"] == selected["fingerprints"]):
+                        incumbent = (
+                            evidence, decision,
+                            _rank(evidence, decision["fingerprints"]),
+                        )
+                    else:
+                        invalid_incumbent = True
+                else:
+                    invalid_incumbent = True
+            except (OSError, ValueError, KeyError, TypeError, ZeroDivisionError):
+                invalid_incumbent = True
         candidates, rejected = [], 0
         requests = sorted(inbox.glob("*.json"))
         for request in requests[:64]:
@@ -171,8 +201,8 @@ def _reviewed_selection():
                 evidence = submission["evidence"]
                 if submission.get("schema") != 1 or set(evidence) != FIELDS:
                     raise ValueError("Invalid selection submission schema")
-                if not Path(evidence["run"]).name.startswith("live-"):
-                    raise ValueError("Automatic serving requires a live candidate")
+                if not Path(evidence["run"]).name.startswith(("live-", "internal-")):
+                    raise ValueError("Automatic serving requires a certified candidate")
                 decision = registry.eligibility(**evidence)
                 if not decision["eligible"]:
                     rejected += 1
@@ -187,12 +217,21 @@ def _reviewed_selection():
             except (OSError, ValueError, KeyError, TypeError, ZeroDivisionError):
                 rejected += 1
         if not candidates:
+            retained_fields = {}
+            if incumbent:
+                retained_fields = {
+                    "checkpoint_sha256": incumbent[1]["fingerprints"]["checkpoint_sha256"],
+                    **_reviewed_release_fields(incumbent[0]),
+                }
             return {"state": "retained" if incumbent else "waiting_for_candidate",
-                    "rejected": rejected, "scan_limited": len(requests) > 64}
+                    "rejected": rejected, "scan_limited": len(requests) > 64,
+                    "selected_candidate_invalid": invalid_incumbent,
+                    **retained_fields}
         _, checkpoint, evidence = max(candidates, key=lambda item: (item[0], item[1]))
         # select_candidate revalidates after taking its own atomic pointer lock.
         registry.select_candidate(**evidence)
-        return {"state": "selected", "checkpoint_sha256": checkpoint, "rejected": rejected}
+        return {"state": "selected", "checkpoint_sha256": checkpoint, "rejected": rejected,
+                **_reviewed_release_fields(evidence)}
 
 
 def _public_selection(learning_policy=None):
@@ -203,18 +242,26 @@ def _public_selection(learning_policy=None):
         except BlockingIOError:
             return {"state": "another_selector_running"}
         incumbent = None
+        invalid_incumbent = False
         pointer = registry.REGISTRY / "selected.json"
         if pointer.is_symlink():
             raise ValueError("Selected pointer must not be a symlink")
         if pointer.exists():
-            selected = json.loads(pointer.read_text())
-            if selected.get("eligibility_policy") == registry.PUBLIC_LIVE_POLICY:
-                decision = registry.selected_eligibility(selected)
-                if decision["eligible"] and decision["fingerprints"] == selected["fingerprints"]:
-                    identity = decision["fingerprints"]
-                    if (_validated_policy(identity, learning_policy)
-                            and _operational_candidate(identity["run"], identity["checkpoint_sha256"])):
-                        incumbent = identity
+            try:
+                selected = json.loads(pointer.read_text())
+                if selected.get("eligibility_policy") == registry.PUBLIC_LIVE_POLICY:
+                    decision = registry.selected_eligibility(selected)
+                    if decision["eligible"] and decision["fingerprints"] == selected["fingerprints"]:
+                        identity = decision["fingerprints"]
+                        if (_validated_policy(identity, learning_policy)
+                                and _operational_candidate(identity["run"], identity["checkpoint_sha256"])):
+                            incumbent = identity
+                        else:
+                            invalid_incumbent = True
+                    else:
+                        invalid_incumbent = True
+            except (OSError, ValueError, KeyError, TypeError):
+                invalid_incumbent = True
         root = registry.REGISTRY.parent / "candidate_runs"
         rejected, new_probes, scanned = 0, 0, 0
         probe_limited = False
@@ -282,6 +329,7 @@ def _public_selection(learning_policy=None):
         if incumbent or runs:
             return {"state": "retained" if incumbent else "waiting_for_candidate",
                     "policy": registry.PUBLIC_LIVE_POLICY, "rejected": rejected,
+                    "selected_candidate_invalid": invalid_incumbent,
                     "scan_limited": scan_limited, "probe_limited": probe_limited,
                     "new_probes": new_probes, "scanned": scanned,
                     **({"checkpoint_sha256": incumbent["checkpoint_sha256"],
@@ -292,21 +340,54 @@ def _public_selection(learning_policy=None):
 def auto_select(*, learning_policy=None):
     if os.environ.get("MAXCORE_AUTO_SELECT", "1") != "1":
         return {"state": "disabled"}
-    # Public candidates are discovered from the certified trainer output itself;
-    # neither an operator submission nor a human signature is needed.
-    result = _public_selection(learning_policy=learning_policy)
+    # Give independently reviewed releases first refusal. This prevents an
+    # unrelated or uncertified live run from starving a signed owner/simulation
+    # candidate already submitted for selection.
+    reviewed = None
+    if learning_policy is None:
+        try:
+            reviewed = _reviewed_selection()
+        except (OSError, ValueError, KeyError, TypeError):
+            return {
+                "state": "blocked_registry",
+                "reason": "reviewed_selection_validation_failed",
+                "selected_candidate_invalid": True,
+            }
+        if reviewed["state"] in {"selected", "retained", "another_selector_running"}:
+            return reviewed
+
+    # Public live-awareness selection remains its own explicitly weaker state;
+    # it is not promoted to trained-checkpoint readiness.
+    try:
+        result = _public_selection(learning_policy=learning_policy)
+    except (OSError, ValueError, KeyError, TypeError):
+        return {
+            "state": "blocked_registry",
+            "reason": "public_selection_validation_failed",
+            "selected_candidate_invalid": True,
+        }
     if result is not None:
+        if reviewed and reviewed.get("rejected"):
+            result["reviewed_rejected"] = reviewed["rejected"]
+        if (reviewed and reviewed.get("selected_candidate_invalid")
+                and result.get("state") not in {"selected", "retained"}):
+            result["selected_candidate_invalid"] = True
         return result
+    if reviewed and reviewed.get("selected_candidate_invalid"):
+        return reviewed
     if learning_policy is not None:
         return {"state": "waiting_for_candidate", "policy": registry.PUBLIC_LIVE_POLICY,
                 "learning_policy": learning_policy, "rejected": 0}
-    return _reviewed_selection()
+    return reviewed or {"state": "waiting_for_candidate", "rejected": 0}
 
 
 def submit_reviewed(**evidence):
     """Queue verified evidence for automatic selection; never generate approvals."""
-    if set(evidence) != FIELDS or not Path(evidence["run"]).name.startswith("live-"):
-        raise ValueError("A complete live-candidate evidence submission is required")
+    run = evidence.get("run")
+    if (set(evidence) != FIELDS
+            or not isinstance(run, str)
+            or not Path(run).name.startswith(("live-", "internal-"))):
+        raise ValueError("A complete certified-candidate evidence submission is required")
     normalized = {key: str(Path(value).resolve()) for key, value in evidence.items()}
     decision = registry.eligibility(**normalized)
     if not decision["eligible"]:

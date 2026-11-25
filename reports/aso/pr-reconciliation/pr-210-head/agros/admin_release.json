@@ -1,0 +1,108 @@
+{
+  "schema": 1,
+  "id": "admin-private",
+  "description": "The administrator can use every Max Booster domain end to end with durable real outcomes.",
+  "required_criteria": {
+    "private_access": "Private application entry points deny anonymous and non-admin access; public registration is closed by default. Intentionally published fan/share content has explicit owner permission and exposes no private data.",
+    "admin_session": "Admin login, MFA, logout, expiry, revocation and account recovery work.",
+    "admin_entitlements": "The administrator can use all features without buying a public subscription; forged roles fail.",
+    "admin_inventory": "Every admin-visible action is inventoried and mapped to tested scenarios; there are no unmapped or skipped actions.",
+    "persistence": "Changes, uploads and jobs survive reload, logout/login and service restart.",
+    "startup_health": "Production artifact starts, becomes ready, handles requests and shuts down cleanly.",
+    "backup_restore": "An actual isolated backup restoration recovers records and referenced assets.",
+    "rollback": "A tested rollback restores a working version without losing accepted data.",
+    "monitoring": "Failures, latency and job status are observable and alert delivery is tested.",
+    "provider_truth": "Required integrations return authentic provider outcomes and failures; no mocks are presented as live acceptance.",
+    "financial_integrity": "Checkouts, refunds, royalties and subscriptions reflect settled authoritative events without duplicates.",
+    "security_findings": "No unresolved critical or high finding affects the private admin release.",
+    "admin_accessibility": "Admin critical workflows work by keyboard with zero blocking accessibility violations.",
+    "admin_performance": "Measured admin workload meets API p95 <=250ms and page load <=2s with realistic media assets.",
+    "owner_runbook": "The administrator can operate, diagnose, recover and disable the system using tested instructions.",
+    "artist.journey_1": "Artist registers, verifies identity, completes onboarding, saves profile, reloads it, and updates the public press kit.",
+    "artist.journey_2": "Manager joins an artist workspace with limited rights, edits permitted profile fields, and loses access after revocation.",
+    "artist.journey_3": "Artist uploads profile artwork, replaces it, sees the durable public version, and removes the asset without orphaned storage.",
+    "artist.journey_4": "Artist exports or erases account data while contractual and financial retention rules remain explicit.",
+    "fans.journey_1": "Artist imports fan contacts with consent and deduplication, creates a segment, and verifies persisted membership.",
+    "fans.journey_2": "Fan opts into a membership, changes preferences, unsubscribes, and stops receiving eligible future messages.",
+    "fans.journey_3": "Artist drafts a fan campaign, previews recipient eligibility, schedules a sandbox delivery, and observes genuine delivery failures.",
+    "fans.journey_4": "Manager searches, paginates, exports, and deletes authorized fan data without seeing another artist's fans.",
+    "projects.journey_1": "Artist creates a project, assigns a collaborator and tasks, attaches files, changes status, and reloads all durable records.",
+    "projects.journey_2": "Collaborator edits an allowed task while a second actor edits concurrently; conflicts are explained without lost updates.",
+    "projects.journey_3": "Artist duplicates a project and verifies new ownership and independent assets; deleting a project cleans only its owned resources.",
+    "projects.journey_4": "Manager manages project budgets, deadlines, search, filtering, and export across authorized workspaces.",
+    "studio.journey_1": "Producer opens a saved session, imports audio, edits tracks and regions, saves, closes, and reopens the same arrangement.",
+    "studio.journey_2": "Producer records or creates MIDI, changes tempo, edits markers and automation, and verifies playback timing.",
+    "studio.journey_3": "Producer renders or exports a mix, observes progress and cancellation, and retrieves the genuine output asset.",
+    "studio.journey_4": "Collaborator lacking edit or export permission is denied; an interrupted save or render resumes without corrupting the session.",
+    "distribution.journey_1": "Artist creates a release, enters credits and rights, uploads valid masters and artwork, and reviews validation errors.",
+    "distribution.journey_2": "Artist submits a release through the authorized provider sandbox and tracks genuine pending, accepted, rejected, and retry states.",
+    "distribution.journey_3": "Artist retries a timed-out submission without duplicate releases, reconciles provider status, and handles signed callbacks.",
+    "distribution.journey_4": "Artist requests a supported update or takedown and sees explicit provider and contractual constraints.",
+    "marketing.journey_1": "Artist connects a sandbox channel with least privilege, drafts campaign content, previews it, and schedules delivery in the correct timezone.",
+    "marketing.journey_2": "Manager reviews an automated proposal, approves only the intended action, and sees the resulting delivery receipt.",
+    "marketing.journey_3": "Artist pauses or cancels a campaign before execution; workers respect consent, rate limits, and revocation.",
+    "marketing.journey_4": "Artist inspects attribution and failure metrics and reconnects an expired integration without losing drafts.",
+    "revenue.journey_1": "Artist imports or syncs a royalty statement, maps releases and splits, and reconciles totals to the source.",
+    "revenue.journey_2": "Manager filters revenue by period, currency, source, and project; the UI distinguishes missing data from zero income.",
+    "revenue.journey_3": "Artist records refunds or corrections and verifies historical reports, payouts, and exports without double counting.",
+    "revenue.journey_4": "Collaborator views only entitled royalty shares and disputes a mismatch through a documented workflow.",
+    "assistant.journey_1": "Artist asks a question grounded in authorized project data and receives a traceable answer or an explicit uncertainty response.",
+    "assistant.journey_2": "Artist requests an action, reviews the proposed side effects, and sees only authorized tools execute.",
+    "assistant.journey_3": "A retrieved document or user message tries to override permissions; the assistant keeps tenant data and tool authority isolated.",
+    "assistant.journey_4": "Artist cancels a generation, reaches a rate or budget limit, or encounters a provider outage and gets a recoverable state.",
+    "collaboration.journey_1": "Artist invites a collaborator, collaborator accepts once, and both see the correct project and role.",
+    "collaboration.journey_2": "Members exchange comments or messages, edit concurrently, reconnect after a network loss, and reconcile durable state.",
+    "collaboration.journey_3": "Owner changes or revokes permissions while a session is active; subsequent reads, writes, and subscriptions enforce the change.",
+    "collaboration.journey_4": "Members review a contribution, resolve a conflict, and access only licensed shared files.",
+    "marketplace.journey_1": "Seller creates a licensed listing, uploads assets, previews public metadata, and publishes only a valid listing.",
+    "marketplace.journey_2": "Buyer starts sandbox checkout and receives the checkout session without the platform claiming a paid purchase.",
+    "marketplace.journey_3": "A verified payment event creates one order and one entitlement; repeated callbacks or retries never duplicate revenue or access.",
+    "marketplace.journey_4": "Buyer downloads only entitled assets, requests a supported refund, and seller sees reconciled order and payout status.",
+    "subscriptions.journey_1": "User selects a plan, starts sandbox checkout, and receives entitlements only after authoritative payment confirmation.",
+    "subscriptions.journey_2": "Subscriber upgrades, downgrades, cancels, or restores an eligible plan with explicit effective dates and proration behavior.",
+    "subscriptions.journey_3": "Payment failure, retry, refund, chargeback, or out-of-order webhook updates the subscription once and reconciles stale state.",
+    "subscriptions.journey_4": "User inspects invoices and billing history while another tenant cannot access them; disabled providers surface a truthful unavailable state.",
+    "administration.journey_1": "Authorized administrator completes required authentication, opens scoped dashboards, and sees current source-backed status.",
+    "administration.journey_2": "Administrator investigates a support or moderation case using least-privilege access and records an attributable action.",
+    "administration.journey_3": "Administrator changes a permitted control, previews its impact, and can identify or roll back the change through an audit trail.",
+    "administration.journey_4": "Non-admin, revoked admin, and cross-tenant users are denied both UI and direct API access; bulk actions are bounded and idempotent."
+  },
+  "mandatory_source_gates": [
+    "build",
+    "types",
+    "lint",
+    "unit",
+    "integration",
+    "regression",
+    "security",
+    "start"
+  ],
+  "deferred": [
+    "Public self-service registration and mass onboarding",
+    "General availability for every persona and subscription tier",
+    "Large-scale multiuser capacity and public growth experiments"
+  ],
+  "numeric_limits": {
+    "security_critical": {
+      "min": 0,
+      "max": 0
+    },
+    "security_high": {
+      "min": 0,
+      "max": 0
+    },
+    "accessibility_violations": {
+      "min": 0,
+      "max": 0
+    },
+    "api_p95_ms": {
+      "min": 0,
+      "max": 250
+    },
+    "page_load_seconds": {
+      "min": 0,
+      "max": 2
+    }
+  },
+  "public_readiness_unchanged": true
+}

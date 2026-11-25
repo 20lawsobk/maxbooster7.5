@@ -4,6 +4,10 @@ import { eq, and } from "drizzle-orm";
 import { z } from "zod";
 import { logger } from "../logger.js";
 import {
+  ensureDnsSyncSecret,
+  hasValidDnsSyncSecret,
+} from "../lib/dnsSyncAuth.js";
+import {
   processQuery,
   getDNSInfo,
   getQueryCount,
@@ -1032,7 +1036,7 @@ router.post("/:storefrontId/templates/:templateId/apply", async (req, res) => {
 
 // ── Internal zone sync endpoint (for dns-node ZONE_SYNC_URL) ─────────────────
 
-const DNS_SYNC_SECRET = process.env.DNS_SYNC_SECRET || "";
+const DNS_SYNC_SECRET = ensureDnsSyncSecret() || "";
 
 /**
  * GET /api/dns/zone/:domain
@@ -1047,8 +1051,8 @@ const DNS_SYNC_SECRET = process.env.DNS_SYNC_SECRET || "";
  */
 router.get("/zone/:domain", async (req, res) => {
   if (DNS_SYNC_SECRET) {
-    const provided = req.headers["x-dns-sync-secret"];
-    if (provided !== DNS_SYNC_SECRET) {
+    const provided = req.get("x-dns-sync-secret");
+    if (!hasValidDnsSyncSecret(provided, DNS_SYNC_SECRET)) {
       return res
         .status(401)
         .json({ error: "Invalid or missing X-DNS-Sync-Secret" });

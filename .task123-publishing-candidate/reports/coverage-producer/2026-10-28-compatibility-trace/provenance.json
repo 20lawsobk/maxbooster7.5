@@ -1,0 +1,15 @@
+{
+  "scope": "Read-only comparison of retained source-mapped profiles; no counters merged or global profile changed",
+  "baselineArchive": "reports/test-verification/history/2026-10-27-before-awareness-release-isolation/master-evidence.tar.gz",
+  "baselineArchiveSha256": "0f66e0d8b0d17209e794110baa8d4305e48c94d46b081e01b76003bd006884cf",
+  "baselineMember": "coverage/coverage-final.json",
+  "baselineMemberBytes": 48952651,
+  "baselineMemberSha256": "b3c316c5eef7f07ef552b1b1653b3f7c058f685d2491f69f6110a87148423fcd",
+  "collectorReceiptBaselineMatches": true,
+  "nodeProfile": "reports/coverage-producer/2026-10-28-a1603b13-node/coverage-final.json",
+  "nodeProfileSha256": "fbc25eda571237d7f97091b61eac4216e62f26b8840f829a4d6853e3ea1f2c75",
+  "sourceRevision": "a1603b13b6352a978e3877a2f43f1ccd98a98a18",
+  "selectedSourceDigest": "41d4c03760221b484d235a49c15ec80702cd5d35be045393b4f069fd842729d4",
+  "files": 9,
+  "productionReady": false
+}

@@ -9,9 +9,18 @@ type Element = { type: unknown; props: Record<string, any> };
 
 // A deliberately small hook/JSX harness: exercises the real page event handlers
 // without a browser, AuthProvider, server imports, credentials, or network.
-function pageHarness(page: string, search = "", authLoading = false, user: { id: string } | null = null) {
+function pageHarness(
+  page: string,
+  search = "",
+  authLoading = false,
+  user: { id: string } | null = null,
+  allowPublicRegistration = false,
+) {
   const source = readFileSync(`client/src/pages/${page}.tsx`, "utf8");
   const slots: any[] = [];
+  // Login's public-registration state is its tenth useState hook. Tests that
+  // exercise demo/signup behavior opt in explicitly; defaults stay private.
+  if (page === "Login" && allowPublicRegistration) slots[9] = true;
   let cursor = 0;
   let request: (...args: any[]) => Promise<Response> = async () => {
     throw new Error("Unexpected fetch in auth page unit test");
@@ -196,6 +205,12 @@ describe("Landing page demo authentication", () => {
 });
 
 describe("Login page contract and request lifecycle", () => {
+  it("keeps demo and public registration controls hidden in private mode", () => {
+    const h = pageHarness("Login");
+    expect(h.all().some(node => node.props?.["data-testid"] === "button-demo-login")).toBe(false);
+    expect(h.all().some(node => node.props?.href === "/register")).toBe(false);
+  });
+
   it("trims the identifier, handles MFA without caching a user, preserves fresh-code guidance", async () => {
     const h = pageHarness("Login");
     h.input("username", "  unit@example.test  ");
@@ -222,7 +237,7 @@ describe("Login page contract and request lifecycle", () => {
   });
 
   it("locks out concurrent login/demo actions and releases controls after a malformed response", async () => {
-    const h = pageHarness("Login");
+    const h = pageHarness("Login", "", false, null, true);
     h.input("username", "artist");
     h.input("password", "Password1!");
     const pending = deferred();
@@ -266,7 +281,7 @@ describe("Login page contract and request lifecycle", () => {
   });
 
   it("demo uses CSRF inside authenticate and delegates cookie-only completion to the provider", async () => {
-    const h = pageHarness("Login");
+    const h = pageHarness("Login", "", false, null, true);
     h.transport(async () => json({ id: "demo-unit", isDemo: true }));
     await h.find("data-testid", "button-demo-login").props.onClick();
     expect(h.calls[0][0]).toBe("/api/auth/demo");

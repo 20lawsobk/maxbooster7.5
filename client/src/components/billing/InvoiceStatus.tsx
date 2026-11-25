@@ -94,7 +94,7 @@ export default function InvoiceStatus({
 }: InvoiceStatusProps) {
   const [statusFilter, setStatusFilter] = useState<string>("all");
 
-  const { data, isLoading,  refetch, isRefetching } = useQuery<{
+  const { data, isLoading, isError, refetch, isRefetching } = useQuery<{
     invoices: Invoice[];
   }>({
     queryKey: [
@@ -187,6 +187,26 @@ export default function InvoiceStatus({
       </CardHeader>
 
       <CardContent className="space-y-4">
+        {isError && (
+          <Alert variant="destructive">
+            <AlertTriangle className="h-4 w-4" />
+            <AlertDescription className="flex flex-wrap items-center justify-between gap-3">
+              <span>
+                Invoice history is temporarily unavailable. Your invoices may
+                still exist; please try again.
+              </span>
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={() => refetch()}
+                disabled={isRefetching}
+              >
+                {isRefetching ? "Retrying…" : "Try again"}
+              </Button>
+            </AlertDescription>
+          </Alert>
+        )}
         {(overdueCount > 0 || pendingCount > 0) && (
           <div className="flex gap-3">
             {overdueCount > 0 && (
@@ -209,7 +229,7 @@ export default function InvoiceStatus({
           </div>
         )}
 
-        {displayedInvoices.length === 0 ? (
+        {!isError && displayedInvoices.length === 0 ? (
           <div className="text-center py-8 text-muted-foreground">
             <FileText className="h-12 w-12 mx-auto mb-3 opacity-50" />
             <p>No invoices found</p>

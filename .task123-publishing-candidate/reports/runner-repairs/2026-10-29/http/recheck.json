@@ -1,0 +1,251 @@
+{
+  "schemaVersion": 1,
+  "observedAt": "2026-10-29T22:57:56.188257+00:00",
+  "sourceRevision": "8a9b638c6c1ce1b46a19501ee4a48893497c2518",
+  "sourceInputsSha256": "afd50ee1ca7c5f5f9391e2b81950478504b62a3af406b70767919082ae479757",
+  "sourceInputsUnchanged": true,
+  "actualCurrentMasterInputsSha256": "afd50ee1ca7c5f5f9391e2b81950478504b62a3af406b70767919082ae479757",
+  "masterStatus": "failed",
+  "oldPlatformDigest": "0e9c292340e7abdb713beb11031e1a6b3a171656b69c8bd4060b692616ced9b7",
+  "currentPlatformDigest": "adbf741bffceb3abd09dbb81fd07b5af9ff0fb764bd1372527e65643eb246aa2",
+  "changedPlatformDigestInputs": [
+    "package.json",
+    "vitest.platform.config.ts"
+  ],
+  "originalInvalidLinks": 9,
+  "candidateResolvedLinks": 9,
+  "candidateResolvedCaseReferences": 23,
+  "negativeControls": [
+    {
+      "name": "stale-platform-digest",
+      "status": "PASS"
+    },
+    {
+      "name": "wrong-testSha256",
+      "status": "PASS"
+    },
+    {
+      "name": "wrong-caseName",
+      "status": "PASS"
+    },
+    {
+      "name": "wrong-group",
+      "status": "PASS"
+    },
+    {
+      "name": "wrong-testFile",
+      "status": "PASS"
+    },
+    {
+      "name": "missing-required-member",
+      "status": "PASS"
+    },
+    {
+      "name": "failed-required-member",
+      "status": "PASS"
+    },
+    {
+      "name": "skipped-required-member",
+      "status": "PASS"
+    },
+    {
+      "name": "duplicate-member",
+      "status": "PASS"
+    },
+    {
+      "name": "unknown-check",
+      "status": "PASS"
+    },
+    {
+      "name": "digest-refresh-cannot-rescue-stale-execution",
+      "status": "PASS"
+    }
+  ],
+  "bindings": [
+    {
+      "checkId": "api-7f174c69ff83279c/access-policy",
+      "resolvedCases": [
+        {
+          "testFile": "tests/health.test.ts",
+          "testSha256": "a68361e7ba4f9bc39b0a3c6f389bb894683af28c1fb96069372590d0ce0fd570",
+          "caseName": "Liveness and Readiness Endpoints > GET /api/health returns 200",
+          "group": "http"
+        }
+      ]
+    },
+    {
+      "checkId": "api-2153be5bc8e5692b/access-policy",
+      "resolvedCases": [
+        {
+          "testFile": "tests/health.test.ts",
+          "testSha256": "a68361e7ba4f9bc39b0a3c6f389bb894683af28c1fb96069372590d0ce0fd570",
+          "caseName": "Liveness and Readiness Endpoints > GET /health returns 200",
+          "group": "http"
+        }
+      ]
+    },
+    {
+      "checkId": "api-50167c08abd2dfe2/access-policy",
+      "resolvedCases": [
+        {
+          "testFile": "tests/health.test.ts",
+          "testSha256": "a68361e7ba4f9bc39b0a3c6f389bb894683af28c1fb96069372590d0ce0fd570",
+          "caseName": "Liveness and Readiness Endpoints > GET /api/ping returns ok:true",
+          "group": "http"
+        }
+      ]
+    },
+    {
+      "checkId": "api-059a423751b44e6c/access-policy",
+      "resolvedCases": [
+        {
+          "testFile": "tests/health.test.ts",
+          "testSha256": "a68361e7ba4f9bc39b0a3c6f389bb894683af28c1fb96069372590d0ce0fd570",
+          "caseName": "Liveness and Readiness Endpoints > GET /ready reflects the actual admitted dependency set",
+          "group": "http"
+        }
+      ]
+    },
+    {
+      "checkId": "api-ebf54287f664010e/access-policy",
+      "resolvedCases": [
+        {
+          "testFile": "tests/health.test.ts",
+          "testSha256": "a68361e7ba4f9bc39b0a3c6f389bb894683af28c1fb96069372590d0ce0fd570",
+          "caseName": "Liveness and Readiness Endpoints > GET /readyz uses the same truthful readiness contract",
+          "group": "http"
+        }
+      ]
+    },
+    {
+      "checkId": "api-ef05357bba6ab833/access-policy",
+      "resolvedCases": [
+        {
+          "testFile": "tests/auth-flows.test.ts",
+          "testSha256": "780b02ce0102c1ff016c2682938c4620833df1ec439dac431a7e01bd2b9edb18",
+          "caseName": "Full Auth Flow > 4. GET /api/auth/me returns user when authenticated",
+          "group": "http"
+        },
+        {
+          "testFile": "tests/auth-flows.test.ts",
+          "testSha256": "780b02ce0102c1ff016c2682938c4620833df1ec439dac431a7e01bd2b9edb18",
+          "caseName": "Full Auth Flow > 10. /api/auth/me returns null or 401 after logout",
+          "group": "http"
+        },
+        {
+          "testFile": "tests/api-guards.test.ts",
+          "testSha256": "74ab6394eb742fe27365983ebd98a2955bc54c09a90d4ef1255783e25d398bc3",
+          "caseName": "Unauthenticated route guards > GET /api/auth/me \u2192 200 (public, returns null)",
+          "group": "http"
+        }
+      ]
+    },
+    {
+      "checkId": "api-3f640ac3745d3b6a/access-policy",
+      "resolvedCases": [
+        {
+          "testFile": "tests/billing-lifecycle.test.ts",
+          "testSha256": "b2dbe3b7c35982649dbaa513d06c6601e8bda3924dcfe3b8fa8e292a51a39421",
+          "caseName": "Billing Webhook Lifecycle > 9. GET /api/billing/subscription returns complete tier shape when authenticated",
+          "group": "http"
+        },
+        {
+          "testFile": "tests/billing-lifecycle.test.ts",
+          "testSha256": "b2dbe3b7c35982649dbaa513d06c6601e8bda3924dcfe3b8fa8e292a51a39421",
+          "caseName": "Billing Webhook Lifecycle > 10. GET /api/billing/subscription returns 401 when unauthenticated",
+          "group": "http"
+        },
+        {
+          "testFile": "tests/billing-lifecycle.test.ts",
+          "testSha256": "b2dbe3b7c35982649dbaa513d06c6601e8bda3924dcfe3b8fa8e292a51a39421",
+          "caseName": "Billing Webhook Lifecycle > access policy: GET /api/billing/subscription rejects suspended session",
+          "group": "http"
+        },
+        {
+          "testFile": "tests/billing-lifecycle.test.ts",
+          "testSha256": "b2dbe3b7c35982649dbaa513d06c6601e8bda3924dcfe3b8fa8e292a51a39421",
+          "caseName": "Billing Webhook Lifecycle > access policy: GET /api/billing/subscription rejects banned session",
+          "group": "http"
+        },
+        {
+          "testFile": "tests/billing-lifecycle.test.ts",
+          "testSha256": "b2dbe3b7c35982649dbaa513d06c6601e8bda3924dcfe3b8fa8e292a51a39421",
+          "caseName": "Billing Webhook Lifecycle > access policy: GET /api/billing/subscription rejects mfa-required session",
+          "group": "http"
+        },
+        {
+          "testFile": "tests/billing-lifecycle.test.ts",
+          "testSha256": "b2dbe3b7c35982649dbaa513d06c6601e8bda3924dcfe3b8fa8e292a51a39421",
+          "caseName": "Billing Webhook Lifecycle > access policy: GET /api/billing/subscription rejects trial-expired session",
+          "group": "http"
+        },
+        {
+          "testFile": "tests/billing-lifecycle.test.ts",
+          "testSha256": "b2dbe3b7c35982649dbaa513d06c6601e8bda3924dcfe3b8fa8e292a51a39421",
+          "caseName": "Billing Webhook Lifecycle > access policy: GET /api/billing/subscription rejects subscription-expired session",
+          "group": "http"
+        }
+      ]
+    },
+    {
+      "checkId": "api-0772b8611dc21e1d/access-policy",
+      "resolvedCases": [
+        {
+          "testFile": "tests/file-management.test.ts",
+          "testSha256": "fa745d1c3d803967c4594c7b672ff9990d8d825834fb31d58405fd609805c392",
+          "caseName": "File Management (Storage Round-Trip) > 9. GET /api/storage/quota returns quota info when authenticated",
+          "group": "http"
+        },
+        {
+          "testFile": "tests/file-management.test.ts",
+          "testSha256": "fa745d1c3d803967c4594c7b672ff9990d8d825834fb31d58405fd609805c392",
+          "caseName": "File Management (Storage Round-Trip) > 10. GET /api/storage/quota returns 401 or 403 without authentication",
+          "group": "http"
+        },
+        {
+          "testFile": "tests/file-management.test.ts",
+          "testSha256": "fa745d1c3d803967c4594c7b672ff9990d8d825834fb31d58405fd609805c392",
+          "caseName": "File Management (Storage Round-Trip) > access policy: GET /api/storage/quota rejects suspended session",
+          "group": "http"
+        },
+        {
+          "testFile": "tests/file-management.test.ts",
+          "testSha256": "fa745d1c3d803967c4594c7b672ff9990d8d825834fb31d58405fd609805c392",
+          "caseName": "File Management (Storage Round-Trip) > access policy: GET /api/storage/quota rejects banned session",
+          "group": "http"
+        },
+        {
+          "testFile": "tests/file-management.test.ts",
+          "testSha256": "fa745d1c3d803967c4594c7b672ff9990d8d825834fb31d58405fd609805c392",
+          "caseName": "File Management (Storage Round-Trip) > access policy: GET /api/storage/quota rejects mfa-required session",
+          "group": "http"
+        },
+        {
+          "testFile": "tests/file-management.test.ts",
+          "testSha256": "fa745d1c3d803967c4594c7b672ff9990d8d825834fb31d58405fd609805c392",
+          "caseName": "File Management (Storage Round-Trip) > access policy: GET /api/storage/quota rejects trial-expired session",
+          "group": "http"
+        },
+        {
+          "testFile": "tests/file-management.test.ts",
+          "testSha256": "fa745d1c3d803967c4594c7b672ff9990d8d825834fb31d58405fd609805c392",
+          "caseName": "File Management (Storage Round-Trip) > access policy: GET /api/storage/quota rejects subscription-expired session",
+          "group": "http"
+        }
+      ]
+    },
+    {
+      "checkId": "api-51e06323624f6bc1/access-policy",
+      "resolvedCases": [
+        {
+          "testFile": "tests/billing-lifecycle.test.ts",
+          "testSha256": "b2dbe3b7c35982649dbaa513d06c6601e8bda3924dcfe3b8fa8e292a51a39421",
+          "caseName": "Billing Webhook Lifecycle > 11. GET /api/billing/plans returns a non-empty plan list without auth",
+          "group": "http"
+        }
+      ]
+    }
+  ],
+  "scope": "Actual full master current leaf proof + prospective map-only refresh. Does not mutate root map, canonical register, readiness or any page designation. Candidate source would require fresh full master after landing.",
+  "productionReady": false
+}

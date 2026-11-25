@@ -1,0 +1,354 @@
+{
+  "schemaVersion": 1,
+  "scope": "Read-only independent retention and raw-baseline receipt review; no counter merge or launch approval",
+  "sourceRevision": "8a9b638c6c1ce1b46a19501ee4a48893497c2518",
+  "reviewedAt": "2026-10-29T22:56:54.889203+00:00",
+  "assertions": {
+    "expectedHead": true,
+    "unchangedMasterSource": true,
+    "actualSourceMatches": true,
+    "newPlanSchemaValid": true,
+    "pagesRetained": true,
+    "controlsRetained": true,
+    "backendRetained": true,
+    "frontendContractsRetained": true,
+    "requiredChecksRetained": true,
+    "businessSectionsRetained": true,
+    "workItemsRetained": true,
+    "sourceInputsRetained": true,
+    "unknownObligationsRetainedExactly": true,
+    "all80Pages": true,
+    "all2162Sections": true,
+    "nineRawOriginals": true,
+    "rawRootAndContract": true,
+    "rawIsUnmerged": true,
+    "rawBytesSourceAndWindow": true,
+    "coverageSummaryFileCount": true
+  },
+  "allReviewAssertionsPass": true,
+  "deltas": {
+    "pages": {
+      "before": 80,
+      "after": 80,
+      "missing": [],
+      "added": []
+    },
+    "controls": {
+      "before": 8374,
+      "after": 8374,
+      "missing": [],
+      "added": []
+    },
+    "backend": {
+      "before": 2909,
+      "after": 2909,
+      "missing": [],
+      "added": []
+    },
+    "frontendContracts": {
+      "before": 932,
+      "after": 932,
+      "missing": [],
+      "added": []
+    },
+    "requiredChecks": {
+      "before": 33549,
+      "after": 33549,
+      "missing": [],
+      "added": []
+    },
+    "businessSections": {
+      "before": 2162,
+      "after": 2162,
+      "missing": [],
+      "added": []
+    },
+    "workItems": {
+      "before": 53020,
+      "after": 53033,
+      "missing": [],
+      "added": [
+        "file-025bcbb1b1306311/contract",
+        "file-1d548c61e362d1ce/contract",
+        "file-26f09e00ae7d303c/contract",
+        "file-56a8b20ea6d3ebd8/contract",
+        "file-9acc9258e665cbca/contract",
+        "file-9eaef395994f0695/contract",
+        "file-c94ec4581905adfa/contract",
+        "file-cde5bbe44dc9dca8/contract",
+        "file-e5825aca83a19cf0/contract",
+        "file-e7b435df1b195a6a/contract",
+        "file-eed9e9ad03e485a5/contract",
+        "file-f1681b2016141da5/contract",
+        "file-fc2f2530d752570e/contract"
+      ]
+    },
+    "sourceInputs": {
+      "before": 4242,
+      "after": 4257,
+      "missing": [],
+      "added": [
+        "script/deployment/capacity.d.mts",
+        "scripts/recovery-private-store.d.mts",
+        "scripts/testing/coverage-coordinate-contract.mjs",
+        "scripts/testing/coverage-node-vite-entry.mjs",
+        "scripts/testing/coverage-raw-sidecar-reporter.cjs",
+        "scripts/testing/coverage-shared-provider.d.mts",
+        "scripts/testing/coverage-shared-provider.mjs",
+        "scripts/testing/junit_evidence.py",
+        "scripts/testing/python_factory_mounts.py",
+        "scripts/testing/report-progress.py",
+        "tests/testing/coverage-coordinate-contract.test.mjs",
+        "tests/testing/test_catalog_snapshot_ownership.py",
+        "tests/testing/test_commerce_subject_selector.py",
+        "tests/testing/test_python_factory_mounts.py",
+        "tests/testing/test_report_progress.py"
+      ]
+    }
+  },
+  "rawOriginals": [
+    {
+      "file": "external/pdim/artifacts/api-server/src/redis/store.ts",
+      "validBytesSourceWindow": true
+    },
+    {
+      "file": "external/pdim/artifacts/api-server/src/workers/lua-pool.ts",
+      "validBytesSourceWindow": true
+    },
+    {
+      "file": "server/config/ports.ts",
+      "validBytesSourceWindow": true
+    },
+    {
+      "file": "server/lib/luaExecutor.ts",
+      "validBytesSourceWindow": true
+    },
+    {
+      "file": "server/lib/pdimCircuitBreaker.ts",
+      "validBytesSourceWindow": true
+    },
+    {
+      "file": "server/lib/pdimClient.ts",
+      "validBytesSourceWindow": true
+    },
+    {
+      "file": "server/logger.ts",
+      "validBytesSourceWindow": true
+    },
+    {
+      "file": "server/logSanitizer.ts",
+      "validBytesSourceWindow": true
+    },
+    {
+      "file": "server/pocket-dimension/fabric/storage/PocketDimensionChunkStore.ts",
+      "validBytesSourceWindow": true
+    }
+  ],
+  "coverageFiles": 2653,
+  "coverageTotals": {
+    "lines": {
+      "total": 224013,
+      "covered": 29344,
+      "skipped": 0,
+      "pct": 13.09
+    },
+    "statements": {
+      "total": 240335,
+      "covered": 31245,
+      "skipped": 0,
+      "pct": 13
+    },
+    "functions": {
+      "total": 47857,
+      "covered": 4150,
+      "skipped": 0,
+      "pct": 8.67
+    },
+    "branches": {
+      "total": 158578,
+      "covered": 13914,
+      "skipped": 0,
+      "pct": 8.77
+    },
+    "branchesTrue": {
+      "total": 0,
+      "covered": 0,
+      "skipped": 0,
+      "pct": 100
+    }
+  },
+  "actualMasterStatus": "failed",
+  "masterFinishedAt": "2026-10-29T22:49:33.882036+00:00",
+  "commands": [
+    {
+      "id": "build",
+      "group": "checks",
+      "status": "passed",
+      "exitCode": 0,
+      "durationSeconds": 20.383
+    },
+    {
+      "id": "ci",
+      "group": "root",
+      "status": "passed",
+      "exitCode": 0,
+      "durationSeconds": 161.118
+    },
+    {
+      "id": "additional",
+      "group": "root",
+      "status": "passed",
+      "exitCode": 0,
+      "durationSeconds": 0.771
+    },
+    {
+      "id": "coverage",
+      "group": "coverage",
+      "status": "failed",
+      "exitCode": 1,
+      "durationSeconds": 226.651
+    },
+    {
+      "id": "desktop-transport-setup",
+      "group": "node",
+      "status": "passed",
+      "exitCode": 0,
+      "durationSeconds": 0.065
+    },
+    {
+      "id": "node",
+      "group": "node",
+      "status": "failed",
+      "exitCode": 1,
+      "durationSeconds": 135.886
+    },
+    {
+      "id": "python",
+      "group": "python",
+      "status": "failed",
+      "exitCode": 1,
+      "durationSeconds": 225.2
+    },
+    {
+      "id": "commerce",
+      "group": "commerce",
+      "status": "passed",
+      "exitCode": 0,
+      "durationSeconds": 43.037
+    },
+    {
+      "id": "subsystems",
+      "group": "subsystems",
+      "status": "passed",
+      "exitCode": 0,
+      "durationSeconds": 43.536
+    },
+    {
+      "id": "browser",
+      "group": "browser",
+      "status": "passed",
+      "exitCode": 0,
+      "durationSeconds": 7.517
+    },
+    {
+      "id": "http",
+      "group": "http",
+      "status": "passed",
+      "exitCode": 0,
+      "durationSeconds": 144.27
+    },
+    {
+      "id": "pages",
+      "group": "pages",
+      "status": "passed",
+      "exitCode": 0,
+      "durationSeconds": 147.392
+    },
+    {
+      "id": "bounded-http-load",
+      "group": "load",
+      "status": "passed",
+      "exitCode": 0,
+      "durationSeconds": 51.963
+    },
+    {
+      "id": "operations",
+      "group": "operations",
+      "status": "passed",
+      "exitCode": 0,
+      "durationSeconds": 20.61
+    },
+    {
+      "id": "types",
+      "group": "checks",
+      "status": "passed",
+      "exitCode": 0,
+      "durationSeconds": 22.974
+    },
+    {
+      "id": "lint",
+      "group": "checks",
+      "status": "passed",
+      "exitCode": 0,
+      "durationSeconds": 49.285
+    },
+    {
+      "id": "audit",
+      "group": "checks",
+      "status": "passed",
+      "exitCode": 0,
+      "durationSeconds": 0.77
+    },
+    {
+      "id": "summary",
+      "group": null,
+      "status": "passed",
+      "exitCode": 0,
+      "durationSeconds": 4.28
+    },
+    {
+      "id": "platform",
+      "group": null,
+      "status": "failed",
+      "exitCode": 1,
+      "durationSeconds": 18.251
+    },
+    {
+      "id": "remediation",
+      "group": null,
+      "status": "failed",
+      "exitCode": 1,
+      "durationSeconds": 2.973
+    },
+    {
+      "id": "completion-plan",
+      "group": null,
+      "status": "passed",
+      "exitCode": 0,
+      "durationSeconds": 10.807
+    },
+    {
+      "id": "final-summary",
+      "group": null,
+      "status": "passed",
+      "exitCode": 0,
+      "durationSeconds": 3.977
+    }
+  ],
+  "evidenceSha256": {
+    "reports/test-verification/orchestration/results.json": "1499417f74c3e1744deec28111276a4ead447fce0b43d17c06b479fbf79405b2",
+    "reports/test-verification/platform-register.json": "52d1b2d0344cf36e42193b63a13b58d79cf36f73ee09b3d4755097c7fd6bf389",
+    "reports/test-verification/completion-plan.json": "29b3cfcefab4cd5c4808e31bd7f67d756815c34f07f944a7f159918ef384eeda",
+    "reports/test-verification/orchestration/source-inputs.json": "c4fe76d8e1ea90e08eae1124769154de1d158dd593d35d32ae4c5012a6cea20d",
+    "reports/test-verification/coverage/coverage-final.json": "b9f9d1efbf2ac622020c708c90b621ef963e2bea2b373c370061917c64b10137",
+    "reports/test-verification/coverage/coverage-summary.json": "cdd8a22736a3c68829429825b88a366f80b0f462b0162e4312d8a5176e27828d",
+    "reports/test-verification/coverage/raw-p1/manifest.json": "16abfd46ed2f9d3983e12afb726bd7672319fea79ccb0081c289775a6920875a"
+  },
+  "originalArchiveSha256": "ef877d9dc922dc7901e632cb7ee31dec9b1b435bf961d70fe489cff7ddbe6432",
+  "originalMembersSha256": {
+    "platform-register.json": "68a06c3ab09afd93260341d4f0e005d00761827e79e9d39773dc5e0bef3d7ba6",
+    "completion-plan.json": "c552bc303dbe773a0e4606e1e79a1981c8c846cc97a8dfb5c6c6c2c8243e13ff",
+    "orchestration/source-inputs.json": "74501da07a78cf6ac65e5ce36b6562b1b6de00dc7b8be41b77403dada4934237"
+  },
+  "productionReady": false
+}

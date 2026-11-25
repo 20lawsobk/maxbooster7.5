@@ -22,6 +22,7 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, Di
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
+import { FlowStateCollaboration } from "@/components/studio/FlowStateCollaboration";
 import {
   Users,
   Search,
@@ -144,6 +145,8 @@ export default function Collaborations() {
   const [selectedUser, setSelectedUser] = useState<Suggestion | null>(null);
   const [connectionMessage, setConnectionMessage] = useState("");
   const [showCreateProjectDialog, setShowCreateProjectDialog] = useState(false);
+  const [activeRoomProject, setActiveRoomProject] =
+    useState<CollabProject | null>(null);
   const [newProjectName, setNewProjectName] = useState("");
   const [newProjectDescription, setNewProjectDescription] = useState("");
   const [newProjectGenre, setNewProjectGenre] = useState("");
@@ -724,13 +727,21 @@ export default function Collaborations() {
                           </div>
                         </CardContent>
                         <CardFooter>
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => setLocation("/workspaces")}
-                          >
-                            Open Project
-                          </Button>
+                          <div className="flex flex-wrap gap-2">
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => setLocation("/workspaces")}
+                            >
+                              Open Project
+                            </Button>
+                            <Button
+                              size="sm"
+                              onClick={() => setActiveRoomProject(project)}
+                            >
+                              Open live session
+                            </Button>
+                          </div>
                         </CardFooter>
                       </Card>
                     ))}
@@ -807,6 +818,24 @@ export default function Collaborations() {
                       : "Create Project"}
                   </Button>
                 </DialogFooter>
+              </DialogContent>
+            </Dialog>
+
+            <Dialog
+              open={activeRoomProject !== null}
+              onOpenChange={(open) => {
+                if (!open) setActiveRoomProject(null);
+              }}
+            >
+              <DialogContent className="h-[90vh] max-w-6xl overflow-hidden p-0">
+                {activeRoomProject && (
+                  <FlowStateCollaboration
+                    projectId={activeRoomProject.id}
+                    projectName={activeRoomProject.name}
+                    currentUserId={user.id}
+                    className="h-full"
+                  />
+                )}
               </DialogContent>
             </Dialog>
 

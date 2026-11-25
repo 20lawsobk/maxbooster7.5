@@ -314,22 +314,58 @@ export function ReleaseWizard({
       // dispatch is owned by the server endpoint, not this component.
       // The server endpoint validates UPC/ISRC/platform selection and creates dispatch records.
       // Official UPC/ISRC values must be supplied by the rights holder, never fabricated here.
-      let submissionStatus: "submitted" | "saved-as-draft" = "saved-as-draft";
+      let submissionStatus:
+        | "submitted"
+        | "saved-as-draft"
+        | "pending-reconciliation"
+        | "rejected" = "saved-as-draft";
       let submissionError: string | undefined;
       if (releaseData.id) {
         try {
+          const scheduledDate = releaseData.releaseDate
+            ? new Date(releaseData.releaseDate)
+            : undefined;
+          const submitAsScheduledRelease =
+            scheduledDate !== undefined &&
+            !Number.isNaN(scheduledDate.getTime()) &&
+            scheduledDate.getTime() > Date.now();
           const submissionResponse = await apiRequest(
             "POST",
-            `/api/distribution/releases/${releaseData.id}/submit`,
-            {},
+            submitAsScheduledRelease
+              ? `/api/distribution/releases/${releaseData.id}/schedule`
+              : `/api/distribution/releases/${releaseData.id}/submit`,
+            submitAsScheduledRelease
+              ? {
+                  releaseDate: scheduledDate.toISOString(),
+                  submitToTooLost: true,
+                }
+              : {},
           );
           const submissionResult = await submissionResponse.json();
           if (!submissionResult.success) {
-            throw new Error(
-              "The distributor did not accept this release for any selected platform. Review the per-platform delivery status.",
-            );
+            const providerStatus =
+              submissionResult.toolostSubmission?.status ||
+              submissionResult.submissionStatus;
+            if (
+              providerStatus === "pending" ||
+              submissionResult.toolostSubmission?.indeterminate
+            ) {
+              submissionStatus = "pending-reconciliation";
+              submissionError =
+                submissionResult.submissionError ||
+                "The distributor response is not fully reconciled. Check delivery status before retrying.";
+            } else if (providerStatus === "rejected") {
+              submissionStatus = "rejected";
+              submissionError =
+                "Too Lost rejected the release. Review the per-platform delivery status before making changes.";
+            } else {
+              throw new Error(
+                "The distributor did not accept this release for any selected platform. Review the per-platform delivery status.",
+              );
+            }
+          } else {
+            submissionStatus = "submitted";
           }
-          submissionStatus = "submitted";
         } catch (err: unknown) {
           const message = err instanceof Error ? err.message : String(err);
           submissionError = message;
@@ -414,7 +450,12 @@ export function ReleaseWizard({
         });
       } else {
         toast({
-          title: "Release saved; submission not confirmed",
+          title:
+            status === "pending-reconciliation"
+              ? "Check Too Lost before retrying"
+              : status === "rejected"
+                ? "Too Lost rejected the release"
+                : "Release saved; submission not confirmed",
           description: submissionError
             ? `Saved, but distribution submission failed: ${submissionError}. Open the release to resolve and resubmit.`
             : "Saved successfully. Open the release to submit for distribution.",
@@ -885,6 +926,11 @@ export function ReleaseWizard({
                   <h4 className="font-medium mb-2">Release Date</h4>
                   <p className="text-sm">
                     {releaseDate ? releaseDate.toLocaleDateString() : "Not set"}
+                  </p>
+                  <p className="text-sm text-muted-foreground mt-2">
+                    Submitting sends this release to Too Lost now. A future
+                    date is sent as the planned public release date; saving a
+                    draft does not submit it.
                   </p>
                 </div>
 

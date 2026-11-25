@@ -58,6 +58,26 @@ describe("registration completion", () => {
     ).toThrow(/did not finish completely/i);
   });
 
+  it.each([null, [], "invalid"])(
+    "rejects a malformed registration response [row %#]",
+    (payload) => {
+      expect(() => parseRegistrationCompletionPayload(payload)).toThrow(
+        /invalid response/i,
+      );
+    },
+  );
+
+  it.each([
+    { consentRecorded: true },
+    { user: "invalid", consentRecorded: true },
+    { user: [], consentRecorded: true },
+    { user: {}, consentRecorded: true },
+  ])("rejects a response without a usable user id: %j", (payload) => {
+    expect(() => parseRegistrationCompletionPayload(payload)).toThrow(
+      /did not finish completely/i,
+    );
+  });
+
   it("surfaces a partially-created account as a special completion error", () => {
     try {
       parseRegistrationCompletionPayload({
@@ -75,6 +95,16 @@ describe("registration completion", () => {
     }
   });
 
+  it("uses the safe partial-account message when no string message is returned", () => {
+    expect(() =>
+      parseRegistrationCompletionPayload({
+        accountCreated: true,
+        code: "ACCOUNT_CREATED_CONSENT_PENDING",
+        message: null,
+      }),
+    ).toThrow("Your account was created, but registration needs attention.");
+  });
+
   it("times out a response body that never finishes", async () => {
     vi.useFakeTimers();
     try {
@@ -89,6 +119,22 @@ describe("registration completion", () => {
       await timedOut;
     } finally {
       vi.useRealTimers();
+    }
+  });
+
+  it("propagates a timer setup failure without obscuring the rejection", async () => {
+    const setupError = new Error("timer service unavailable");
+    const timer = vi.spyOn(globalThis, "setTimeout").mockImplementation(() => {
+      throw setupError;
+    });
+    try {
+      await expect(
+        readRegistrationCompletionPayload(
+          { json: () => new Promise<never>(() => {}) },
+        ),
+      ).rejects.toBe(setupError);
+    } finally {
+      timer.mockRestore();
     }
   });
 });

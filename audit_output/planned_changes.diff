@@ -1,0 +1,859 @@
+--- a/.env.example
++++ b/.env.example
+@@ -525,3 +525,8 @@
+ # Manifest/evidence must follow the LIVE_LEARNING.md contract; never accept these from HTTP input.
+ # MAXCORE_TEXT_TRAINING_RIGHTS_MANIFEST=/operator/text-training-rights.json
+ # MAXCORE_TEXT_TRAINING_RIGHTS_SHA256=
++PASSWORD=
++CLIENT_SECRET=
++CONFIRM_PASSWORD=
++MAXBOOSTER_GENERATION_E2_E_PASSWORD=
++STRIPE_TEST_SECRET=
+
+--- a/.gitignore
++++ b/.gitignore
+@@ -223,3 +223,8 @@
+ /reports/test-verification/final-plan-fix/completion-plan.json
+ /reports/test-verification/recheck-2026-11-10/completion-plan.json
+ /reports/test-verification/current-coverage/coverage/coverage-final.json
++
++# Added by production audit
++.env.*
++!.env.example
++!.env.*.example
+
+--- a/.task123-publishing-candidate/reports/aso/pr-reconciliation/pr-211-head/tests/admin-account-parity.test.ts
++++ b/.task123-publishing-candidate/reports/aso/pr-reconciliation/pr-211-head/tests/admin-account-parity.test.ts
+@@ -10,7 +10,7 @@
+ function account(name: string) {
+   const cookies = new Map<string, string>();
+   const email = `parity_${name}_${suffix}@maxbooster-test.invalid`;
+-  const password = "ParityFixture94!Secure";
++  const password = process.env.PASSWORD as string;
+   async function api(method: string, path: string, body?: Json) {
+     if (method !== "GET" && !cookies.has("csrf-token")) await api("GET", "/api/csrf-token");
+     const headers: Record<string, string> = { "Content-Type": "application/json", "x-maxbooster-fixture-client": name };
+
+--- a/.task123-publishing-candidate/reports/aso/pr-reconciliation/pr-211-head/tests/content-analysis-entitlement.test.ts
++++ b/.task123-publishing-candidate/reports/aso/pr-reconciliation/pr-211-head/tests/content-analysis-entitlement.test.ts
+@@ -4,7 +4,7 @@
+ import { withFixtureDatabase } from "./helpers-http-fixture";
+ 
+ const email = `content_entitlement_${randomUUID().replaceAll("-", "")}@maxbooster-test.invalid`;
+-const password = "ContentFixture79!Secure";
++const password = process.env.PASSWORD as string;
+ const cookies = new Map<string, string>();
+ async function request(method: string, path: string, body?: Record<string, unknown>): Promise<Response> {
+   if (method !== "GET" && !cookies.has("csrf-token")) await request("GET", "/api/csrf-token");
+
+--- a/.task123-publishing-candidate/reports/platform-evidence/2026-10-28-case-identity-repair-candidate/baseline-source/tests/unit/subscriptionCheckout.test.ts
++++ b/.task123-publishing-candidate/reports/platform-evidence/2026-10-28-case-identity-repair-candidate/baseline-source/tests/unit/subscriptionCheckout.test.ts
+@@ -43,11 +43,11 @@
+   it("accepts a usable Stripe client secret", () => {
+     expect(
+       parseSubscriptionSetupPayload({
+-        clientSecret: "pi_123_secret_abc",
++        clientSecret: process.env.CLIENT_SECRET as string,
+       }),
+     ).toEqual({
+       ok: true,
+-      clientSecret: "pi_123_secret_abc",
++      clientSecret: process.env.CLIENT_SECRET as string,
+     });
+   });
+ 
+
+--- a/.task123-publishing-candidate/reports/platform-evidence/2026-10-28-case-identity-repair-candidate/proposed/tests/unit/subscriptionCheckout.test.ts
++++ b/.task123-publishing-candidate/reports/platform-evidence/2026-10-28-case-identity-repair-candidate/proposed/tests/unit/subscriptionCheckout.test.ts
+@@ -43,11 +43,11 @@
+   it("accepts a usable Stripe client secret", () => {
+     expect(
+       parseSubscriptionSetupPayload({
+-        clientSecret: "pi_123_secret_abc",
++        clientSecret: process.env.CLIENT_SECRET as string,
+       }),
+     ).toEqual({
+       ok: true,
+-      clientSecret: "pi_123_secret_abc",
++      clientSecret: process.env.CLIENT_SECRET as string,
+     });
+   });
+ 
+
+--- a/.task123-publishing-candidate/reports/platform-evidence/2026-10-29-access-policy-candidate/tests/billing-lifecycle.test.ts
++++ b/.task123-publishing-candidate/reports/platform-evidence/2026-10-29-access-policy-candidate/tests/billing-lifecycle.test.ts
+@@ -19,7 +19,7 @@
+ const testUser = {
+   birthdate: "1990-01-01",
+   email: `billing_${Date.now()}@maxbooster-test.invalid`,
+-  password: "SecurePass123!@#",
++  password: process.env.PASSWORD as string,
+   firstName: "Billing",
+   lastName: "Test",
+ };
+
+--- a/.task123-publishing-candidate/reports/platform-evidence/2026-10-29-access-policy-candidate/tests/file-management.test.ts
++++ b/.task123-publishing-candidate/reports/platform-evidence/2026-10-29-access-policy-candidate/tests/file-management.test.ts
+@@ -18,7 +18,7 @@
+ const testUser = {
+   birthdate: "1990-01-01",
+   email: `filemgmt_${Date.now()}@maxbooster-test.invalid`,
+-  password: "SecurePass123!@#",
++  password: process.env.PASSWORD as string,
+   firstName: "File",
+   lastName: "Test",
+ };
+
+--- a/.task123-publishing-candidate/scripts/simulate-production.mjs
++++ b/.task123-publishing-candidate/scripts/simulate-production.mjs
+@@ -435,8 +435,8 @@
+       body: JSON.stringify({
+         email: `packed-recovery-${suffix}@example.invalid`,
+         username: `packed_recovery_${suffix}`,
+-        password: "Packed!Simulation9aAcceptance",
+-        confirmPassword: "Packed!Simulation9aAcceptance",
++        password: process.env.PASSWORD,
++        confirmPassword: process.env.CONFIRM_PASSWORD,
+         firstName: "Packed", lastName: "Recovery",
+       }),
+     });
+@@ -1626,7 +1626,7 @@
+       VIDEO_DIFFUSION_PORT: String(gatewayPort), MAXCORE_LOCAL_PORT: String(maxcorePort),
+       BOOSTERSTATE_SIDECAR_PORT: String(boosterPort), MODEL_API_PORT: String(modelPort),
+       MODEL_API_HEALTH_PORT: String(modelHealthPort), PYTHON_AI_PORT: String(pythonPort),
+-      SESSION_SECRET: "production-simulation-session-secret-0123456789",
++      SESSION_SECRET: process.env.SESSION_SECRET,
+       ADMIN_KEY: "production-simulation-maxcore-admin-key-0123456789",
+       DATABASE_URL: databaseUrl,
+       READINESS_ISOLATED_PG: "1", READINESS_EGRESS_GUARD: "1",
+@@ -1868,8 +1868,8 @@
+           body: JSON.stringify({
+             email: `packed-load-${suffix}@example.invalid`,
+             username: `packed_load_${usernameSuffix}`,
+-            password: "Packed!Simulation9aAcceptance",
+-            confirmPassword: "Packed!Simulation9aAcceptance",
++            password: process.env.PASSWORD,
++            confirmPassword: process.env.CONFIRM_PASSWORD,
+             firstName: "Packed",
+             lastName: "Load",
+           }),
+
+--- a/.task123-publishing-candidate/tests/admin-account-parity.test.ts
++++ b/.task123-publishing-candidate/tests/admin-account-parity.test.ts
+@@ -10,7 +10,7 @@
+ function account(name: string) {
+   const cookies = new Map<string, string>();
+   const email = `parity_${name}_${suffix}@maxbooster-test.invalid`;
+-  const password = "ParityFixture94!Secure";
++  const password = process.env.PASSWORD as string;
+   async function api(method: string, path: string, body?: Json) {
+     if (method !== "GET" && !cookies.has("csrf-token")) await api("GET", "/api/csrf-token");
+     const headers: Record<string, string> = { "Content-Type": "application/json", "x-maxbooster-fixture-client": name };
+
+--- a/.task123-publishing-candidate/tests/ai-analytics-integration.test.ts
++++ b/.task123-publishing-candidate/tests/ai-analytics-integration.test.ts
+@@ -14,7 +14,7 @@
+ const testUser = {
+   birthdate: "1990-01-01",
+   email: `ai_analytics_test_${Date.now()}@maxbooster-test.invalid`,
+-  password: "SecurePass123!@#",
++  password: process.env.PASSWORD as string,
+   username: `AIAnalyticsTest_${Date.now()}`,
+   firstName: "AI",
+   lastName: "Tester",
+
+--- a/.task123-publishing-candidate/tests/auth-2fa.test.ts
++++ b/.task123-publishing-candidate/tests/auth-2fa.test.ts
+@@ -13,7 +13,7 @@
+ const testUser = {
+   birthdate: "1990-01-01",
+   email: `twofa_${Date.now()}@maxbooster-test.invalid`,
+-  password: "SecurePass123!@#",
++  password: process.env.PASSWORD as string,
+   firstName: "2FA",
+   lastName: "Test",
+ };
+
+--- a/.task123-publishing-candidate/tests/auth-flows.test.ts
++++ b/.task123-publishing-candidate/tests/auth-flows.test.ts
+@@ -11,7 +11,7 @@
+ const testUser = {
+   birthdate: "1990-01-01",
+   email: `authflow_${Date.now()}@maxbooster-test.invalid`,
+-  password: "SecurePass123!@#",
++  password: process.env.PASSWORD as string,
+   firstName: "Auth",
+   lastName: "Flow",
+ };
+
+--- a/.task123-publishing-candidate/tests/billing-lifecycle.test.ts
++++ b/.task123-publishing-candidate/tests/billing-lifecycle.test.ts
+@@ -19,7 +19,7 @@
+ const testUser = {
+   birthdate: "1990-01-01",
+   email: `billing_${Date.now()}@maxbooster-test.invalid`,
+-  password: "SecurePass123!@#",
++  password: process.env.PASSWORD as string,
+   firstName: "Billing",
+   lastName: "Test",
+ };
+
+--- a/.task123-publishing-candidate/tests/content-analysis-entitlement.test.ts
++++ b/.task123-publishing-candidate/tests/content-analysis-entitlement.test.ts
+@@ -4,7 +4,7 @@
+ import { withFixtureDatabase } from "./helpers-http-fixture";
+ 
+ const email = `content_entitlement_${randomUUID().replaceAll("-", "")}@maxbooster-test.invalid`;
+-const password = "ContentFixture79!Secure";
++const password = process.env.PASSWORD as string;
+ const cookies = new Map<string, string>();
+ async function request(method: string, path: string, body?: Record<string, unknown>): Promise<Response> {
+   if (method !== "GET" && !cookies.has("csrf-token")) await request("GET", "/api/csrf-token");
+
+--- a/.task123-publishing-candidate/tests/critical-paths.test.ts
++++ b/.task123-publishing-candidate/tests/critical-paths.test.ts
+@@ -11,7 +11,7 @@
+ const testUser = {
+   birthdate: "1990-01-01",
+   email: `test_${Date.now()}@maxbooster-test.invalid`,
+-  password: "SecurePass123!",
++  password: process.env.PASSWORD as string,
+   username: `TestUser_${Date.now()}`,
+   firstName: "Test",
+   lastName: "User",
+
+--- a/.task123-publishing-candidate/tests/direct-upload.test.ts
++++ b/.task123-publishing-candidate/tests/direct-upload.test.ts
+@@ -7,7 +7,7 @@
+ const testUser = {
+   birthdate: "1990-01-01",
+   email: `directupload_${Date.now()}@maxbooster-test.invalid`,
+-  password: "SecurePass123!@#",
++  password: process.env.PASSWORD as string,
+   firstName: "Direct",
+   lastName: "Upload",
+ };
+
+--- a/.task123-publishing-candidate/tests/fabric-root-storage-postgres.test.mjs
++++ b/.task123-publishing-candidate/tests/fabric-root-storage-postgres.test.mjs
+@@ -137,7 +137,7 @@
+     url.searchParams.set("host",options.host);url.searchParams.set("port",String(options.port));
+     const child = spawnSync(process.execPath,[fixture],{cwd:scratch,encoding:"utf8",timeout:50_000,
+       env:{PATH:process.env.PATH,HOME:scratch,NODE_ENV:"test",DATABASE_URL:url.toString(),
+-        SESSION_SECRET:"isolated-root-fabric-fixture-secret-not-an-application-binding",
++        SESSION_SECRET:process.env.SESSION_SECRET,
+         READINESS_ISOLATED_PG:"1",READINESS_EGRESS_GUARD:"1",READINESS_LOCAL_CODECS:"1",
+         NODE_OPTIONS:`--import=${path.join(root,"scripts/readiness-egress-guard.mjs")}`,
+         ...(process.env.LD_LIBRARY_PATH?{LD_LIBRARY_PATH:process.env.LD_LIBRARY_PATH}:{})} });
+
+--- a/.task123-publishing-candidate/tests/feature-catalog-production.test.ts
++++ b/.task123-publishing-candidate/tests/feature-catalog-production.test.ts
+@@ -11,7 +11,7 @@
+ const testUser = {
+   birthdate: "1990-01-01",
+   email: `feat_catalog_${Date.now()}@maxbooster-test.invalid`,
+-  password: "SecurePass123!@#",
++  password: process.env.PASSWORD as string,
+   firstName: "Feature",
+   lastName: "Catalog",
+ };
+
+--- a/.task123-publishing-candidate/tests/feature-marketplace-distribution.test.ts
++++ b/.task123-publishing-candidate/tests/feature-marketplace-distribution.test.ts
+@@ -8,7 +8,7 @@
+ const testUser = {
+   birthdate: "1990-01-01",
+   email: `feat_mktplace_${Date.now()}@maxbooster-test.invalid`,
+-  password: "SecurePass123!@#",
++  password: process.env.PASSWORD as string,
+   firstName: "Feature",
+   lastName: "Market",
+ };
+
+--- a/.task123-publishing-candidate/tests/feature-press-pitching-ar.test.ts
++++ b/.task123-publishing-candidate/tests/feature-press-pitching-ar.test.ts
+@@ -11,7 +11,7 @@
+ const testUser = {
+   birthdate: "1990-01-01",
+   email: `feat_pitch_${Date.now()}@maxbooster-test.invalid`,
+-  password: "SecurePass123!@#",
++  password: process.env.PASSWORD as string,
+   firstName: "Feature",
+   lastName: "Pitch",
+ };
+
+--- a/.task123-publishing-candidate/tests/feature-revenue-merch.test.ts
++++ b/.task123-publishing-candidate/tests/feature-revenue-merch.test.ts
+@@ -9,7 +9,7 @@
+ const testUser = {
+   birthdate: "1990-01-01",
+   email: `feat_revenue_${Date.now()}@maxbooster-test.invalid`,
+-  password: "SecurePass123!@#",
++  password: process.env.PASSWORD as string,
+   firstName: "Feature",
+   lastName: "Revenue",
+ };
+
+--- a/.task123-publishing-candidate/tests/feature-storefront-dns.test.ts
++++ b/.task123-publishing-candidate/tests/feature-storefront-dns.test.ts
+@@ -10,7 +10,7 @@
+ const testUser = {
+   birthdate: "1990-01-01",
+   email: `feat_sf_${Date.now()}@maxbooster-test.invalid`,
+-  password: "SecurePass123!@#",
++  password: process.env.PASSWORD as string,
+   firstName: "Feature",
+   lastName: "Storefront",
+ };
+
+--- a/.task123-publishing-candidate/tests/file-management.test.ts
++++ b/.task123-publishing-candidate/tests/file-management.test.ts
+@@ -18,7 +18,7 @@
+ const testUser = {
+   birthdate: "1990-01-01",
+   email: `filemgmt_${Date.now()}@maxbooster-test.invalid`,
+-  password: "SecurePass123!@#",
++  password: process.env.PASSWORD as string,
+   firstName: "File",
+   lastName: "Test",
+ };
+
+--- a/.task123-publishing-candidate/tests/p0-verification.ts
++++ b/.task123-publishing-candidate/tests/p0-verification.ts
+@@ -195,7 +195,7 @@
+   console.log("Testing P0-06: Auth Login (Invalid Credentials)...");
+   const loginResult = await makeRequest("POST", "/api/auth/login", {
+     email: "invalid@nonexistent.com",
+-    password: "wrongpassword123",
++    password: process.env.PASSWORD as string,
+   });
+   results.push({
+     id: "P0-06",
+
+--- a/.task123-publishing-candidate/tests/paid-user-e2e.test.ts
++++ b/.task123-publishing-candidate/tests/paid-user-e2e.test.ts
+@@ -11,7 +11,7 @@
+ const testUser = {
+   birthdate: "1990-01-01",
+   email: `paidtest_${Date.now()}@maxbooster-test.invalid`,
+-  password: "SecurePass123!@#",
++  password: process.env.PASSWORD as string,
+   username: `PaidUser_${Date.now()}`,
+   firstName: "Paid",
+   lastName: "Tester",
+
+--- a/.task123-publishing-candidate/tests/payment-processing/outbound-services-webhooks.mjs
++++ b/.task123-publishing-candidate/tests/payment-processing/outbound-services-webhooks.mjs
+@@ -187,7 +187,7 @@
+   const event = { id: "evt_signed", type: "payout.paid", data: { object: { amount: 9000 } } };
+   globalThis.__outboundWebhookEvent = event;
+   globalThis.__outboundWebhookEnv = {
+-    STRIPE_WEBHOOK_SECRET: "whsec_isolated_marker",
++    STRIPE_WEBHOOK_SECRET: process.env.STRIPE_WEBHOOK_SECRET,
+     STRIPE_SECRET_KEY: "sk_test_isolated_marker",
+   };
+   const { stripeWebhookMiddleware, stripeRawBodyParser, getWebhookAuditLog } = await loadOutboundSubject(
+
+--- a/.task123-publishing-candidate/tests/private-admin-http.test.ts
++++ b/.task123-publishing-candidate/tests/private-admin-http.test.ts
+@@ -5,7 +5,7 @@
+ import { withFixtureDatabase } from "./helpers-http-fixture";
+ 
+ const suffix = randomUUID().replaceAll("-", "");
+-const password = "IsolatedAdmin93!Fixture";
++const password = process.env.PASSWORD as string;
+ function account(label: string) {
+   const cookies = new Map<string, string>();
+   const email = `${label}_${suffix}@maxbooster-test.invalid`;
+
+--- a/.task123-publishing-candidate/tests/security-hardening.test.ts
++++ b/.task123-publishing-candidate/tests/security-hardening.test.ts
+@@ -102,7 +102,7 @@
+     const r = await req("POST", "/api/auth/register", {
+       birthdate: "1990-01-01",
+       email,
+-      password: "SecurePass123!",
++      password: process.env.PASSWORD as string,
+       firstName: "Test",
+       lastName: "User",
+     });
+
+--- a/.task123-publishing-candidate/tests/unit/generation-reliability-gate.test.mjs
++++ b/.task123-publishing-candidate/tests/unit/generation-reliability-gate.test.mjs
+@@ -213,7 +213,7 @@
+       MAXBOOSTER_GENERATION_E2E_BASE_URL: origin,
+       MAXBOOSTER_GENERATION_E2E_ALLOWED_ORIGIN: origin,
+       MAXBOOSTER_GENERATION_E2E_USERNAME: "fixture-user",
+-      MAXBOOSTER_GENERATION_E2E_PASSWORD: "fixture-password",
++      MAXBOOSTER_GENERATION_E2E_PASSWORD: process.env.MAXBOOSTER_GENERATION_E2_E_PASSWORD,
+       MAXBOOSTER_GENERATION_E2E_ACCOUNT_ID: "e2e-account",
+       MAXBOOSTER_GENERATION_E2E_CONFIRM_ISOLATED: "1",
+       MAXBOOSTER_GENERATION_E2E_PROVIDER_RECEIPT: JSON.stringify({
+
+--- a/.task123-publishing-candidate/tests/unit/schema-validators.test.ts
++++ b/.task123-publishing-candidate/tests/unit/schema-validators.test.ts
+@@ -8,7 +8,7 @@
+ describe("insertUserSchema", () => {
+   const validUser = {
+     email: "test@example.com",
+-    password: "SecurePass123!",
++    password: process.env.PASSWORD as string,
+     firstName: "Alice",
+     lastName: "Smith",
+   };
+
+--- a/.task123-publishing-candidate/tests/unit/stripe-credentials.test.ts
++++ b/.task123-publishing-candidate/tests/unit/stripe-credentials.test.ts
+@@ -10,7 +10,7 @@
+       selectStripeSecretKey(
+         {
+           STRIPE_SECRET_KEY: "live-secret",
+-          STRIPE_TEST_SECRET: "sandbox-secret",
++          STRIPE_TEST_SECRET: process.env.STRIPE_TEST_SECRET as string,
+           TESTING_STRIPE_SECRET_KEY: "legacy-sandbox-secret",
+         },
+         true,
+@@ -23,7 +23,7 @@
+       selectStripeSecretKey(
+         {
+           STRIPE_SECRET_KEY: "live-secret",
+-          STRIPE_TEST_SECRET: "sandbox-secret",
++          STRIPE_TEST_SECRET: process.env.STRIPE_TEST_SECRET as string,
+           TESTING_STRIPE_SECRET_KEY: "legacy-sandbox-secret",
+         },
+         false,
+
+--- a/.task123-publishing-candidate/tests/unit/subscriptionCheckout.test.ts
++++ b/.task123-publishing-candidate/tests/unit/subscriptionCheckout.test.ts
+@@ -43,11 +43,11 @@
+   it("accepts a usable Stripe client secret", () => {
+     expect(
+       parseSubscriptionSetupPayload({
+-        clientSecret: "pi_123_secret_abc",
++        clientSecret: process.env.CLIENT_SECRET as string,
+       }),
+     ).toEqual({
+       ok: true,
+-      clientSecret: "pi_123_secret_abc",
++      clientSecret: process.env.CLIENT_SECRET as string,
+     });
+   });
+ 
+
+--- a/reports/aso/pr-reconciliation/pr-211-head/tests/admin-account-parity.test.ts
++++ b/reports/aso/pr-reconciliation/pr-211-head/tests/admin-account-parity.test.ts
+@@ -10,7 +10,7 @@
+ function account(name: string) {
+   const cookies = new Map<string, string>();
+   const email = `parity_${name}_${suffix}@maxbooster-test.invalid`;
+-  const password = "ParityFixture94!Secure";
++  const password = process.env.PASSWORD as string;
+   async function api(method: string, path: string, body?: Json) {
+     if (method !== "GET" && !cookies.has("csrf-token")) await api("GET", "/api/csrf-token");
+     const headers: Record<string, string> = { "Content-Type": "application/json", "x-maxbooster-fixture-client": name };
+
+--- a/reports/aso/pr-reconciliation/pr-211-head/tests/content-analysis-entitlement.test.ts
++++ b/reports/aso/pr-reconciliation/pr-211-head/tests/content-analysis-entitlement.test.ts
+@@ -4,7 +4,7 @@
+ import { withFixtureDatabase } from "./helpers-http-fixture";
+ 
+ const email = `content_entitlement_${randomUUID().replaceAll("-", "")}@maxbooster-test.invalid`;
+-const password = "ContentFixture79!Secure";
++const password = process.env.PASSWORD as string;
+ const cookies = new Map<string, string>();
+ async function request(method: string, path: string, body?: Record<string, unknown>): Promise<Response> {
+   if (method !== "GET" && !cookies.has("csrf-token")) await request("GET", "/api/csrf-token");
+
+--- a/reports/platform-evidence/2026-10-28-case-identity-repair-candidate/baseline-source/tests/unit/subscriptionCheckout.test.ts
++++ b/reports/platform-evidence/2026-10-28-case-identity-repair-candidate/baseline-source/tests/unit/subscriptionCheckout.test.ts
+@@ -43,11 +43,11 @@
+   it("accepts a usable Stripe client secret", () => {
+     expect(
+       parseSubscriptionSetupPayload({
+-        clientSecret: "pi_123_secret_abc",
++        clientSecret: process.env.CLIENT_SECRET as string,
+       }),
+     ).toEqual({
+       ok: true,
+-      clientSecret: "pi_123_secret_abc",
++      clientSecret: process.env.CLIENT_SECRET as string,
+     });
+   });
+ 
+
+--- a/reports/platform-evidence/2026-10-28-case-identity-repair-candidate/proposed/tests/unit/subscriptionCheckout.test.ts
++++ b/reports/platform-evidence/2026-10-28-case-identity-repair-candidate/proposed/tests/unit/subscriptionCheckout.test.ts
+@@ -43,11 +43,11 @@
+   it("accepts a usable Stripe client secret", () => {
+     expect(
+       parseSubscriptionSetupPayload({
+-        clientSecret: "pi_123_secret_abc",
++        clientSecret: process.env.CLIENT_SECRET as string,
+       }),
+     ).toEqual({
+       ok: true,
+-      clientSecret: "pi_123_secret_abc",
++      clientSecret: process.env.CLIENT_SECRET as string,
+     });
+   });
+ 
+
+--- a/reports/platform-evidence/2026-10-29-access-policy-candidate/tests/billing-lifecycle.test.ts
++++ b/reports/platform-evidence/2026-10-29-access-policy-candidate/tests/billing-lifecycle.test.ts
+@@ -19,7 +19,7 @@
+ const testUser = {
+   birthdate: "1990-01-01",
+   email: `billing_${Date.now()}@maxbooster-test.invalid`,
+-  password: "SecurePass123!@#",
++  password: process.env.PASSWORD as string,
+   firstName: "Billing",
+   lastName: "Test",
+ };
+
+--- a/reports/platform-evidence/2026-10-29-access-policy-candidate/tests/file-management.test.ts
++++ b/reports/platform-evidence/2026-10-29-access-policy-candidate/tests/file-management.test.ts
+@@ -18,7 +18,7 @@
+ const testUser = {
+   birthdate: "1990-01-01",
+   email: `filemgmt_${Date.now()}@maxbooster-test.invalid`,
+-  password: "SecurePass123!@#",
++  password: process.env.PASSWORD as string,
+   firstName: "File",
+   lastName: "Test",
+ };
+
+--- a/scripts/simulate-production.mjs
++++ b/scripts/simulate-production.mjs
+@@ -435,8 +435,8 @@
+       body: JSON.stringify({
+         email: `packed-recovery-${suffix}@example.invalid`,
+         username: `packed_recovery_${suffix}`,
+-        password: "Packed!Simulation9aAcceptance",
+-        confirmPassword: "Packed!Simulation9aAcceptance",
++        password: process.env.PASSWORD,
++        confirmPassword: process.env.CONFIRM_PASSWORD,
+         firstName: "Packed", lastName: "Recovery",
+       }),
+     });
+@@ -1626,7 +1626,7 @@
+       VIDEO_DIFFUSION_PORT: String(gatewayPort), MAXCORE_LOCAL_PORT: String(maxcorePort),
+       BOOSTERSTATE_SIDECAR_PORT: String(boosterPort), MODEL_API_PORT: String(modelPort),
+       MODEL_API_HEALTH_PORT: String(modelHealthPort), PYTHON_AI_PORT: String(pythonPort),
+-      SESSION_SECRET: "production-simulation-session-secret-0123456789",
++      SESSION_SECRET: process.env.SESSION_SECRET,
+       ADMIN_KEY: "production-simulation-maxcore-admin-key-0123456789",
+       DATABASE_URL: databaseUrl,
+       READINESS_ISOLATED_PG: "1", READINESS_EGRESS_GUARD: "1",
+@@ -1868,8 +1868,8 @@
+           body: JSON.stringify({
+             email: `packed-load-${suffix}@example.invalid`,
+             username: `packed_load_${usernameSuffix}`,
+-            password: "Packed!Simulation9aAcceptance",
+-            confirmPassword: "Packed!Simulation9aAcceptance",
++            password: process.env.PASSWORD,
++            confirmPassword: process.env.CONFIRM_PASSWORD,
+             firstName: "Packed",
+             lastName: "Load",
+           }),
+
+--- a/tests/admin-account-parity.test.ts
++++ b/tests/admin-account-parity.test.ts
+@@ -10,7 +10,7 @@
+ function account(name: string) {
+   const cookies = new Map<string, string>();
+   const email = `parity_${name}_${suffix}@maxbooster-test.invalid`;
+-  const password = "ParityFixture94!Secure";
++  const password = process.env.PASSWORD as string;
+   async function api(method: string, path: string, body?: Json) {
+     if (method !== "GET" && !cookies.has("csrf-token")) await api("GET", "/api/csrf-token");
+     const headers: Record<string, string> = { "Content-Type": "application/json", "x-maxbooster-fixture-client": name };
+
+--- a/tests/ai-analytics-integration.test.ts
++++ b/tests/ai-analytics-integration.test.ts
+@@ -14,7 +14,7 @@
+ const testUser = {
+   birthdate: "1990-01-01",
+   email: `ai_analytics_test_${Date.now()}@maxbooster-test.invalid`,
+-  password: "SecurePass123!@#",
++  password: process.env.PASSWORD as string,
+   username: `AIAnalyticsTest_${Date.now()}`,
+   firstName: "AI",
+   lastName: "Tester",
+
+--- a/tests/auth-2fa.test.ts
++++ b/tests/auth-2fa.test.ts
+@@ -13,7 +13,7 @@
+ const testUser = {
+   birthdate: "1990-01-01",
+   email: `twofa_${Date.now()}@maxbooster-test.invalid`,
+-  password: "SecurePass123!@#",
++  password: process.env.PASSWORD as string,
+   firstName: "2FA",
+   lastName: "Test",
+ };
+
+--- a/tests/auth-flows.test.ts
++++ b/tests/auth-flows.test.ts
+@@ -11,7 +11,7 @@
+ const testUser = {
+   birthdate: "1990-01-01",
+   email: `authflow_${Date.now()}@maxbooster-test.invalid`,
+-  password: "SecurePass123!@#",
++  password: process.env.PASSWORD as string,
+   firstName: "Auth",
+   lastName: "Flow",
+ };
+
+--- a/tests/billing-lifecycle.test.ts
++++ b/tests/billing-lifecycle.test.ts
+@@ -19,7 +19,7 @@
+ const testUser = {
+   birthdate: "1990-01-01",
+   email: `billing_${Date.now()}@maxbooster-test.invalid`,
+-  password: "SecurePass123!@#",
++  password: process.env.PASSWORD as string,
+   firstName: "Billing",
+   lastName: "Test",
+ };
+
+--- a/tests/content-analysis-entitlement.test.ts
++++ b/tests/content-analysis-entitlement.test.ts
+@@ -4,7 +4,7 @@
+ import { withFixtureDatabase } from "./helpers-http-fixture";
+ 
+ const email = `content_entitlement_${randomUUID().replaceAll("-", "")}@maxbooster-test.invalid`;
+-const password = "ContentFixture79!Secure";
++const password = process.env.PASSWORD as string;
+ const cookies = new Map<string, string>();
+ async function request(method: string, path: string, body?: Record<string, unknown>): Promise<Response> {
+   if (method !== "GET" && !cookies.has("csrf-token")) await request("GET", "/api/csrf-token");
+
+--- a/tests/critical-paths.test.ts
++++ b/tests/critical-paths.test.ts
+@@ -11,7 +11,7 @@
+ const testUser = {
+   birthdate: "1990-01-01",
+   email: `test_${Date.now()}@maxbooster-test.invalid`,
+-  password: "SecurePass123!",
++  password: process.env.PASSWORD as string,
+   username: `TestUser_${Date.now()}`,
+   firstName: "Test",
+   lastName: "User",
+
+--- a/tests/direct-upload.test.ts
++++ b/tests/direct-upload.test.ts
+@@ -7,7 +7,7 @@
+ const testUser = {
+   birthdate: "1990-01-01",
+   email: `directupload_${Date.now()}@maxbooster-test.invalid`,
+-  password: "SecurePass123!@#",
++  password: process.env.PASSWORD as string,
+   firstName: "Direct",
+   lastName: "Upload",
+ };
+
+--- a/tests/fabric-root-storage-postgres.test.mjs
++++ b/tests/fabric-root-storage-postgres.test.mjs
+@@ -137,7 +137,7 @@
+     url.searchParams.set("host",options.host);url.searchParams.set("port",String(options.port));
+     const child = spawnSync(process.execPath,[fixture],{cwd:scratch,encoding:"utf8",timeout:50_000,
+       env:{PATH:process.env.PATH,HOME:scratch,NODE_ENV:"test",DATABASE_URL:url.toString(),
+-        SESSION_SECRET:"isolated-root-fabric-fixture-secret-not-an-application-binding",
++        SESSION_SECRET:process.env.SESSION_SECRET,
+         READINESS_ISOLATED_PG:"1",READINESS_EGRESS_GUARD:"1",READINESS_LOCAL_CODECS:"1",
+         NODE_OPTIONS:`--import=${path.join(root,"scripts/readiness-egress-guard.mjs")}`,
+         ...(process.env.LD_LIBRARY_PATH?{LD_LIBRARY_PATH:process.env.LD_LIBRARY_PATH}:{})} });
+
+--- a/tests/feature-catalog-production.test.ts
++++ b/tests/feature-catalog-production.test.ts
+@@ -11,7 +11,7 @@
+ const testUser = {
+   birthdate: "1990-01-01",
+   email: `feat_catalog_${Date.now()}@maxbooster-test.invalid`,
+-  password: "SecurePass123!@#",
++  password: process.env.PASSWORD as string,
+   firstName: "Feature",
+   lastName: "Catalog",
+ };
+
+--- a/tests/feature-marketplace-distribution.test.ts
++++ b/tests/feature-marketplace-distribution.test.ts
+@@ -8,7 +8,7 @@
+ const testUser = {
+   birthdate: "1990-01-01",
+   email: `feat_mktplace_${Date.now()}@maxbooster-test.invalid`,
+-  password: "SecurePass123!@#",
++  password: process.env.PASSWORD as string,
+   firstName: "Feature",
+   lastName: "Market",
+ };
+
+--- a/tests/feature-press-pitching-ar.test.ts
++++ b/tests/feature-press-pitching-ar.test.ts
+@@ -11,7 +11,7 @@
+ const testUser = {
+   birthdate: "1990-01-01",
+   email: `feat_pitch_${Date.now()}@maxbooster-test.invalid`,
+-  password: "SecurePass123!@#",
++  password: process.env.PASSWORD as string,
+   firstName: "Feature",
+   lastName: "Pitch",
+ };
+
+--- a/tests/feature-revenue-merch.test.ts
++++ b/tests/feature-revenue-merch.test.ts
+@@ -9,7 +9,7 @@
+ const testUser = {
+   birthdate: "1990-01-01",
+   email: `feat_revenue_${Date.now()}@maxbooster-test.invalid`,
+-  password: "SecurePass123!@#",
++  password: process.env.PASSWORD as string,
+   firstName: "Feature",
+   lastName: "Revenue",
+ };
+
+--- a/tests/feature-storefront-dns.test.ts
++++ b/tests/feature-storefront-dns.test.ts
+@@ -10,7 +10,7 @@
+ const testUser = {
+   birthdate: "1990-01-01",
+   email: `feat_sf_${Date.now()}@maxbooster-test.invalid`,
+-  password: "SecurePass123!@#",
++  password: process.env.PASSWORD as string,
+   firstName: "Feature",
+   lastName: "Storefront",
+ };
+
+--- a/tests/file-management.test.ts
++++ b/tests/file-management.test.ts
+@@ -18,7 +18,7 @@
+ const testUser = {
+   birthdate: "1990-01-01",
+   email: `filemgmt_${Date.now()}@maxbooster-test.invalid`,
+-  password: "SecurePass123!@#",
++  password: process.env.PASSWORD as string,
+   firstName: "File",
+   lastName: "Test",
+ };
+
+--- a/tests/p0-verification.ts
++++ b/tests/p0-verification.ts
+@@ -195,7 +195,7 @@
+   console.log("Testing P0-06: Auth Login (Invalid Credentials)...");
+   const loginResult = await makeRequest("POST", "/api/auth/login", {
+     email: "invalid@nonexistent.com",
+-    password: "wrongpassword123",
++    password: process.env.PASSWORD as string,
+   });
+   results.push({
+     id: "P0-06",
+
+--- a/tests/paid-user-e2e.test.ts
++++ b/tests/paid-user-e2e.test.ts
+@@ -11,7 +11,7 @@
+ const testUser = {
+   birthdate: "1990-01-01",
+   email: `paidtest_${Date.now()}@maxbooster-test.invalid`,
+-  password: "SecurePass123!@#",
++  password: process.env.PASSWORD as string,
+   username: `PaidUser_${Date.now()}`,
+   firstName: "Paid",
+   lastName: "Tester",
+
+--- a/tests/payment-processing/outbound-services-webhooks.mjs
++++ b/tests/payment-processing/outbound-services-webhooks.mjs
+@@ -187,7 +187,7 @@
+   const event = { id: "evt_signed", type: "payout.paid", data: { object: { amount: 9000 } } };
+   globalThis.__outboundWebhookEvent = event;
+   globalThis.__outboundWebhookEnv = {
+-    STRIPE_WEBHOOK_SECRET: "whsec_isolated_marker",
++    STRIPE_WEBHOOK_SECRET: process.env.STRIPE_WEBHOOK_SECRET,
+     STRIPE_SECRET_KEY: "sk_test_isolated_marker",
+   };
+   const { stripeWebhookMiddleware, stripeRawBodyParser, getWebhookAuditLog } = await loadOutboundSubject(
+
+--- a/tests/private-admin-http.test.ts
++++ b/tests/private-admin-http.test.ts
+@@ -5,7 +5,7 @@
+ import { withFixtureDatabase } from "./helpers-http-fixture";
+ 
+ const suffix = randomUUID().replaceAll("-", "");
+-const password = "IsolatedAdmin93!Fixture";
++const password = process.env.PASSWORD as string;
+ function account(label: string) {
+   const cookies = new Map<string, string>();
+   const email = `${label}_${suffix}@maxbooster-test.invalid`;
+
+--- a/tests/security-hardening.test.ts
++++ b/tests/security-hardening.test.ts
+@@ -102,7 +102,7 @@
+     const r = await req("POST", "/api/auth/register", {
+       birthdate: "1990-01-01",
+       email,
+-      password: "SecurePass123!",
++      password: process.env.PASSWORD as string,
+       firstName: "Test",
+       lastName: "User",
+     });
+
+--- a/tests/unit/generation-reliability-gate.test.mjs
++++ b/tests/unit/generation-reliability-gate.test.mjs
+@@ -213,7 +213,7 @@
+       MAXBOOSTER_GENERATION_E2E_BASE_URL: origin,
+       MAXBOOSTER_GENERATION_E2E_ALLOWED_ORIGIN: origin,
+       MAXBOOSTER_GENERATION_E2E_USERNAME: "fixture-user",
+-      MAXBOOSTER_GENERATION_E2E_PASSWORD: "fixture-password",
++      MAXBOOSTER_GENERATION_E2E_PASSWORD: process.env.MAXBOOSTER_GENERATION_E2_E_PASSWORD,
+       MAXBOOSTER_GENERATION_E2E_ACCOUNT_ID: "e2e-account",
+       MAXBOOSTER_GENERATION_E2E_CONFIRM_ISOLATED: "1",
+       MAXBOOSTER_GENERATION_E2E_PROVIDER_RECEIPT: JSON.stringify({
+
+--- a/tests/unit/schema-validators.test.ts
++++ b/tests/unit/schema-validators.test.ts
+@@ -8,7 +8,7 @@
+ describe("insertUserSchema", () => {
+   const validUser = {
+     email: "test@example.com",
+-    password: "SecurePass123!",
++    password: process.env.PASSWORD as string,
+     firstName: "Alice",
+     lastName: "Smith",
+   };
+
+--- a/tests/unit/stripe-credentials.test.ts
++++ b/tests/unit/stripe-credentials.test.ts
+@@ -10,7 +10,7 @@
+       selectStripeSecretKey(
+         {
+           STRIPE_SECRET_KEY: "live-secret",
+-          STRIPE_TEST_SECRET: "sandbox-secret",
++          STRIPE_TEST_SECRET: process.env.STRIPE_TEST_SECRET as string,
+           TESTING_STRIPE_SECRET_KEY: "legacy-sandbox-secret",
+         },
+         true,
+@@ -23,7 +23,7 @@
+       selectStripeSecretKey(
+         {
+           STRIPE_SECRET_KEY: "live-secret",
+-          STRIPE_TEST_SECRET: "sandbox-secret",
++          STRIPE_TEST_SECRET: process.env.STRIPE_TEST_SECRET as string,
+           TESTING_STRIPE_SECRET_KEY: "legacy-sandbox-secret",
+         },
+         false,
+
+--- a/tests/unit/subscriptionCheckout.test.ts
++++ b/tests/unit/subscriptionCheckout.test.ts
+@@ -43,11 +43,11 @@
+   it("accepts a usable Stripe client secret", () => {
+     expect(
+       parseSubscriptionSetupPayload({
+-        clientSecret: "pi_123_secret_abc",
++        clientSecret: process.env.CLIENT_SECRET as string,
+       }),
+     ).toEqual({
+       ok: true,
+-      clientSecret: "pi_123_secret_abc",
++      clientSecret: process.env.CLIENT_SECRET as string,
+     });
+   });
+ 

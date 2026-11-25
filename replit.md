@@ -106,7 +106,7 @@ Use `docs/sophia-agent-evaluation.md` as the acceptance scorecard for consequent
 
 Use the admin account for all further testing in this project, not Demo Mode. Use authorized access; do not alter real account data or perform destructive or externally consequential actions merely to test a feature.
 
-The main workflow is **"Start application"** — starts Redis then the Express + Vite dev server on port 5000.
+The main workflow is **"Start application"**. It starts the Express + Vite dev server and configured local services first, then runs the repository completion analysis after all configured listeners pass readiness. This keeps the full-repository analysis from consuming the app's startup window.
 
 ```bash
 npm run dev
@@ -120,10 +120,11 @@ Skips the optional Rust `boosterstate` sidecar if not compiled, then starts `ser
 
 | Variable | Notes |
 |---|---|
-| `NEON_DATABASE_URL` | PostgreSQL (Neon) — the app's actual database |
+| `NEON_PRIMARY_URL` | PostgreSQL (Neon) — the app's primary database |
+| `NEON_DATABASE_URL` | PostgreSQL (Neon) — secondary compatibility target |
 | `SESSION_SECRET` | Set as a Replit Secret (min 32 chars) |
 
-> ⚠️ `DATABASE_URL` (Replit-managed PostgreSQL) is a **different** database from `NEON_DATABASE_URL`. All schema/query work targets `NEON_DATABASE_URL`.
+> ⚠️ `DATABASE_URL` (Replit-managed PostgreSQL) is separate from the Neon databases. The app uses `NEON_PRIMARY_URL` first, then `NEON_DATABASE_URL`; use `DATABASE_URL` only as a compatibility fallback.
 
 See `.env.example` for the full list of 300+ optional variables (Stripe, SendGrid, MaxCore, social OAuth, etc.). Features degrade gracefully when absent; AI features return 503 without MaxCore.
 
@@ -133,7 +134,7 @@ See `.env.example` for the full list of 300+ optional variables (Stripe, SendGri
 
 | Script | Purpose |
 |---|---|
-| `npm run dev` | Start development server (Express + Vite HMR) |
+| `npm run dev` | Start development server, then run bounded repository completion analysis after listener readiness |
 | `npm run build` | Production build to `dist/` |
 | `npm run check` | TypeScript check — server + client (split configs, OOM-safe) |
 | `npm run check:server` | TypeScript check — server only |
@@ -142,7 +143,7 @@ See `.env.example` for the full list of 300+ optional variables (Stripe, SendGri
 | `npm run lint:fix` | ESLint auto-fix |
 | `npm run verify:dependency-upgrades` | Exercise upgraded native, archive, spreadsheet, UUID, and storage dependencies |
 | `npm run fix` | ESLint --fix + Prettier --write |
-| `npm run db:push` | Sync Drizzle schema to NEON_DATABASE_URL |
+| `npm run db:push` | Sync Drizzle schema to the selected primary Neon database |
 | `node scripts/fix-all.mjs --phase <p>` | Resumable fix-all pipeline (ts-server/ts-client/verify/imports/schema/runtime/audit/lint/summary); state+reports in `reports/fix-all/`; exits 1 while work is outstanding |
 | `npm run bootstrap:admin` | Create the initial admin user |
 
@@ -154,7 +155,7 @@ See `.env.example` for the full list of 300+ optional variables (Stripe, SendGri
 |---|---|
 | Preview blank / not loading | Restart "Start application" workflow; confirm port 5000 opened; check `server.allowedHosts: true` in `vite.config.ts` |
 | `node_modules/.bin` missing | Run the inline Node script that reads each package's `bin` field and recreates symlinks manually (see Startup Note below) |
-| Dependency installation fails | Preserve locks. Use root npm 10.9.4 and the independent imported pnpm locks; verify registry/policy errors. The tar stub and lock-deletion workaround are obsolete. |
+| Dependency installation fails | Preserve locks. Use root npm 11.19.1 and the independent imported pnpm locks; verify registry/policy errors. The tar stub and lock-deletion workaround are obsolete. |
 | Typecheck OOMs (`tsc` killed) | Never run monolithic `tsc`; use `npm run check` (split server/client configs); also clear `.cache/tsbuildinfo.*` before re-measuring |
 | AI features return 503 | Inspect the actual reason: boot/crash, connectivity, awareness freshness or no qualified candidate. Restarting cannot establish missing model capability. |
 | Login / CSRF failures in curl | Pass the `csrf-token` cookie value as `X-CSRF-Token` header (double-submit pattern) |
@@ -214,7 +215,7 @@ See [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) for the full diagram and requ
 
 ## User Preferences
 
-- Root dependencies use pinned npm 10.9.4 and package-lock.json; imported MaxCore/PDIM use independent pinned pnpm locks.
+- Root dependencies use pinned npm 11.19.1 and package-lock.json; imported MaxCore/PDIM use independent pinned pnpm locks.
 - Run heavy installs via a Replit workflow, not ShellExec (detached bash gets reaped)
 - Diagnose missing tool binaries through the lock-consistent installation and dependency gates (see Startup Note above).
 - Never run monolithic `tsc` — always use `npm run check` (split server/client configs)

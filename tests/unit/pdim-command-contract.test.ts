@@ -44,6 +44,94 @@ describe("PDIM command argument contract (PdimRedisClient)", () => {
     expect(body).toEqual({ cmd: "GET", args: ["some-key"] });
   });
 
+  it("reports ready after two consecutive successful PINGs", async () => {
+    fetchMock.mockImplementation(async () =>
+      new Response(JSON.stringify({ result: "PONG" }), {
+        status: 200,
+        headers: { "content-type": "application/json" },
+      }),
+    );
+    const client = new PdimRedisClient(EXEC_URL, TOKEN);
+    const events: string[] = [];
+    client.on("connect", () => events.push("connect"));
+    client.on("ready", () => events.push("ready"));
+
+    expect(client.status).toBe("connecting");
+    await expect(client.connect()).resolves.toBeUndefined();
+    expect(client.status).toBe("ready");
+    expect(events).toEqual(["connect", "ready"]);
+    expect(fetchMock).toHaveBeenCalledTimes(2);
+    for (const [requestUrl, requestInit] of fetchMock.mock.calls) {
+      expect(String(requestUrl)).toBe(EXEC_URL);
+      expect(JSON.parse(String((requestInit as RequestInit).body))).toEqual({
+        cmd: "PING",
+        args: [],
+      });
+    }
+  });
+
+  it("propagates an unavailable PING instead of reporting a false PONG", async () => {
+    fetchMock.mockResolvedValueOnce(
+      new Response(JSON.stringify({ error: "service temporarily unavailable" }), {
+        status: 503,
+        headers: { "content-type": "application/json" },
+      }),
+    );
+    const client = new PdimRedisClient(EXEC_URL, TOKEN);
+    const events: string[] = [];
+    client.on("connect", () => events.push("connect"));
+    client.on("ready", () => events.push("ready"));
+
+    await expect(client.ping()).rejects.toThrow();
+    expect(client.status).toBe("reconnecting");
+    expect(events).toEqual([]);
+  });
+
+  it("retries a transport reset once for idempotent HSET only", async () => {
+    fetchMock
+      .mockRejectedValueOnce(Object.assign(new Error("fetch failed"), {
+        cause: Object.assign(new Error("read ECONNRESET"), { code: "ECONNRESET" }),
+      }))
+      .mockResolvedValueOnce(new Response(JSON.stringify({ result: 1 }), {
+        status: 200,
+        headers: { "content-type": "application/json" },
+      }));
+    const client = new PdimRedisClient(EXEC_URL, TOKEN);
+
+    await expect(client.sendCommand(["HSET", "session:1", "status", "active"]))
+      .resolves.toBe(1);
+    expect(fetchMock).toHaveBeenCalledTimes(2);
+    const sentBodies = fetchMock.mock.calls.map((call) =>
+      JSON.parse(String((call[1] as RequestInit).body)),
+    );
+    expect(sentBodies[0]).toEqual(sentBodies[1]);
+  });
+
+  it("retries a transport reset once for read-only GET", async () => {
+    fetchMock
+      .mockRejectedValueOnce(Object.assign(new Error("fetch failed"), {
+        cause: Object.assign(new Error("read ECONNRESET"), { code: "ECONNRESET" }),
+      }))
+      .mockResolvedValueOnce(new Response(JSON.stringify({ result: "value" }), {
+        status: 200,
+        headers: { "content-type": "application/json" },
+      }));
+    const client = new PdimRedisClient(EXEC_URL, TOKEN);
+
+    await expect(client.sendCommand(["GET", "state:key"])).resolves.toBe("value");
+    expect(fetchMock).toHaveBeenCalledTimes(2);
+  });
+
+  it("does not replay non-idempotent commands after an uncertain transport failure", async () => {
+    fetchMock.mockRejectedValueOnce(Object.assign(new Error("fetch failed"), {
+      cause: Object.assign(new Error("read ECONNRESET"), { code: "ECONNRESET" }),
+    }));
+    const client = new PdimRedisClient(EXEC_URL, TOKEN);
+
+    await expect(client.sendCommand(["INCR", "counter"])).rejects.toThrow("fetch failed");
+    expect(fetchMock).toHaveBeenCalledOnce();
+  });
+
   it("coerces numeric arguments to strings on the wire", async () => {
     const client = new PdimRedisClient(EXEC_URL, TOKEN);
     await client.sendCommand(["INCRBY", "counter", 2 as unknown as string]);

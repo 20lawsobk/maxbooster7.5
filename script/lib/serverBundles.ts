@@ -4,7 +4,8 @@ import { build } from "esbuild";
 
 export const SERVER_ENTRIES = {
   "dns-node": "dns-node/src/index.ts",
-  index: "server/index.ts",
+  "dns-api": "dns-os/services/dns-api/src/index.ts",
+  index: "src/index.ts",
   "retained-pdim-recovery-worker": "scripts/retained-pdim-recovery-worker.ts",
   cluster: "server/cluster.ts",
   gateway: "server/diffusion-gateway/index.ts",
@@ -35,7 +36,8 @@ export async function buildDeploymentBootstrap(root: string, outdir: string) {
   // start.sh must run these before the application capsule is restored.
   const bootstrap = path.join(outdir, "deployment");
   fs.mkdirSync(bootstrap, { recursive: true });
-  for (const name of fs.readdirSync(path.join(root, "script/deployment")).filter(name => name.endsWith(".mjs"))) {
+  for (const name of fs.readdirSync(path.join(root, "script/deployment"))
+    .filter(name => name.endsWith(".mjs") && name !== "sequential-build.mjs")) {
     fs.copyFileSync(path.join(root, "script/deployment", name), path.join(bootstrap, name));
   }
   for (const file of ["scripts/port-contract.sh", "scripts/boot-stub-server.mjs", "script/deployment/image-size-gate.sh"]) {

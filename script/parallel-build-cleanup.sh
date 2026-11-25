@@ -4,47 +4,31 @@ set -eu
 cd "${1:?A disposable build root is required}"
 [[ "$PWD" != "/" ]] || { echo "Refusing filesystem-root cleanup" >&2; exit 1; }
 
-# Two independent filesystem operations at a time. More delete workers can
-# saturate metadata I/O rather than improve throughput. Never scan first with du.
-targets=(.local .cache .agents node_modules/.vite node_modules/.cache)
-declare -A active=()
-next=0
-failed=0
+# The workspace-root `.cache` is Replit-managed and actively repopulated by the
+# builder; it is excluded from the release payload, so never recursively delete
+# it. npm ci replaces node_modules itself, and compiler caches are pruned once
+# after the build before capsule packing. Never scan first with du.
+targets=(.local .agents)
 started=$SECONDS
 last_report=$SECONDS
 
-stop() {
-  trap - INT TERM
-  for pid in "${!active[@]}"; do kill -TERM "$pid" 2>/dev/null || :; done
-  for pid in "${!active[@]}"; do wait "$pid" 2>/dev/null || :; done
-  exit 130
-}
-trap stop INT TERM
+remove_target() {
+  local target=$1
 
-while (( next < ${#targets[@]} || ${#active[@]} > 0 )); do
-  while (( failed == 0 && next < ${#targets[@]} && ${#active[@]} < 2 )); do
-    target=${targets[next]}
-    echo "[cleanup] Starting ${target} (elapsed $((SECONDS-started))s)"
-    rm -rf -- "$target" &
-    active[$!]=$target
-    next=$((next+1))
-  done
-  for pid in "${!active[@]}"; do
-    if ! kill -0 "$pid" 2>/dev/null; then
-      if wait "$pid"; then
-        echo "[cleanup] Finished ${active[$pid]} (elapsed $((SECONDS-started))s)"
-      else
-        echo "[cleanup] FAILED ${active[$pid]}; draining active deletions" >&2
-        failed=1
-      fi
-      unset 'active[$pid]'
-    fi
-  done
+  rm -rf -- "$target"
+}
+
+for target in "${targets[@]}"; do
+  echo "[cleanup] Starting ${target} (elapsed $((SECONDS-started))s)"
+  if remove_target "$target"; then
+    echo "[cleanup] Finished ${target} (elapsed $((SECONDS-started))s)"
+  else
+    echo "[cleanup] FAILED ${target}; later cleanup steps were not started" >&2
+    exit 1
+  fi
   if (( SECONDS-last_report >= 15 )); then
-    echo "[cleanup] Still running: ${active[*]} (elapsed $((SECONDS-started))s)"
+    echo "[cleanup] Still running: ${target} (elapsed $((SECONDS-started))s)"
     last_report=$SECONDS
   fi
-  if (( failed && ${#active[@]} == 0 )); then exit 1; fi
-  if (( ${#active[@]} > 0 )); then sleep 1; fi
 done
 echo "[cleanup] Complete in $((SECONDS-started))s"

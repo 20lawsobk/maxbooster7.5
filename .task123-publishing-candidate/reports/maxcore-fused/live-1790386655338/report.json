@@ -1,0 +1,181 @@
+{
+  "version": 2,
+  "execution": "COMPLETE",
+  "quality": "NOT_ESTABLISHED",
+  "veoComparison": "NOT_ESTABLISHED",
+  "cases": [
+    {
+      "id": "text",
+      "kind": "text",
+      "requestHash": "8a7565cba9585fde02c2943631a99287e2edda8a1bcff836aa2cc96c630c7191",
+      "attempts": [
+        {
+          "status": "EXPLICIT_REJECTION",
+          "httpStatus": 503,
+          "errorDigest": "ad0900aab1a1622ceebf02dceccea8cd93f3bfe2a531babfc32cd6ebeb57f399",
+          "noFallback": true
+        },
+        {
+          "status": "EXPLICIT_REJECTION",
+          "httpStatus": 503,
+          "errorDigest": "ad0900aab1a1622ceebf02dceccea8cd93f3bfe2a531babfc32cd6ebeb57f399",
+          "noFallback": true
+        }
+      ],
+      "replay": {
+        "sameFrozenInputs": "NOT_ESTABLISHED",
+        "exactTextReplay": "NOT_ESTABLISHED",
+        "uncachedReplay": "NOT_ESTABLISHED"
+      }
+    },
+    {
+      "id": "music",
+      "kind": "audio",
+      "requestHash": "5f0b84ff5075299d69e4667ebadd090da5ce32f8304bd579062d7a407088d46c",
+      "attempts": [
+        {
+          "status": "EXPLICIT_REJECTION",
+          "httpStatus": 503,
+          "errorDigest": "8a29014d679ae2c0638c30ff73281a2b7ec84b9cdbe0612fb92871038838d048",
+          "noFallback": true
+        }
+      ]
+    },
+    {
+      "id": "social",
+      "kind": "text",
+      "requestHash": "be5c9d2762cec4ddf82150ed545402d192303a9777ef6fa6b1a33324a00e3d19",
+      "attempts": [
+        {
+          "status": "EXPLICIT_REJECTION",
+          "httpStatus": 503,
+          "errorDigest": "c5d91d4bc59ddf4128d3c1cc6ffe703a6d0b545564cfc6960ebcd09f8b5b6dad",
+          "noFallback": true
+        },
+        {
+          "status": "EXPLICIT_REJECTION",
+          "httpStatus": 503,
+          "errorDigest": "c5d91d4bc59ddf4128d3c1cc6ffe703a6d0b545564cfc6960ebcd09f8b5b6dad",
+          "noFallback": true
+        }
+      ],
+      "replay": {
+        "sameFrozenInputs": "NOT_ESTABLISHED",
+        "exactTextReplay": "NOT_ESTABLISHED",
+        "uncachedReplay": "NOT_ESTABLISHED"
+      }
+    },
+    {
+      "id": "advertising",
+      "kind": "text",
+      "requestHash": "764a361d37704b3b83936cff38b6112f9399ea43a06bc31fbaba439511e517f6",
+      "attempts": [
+        {
+          "status": "EXPLICIT_REJECTION",
+          "httpStatus": 503,
+          "errorDigest": "ac0a70c511b876e79557b50c6ab0c509643bd1c8af4cc6f1064bca034b796a89",
+          "noFallback": true
+        },
+        {
+          "status": "EXPLICIT_REJECTION",
+          "httpStatus": 503,
+          "errorDigest": "ac0a70c511b876e79557b50c6ab0c509643bd1c8af4cc6f1064bca034b796a89",
+          "noFallback": true
+        }
+      ],
+      "replay": {
+        "sameFrozenInputs": "NOT_ESTABLISHED",
+        "exactTextReplay": "NOT_ESTABLISHED",
+        "uncachedReplay": "NOT_ESTABLISHED"
+      }
+    },
+    {
+      "id": "culture",
+      "kind": "text",
+      "requestHash": "ea76866165eb7394055bf5fef440da3ddfa22a6ed7cc2558135da6444fe72e3c",
+      "attempts": [
+        {
+          "status": "EXPLICIT_REJECTION",
+          "httpStatus": 503,
+          "errorDigest": "986c30b40b521fb3514333b8a010ec98ef97edadce027f89edb162b4d8ca8741",
+          "noFallback": true
+        },
+        {
+          "status": "EXPLICIT_REJECTION",
+          "httpStatus": 503,
+          "errorDigest": "986c30b40b521fb3514333b8a010ec98ef97edadce027f89edb162b4d8ca8741",
+          "noFallback": true
+        }
+      ],
+      "replay": {
+        "sameFrozenInputs": "NOT_ESTABLISHED",
+        "exactTextReplay": "NOT_ESTABLISHED",
+        "uncachedReplay": "NOT_ESTABLISHED"
+      }
+    },
+    {
+      "id": "video-spec",
+      "kind": "scene-spec",
+      "requestHash": "62917eb15f77b1bf713c0ed2489a93ded5106c36efd37b61c91898c150f88ecc",
+      "attempts": [
+        {
+          "status": "EXPLICIT_REJECTION",
+          "httpStatus": 503,
+          "errorDigest": "947c88bca13e8a4caace523e671ce9c334d5e966b3925018f2a63a1372640afc",
+          "noFallback": true
+        },
+        {
+          "status": "EXPLICIT_REJECTION",
+          "httpStatus": 503,
+          "errorDigest": "947c88bca13e8a4caace523e671ce9c334d5e966b3925018f2a63a1372640afc",
+          "noFallback": true
+        }
+      ],
+      "replay": {
+        "sameFrozenInputs": "NOT_ESTABLISHED",
+        "exactTextReplay": "NOT_ESTABLISHED",
+        "uncachedReplay": "NOT_ESTABLISHED"
+      }
+    },
+    {
+      "id": "video-clip",
+      "kind": "video",
+      "requestHash": "5e09c0679d29c8edbab01f27c76b3c3e06fcbefbea6453363aa904ffd1085ac9",
+      "attempts": [
+        {
+          "status": "EXPLICIT_REJECTION",
+          "httpStatus": 503,
+          "errorDigest": "8a29014d679ae2c0638c30ff73281a2b7ec84b9cdbe0612fb92871038838d048",
+          "noFallback": true
+        }
+      ]
+    }
+  ],
+  "readinessHttpStatus": 200,
+  "snapshotDigest": "bd6011bc998aed3f8ac0b02623b3c5e47e8885f3e17e4440898bf3f3cfeb06d4",
+  "awarenessBefore": {
+    "snapshotId": "b906f926a195343c2bef5cc2c2f0515d1762c4abecdf347eeb1b6f7a9661868a",
+    "gpu": {
+      "backend": "digital_gpu_awareness_software",
+      "completed": 24,
+      "operations": {
+        "sum_counts": 1,
+        "rank": 23
+      }
+    }
+  },
+  "awarenessAfter": {
+    "snapshotId": "b906f926a195343c2bef5cc2c2f0515d1762c4abecdf347eeb1b6f7a9661868a",
+    "gpu": {
+      "backend": "digital_gpu_awareness_software",
+      "completed": 24,
+      "operations": {
+        "sum_counts": 1,
+        "rank": 23
+      }
+    }
+  },
+  "awarenessDispatchDelta": 0,
+  "dispatchAttribution": "PROCESS_WIDE_ONLY_NOT_REQUEST_ATTRIBUTED",
+  "httpRequests": 20
+}

@@ -64,9 +64,12 @@ function patched(version, floor) {
 }
 export function inspectDependencies(root, scopes) {
   root = fs.realpathSync(root);
-  // Legacy copies are optional in a fresh checkout, but every retained copy
-  // participates in the same installed-tree checks when present.
-  scopes ??= [...workspaces, ...legacyWorkspaces.filter(scope => fs.existsSync(path.join(root, scope)))];
+  // Legacy source shells are optional. Audit their installed trees when
+  // present, but do not treat an empty Replit-created directory as a project.
+  // The deployment gate independently requires every legacy path to remain
+  // excluded from the image.
+  scopes ??= [...workspaces, ...legacyWorkspaces.filter(scope =>
+    fs.lstatSync(path.join(root, scope, "node_modules"), { throwIfNoEntry: false }) !== undefined)];
   const failures = [], occurrences = [], resolutions = [], seen = new Set();
   function record(file, scope, consumer) {
     const real = fs.realpathSync(file);
@@ -173,7 +176,7 @@ export async function inspectArtifacts(root, capsules = ["node_modules", "python
   }
   return { ready: failures.length === 0, failures, evidence };
 }
-export function inspectRestored(root, files = ["dist/index.mjs", "dist/cluster.mjs", "dist/gateway.mjs", "dist/compute-sizing.mjs", "dist/pdim-restore.mjs", "dist/public/index.html", "start.sh", ".node_bin/node", ".node_bin/provenance.json", "bin/boosterstate", "python_runtime/bin/python3"]) {
+export function inspectRestored(root, files = ["dist/index.mjs", "dist/cluster.mjs", "dist/gateway.mjs", "dist/dns-api.mjs", "dist/compute-sizing.mjs", "dist/pdim-restore.mjs", "dist/public/index.html", "start.sh", ".node_bin/node", ".node_bin/provenance.json", "bin/boosterstate", "python_runtime/bin/python3"]) {
   const failures = [];
   for (const file of files) {
     try {

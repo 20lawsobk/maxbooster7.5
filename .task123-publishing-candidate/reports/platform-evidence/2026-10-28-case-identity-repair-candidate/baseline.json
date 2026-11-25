@@ -1,0 +1,27 @@
+{
+  "root": "/workspace/maxbooster7.5",
+  "head": "d9d04498a02c25a1b6ce03306adc20727e9aa2d1",
+  "oldCohortUntouched": {
+    "reports/platform-evidence/2026-10-28-rejected-case-trace/README.md": "c865c08665f87df17cf4c269bcfc592bc4045e89e173149a552ab87c720df28d",
+    "reports/platform-evidence/2026-10-28-rejected-case-trace/build-report.initial.py": "f044035ac282b3bd4988f199bd9374062be895bba6f5b955cdaff51aad5a1d0a",
+    "reports/platform-evidence/2026-10-28-rejected-case-trace/build-report.py": "008ef7483fc4771004325f2a0f501207e60905c8df524347fa1962ca0139e382",
+    "reports/platform-evidence/2026-10-28-rejected-case-trace/catalog-gap.json": "d33eeb28536e1368b10b0be7b8554261095b8c32d983555426d38eaaeb7dacc7",
+    "reports/platform-evidence/2026-10-28-rejected-case-trace/entries.json": "615d38f7aa7df195f6a5d325d9935005f834e2ba8a2c36c91ebdeea7e14f4bb3",
+    "reports/platform-evidence/2026-10-28-rejected-case-trace/initial-build-syntax-error.txt": "8e23dc1dc41eb4e2338171e3360294b11eb117219f1ebaeb80ebdace7de29786",
+    "reports/platform-evidence/2026-10-28-rejected-case-trace/initial-syntax-error.txt": "828b832de9fc5a6fa6a499aba6424cfd60b8774df72c947b6594df8e1e915ccf",
+    "reports/platform-evidence/2026-10-28-rejected-case-trace/manifest.json": "28ac6ea32f7af0a10cbf02b277907729839340b4987499f3af9073048183be51",
+    "reports/platform-evidence/2026-10-28-rejected-case-trace/matrix.md": "e7339ef5d1c276a215c17612de541d93b67f67fb884c49a7c79a0742857aba2c",
+    "reports/platform-evidence/2026-10-28-rejected-case-trace/parameter-table-semantics.json": "ca949aea46ac2ed3a4d4dd4960527af19194c29e057c5c0c1fcfafc87ea8129b",
+    "reports/platform-evidence/2026-10-28-rejected-case-trace/parameterized-source-sites.json": "5959006924719ddde7c1dd1ccd6aa93f06733d00b6f5fc9fcaff6111b2a8a8d3",
+    "reports/platform-evidence/2026-10-28-rejected-case-trace/replay-receipt.json": "7d5b2a6f43f00d1ab68a4c0b2151d79706413660d759dc90a00278f91fac4711",
+    "reports/platform-evidence/2026-10-28-rejected-case-trace/replay.txt": "4f794d5b2155f29c714336470bdf501484fa860cd44da09f748a8da71f2582c0",
+    "reports/platform-evidence/2026-10-28-rejected-case-trace/summary.json": "d3dd7f1fceedc790b44ce16ea0f7628d9fb02f52ee31510692fc8d78c1de3744",
+    "reports/platform-evidence/2026-10-28-rejected-case-trace/trace-rejections.executed.py": "111db3f327a59f23f5350ee8cafba07372f99fb252ffcccbd50f68d5a6532e38",
+    "reports/platform-evidence/2026-10-28-rejected-case-trace/trace-rejections.initial.py": "90948f347c34e32e35e00efb2b0596a745a1a532ada6e901e12fa10f3b7f143f",
+    "reports/platform-evidence/2026-10-28-rejected-case-trace/trace-rejections.py": "ad56cd9bfe509c26b190297e3127d3c24821d529ecaf0939814af66bcf320f30",
+    "reports/platform-evidence/2026-10-28-rejected-case-trace/validate-cohort.py": "5fc2a146a23ed3ac68154bb7ec11c262067fac3aa4d02bf5858a5192a229d8fe"
+  },
+  "sourceFiles": 15,
+  "sourcePatchSha256": "42e3e063155227a4695989f6426e8bfd0e9f69256a92802854c98a1df0d8c6a2",
+  "scope": "Outside-only review candidate; never applied to root or canonical evidence"
+}

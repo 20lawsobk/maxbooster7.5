@@ -130,7 +130,7 @@ export async function selectArm(
       style_focus?: string[];
       next_topics?: Array<{ topic?: string }>;
     };
-  }>("/platform/social/autopilot", {
+  }>("/api/platform/social/autopilot", {
     method: "POST",
     authScope: "generation",
     userId: opts.scope,

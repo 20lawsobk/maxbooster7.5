@@ -1,2 +1,34 @@
 - [Nix dependency editing](nix-dependency-editing.md) — verify custom dependency expressions actually change; the package remover can report success without removing them.
-- [User-local Nix constraints](user-local-nix.md) — custom stores avoid platform permissions but do not repair Replit's environment loader.
+- [Review after code changes](review-after-code-changes.md) — run the code-review skill after each code change in this project.
+- [User-local Nix constraints](user-local-nix.md) — private stores address permissions; preserve LD_AUDIT and reserve 128 KiB optional static TLS for pinned Rust builds.
+- [Private-admin release](admin-first-release-policy.md) — admin use comes first; public rollout remains closed and provider outcomes must be genuine.
+- [Workflow side effects](app-workflow-database-side-effects.md) — startup and preview can write shared data; use isolated fixtures when live writes are not authorized.
+- [Packaged restart fixtures](packaged-restart-fixture.md) — keep generated schema baselines separate from overlapping migrations; require readiness on every restart cycle.
+- [Python scan version attribution](python-scan-version-attribution.md) — resolve reported versions from current constraints before changing pins when scan results disagree.
+- [Portable Python publishing](portable-python-build.md) — isolated runtime installs must override builder-level pip user mode and enforce both AI-server and diffusion requirements.
+- [Local PDIM AOF recovery](local-pdim-aof-conflicting-sequences.md) — verify checksums, ignore snapshot-covered frames, require contiguous records, and fence each writer with one lease.
+- [Awareness profile sources](awareness-profile-sources.md) — only the selected eight platforms are approved; topic categories are metadata, not source targets.
+- [Simulation cycle semantics](simulation-cycle-semantics.md) — repeat a fixed ten-year horizon indefinitely with both rolling-state and fixed-baseline tracks.
+- [Live-awareness serving readiness](live-awareness-serving-readiness.md) — serve current awareness before a trained checkpoint, while reporting checkpoint status separately.
+- [Provider error logging](provider-error-logging.md) — do not log raw provider messages; they can embed unlabelled credentials that generic redaction cannot reliably identify.
+- [Weave rebase build conflicts](weave-rebase-build-conflicts.md) — generated `dist` conflicts can retain markers; restore clean target-branch output or rebuild.
+- [Whole-product acceptance](whole-product-acceptance.md) — cover every role and journey; MaxCore also has owner-defined memory, graph, agent, tool, expansion, and data-model requirements.
+- [Publishing SIGTERM boundary](publishing-sigterm-boundary.md) — honor supervisor termination; a deployment log may not identify its source, and application code cannot prevent an external stop.
+- [Release acceptance history](release-acceptance-history.md) — the owner reports no successful deployment since August 2026; local rehearsal is not publish evidence.
+- [Automation side-effect serialization](automation-side-effect-serialization.md) — serialize workflow steps and lifecycle transitions; retries of external actions need durable idempotency evidence.
+- [Python test interpreter alignment](python-test-interpreter-alignment.md) — ensure coverage and test tools are importable in the exact interpreter selected by the runner.
+- [Vitest timeout and sharding hygiene](vitest-cli-subprocess-contention.md) — distinguish runner timeouts from test failures and merge coverage shards before enforcing global thresholds.
+- [Nested Max Booster copy](nested-maxbooster-copy.md) — the owner identified `maxbooster7.5` as a nested duplicate, not the active app source.
+- [Embedded Vite configuration](embedded-vite-configuration.md) — resolve env callbacks before middleware builds; object-spreading one can silently default to the workspace root.
+- [Neon session startup race](neon-session-startup-race.md) — initialize authoritative sessions before parallel DB probes; bounded retries should cover transient connection failures only.
+- [Stuck preview boot shell](stuck-preview-boot-shell.md) — verify the active preview host and Node/Vite health before changing client loading behavior.
+- [Owner training and generation rights](owner-admin-training-rights.md) — owner-controlled content is authorized; third-party awareness content still needs separate permission.
+- [PDIM Lua JSON values](pdim-lua-json-values.md) — the embedded Wasmoon Redis bridge may expose decoded JSON objects as userdata, so validate fields rather than requiring Lua `table` type.
+- [Max Booster publishing authorization](maxbooster-publishing-authorization.md) — the owner authorizes publishing once release readiness is achieved; this does not make unfinished work ready.
+- [Organic advertising autopilot](organic-advertising-autopilot.md) — MaxCore creates organic promotion distributed through each user's connected social profiles; it does not spend on paid ads.
+- [Replit build runner capacity](replit-publishing-build-runner-capacity.md) — the publishing Build runner is managed separately from the configured Reserved VM runtime; schedule against live cgroup limits.
+- [Read-only Git inventory](read-only-git-inventory.md) — set `GIT_OPTIONAL_LOCKS=0` on audit subprocesses to avoid optional index writes in isolated worktrees.
+- [Deterministic completion patches](completion-loop-patching.md) — generate only registered, evidence-bound local fixes and route all writes through the existing isolated executor.
+- [Drizzle public schema](drizzle-public-schema.md) — this Drizzle version rejects `pgSchema("public")`; keep public tables on `pgTable` and qualify raw SQL explicitly.
+- [Collaboration region routing](collaboration-region-routing.md) — use Max Booster’s built-in DNS/storefront for regional discovery; verify media health and capacity separately.
+- [Isolated MaxCore test dependencies](isolated-maxcore-test-dependencies.md) — isolated clones must preserve nested workspace package links or mocks may miss and hit live local services.

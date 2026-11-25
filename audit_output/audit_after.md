@@ -1,0 +1,650 @@
+# Production Audit Report
+
+Generated: 2026-11-25T03:51:34.933203+00:00
+Repository: `/home/runner/workspace`
+
+**Production Score:** 3/100  
+**Production Ready:** False  
+**Blockers:** 204  
+
+## Scan Summary
+
+- Files: 12041 (text 11671, binary 370, skipped 0)
+- Lines scanned: 29962928
+- Source files: 3963, test files: 1711
+
+## Security (30)
+
+- **[CRITICAL] Potential hardcoded secret** — `.agents/memory/maxcore-test-suite-auth.md`
+  - Details: L5: Assigned API_KEY: $MAX…[18 chars]
+  - Fix: Rotate the credential and move it to a secrets manager / env vars
+- **[CRITICAL] Potential hardcoded secret** — `client/src/i18n/locales/ja.json`
+  - Details: L24: Assigned Password: パスワー…[13 chars]
+  - Fix: Rotate the credential and move it to a secrets manager / env vars
+- **[CRITICAL] Potential hardcoded secret** — `external/maxcore/artifacts/ai-training-server/ai_model/awareness/test_platform_discovery.py`
+  - Details: L88: Assigned API_KEY: fixt…[14 chars]; L130: Assigned API_KEY: fixt…[12 chars]; L131: Assigned API_KEY: fixt…[12 chars]; L157: Assigned API_KEY: fixt…[12 chars]; L158: Assigned API_KEY: fixt…[12 chars]; L174: Assigned API_KEY: fixt…[12 chars]; L175: Assigned API_KEY: fixt…[12 chars]; L304: Assigned API_KEY: fixt…[12 chars]; L376: Assigned API_KEY: fixt…[23 chars]; L436: Assigned API_KEY: fixt…[23 chars]
+  - Fix: Rotate the credential and move it to a secrets manager / env vars
+- **[CRITICAL] Potential hardcoded secret** — `reports/platform-evidence/2026-10-29-commerce-catalog-repairs/source.patch`
+  - Details: L253: Assigned SECRET: fram…[37 chars]
+  - Fix: Rotate the credential and move it to a secrets manager / env vars
+- **[CRITICAL] Potential hardcoded secret** — `reports/readiness-audit/scanner-dependencies.json`
+  - Details: L7053: Assigned secret: /tmp…[33 chars]; L12339: Assigned secret: /tmp…[33 chars]; L16970: AWS access key: ASIA…[20 chars]
+  - Fix: Rotate the credential and move it to a secrets manager / env vars
+- **[CRITICAL] Potential hardcoded secret** — `scripts/production-provider-simulation.mjs`
+  - Details: L50: Assigned SECRET: simu…[56 chars]
+  - Fix: Rotate the credential and move it to a secrets manager / env vars
+- **[CRITICAL] Potential hardcoded secret** — `scripts/readiness-gauge/lib/checks.ts`
+  - Details: L93: Private key block: ----…[27 chars]
+  - Fix: Rotate the credential and move it to a secrets manager / env vars
+- **[CRITICAL] Potential hardcoded secret** — `scripts/rehearse-publishing-start.sh`
+  - Details: L23: Assigned SECRET: isol…[47 chars]
+  - Fix: Rotate the credential and move it to a secrets manager / env vars
+- **[CRITICAL] Potential hardcoded secret** — `scripts/simulate-production.mjs`
+  - Details: L1640: Assigned TOKEN: prod…[32 chars]
+  - Fix: Rotate the credential and move it to a secrets manager / env vars
+- **[CRITICAL] Potential hardcoded secret** — `scripts/testing/run-pdim-smoke.mjs`
+  - Details: L74: Assigned TOKEN: isol…[22 chars]
+  - Fix: Rotate the credential and move it to a secrets manager / env vars
+- **[CRITICAL] Potential hardcoded secret** — `server/services/acmeCrypto.ts`
+  - Details: L136: Private key block: ----…[27 chars]
+  - Fix: Rotate the credential and move it to a secrets manager / env vars
+- **[CRITICAL] Potential hardcoded secret** — `server/services/mobilePushService.ts`
+  - Details: L137: Private key block: ----…[27 chars]
+  - Fix: Rotate the credential and move it to a secrets manager / env vars
+- **[CRITICAL] Potential hardcoded secret** — `tests/completion-understanding.test.mjs`
+  - Details: L188: Assigned API_KEY: fixt…[20 chars]
+  - Fix: Rotate the credential and move it to a secrets manager / env vars
+- **[CRITICAL] Potential hardcoded secret** — `tests/current-storage-joint-recovery.test.mjs`
+  - Details: L41: Assigned SECRET: owne…[42 chars]
+  - Fix: Rotate the credential and move it to a secrets manager / env vars
+- **[CRITICAL] Potential hardcoded secret** — `tests/fabric-migration-outbox-postgres.test.mjs`
+  - Details: L190: Assigned SECRET: isol…[60 chars]; L194: Assigned SECRET: isol…[60 chars]
+  - Fix: Rotate the credential and move it to a secrets manager / env vars
+- **[CRITICAL] Potential hardcoded secret** — `tests/payment-processing/outbound-services-webhooks.mjs`
+  - Details: L298: Assigned SECRET: whse…[14 chars]
+  - Fix: Rotate the credential and move it to a secrets manager / env vars
+- **[CRITICAL] Potential hardcoded secret** — `tests/testing/test_commerce_subject_selector.py`
+  - Details: L120: Assigned SECRET: fram…[37 chars]
+  - Fix: Rotate the credential and move it to a secrets manager / env vars
+- **[CRITICAL] Potential hardcoded secret** — `tests/testing/test_production_audit_understand_cli.py`
+  - Details: L134: AWS access key: AKIA…[20 chars]
+  - Fix: Rotate the credential and move it to a secrets manager / env vars
+- **[CRITICAL] Potential hardcoded secret** — `tests/unit/acmeCrypto.test.ts`
+  - Details: L46: Private key block: ----…[27 chars]
+  - Fix: Rotate the credential and move it to a secrets manager / env vars
+- **[CRITICAL] Potential hardcoded secret** — `tests/unit/api-request-csrf.test.ts`
+  - Details: L30: Assigned token: fixt…[18 chars]
+  - Fix: Rotate the credential and move it to a secrets manager / env vars
+- **[CRITICAL] Potential hardcoded secret** — `tests/unit/auth-page-contracts.test.ts`
+  - Details: L300: Assigned Token: boot…[22 chars]
+  - Fix: Rotate the credential and move it to a secrets manager / env vars
+- **[CRITICAL] Potential hardcoded secret** — `tests/unit/auto-posting-recovery.test.ts`
+  - Details: L226: Assigned Token: isol…[22 chars]
+  - Fix: Rotate the credential and move it to a secrets manager / env vars
+- **[CRITICAL] Potential hardcoded secret** — `tests/unit/checkout-subscription-page-contracts.test.ts`
+  - Details: L268: Assigned Secret: mont…[19 chars]
+  - Fix: Rotate the credential and move it to a secrets manager / env vars
+- **[CRITICAL] Potential hardcoded secret** — `tests/unit/client-auth-beta-contracts.test.mjs`
+  - Details: L21: Assigned secret: simu…[21 chars]; L35: Assigned password: pass…[16 chars]; L60: Assigned password: pass…[16 chars]
+  - Fix: Rotate the credential and move it to a secrets manager / env vars
+- **[CRITICAL] Potential hardcoded secret** — `tests/unit/developer-api-page-backend.test.ts`
+  - Details: L31: Assigned apiKey: fixt…[12 chars]
+  - Fix: Rotate the credential and move it to a secrets manager / env vars
+- **[CRITICAL] Potential hardcoded secret** — `tests/unit/growth-rights.test.ts`
+  - Details: L45: Assigned API_KEY: isol…[23 chars]
+  - Fix: Rotate the credential and move it to a secrets manager / env vars
+- **[CRITICAL] Potential hardcoded secret** — `tests/unit/maxcore-connector-contract.test.ts`
+  - Details: L67: Assigned TOKEN: priv…[12 chars]
+  - Fix: Rotate the credential and move it to a secrets manager / env vars
+- **[CRITICAL] Potential hardcoded secret** — `tests/unit/readiness-gauge.test.ts`
+  - Details: L437: Private key block: ----…[27 chars]; L443: Private key block: ----…[31 chars]
+  - Fix: Rotate the credential and move it to a secrets manager / env vars
+- **[CRITICAL] Potential hardcoded secret** — `tests/unit/toolost-release-transport.test.ts`
+  - Details: L72: Assigned SECRET: olde…[20 chars]
+  - Fix: Rotate the credential and move it to a secrets manager / env vars
+- **[CRITICAL] Potential hardcoded secret** — `tools/legacy-security-update.json`
+  - Details: L287: Private key block: ----…[27 chars]; L294: Private key block: ----…[27 chars]
+  - Fix: Rotate the credential and move it to a secrets manager / env vars
+
+## Placeholder Logic (150)
+
+- **[HIGH] Mock/stub/placeholder in non-test code** — `AI enhancements/creativeModelService.ts`
+  - Details: L32: placeholder
+  - Fix: Replace with production implementation
+- **[HIGH] Mock/stub/placeholder in non-test code** — `AI enhancements/socialMedia.ts`
+  - Details: L2282: stub
+  - Fix: Replace with production implementation
+- **[HIGH] Mock/stub/placeholder in non-test code** — `build.sh`
+  - Details: L206: stub
+  - Fix: Replace with production implementation
+- **[HIGH] Mock/stub/placeholder in non-test code** — `client/src/components/automations/CustomWorkflowBuilder.tsx`
+  - Details: L68: placeholder; L175: placeholder; L208: placeholder
+  - Fix: Replace with production implementation
+- **[HIGH] Mock/stub/placeholder in non-test code** — `client/src/components/batch/BatchEditDialog.tsx`
+  - Details: L44: placeholder; L580: placeholder; L596: placeholder; L612: placeholder; L622: placeholder; L646: placeholder; L655: placeholder
+  - Fix: Replace with production implementation
+- **[HIGH] Mock/stub/placeholder in non-test code** — `client/src/components/batch/BulkCreateDialog.tsx`
+  - Details: L57: placeholder; L337: placeholder; L479: placeholder; L727: placeholder
+  - Fix: Replace with production implementation
+- **[HIGH] Mock/stub/placeholder in non-test code** — `client/src/components/batch/BulkEditDialog.tsx`
+  - Details: L34: placeholder; L302: placeholder; L318: placeholder; L334: placeholder; L344: placeholder; L361: placeholder
+  - Fix: Replace with production implementation
+- **[HIGH] Mock/stub/placeholder in non-test code** — `client/src/components/batch/BulkEditForm.tsx`
+  - Details: L48: placeholder; L382: placeholder; L402: placeholder; L426: placeholder; L438: placeholder; L471: placeholder; L483: placeholder
+  - Fix: Replace with production implementation
+- **[HIGH] Mock/stub/placeholder in non-test code** — `client/src/components/marketplace/DNSZoneEditor.tsx`
+  - Details: L510: placeholder
+  - Fix: Replace with production implementation
+- **[HIGH] Mock/stub/placeholder in non-test code** — `client/src/components/marketplace/StorefrontDnsZoneManager.tsx`
+  - Details: L1298: placeholder
+  - Fix: Replace with production implementation
+- **[HIGH] Mock/stub/placeholder in non-test code** — `client/src/components/search/GlobalSearch.tsx`
+  - Details: L40: placeholder; L236: placeholder
+  - Fix: Replace with production implementation
+- **[HIGH] Mock/stub/placeholder in non-test code** — `client/src/components/social/CompetitorBenchmark.tsx`
+  - Details: L175: mock
+  - Fix: Replace with production implementation
+- **[HIGH] Mock/stub/placeholder in non-test code** — `client/src/components/studio/AIMusicGenerator.tsx`
+  - Details: L612: placeholder
+  - Fix: Replace with production implementation
+- **[HIGH] Mock/stub/placeholder in non-test code** — `client/src/components/studio/FlowStateReferenceMatch.tsx`
+  - Details: L81: placeholder
+  - Fix: Replace with production implementation
+- **[HIGH] Mock/stub/placeholder in non-test code** — `client/src/components/studio/HighPerformanceDAW.tsx`
+  - Details: L1284: placeholder
+  - Fix: Replace with production implementation
+- **[HIGH] Mock/stub/placeholder in non-test code** — `client/src/components/studio/LyricsPanel.tsx`
+  - Details: L263: placeholder; L299: placeholder; L320: placeholder; L1054: placeholder
+  - Fix: Replace with production implementation
+- **[HIGH] Mock/stub/placeholder in non-test code** — `client/src/components/studio/MobileLyricsPanel.tsx`
+  - Details: L239: placeholder
+  - Fix: Replace with production implementation
+- **[HIGH] Mock/stub/placeholder in non-test code** — `client/src/components/studio/PluginBrowser.tsx`
+  - Details: L196: placeholder
+  - Fix: Replace with production implementation
+- **[HIGH] Mock/stub/placeholder in non-test code** — `client/src/components/studio/StudioOneDAW.tsx`
+  - Details: L3930: placeholder; L4737: placeholder
+  - Fix: Replace with production implementation
+- **[HIGH] Mock/stub/placeholder in non-test code** — `client/src/components/studio/StudioStartHub.tsx`
+  - Details: L900: placeholder
+  - Fix: Replace with production implementation
+- **[HIGH] Mock/stub/placeholder in non-test code** — `client/src/components/studio/Transport.tsx`
+  - Details: L288: placeholder
+  - Fix: Replace with production implementation
+- **[HIGH] Mock/stub/placeholder in non-test code** — `client/src/components/studio/WaveformClip.tsx`
+  - Details: L174: placeholder
+  - Fix: Replace with production implementation
+- **[HIGH] Mock/stub/placeholder in non-test code** — `client/src/components/ui/lazy-image.tsx`
+  - Details: L16: placeholder
+  - Fix: Replace with production implementation
+- **[HIGH] Mock/stub/placeholder in non-test code** — `client/src/components/ui/safe-img.tsx`
+  - Details: L6: placeholder; L11: placeholder; L15: placeholder; L38: placeholder; L39: placeholder
+  - Fix: Replace with production implementation
+- **[HIGH] Mock/stub/placeholder in non-test code** — `client/src/components/ui/video-player.tsx`
+  - Details: L23: placeholder
+  - Fix: Replace with production implementation
+- **[HIGH] Mock/stub/placeholder in non-test code** — `client/src/lib/audio/AIMixer.ts`
+  - Details: L433: placeholder
+  - Fix: Replace with production implementation
+- **[HIGH] Mock/stub/placeholder in non-test code** — `client/src/lib/authSession.ts`
+  - Details: L69: fake
+  - Fix: Replace with production implementation
+- **[HIGH] Mock/stub/placeholder in non-test code** — `client/src/lib/sentry.ts`
+  - Details: L73: mock; L155: mock; L187: mock
+  - Fix: Replace with production implementation
+- **[HIGH] Mock/stub/placeholder in non-test code** — `client/src/lib/socialPlatformStatus.ts`
+  - Details: L118: placeholder
+  - Fix: Replace with production implementation
+- **[HIGH] Mock/stub/placeholder in non-test code** — `client/src/lib/studioStore.ts`
+  - Details: L1002: sample data; L1594: mock
+  - Fix: Replace with production implementation
+- **[HIGH] Mock/stub/placeholder in non-test code** — `client/src/lib/video/maxcoreVideoRenderer.ts`
+  - Details: L575: placeholder
+  - Fix: Replace with production implementation
+- **[HIGH] Mock/stub/placeholder in non-test code** — `client/src/pages/Login.tsx`
+  - Details: L472: sample data
+  - Fix: Replace with production implementation
+- **[HIGH] Mock/stub/placeholder in non-test code** — `client/src/pages/analytics/CrossPlatformComparison.tsx`
+  - Details: L275: placeholder
+  - Fix: Replace with production implementation
+- **[HIGH] Mock/stub/placeholder in non-test code** — `dns-os/db/migrations/003_max_booster_zone.sql`
+  - Details: L170: placeholder; L181: placeholder
+  - Fix: Replace with production implementation
+- **[HIGH] Mock/stub/placeholder in non-test code** — `docs/archive/production-variants-2026-08/history/scripts-and-config/start.sh/start--21964db82ef9.sh`
+  - Details: L93: stub; L117: stub; L123: stub; L124: stub; L126: stub; L128: stub; L274: stub; L275: stub; L285: stub
+  - Fix: Replace with production implementation
+- **[HIGH] Mock/stub/placeholder in non-test code** — `docs/archive/production-variants-2026-08/history/scripts-and-config/start.sh/start--35b316649520.sh`
+  - Details: L93: stub; L112: stub; L118: stub; L119: stub; L121: stub; L123: stub; L269: stub; L270: stub; L280: stub
+  - Fix: Replace with production implementation
+- **[HIGH] Mock/stub/placeholder in non-test code** — `docs/archive/production-variants-2026-08/history/scripts-and-config/start.sh/start--688a50de953f.sh`
+  - Details: L92: stub; L98: stub; L99: stub; L101: stub; L103: stub; L249: stub; L250: stub; L260: stub
+  - Fix: Replace with production implementation
+- **[HIGH] Mock/stub/placeholder in non-test code** — `docs/archive/production-variants-2026-08/history/scripts-and-config/start.sh/start--ad5a36299765.sh`
+  - Details: L93: stub; L98: stub; L104: stub; L105: stub; L107: stub; L109: stub; L255: stub; L256: stub; L266: stub
+  - Fix: Replace with production implementation
+- **[HIGH] Mock/stub/placeholder in non-test code** — `docs/archive/production-variants-2026-08/history/scripts-and-config/start.sh/start--d7f79d604107.sh`
+  - Details: L92: stub; L98: stub; L99: stub; L101: stub; L103: stub; L271: stub; L272: stub; L282: stub
+  - Fix: Replace with production implementation
+- **[HIGH] Mock/stub/placeholder in non-test code** — `external/maxcore/artifacts/ai-dashboard/src/components/ui/select.tsx`
+  - Details: L22: placeholder
+  - Fix: Replace with production implementation
+- **[HIGH] Mock/stub/placeholder in non-test code** — `external/maxcore/artifacts/ai-training-server/ai_model/agents/script_agent.py`
+  - Details: L848: placeholder; L849: placeholder
+  - Fix: Replace with production implementation
+- **[HIGH] Mock/stub/placeholder in non-test code** — `external/maxcore/artifacts/ai-training-server/ai_model/content_playbook.py`
+  - Details: L439: fake
+  - Fix: Replace with production implementation
+- **[HIGH] Mock/stub/placeholder in non-test code** — `external/maxcore/artifacts/ai-training-server/ai_model/director/platforms.py`
+  - Details: L83: fake
+  - Fix: Replace with production implementation
+- **[HIGH] Mock/stub/placeholder in non-test code** — `external/maxcore/artifacts/ai-training-server/ai_model/image/image_engine.py`
+  - Details: L372: fake
+  - Fix: Replace with production implementation
+- **[HIGH] Mock/stub/placeholder in non-test code** — `external/maxcore/artifacts/ai-training-server/ai_model/maxcore/backend/future_backends.py`
+  - Details: L55: stub
+  - Fix: Replace with production implementation
+- **[HIGH] Mock/stub/placeholder in non-test code** — `external/maxcore/artifacts/ai-training-server/ai_model/maxcore/pdim/orchestrator.py`
+  - Details: L14: fake
+  - Fix: Replace with production implementation
+- **[HIGH] Mock/stub/placeholder in non-test code** — `external/maxcore/artifacts/ai-training-server/ai_model/quality_awareness.py`
+  - Details: L246: fake
+  - Fix: Replace with production implementation
+- **[HIGH] Mock/stub/placeholder in non-test code** — `external/maxcore/artifacts/ai-training-server/ai_model/request_intelligence.py`
+  - Details: L2192: placeholder
+  - Fix: Replace with production implementation
+- **[HIGH] Mock/stub/placeholder in non-test code** — `external/maxcore/artifacts/ai-training-server/ai_model/retrieval/asset_index.py`
+  - Details: L5: placeholder
+  - Fix: Replace with production implementation
+- **[HIGH] Mock/stub/placeholder in non-test code** — `external/maxcore/artifacts/ai-training-server/ai_model/rta/__init__.py`
+  - Details: L16: placeholder
+  - Fix: Replace with production implementation
+- …and 100 more (see JSON report)
+
+## Incomplete Implementation (24)
+
+- **[HIGH] TODO/FIXME markers** — `production_audit.py`
+  - Details: L80: TODO
+  - Fix: Complete or ticket the unfinished work
+- **[HIGH] TODO/FIXME markers** — `reports/aso/isolated-full-20261106T233139Z/toolchains/rust-1.93.1/lib/rustlib/etc/lldb_providers.py`
+  - Details: L1398: FIXME
+  - Fix: Complete or ticket the unfinished work
+- **[HIGH] TODO/FIXME markers** — `reports/aso/isolated-full-20261106T233139Z/toolchains/rust-1.93.1/lib/rustlib/uninstall.sh`
+  - Details: L574: HACK; L828: FIXME
+  - Fix: Complete or ticket the unfinished work
+- **[HIGH] TODO/FIXME markers** — `reports/mapping-audit/2026-10-28-python-factory-proposal/platform-register.next.py`
+  - Details: L307: TODO
+  - Fix: Complete or ticket the unfinished work
+- **[HIGH] TODO/FIXME markers** — `reports/mapping-audit/2026-10-28-topology-final/candidate/scripts/audit-endpoints.mjs`
+  - Details: L22: TODO
+  - Fix: Complete or ticket the unfinished work
+- **[HIGH] TODO/FIXME markers** — `reports/mapping-audit/2026-10-28-topology-final/candidate/scripts/testing/platform-register.py`
+  - Details: L587: TODO
+  - Fix: Complete or ticket the unfinished work
+- **[HIGH] TODO/FIXME markers** — `reports/mapping-audit/2026-10-29-python-factory-final/platform-register.next.py`
+  - Details: L315: TODO
+  - Fix: Complete or ticket the unfinished work
+- **[HIGH] TODO/FIXME markers** — `reports/test-verification/final-map-refresh/toolchains/rust-1.93.1/lib/rustlib/etc/lldb_providers.py`
+  - Details: L1398: FIXME
+  - Fix: Complete or ticket the unfinished work
+- **[HIGH] TODO/FIXME markers** — `reports/test-verification/final-map-refresh/toolchains/rust-1.93.1/lib/rustlib/uninstall.sh`
+  - Details: L574: HACK; L828: FIXME
+  - Fix: Complete or ticket the unfinished work
+- **[HIGH] TODO/FIXME markers** — `reports/test-verification/final-plan-fix/toolchains/rust-1.93.1/lib/rustlib/etc/lldb_providers.py`
+  - Details: L1398: FIXME
+  - Fix: Complete or ticket the unfinished work
+- **[HIGH] TODO/FIXME markers** — `reports/test-verification/final-plan-fix/toolchains/rust-1.93.1/lib/rustlib/uninstall.sh`
+  - Details: L574: HACK; L828: FIXME
+  - Fix: Complete or ticket the unfinished work
+- **[HIGH] TODO/FIXME markers** — `reports/test-verification/full-current/toolchains/rust-1.93.1/lib/rustlib/etc/lldb_providers.py`
+  - Details: L1398: FIXME
+  - Fix: Complete or ticket the unfinished work
+- **[HIGH] TODO/FIXME markers** — `reports/test-verification/full-current/toolchains/rust-1.93.1/lib/rustlib/uninstall.sh`
+  - Details: L574: HACK; L828: FIXME
+  - Fix: Complete or ticket the unfinished work
+- **[HIGH] TODO/FIXME markers** — `scripts/audit-endpoints.mjs`
+  - Details: L22: TODO
+  - Fix: Complete or ticket the unfinished work
+- **[HIGH] TODO/FIXME markers** — `scripts/testing/completion-understanding.mjs`
+  - Details: L496: TODO
+  - Fix: Complete or ticket the unfinished work
+- **[HIGH] TODO/FIXME markers** — `scripts/testing/launch-readiness-audit.py`
+  - Details: L213: TODO
+  - Fix: Complete or ticket the unfinished work
+- **[HIGH] TODO/FIXME markers** — `scripts/testing/platform-register.py`
+  - Details: L315: TODO
+  - Fix: Complete or ticket the unfinished work
+- **[HIGH] TODO/FIXME markers** — `server/services/algorithmIntelligence.ts`
+  - Details: L834: WIP
+  - Fix: Complete or ticket the unfinished work
+- **[HIGH] TODO/FIXME markers** — `server/services/distributionService.ts`
+  - Details: L676: XXX
+  - Fix: Complete or ticket the unfinished work
+- **[HIGH] TODO/FIXME markers** — `server/services/labelGridService.ts`
+  - Details: L406: XXX; L408: XXX
+  - Fix: Complete or ticket the unfinished work
+- **[HIGH] TODO/FIXME markers** — `server/services/royaltyExports.ts`
+  - Details: L14: TODO
+  - Fix: Complete or ticket the unfinished work
+- **[HIGH] TODO/FIXME markers** — `tests/atlas-runtime.test.mjs`
+  - Details: L44: TODO
+  - Fix: Complete or ticket the unfinished work
+- **[HIGH] TODO/FIXME markers** — `tests/completion-understanding.test.mjs`
+  - Details: L40: TODO
+  - Fix: Complete or ticket the unfinished work
+- **[HIGH] TODO/FIXME markers** — `tests/unit/readiness-gauge.test.ts`
+  - Details: L573: TODO
+  - Fix: Complete or ticket the unfinished work
+
+## Reliability (157)
+
+- **[MEDIUM] Swallowed or overly broad exception** — `AI enhancements/AudioWorkletEngine.ts`
+  - Details: L522: } catch (e) {}; L542: } catch (e) {}
+  - Fix: Catch specific errors and log or re-raise
+- **[MEDIUM] Swallowed or overly broad exception** — `built-in plugins dsp/CompressorPlugin.ts`
+  - Details: L62: } catch (e) {}; L65: } catch (e) {}; L68: } catch (e) {}
+  - Fix: Catch specific errors and log or re-raise
+- **[MEDIUM] Swallowed or overly broad exception** — `built-in plugins dsp/DeEsserPlugin.ts`
+  - Details: L132: } catch (e) {}
+  - Fix: Catch specific errors and log or re-raise
+- **[MEDIUM] Swallowed or overly broad exception** — `built-in plugins dsp/DynamicEQPlugin.ts`
+  - Details: L123: } catch (e) {}
+  - Fix: Catch specific errors and log or re-raise
+- **[MEDIUM] Swallowed or overly broad exception** — `built-in plugins dsp/PhaserPlugin.ts`
+  - Details: L53: } catch (_) {}; L60: } catch (_) {}; L146: } catch (_) {}
+  - Fix: Catch specific errors and log or re-raise
+- **[MEDIUM] Swallowed or overly broad exception** — `client/public/js/theme-init.js`
+  - Details: L3: try { theme = localStorage.getItem("max-booster-theme") || "dark"; } catch {}
+  - Fix: Catch specific errors and log or re-raise
+- **[MEDIUM] Swallowed or overly broad exception** — `client/public/sw.js`
+  - Details: L452: } catch {}; L901: } catch {}; L906: } catch {}; L907: } catch {}; L929: } catch {}; L956: } catch {}
+  - Fix: Catch specific errors and log or re-raise
+- **[MEDIUM] Swallowed or overly broad exception** — `client/src/components/achievements/AchievementNotification.tsx`
+  - Details: L134: } catch {}
+  - Fix: Catch specific errors and log or re-raise
+- **[MEDIUM] Swallowed or overly broad exception** — `client/src/components/auth/InactivityManager.tsx`
+  - Details: L57: } catch {}
+  - Fix: Catch specific errors and log or re-raise
+- **[MEDIUM] Swallowed or overly broad exception** — `client/src/components/export/BulkExportManager.tsx`
+  - Details: L606: } catch {}
+  - Fix: Catch specific errors and log or re-raise
+- **[MEDIUM] Swallowed or overly broad exception** — `client/src/components/marketplace/StorefrontBuilder.tsx`
+  - Details: L797: } catch {}
+  - Fix: Catch specific errors and log or re-raise
+- **[MEDIUM] Swallowed or overly broad exception** — `client/src/components/marketplace/StorefrontDnsZoneManager.tsx`
+  - Details: L491: } catch {}; L525: } catch {}; L581: } catch {}; L689: } catch {}; L1767: } catch {}; L1815: } catch {}
+  - Fix: Catch specific errors and log or re-raise
+- **[MEDIUM] Swallowed or overly broad exception** — `client/src/components/settings/CrossPlatformSync.tsx`
+  - Details: L160: } catch {}
+  - Fix: Catch specific errors and log or re-raise
+- **[MEDIUM] Swallowed or overly broad exception** — `client/src/components/studio/PanningModes.tsx`
+  - Details: L110: } catch {}; L116: } catch {}; L304: } catch {}
+  - Fix: Catch specific errors and log or re-raise
+- **[MEDIUM] Swallowed or overly broad exception** — `client/src/components/studio/PatternEditor.tsx`
+  - Details: L838: } catch (error) {}
+  - Fix: Catch specific errors and log or re-raise
+- **[MEDIUM] Swallowed or overly broad exception** — `client/src/components/studio/SpatialAudio.tsx`
+  - Details: L268: } catch {}; L276: } catch {}; L281: } catch {}
+  - Fix: Catch specific errors and log or re-raise
+- **[MEDIUM] Swallowed or overly broad exception** — `client/src/hooks/useAudioContext.ts`
+  - Details: L216: } catch {}; L221: } catch {}; L226: } catch {}
+  - Fix: Catch specific errors and log or re-raise
+- **[MEDIUM] Swallowed or overly broad exception** — `client/src/hooks/useAutoUpdate.ts`
+  - Details: L31: } catch {}
+  - Fix: Catch specific errors and log or re-raise
+- **[MEDIUM] Swallowed or overly broad exception** — `client/src/hooks/useBatchSelection.ts`
+  - Details: L62: } catch {}; L79: } catch {}
+  - Fix: Catch specific errors and log or re-raise
+- **[MEDIUM] Swallowed or overly broad exception** — `client/src/hooks/useDAWAudioPlayback.ts`
+  - Details: L87: } catch {}
+  - Fix: Catch specific errors and log or re-raise
+- **[MEDIUM] Swallowed or overly broad exception** — `client/src/hooks/useFocusReturn.ts`
+  - Details: L53: } catch {}; L88: } catch {}
+  - Fix: Catch specific errors and log or re-raise
+- **[MEDIUM] Swallowed or overly broad exception** — `client/src/hooks/useNPSSurvey.ts`
+  - Details: L26: } catch {}; L33: } catch {}
+  - Fix: Catch specific errors and log or re-raise
+- **[MEDIUM] Swallowed or overly broad exception** — `client/src/hooks/useSelection.ts`
+  - Details: L66: } catch {}; L81: } catch {}
+  - Fix: Catch specific errors and log or re-raise
+- **[MEDIUM] Swallowed or overly broad exception** — `client/src/lib/audioEngine.ts`
+  - Details: L1690: } catch (e) {}; L1693: } catch (e) {}; L1696: } catch (e) {}; L1699: } catch (e) {}; L1702: } catch (e) {}; L1706: } catch (e) {}; L1709: } catch (e) {}; L1714: } catch (e) {}; L1717: } catch (e) {}; L1721: } catch (e) {}; +29 more
+  - Fix: Catch specific errors and log or re-raise
+- **[MEDIUM] Swallowed or overly broad exception** — `client/src/lib/audioPreviewEngine.ts`
+  - Details: L222: } catch (e) {}; L294: } catch (e) {}
+  - Fix: Catch specific errors and log or re-raise
+- **[MEDIUM] Swallowed or overly broad exception** — `client/src/lib/daw/AudioWorkletEngine.ts`
+  - Details: L543: } catch (e) {}; L563: } catch (e) {}
+  - Fix: Catch specific errors and log or re-raise
+- **[MEDIUM] Swallowed or overly broad exception** — `client/src/lib/video/BrowserCapabilities.ts`
+  - Details: L192: } catch {}; L197: } catch {}; L202: } catch {}; L270: } catch {}; L473: } catch {}
+  - Fix: Catch specific errors and log or re-raise
+- **[MEDIUM] Swallowed or overly broad exception** — `client/src/pages/Marketplace.tsx`
+  - Details: L1471: } catch {}
+  - Fix: Catch specific errors and log or re-raise
+- **[MEDIUM] Swallowed or overly broad exception** — `client/src/pages/Storefront.tsx`
+  - Details: L467: } catch {}
+  - Fix: Catch specific errors and log or re-raise
+- **[MEDIUM] Swallowed or overly broad exception** — `evaluations/maxcore-fused/live-api.mjs`
+  - Details: L137: try { json = JSON.parse(bytes.toString()); } catch {}
+  - Fix: Catch specific errors and log or re-raise
+- **[MEDIUM] Swallowed or overly broad exception** — `external/maxcore/artifacts/ai-training-server/tests/test_all_endpoints.py`
+  - Details: L35: except: return r.status, raw.decode(errors="replace")[:200]
+  - Fix: Catch specific errors and log or re-raise
+- **[MEDIUM] Swallowed or overly broad exception** — `external/maxcore/artifacts/ai-training-server/tests/test_smoke_load.py`
+  - Details: L145: except Exception: pass
+  - Fix: Catch specific errors and log or re-raise
+- **[MEDIUM] Swallowed or overly broad exception** — `external/pdim/artifacts/api-server/src/index.ts`
+  - Details: L32: } catch {}
+  - Fix: Catch specific errors and log or re-raise
+- **[MEDIUM] Swallowed or overly broad exception** — `external/pdim/artifacts/api-server/src/pocket-dimension/fabric/compression/CompressionProfileRouter.ts`
+  - Details: L103: } catch {}
+  - Fix: Catch specific errors and log or re-raise
+- **[MEDIUM] Swallowed or overly broad exception** — `external/pdim/artifacts/api-server/src/services/modelWeightStorage.ts`
+  - Details: L65: } catch {}
+  - Fix: Catch specific errors and log or re-raise
+- **[MEDIUM] Swallowed or overly broad exception** — `external/pdim/artifacts/api-server/src/services/serverHealthMonitor.ts`
+  - Details: L612: } catch {}; L744: } catch {}; L777: } catch {}; L844: } catch {}
+  - Fix: Catch specific errors and log or re-raise
+- **[MEDIUM] Swallowed or overly broad exception** — `external/pdim/artifacts/dashboard/src/components/CreateInstanceDialog.tsx`
+  - Details: L63: } catch {}
+  - Fix: Catch specific errors and log or re-raise
+- **[MEDIUM] Swallowed or overly broad exception** — `external/pdim/artifacts/dashboard/src/components/KeyExplorer.tsx`
+  - Details: L122: } catch {}
+  - Fix: Catch specific errors and log or re-raise
+- **[MEDIUM] Swallowed or overly broad exception** — `reports/coverage-producer/2026-10-27-analytics-dependencies-node/59116-0/679b846d2ed26f6ecbe38d992d23876c0e2e95b6fd326075a22aeed633992a1e.js`
+  - Details: L135: `;async function execLuaViaPdim(pdimExec,script,numKeys,allArgs){const keys=allA
+  - Fix: Catch specific errors and log or re-raise
+- **[MEDIUM] Swallowed or overly broad exception** — `reports/coverage-producer/2026-10-27-final-node/40003-0/679b846d2ed26f6ecbe38d992d23876c0e2e95b6fd326075a22aeed633992a1e.js`
+  - Details: L135: `;async function execLuaViaPdim(pdimExec,script,numKeys,allArgs){const keys=allA
+  - Fix: Catch specific errors and log or re-raise
+- **[MEDIUM] Swallowed or overly broad exception** — `reports/coverage-producer/2026-10-27-node-with-originals/39246-0/679b846d2ed26f6ecbe38d992d23876c0e2e95b6fd326075a22aeed633992a1e.js`
+  - Details: L135: `;async function execLuaViaPdim(pdimExec,script,numKeys,allArgs){const keys=allA
+  - Fix: Catch specific errors and log or re-raise
+- **[MEDIUM] Swallowed or overly broad exception** — `reports/coverage-producer/2026-10-27-stable-node/40770-0/679b846d2ed26f6ecbe38d992d23876c0e2e95b6fd326075a22aeed633992a1e.js`
+  - Details: L135: `;async function execLuaViaPdim(pdimExec,script,numKeys,allArgs){const keys=allA
+  - Fix: Catch specific errors and log or re-raise
+- **[MEDIUM] Swallowed or overly broad exception** — `reports/coverage-producer/2026-10-28-a1603b13-node/125755-0/679b846d2ed26f6ecbe38d992d23876c0e2e95b6fd326075a22aeed633992a1e.js`
+  - Details: L135: `;async function execLuaViaPdim(pdimExec,script,numKeys,allArgs){const keys=allA
+  - Fix: Catch specific errors and log or re-raise
+- **[MEDIUM] Swallowed or overly broad exception** — `reports/coverage-producer/2026-10-28-keepnames-final/profile/201184-0/679b846d2ed26f6ecbe38d992d23876c0e2e95b6fd326075a22aeed633992a1e.js`
+  - Details: L135: `;async function execLuaViaPdim(pdimExec,script,numKeys,allArgs){const keys=allA
+  - Fix: Catch specific errors and log or re-raise
+- **[MEDIUM] Swallowed or overly broad exception** — `reports/coverage-producer/2026-10-28-next-contract-trace/controls/external__pdim__artifacts__api-server__src__redis__store.ts.vite-tsconfig-ssr.js`
+  - Details: L1: __vite_ssr_exportName__("getLuaConcurrency", () => { try { return getLuaConcurre; L2: __vite_ssr_exportName__("RedisStore", () => { try { return RedisStore } catch {}
+  - Fix: Catch specific errors and log or re-raise
+- **[MEDIUM] Swallowed or overly broad exception** — `reports/coverage-producer/2026-10-28-next-contract-trace/controls/external__pdim__artifacts__api-server__src__workers__lua-pool.ts.vite-tsconfig-ssr.js`
+  - Details: L1: __vite_ssr_exportName__("luaPool", () => { try { return luaPool } catch {} });
+  - Fix: Catch specific errors and log or re-raise
+- **[MEDIUM] Swallowed or overly broad exception** — `reports/coverage-producer/2026-10-28-next-contract-trace/controls/server__config__ports.ts.vite-tsconfig-ssr.js`
+  - Details: L1: __vite_ssr_exportName__("defaultPorts", () => { try { return defaultPorts } catc; L2: __vite_ssr_exportName__("runtimePorts", () => { try { return runtimePorts } catc; L3: __vite_ssr_exportName__("loopbackUrl", () => { try { return loopbackUrl } catch 
+  - Fix: Catch specific errors and log or re-raise
+- **[MEDIUM] Swallowed or overly broad exception** — `reports/coverage-producer/2026-10-28-next-contract-trace/controls/server__lib__luaExecutor.ts.vite-tsconfig-ssr.js`
+  - Details: L1: __vite_ssr_exportName__("setLuaScriptTimeout", () => { try { return setLuaScript; L2: __vite_ssr_exportName__("getLuaScriptTimeout", () => { try { return getLuaScript; L3: __vite_ssr_exportName__("resetLuaExecutorSemaphore", () => { try { return resetL; L4: __vite_ssr_exportName__("getLuaExecutorStats", () => { try { return getLuaExecut; L5: __vite_ssr_exportName__("setLuaRegistrationMode", () => { try { return setLuaReg; L6: __vite_ssr_exportName__("isLuaRegistrationMode", () => { try { return isLuaRegis; L7: __vite_ssr_exportName__("execLuaViaPdim", () => { try { return execLuaViaPdim } 
+  - Fix: Catch specific errors and log or re-raise
+- **[MEDIUM] Swallowed or overly broad exception** — `reports/coverage-producer/2026-10-28-next-contract-trace/controls/server__lib__pdimCircuitBreaker.ts.vite-tsconfig-ssr.js`
+  - Details: L1: __vite_ssr_exportName__("cbRecordFailure", () => { try { return cbRecordFailure ; L2: __vite_ssr_exportName__("cbRecordSuccess", () => { try { return cbRecordSuccess ; L3: __vite_ssr_exportName__("cbAllowRequest", () => { try { return cbAllowRequest } ; L4: __vite_ssr_exportName__("cbIsOpen", () => { try { return cbIsOpen } catch {} });; L5: __vite_ssr_exportName__("cbIsPdimUnhealthy", () => { try { return cbIsPdimUnheal; L6: __vite_ssr_exportName__("cbGetState", () => { try { return cbGetState } catch {}; L7: __vite_ssr_exportName__("cbGetOpenUntilMs", () => { try { return cbGetOpenUntilM; L8: __vite_ssr_exportName__("cbForceClose", () => { try { return cbForceClose } catc; L9: __vite_ssr_exportName__("cbHalfOpenFailed", () => { try { return cbHalfOpenFaile
+  - Fix: Catch specific errors and log or re-raise
+- **[MEDIUM] Swallowed or overly broad exception** — `reports/coverage-producer/2026-10-28-next-contract-trace/controls/server__lib__pdimClient.ts.vite-tsconfig-ssr.js`
+  - Details: L1: __vite_ssr_exportName__("setPdimGapFloor", () => { try { return setPdimGapFloor ; L2: __vite_ssr_exportName__("getPdimGapFloor", () => { try { return getPdimGapFloor ; L3: __vite_ssr_exportName__("getPdimAdaptiveGapMs", () => { try { return getPdimAdap; L4: __vite_ssr_exportName__("getPdimQueueDepth", () => { try { return getPdimQueueDe; L5: __vite_ssr_exportName__("getPdimDirectQueueDepth", () => { try { return getPdimD; L6: __vite_ssr_exportName__("getPdimScriptQueueDepth", () => { try { return getPdimS; L7: __vite_ssr_exportName__("setPdimAdaptiveGap", () => { try { return setPdimAdapti; L8: __vite_ssr_exportName__("PdimRedisClient", () => { try { return PdimRedisClient ; L9: __vite_ssr_exportName__("getPdimClient", () => { try { return getPdimClient } ca; L10: __vite_ssr_exportName__("isPdimConfigured", () => { try { return isPdimConfigure; +1 more
+  - Fix: Catch specific errors and log or re-raise
+- …and 107 more (see JSON report)
+
+## Architecture (84)
+
+- **[MEDIUM] Oversized source file** — `.pdim-cluster-test-Pidv4k/cluster-fixture.mjs`
+  - Details: L1: 10557 lines
+  - Fix: Break into smaller modules
+- **[MEDIUM] Oversized source file** — `.pdim-recovery-simulation-FnED0j/fixture-worker.mjs`
+  - Details: L1: 11077 lines
+  - Fix: Break into smaller modules
+- **[MEDIUM] Oversized source file** — `.pdim-recovery-simulation-FnED0j/verifier-worker.mjs`
+  - Details: L1: 19420 lines
+  - Fix: Break into smaller modules
+- **[MEDIUM] Oversized source file** — `AI enhancements/SocialMedia.tsx`
+  - Details: L1: 5742 lines
+  - Fix: Break into smaller modules
+- **[MEDIUM] Oversized source file** — `AI enhancements/socialMedia.ts`
+  - Details: L1: 5182 lines
+  - Fix: Break into smaller modules
+- **[MEDIUM] Oversized source file** — `client/src/components/content/ServerVideoGenerator.tsx`
+  - Details: L1: 2036 lines
+  - Fix: Break into smaller modules
+- **[MEDIUM] Oversized source file** — `client/src/components/distribution/AutoArtistSync.tsx`
+  - Details: L1: 2954 lines
+  - Fix: Break into smaller modules
+- **[MEDIUM] Oversized source file** — `client/src/components/marketplace/StorefrontBuilder.tsx`
+  - Details: L1: 3195 lines
+  - Fix: Break into smaller modules
+- **[MEDIUM] Oversized source file** — `client/src/components/marketplace/StorefrontDnsZoneManager.tsx`
+  - Details: L1: 2566 lines
+  - Fix: Break into smaller modules
+- **[MEDIUM] Oversized source file** — `client/src/components/social/ContentGenerator.tsx`
+  - Details: L1: 2294 lines
+  - Fix: Break into smaller modules
+- **[MEDIUM] Oversized source file** — `client/src/components/studio/HighPerformanceDAW.tsx`
+  - Details: L1: 2032 lines
+  - Fix: Break into smaller modules
+- **[MEDIUM] Oversized source file** — `client/src/components/studio/PluginControlDialog.tsx`
+  - Details: L1: 2001 lines
+  - Fix: Break into smaller modules
+- **[MEDIUM] Oversized source file** — `client/src/components/studio/StudioOneDAW.tsx`
+  - Details: L1: 6145 lines
+  - Fix: Break into smaller modules
+- **[MEDIUM] Oversized source file** — `client/src/lib/audioEngine.ts`
+  - Details: L1: 3172 lines
+  - Fix: Break into smaller modules
+- **[MEDIUM] Oversized source file** — `client/src/lib/studioStore.ts`
+  - Details: L1: 2247 lines
+  - Fix: Break into smaller modules
+- **[MEDIUM] Oversized source file** — `client/src/lib/video/templates/PromoTemplates.ts`
+  - Details: L1: 2458 lines
+  - Fix: Break into smaller modules
+- **[MEDIUM] Oversized source file** — `client/src/pages/Admin.tsx`
+  - Details: L1: 3054 lines
+  - Fix: Break into smaller modules
+- **[MEDIUM] Oversized source file** — `client/src/pages/AdminDashboard.tsx`
+  - Details: L1: 2471 lines
+  - Fix: Break into smaller modules
+- **[MEDIUM] Oversized source file** — `client/src/pages/Advertisement.tsx`
+  - Details: L1: 3455 lines
+  - Fix: Break into smaller modules
+- **[MEDIUM] Oversized source file** — `client/src/pages/Analytics.tsx`
+  - Details: L1: 3518 lines
+  - Fix: Break into smaller modules
+- **[MEDIUM] Oversized source file** — `client/src/pages/Distribution.tsx`
+  - Details: L1: 7291 lines
+  - Fix: Break into smaller modules
+- **[MEDIUM] Oversized source file** — `client/src/pages/Marketplace.tsx`
+  - Details: L1: 8865 lines
+  - Fix: Break into smaller modules
+- **[MEDIUM] Oversized source file** — `client/src/pages/Royalties.tsx`
+  - Details: L1: 2924 lines
+  - Fix: Break into smaller modules
+- **[MEDIUM] Oversized source file** — `client/src/pages/Settings.tsx`
+  - Details: L1: 2445 lines
+  - Fix: Break into smaller modules
+- **[MEDIUM] Oversized source file** — `client/src/pages/SocialMedia.tsx`
+  - Details: L1: 6392 lines
+  - Fix: Break into smaller modules
+- **[MEDIUM] Oversized source file** — `external/maxcore/artifacts/ai-training-server/ai_model/request_intelligence.py`
+  - Details: L1: 2663 lines
+  - Fix: Break into smaller modules
+- **[MEDIUM] Oversized source file** — `external/maxcore/artifacts/ai-training-server/server.py`
+  - Details: L1: 13835 lines
+  - Fix: Break into smaller modules
+- **[MEDIUM] Oversized source file** — `external/pdim/artifacts/api-server/src/redis/store.ts`
+  - Details: L1: 4665 lines
+  - Fix: Break into smaller modules
+- **[MEDIUM] Oversized source file** — `migrations/0000_wandering_champions.sql`
+  - Details: L1: 2374 lines
+  - Fix: Break into smaller modules
+- **[MEDIUM] Oversized source file** — `reports/aso/isolated-full-20261106T233139Z/rechecks/admin-entitlement-regression/studio-loader-browser/browser-script.js`
+  - Details: L1: 29808 lines
+  - Fix: Break into smaller modules
+- **[MEDIUM] Oversized source file** — `reports/aso/isolated-full-20261106T233139Z/studio-loader-browser/browser-script.js`
+  - Details: L1: 29808 lines
+  - Fix: Break into smaller modules
+- **[MEDIUM] Oversized source file** — `reports/aso/pr-reconciliation/merged-validation/studio-loader-browser/browser-script.js`
+  - Details: L1: 29808 lines
+  - Fix: Break into smaller modules
+- **[MEDIUM] Oversized source file** — `reports/coverage-producer/2026-10-28-next-contract-trace/controls/external__pdim__artifacts__api-server__src__redis__store.ts.vite-tsconfig-ssr.js`
+  - Details: L1: 4025 lines
+  - Fix: Break into smaller modules
+- **[MEDIUM] Oversized source file** — `reports/coverage-producer/2026-10-28-shared-producer-candidate/p1-shared-3/e63e116c181fa0fe419f330f160b2137ba9b1b86737cd8ff2923381dc3385a4a.body.js`
+  - Details: L1: 4028 lines
+  - Fix: Break into smaller modules
+- **[MEDIUM] Oversized source file** — `reports/coverage-producer/2026-10-28-shared-producer-candidate/p1-shared-3/e63e116c181fa0fe419f330f160b2137ba9b1b86737cd8ff2923381dc3385a4a.executed.js`
+  - Details: L1: 4030 lines
+  - Fix: Break into smaller modules
+- **[MEDIUM] Oversized source file** — `reports/coverage-producer/2026-10-29-main-integration/runtime/e63e116c181fa0fe419f330f160b2137ba9b1b86737cd8ff2923381dc3385a4a.body.js`
+  - Details: L1: 4028 lines
+  - Fix: Break into smaller modules
+- **[MEDIUM] Oversized source file** — `reports/coverage-producer/2026-10-29-main-integration/runtime/e63e116c181fa0fe419f330f160b2137ba9b1b86737cd8ff2923381dc3385a4a.executed.js`
+  - Details: L1: 4030 lines
+  - Fix: Break into smaller modules
+- **[MEDIUM] Oversized source file** — `reports/coverage-producer/2026-10-29-p2-review-blocked/candidate/runtime/e63e116c181fa0fe419f330f160b2137ba9b1b86737cd8ff2923381dc3385a4a.body.js`
+  - Details: L1: 4028 lines
+  - Fix: Break into smaller modules
+- **[MEDIUM] Oversized source file** — `reports/coverage-producer/2026-10-29-p2-review-blocked/candidate/runtime/e63e116c181fa0fe419f330f160b2137ba9b1b86737cd8ff2923381dc3385a4a.executed.js`
+  - Details: L1: 4030 lines
+  - Fix: Break into smaller modules
+- **[MEDIUM] Oversized source file** — `reports/runner-repairs/2026-10-29/node/candidate/producer/actual-p1/e63e116c181fa0fe419f330f160b2137ba9b1b86737cd8ff2923381dc3385a4a.body.js`
+  - Details: L1: 4028 lines
+  - Fix: Break into smaller modules
+- **[MEDIUM] Oversized source file** — `reports/runner-repairs/2026-10-29/node/candidate/producer/actual-p1/e63e116c181fa0fe419f330f160b2137ba9b1b86737cd8ff2923381dc3385a4a.executed.js`
+  - Details: L1: 4030 lines
+  - Fix: Break into smaller modules
+- **[MEDIUM] Oversized source file** — `reports/test-verification/final-plan-fix/studio-loader-browser/browser-script.js`
+  - Details: L1: 29808 lines
+  - Fix: Break into smaller modules
+- **[MEDIUM] Oversized source file** — `reports/test-verification/history/2026-10-27-focused-final-hardening/studio-loader-browser-coverage/browser-script.js`
+  - Details: L1: 29808 lines
+  - Fix: Break into smaller modules
+- **[MEDIUM] Oversized source file** — `scripts/simulate-production.mjs`
+  - Details: L1: 2149 lines
+  - Fix: Break into smaller modules
+- **[MEDIUM] Oversized source file** — `server/index.ts`
+  - Details: L1: 2125 lines
+  - Fix: Break into smaller modules
+- **[MEDIUM] Oversized source file** — `server/init-admin.ts`
+  - Details: L1: 2014 lines
+  - Fix: Break into smaller modules
+- **[MEDIUM] Oversized source file** — `server/lib/pdimClient.ts`
+  - Details: L1: 2688 lines
+  - Fix: Break into smaller modules
+- **[MEDIUM] Oversized source file** — `server/routes.ts`
+  - Details: L1: 8823 lines
+  - Fix: Break into smaller modules
+- **[MEDIUM] Oversized source file** — `server/routes/advertising.ts`
+  - Details: L1: 2617 lines
+  - Fix: Break into smaller modules
+- **[MEDIUM] Oversized source file** — `server/routes/analytics-internal.ts`
+  - Details: L1: 2119 lines
+  - Fix: Break into smaller modules
+- …and 34 more (see JSON report)
+
+## Documentation (1)
+
+- **[LOW] Missing LICENSE** — `*`
+  - Details: No LICENSE at repository root
+  - Fix: Add a license file

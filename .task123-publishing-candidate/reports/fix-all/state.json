@@ -1,0 +1,64 @@
+{
+  "phases": {
+    "ts-server": {
+      "status": "applied",
+      "at": "2026-08-21T00:50:15.109Z",
+      "note": "native fixed=0 skipped=0; external=fix-params-string.mjs,fix-params-string2.mjs,fix-table-optional-chain.mjs,fix-singleton-optional-chain.mjs,fix-ts2724-underscore.mjs,fix-ts2551-rename-back.mjs,fix-ts2769.mjs,fix-ts2345.mjs,fix-ts2339-cast.mjs; syntax-restored=0",
+      "snapshot": "ts-server-1787273409228",
+      "nativeFixed": 0,
+      "syntaxRestored": []
+    },
+    "verify-server": {
+      "status": "measured",
+      "at": "2026-08-25T10:34:43.338Z",
+      "note": "0 → 0 errors (parser: 0); top: "
+    },
+    "imports": {
+      "status": "applied",
+      "at": "2026-08-07T11:36:15.500Z",
+      "note": "rewritten=0 ambiguous=0 (bare-module diags left to policy) syntax-restored=0"
+    },
+    "schema": {
+      "status": "measured",
+      "at": "2026-08-07T11:36:15.330Z",
+      "note": "pairs=115 inDb=0 removalCandidates=68 latentReads=123 (report-only — no code edited)"
+    },
+    "runtime": {
+      "status": "passed",
+      "at": "2026-08-07T11:40:37.845Z",
+      "note": "/api/ready:200 /:200 /api/auth/user:404"
+    },
+    "audit": {
+      "status": "measured",
+      "at": "2026-08-07T11:40:39.702Z",
+      "note": "critical=0 high=2 moderate=0 low=0 (report-only; installs are managed manually in this repo)"
+    },
+    "lint": {
+      "status": "measured",
+      "at": "2026-08-07T11:41:12.364Z",
+      "note": "errors=896; top rules: no-unsafe-optional-chaining:432 no-division-by-zero/no-division-by-zero:393 @typescript-eslint/no-non-null-asserted-optional-chain:44 @typescript-eslint/no-unused-expressions:24 no-dupe-else-if:1 no-self-assign:1 no-script-url:1"
+    },
+    "verify-client": {
+      "status": "measured",
+      "at": "2026-08-25T10:36:00.384Z",
+      "note": "0 → 0 errors (parser: 0); top: "
+    }
+  },
+  "counts": {
+    "server": {
+      "total": 0,
+      "parser": 0,
+      "top": [],
+      "at": "2026-08-25T10:34:43.243Z"
+    },
+    "client": {
+      "total": 0,
+      "parser": 0,
+      "top": [],
+      "at": "2026-08-25T10:36:00.381Z"
+    }
+  },
+  "lastSnapshot": {
+    "server": "ts-server-1787273409228"
+  }
+}

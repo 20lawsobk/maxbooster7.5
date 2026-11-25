@@ -1,0 +1,24 @@
+{
+  "scope": "Read-only AST-extracted exact helper counterexample; no source module imports or runtime behavior claims",
+  "startedAt": "2026-10-28T02:28:26.084804+00:00",
+  "command": [
+    "/workspace/.cloud-python/bin/python",
+    "-m",
+    "pytest",
+    "-q",
+    "-s",
+    "-p",
+    "no:cacheprovider",
+    "/tmp/maxbooster-oracle-readonly-bfqafxs9/test_oracle_probe.py",
+    "--junitxml=/workspace/onboarding-results/python-oracle-readonly-audit/ast-helper-probe.xml"
+  ],
+  "exitCode": 0,
+  "sourceHashes": {
+    "external/maxcore/artifacts/ai-training-server/ai_model/retrieval/test_rcgs.py": "5ff1cb401b06d2698e6c1646792139fa2bcf47d13197fadf5a1722b8e8d6b980",
+    "external/maxcore/artifacts/ai-training-server/ai_model/retrieval/test_retrieval.py": "47b1c544e0313b543864e42c58b3ade9832b1b00009981a64253d46415317abe",
+    "external/maxcore/artifacts/ai-training-server/ai_model/rta/test_render_contracts.py": "c13146406c9004754892750d08157495e0b8986e38d5ca128686ba100e31ae8f"
+  },
+  "logSha256": "9f5534c70004c02681b9363938bd57d8533d25a3515176f7a41326fe9b6e5d28",
+  "intentionalFalseConditions": 3,
+  "productionTestsExecuted": false
+}

@@ -1,0 +1,169 @@
+# Deployment and operations
+
+Current entrypoints are defined by `package.json`, `.replit`, `build.sh`,
+`start.sh` and `script/deployment/`. Documentation describes their contracts;
+it does not establish the state of a running deployment.
+
+## Development and ordinary production compilation
+
+Use Node 24 and the pinned npm 11.19.1 for the root checkout:
+
+```sh
+npm ci
+npm run dev
+```
+
+The development command invokes `scripts/start-dev.sh`, which validates the
+port contract and owns its local service lifecycle. Do not start an unrelated
+Redis daemon on port 6379 as a substitute for the application's PDIM state.
+
+The ordinary production commands are:
+
+```sh
+npm run build
+npm run prod
+```
+
+The build compiles the frontend and runtime entries and records source/artifact
+hashes. Start validates that record before handing off to `start.sh`. Runtime
+resources and services must also be provisioned; `dist` alone is not a complete
+installation. `npm run start` is an equivalent alias. Both production commands
+wait for the complete private listener set before reporting startup success.
+Read [npm-build-start.md](npm-build-start.md) for exact boundaries.
+
+`src/index.ts` is a thin compatibility entry for single-entry esbuild layouts;
+it forwards to the canonical `server/index.ts`. The production build still
+emits all runtime bundles and assets through `script/lib/serverBundles.ts`.
+Do not run a single-entry template that removes or replaces `dist`; that would
+discard required listeners and invalidate the build contract.
+
+The default model mode is `live-awareness`. Its model registry, candidate bundles
+and training audit are private runtime state under `MAXCORE_MODEL_STATE_DIR`,
+which the supervisor defaults to `models` beneath `MAXCORE_PRIVATE_STATE_DIR`
+(or `~/.local/state/maxcore`). These files are separate from replaceable PDIM
+application capsules and require durable attachment/recovery. Missing qualified
+state remains a generation-readiness failure; rebuilding source cannot create it.
+
+Git LFS is required only by explicit `MAXCORE_SERVING_RELEASE=legacy` checkpoint
+preparation. The default release packager requires no legacy checkpoint and
+excludes `model.corrupt`. An LFS budget error therefore does not block default
+live-awareness packaging. See the imported [live-learning runtime contract](../external/maxcore/artifacts/ai-training-server/ai_model/training/LIVE_LEARNING.md).
+
+Chunk uploads use a private shared staging directory and PostgreSQL advisory
+locks so requests can alternate between workers on the Reserved VM. The default
+is `~/.local/state/maxbooster/chunk-uploads`; `STORAGE_CHUNK_STAGING_DIR` can select
+another absolute path. Every worker must use the same directory and database.
+Directories must belong to the service with mode 0700, files use 0600, and
+symlinked paths are refused. Keep this state outside public media and release
+capsules. Different hosts require an explicitly shared filesystem; the local
+implementation does not provide distributed storage by itself.
+
+Staging reserves at most 1 GiB globally and 500 MiB per user, with 128 active
+sessions globally and four per user. Normal staging expires after 24 hours;
+completed receipts retain at most the latest 128 responses for that interval.
+An interrupted completion with an unknown storage outcome remains reserved.
+A retry reconciles a matching committed owner/hash/session tracking record;
+otherwise inspect the recorded object and tracking outcome before releasing the
+claim. Cancellation cannot discard an in-flight completion or prove an unknown
+write failed. This favors explicit reconciliation over duplicate object writes.
+
+Root npm installation does not install the independent imported MaxCore/PDIM
+pnpm workspaces. Explicitly provision their locked packages using pinned pnpm
+10.26.1 and disabled lifecycle scripts. With packages already cached, synchronize
+using `SUBSYSTEM_INSTALL=1 bash script/sync-subsystem-dependencies.sh`. Ordinary
+builds verify those trees and fail rather than silently downloading tools.
+Keep all dependency locks; there is no supported tar stub or lock-deletion repair.
+
+## Configured publishing
+
+The tracked `.replit` deployment invokes `bash build.sh`, then
+`npm run deployment:start` (which delegates to `bash start.sh`). This preserves
+the guarded deployment executive, portable runtimes, capsule
+packaging/restoration and integrity checks. Replit runs the build and start as
+separate ordered phases; do not combine them into one shell command or run
+destructive packing in the development checkout. A GitHub push does not prove
+a successful publication. The owner-defined target is a Replit Reserved VM;
+historical scaled tests do not measure that production VM's capacity.
+
+The Publishing tool currently selects a dedicated **16 vCPU / 64 GiB RAM**
+machine. Machine sizing is selected in Publishing and is not encoded in
+`.replit`; the build and startup commands are encoded there. Replit applies the
+selected machine configuration to those commands.
+The project requests a **16 vCPU / 64 GiB** Reserved VM. Confirm the selected
+machine size and region in Publishing settings; source configuration does not
+prove the live selection. The shared deployment capacity module is the source
+of the **16 vCPU / 64 GiB** ceiling used by build plans, the executor,
+capsule/release helpers, and runtime worker sizing. The admin scaling metrics read cgroup CPU and memory usage
+against the same live capacity; host load average is labeled separately.
+Each build tool receives its per-task CPU assignment; worker counts cannot
+exceed the shared ceiling or live cgroup capacity. The optional prepared-release
+path uses the same detected CPU budget by default. Per-task `memoryMB` values
+are scheduler reservations, not hard memory limits; the live cgroup remains the
+actual process limit. Scaling recommendations do not resize Replit's machine.
+Machine-setting changes require a new publish. See
+[Replit machine configuration](https://docs.replit.com/features/publishing/machine-configuration).
+
+Workspace cleanup, dependency installation, and Rust compilation request elastic
+CPU allocations up to the 16-vCPU ceiling instead of reserving a fixed eight
+CPUs. The cleanup phase is I/O-bound, so a larger CPU reservation does not imply
+that filesystem removal scales linearly. The executive re-samples live CPU,
+available memory, and I/O capacity before admitting work.
+If capacity falls, it pauses new admissions without killing already-running
+build phases; once a phase exits its reservations are released, and queued work
+can start again when a later live sample has enough headroom. This adapts to
+resource fluctuations but cannot change the actual machine allocation or
+resize worker counts inside an already-running child process.
+
+`.prepared-release` is optional tooling, not a dependency of this configured
+Publish path. See [prepared-production-releases.md](prepared-production-releases.md).
+There is no `npm run deploy` command: Replit's Publish workflow is the only
+publication path. `npm run build` and `npm run start` remain the ordinary
+unpacked production compile/start pair for local validation and CI.
+
+Desktop/mobile packages, store uploads and multi-application workflows are
+excluded from this web/API readiness scope. Their statuses are not substitutes
+for verification of the actual web runtime.
+
+## Configuration and service authority
+
+- The strict launcher contract maps all ten configured listeners:
+  authoritative DNS 53, public application 5000, local DNS 5353, PDIM 5556,
+  diffusion gateway 8008, MaxCore API 8090, BoosterState 9877, model API 9878,
+  model health 9879, and the legacy MaxCore proxy 9880. DNS listeners use TCP
+  and UDP. Only application port 5000 maps externally (to port 80); the other
+  nine mappings remain private. The local DNS health probe uses private port
+  5380 and is not an additional published service mapping.
+- Canonical PDIM: local loopback port 5556, used for Redis-compatible state and
+  storage through the application's real clients. Remote `STORAGE_*` credentials
+  are not an automatic requirement for this local topology.
+- MaxCore: the local supervisor owns its imported API and Python processes.
+  Running/model-loaded health is different from qualified generation capability.
+- Database: inspect the configured target before any operation. The application
+  prefers `NEON_PRIMARY_URL`, then `NEON_DATABASE_URL`, with `DATABASE_URL` as a
+  compatibility fallback.
+  Never assume a development label means a disposable database.
+- Session/provider configuration: use environment secret bindings and `.env.example`.
+  Do not copy credentials into source, logs or release notes.
+
+Schema changes, migrations, restores and acceptance writes must target explicit
+isolated fixtures or separately authorized environments. Keep retained backups
+and rehearse restoration before a shared-data migration. Do not run blanket SQL
+updates to clear worker state or remove live PDIM ownership locks.
+
+## Verification and recovery
+
+Use `npm run check`, `npm run lint`, `npm run test:ci`, production dependency
+audits and the relevant isolated integration/consumer tests. Keep build/compiler
+jobs separate from resource-sensitive queue timing tests on small hosts.
+
+`/api/health` establishes HTTP liveness. `/api/ready` must pass the real subsystem
+and unified-awareness checks; a homepage or health 200 is not readiness. An AI
+503 may represent boot/crash, connectivity, stale awareness, or an unavailable
+qualified generation candidate. Diagnose the actual reported reason.
+
+Exercise authentication/session/CSRF, owner isolation, payment replay and
+idempotency, worker recovery, retained storage/database restore, graceful shutdown,
+and cold restored-payload startup. Record revision, runtime, fixture boundaries,
+exit codes and latency measurements. Test fixtures do not prove real delivery,
+settlement or provider-side credential changes. See the current continuation
+report and [LIVE_VERIFICATION_RUNBOOK.md](LIVE_VERIFICATION_RUNBOOK.md).

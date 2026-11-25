@@ -100,14 +100,36 @@ function fixture(t) {
   return {root,state,calls,authorization,write,run,runLegacyPublishing,outsideInterpreter};
 }
 
-test("Replit publishing selects the current guarded bootstrap executive shell", () => {
+test("Replit uses npm aliases for the capsule build and capsule-aware start", () => {
+  const repl = fs.readFileSync(path.join(repo, ".replit"), "utf8");
+  assert.match(repl, /^run = "npm run dev"$/m);
+  assert.match(repl, /^args = "npm run dev"$/m);
   const command = configuredBuildCommand();
-  assert.deepEqual(command, ["bash", "build.sh"]);
+  assert.deepEqual(command, ["npm", "run", "deployment:build"]);
   const section = fs.readFileSync(path.join(repo, ".replit"), "utf8")
     .match(/^\[deployment\]\s*\n([\s\S]*?)(?=^\[|(?![\s\S]))/m)?.[1];
   const publishing = JSON.parse(section.match(/^build\s*=\s*(\[[^\n]*\])\s*$/m)[1]);
   assert.deepEqual(publishing, command);
+  const runtime = JSON.parse(section.match(/^run\s*=\s*(\[[^\n]*\])\s*$/m)[1]);
+  assert.deepEqual(runtime, ["npm", "run", "deployment:start"]);
+  const scripts = JSON.parse(fs.readFileSync("package.json", "utf8")).scripts;
+  assert.equal(scripts["deployment:build"], "bash build.sh");
+  assert.equal(scripts["deployment:start"], "bash start.sh");
+  assert.equal(scripts.build, "node scripts/build-production.mjs");
+  assert.match(
+    fs.readFileSync("scripts/build-production.mjs", "utf8"),
+    /"script\/build\.ts"/,
+    "ordinary compilation must use the current adapted August build entry",
+  );
+  assert.match(
+    fs.readFileSync("build.sh", "utf8"),
+    /PUBLISH_SHELL_PACKS_CAPSULES=1 npm run build/,
+    "Publishing must retain the complete shell packaging pipeline around compilation",
+  );
+  assert.equal(scripts.deploy, undefined);
   assert.match(fs.readFileSync("build.sh", "utf8"), /exec bash script\/deployment\/bootstrap\.sh/);
+  assert.match(fs.readFileSync("script/deployment/bootstrap.sh", "utf8"), /sequential-build\.mjs/);
+  assert.match(fs.readFileSync("start.sh", "utf8"), /dist\/deployment\/executive\.mjs/);
   assert.ok(fs.readFileSync("docs/publishing-build-authorization.md","utf8").includes(publishing.join(" ")));
 });
 
@@ -115,6 +137,9 @@ for (const indicators of [{}, {REPLIT_DEPLOYMENT:"",REPLIT_DEPLOYMENT_ID:""},
   {REPLIT_DEPLOYMENT:"1",REPLIT_DEPLOYMENT_ID:"runtime-present"}]) {
   test(`legacy recovery publishing helper packs and reenters with indicators ${JSON.stringify(indicators)}`, t => {
     const f = fixture(t);
+    const cacheEvidence = path.join(f.root, ".cache", "platform-owned");
+    fs.mkdirSync(path.dirname(cacheEvidence), { recursive: true });
+    fs.writeFileSync(cacheEvidence, "preserve Replit-owned root cache");
     const protectedFiles = ["package.json", "start.sh", RECOVERY_HELPER_PATH];
     const before = protectedFiles.map(p => fs.readFileSync(path.join(f.root,p)));
     for (let attempt=0; attempt<2; attempt++) {
@@ -147,11 +172,12 @@ for (const indicators of [{}, {REPLIT_DEPLOYMENT:"",REPLIT_DEPLOYMENT_ID:""},
       assert.ok(!fs.existsSync(path.join(f.root,"node_modules")));
       assert.ok(!fs.existsSync(path.join(f.root,"fixture-build.mjs")));
       assert.ok(!fs.existsSync(path.join(f.root,"venv")));
-      assert.ok(!fs.existsSync(path.join(f.root,".cache")));
+      assert.equal(fs.readFileSync(cacheEvidence, "utf8"), "preserve Replit-owned root cache");
       assert.equal(fs.readFileSync(f.outsideInterpreter,"utf8"), "external interpreter must remain unchanged");
     }
     const restored=f.run({...indicators,...f.authorization},["--recover", "."]);
     assert.equal(restored.status,0,restored.stderr);
+    assert.equal(fs.readFileSync(cacheEvidence, "utf8"), "preserve Replit-owned root cache");
     assert.deepEqual(fs.readFileSync(path.join(f.root,"node_modules/input")),Buffer.from([0,1,127,255]));
     assert.equal(fs.readFileSync(path.join(f.root,"server/source.ts"),"utf8"),"original source");
   });

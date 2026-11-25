@@ -1,0 +1,18 @@
+{
+  "command": [
+    "taskset",
+    "-c",
+    "0",
+    "npm",
+    "run",
+    "build"
+  ],
+  "cwd": "/tmp/maxbooster-linux-u3f69z18/project",
+  "startedAt": "2026-10-28T02:05:10.853578+00:00",
+  "ownedProcessGroup": 94856,
+  "durationSeconds": 1.231,
+  "exitCode": 1,
+  "timedOut": false,
+  "log": "reports/native-linux-rehearsal/2026-10-27/owned-build.txt",
+  "logSha256": "9a3d183994103d3e94e4e2b4ca0d68d68a05f5474beae52a7081e1b5e720cd01"
+}

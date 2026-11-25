@@ -1,20 +1,18 @@
 {
-  "generatedAt": "2026-10-29T23:16:16.878118+00:00",
-  "revision": "5eb416a04021f66c9bfc8af93997ec9fe8a55e31",
+  "generatedAt": "2026-11-10T15:05:37.018475+00:00",
+  "revision": "d33649d75e7a0dffc80adf40fa410f4ee66b1984",
   "scope": "Canonical native/imported subsystem checks; no production database or provider credentials",
   "settings": {
     "includeRustConcurrency": true,
     "includePdimSmoke": true,
     "offline": false,
-    "portableRustSelected": true
+    "portableRustSelected": false
   },
   "results": [
     {
       "id": "rust-boosterstate",
-      "status": "passed",
-      "exitCode": 0,
-      "timedOut": false,
-      "seconds": 0.115,
+      "status": "blocked",
+      "exitCode": null,
       "command": [
         "cargo",
         "test",
@@ -28,17 +26,14 @@
         "boosterstate/tests/runtime_dependency.rs"
       ],
       "stdoutFile": "rust-boosterstate.txt",
-      "sourceSha256": {
-        "boosterstate/tests/runtime_dependency.rs": "061b70cf7dec26cbc3b268b0bf6e1812ac315de7ad37a7ee9f1e7e72adab9cb6"
-      },
-      "passedTests": 2
+      "reason": "Required executable is not installed"
     },
     {
       "id": "go-dns",
       "status": "passed",
       "exitCode": 0,
       "timedOut": false,
-      "seconds": 0.417,
+      "seconds": 5.293,
       "command": [
         "go",
         "test",
@@ -62,7 +57,7 @@
       "status": "passed",
       "exitCode": 0,
       "timedOut": false,
-      "seconds": 0.165,
+      "seconds": 0.215,
       "command": [
         "node",
         "--import",
@@ -84,7 +79,7 @@
       "status": "passed",
       "exitCode": 0,
       "timedOut": false,
-      "seconds": 0.115,
+      "seconds": 1.869,
       "command": [
         "node",
         "scripts/check-js-security-versions.js"
@@ -103,10 +98,11 @@
       "status": "passed",
       "exitCode": 0,
       "timedOut": false,
-      "seconds": 35.901,
+      "seconds": 51.286,
       "command": [
         "node",
         "--test",
+        "--test-reporter=tap",
         "tests/deployment-rust-phase.test.mjs"
       ],
       "cwd": ".",
@@ -115,7 +111,7 @@
       ],
       "stdoutFile": "rust-cleanup-concurrency.txt",
       "sourceSha256": {
-        "tests/deployment-rust-phase.test.mjs": "ff4a59d97e864bd5a3f8fa8c530d3885f75deb540d2a45efc2d663963eb8f60d"
+        "tests/deployment-rust-phase.test.mjs": "141b3abc4e7a8808fc2b24b1d917de58242237cf3a287d9f43650f9c0f8c6738"
       },
       "passedTests": 2
     },
@@ -124,11 +120,11 @@
       "status": "passed",
       "exitCode": 0,
       "timedOut": false,
-      "seconds": 4.086,
+      "seconds": 6.288,
       "command": [
         "node",
         "scripts/testing/run-pdim-smoke.mjs",
-        "/workspace/maxbooster7.5/reports/test-verification/subsystems"
+        "/home/runner/workspace/reports/test-verification/subsystems"
       ],
       "cwd": ".",
       "sourceFiles": [

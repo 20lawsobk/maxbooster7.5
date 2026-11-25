@@ -8,7 +8,7 @@ import { encryptSocialCredential } from "./socialCredentialCodec.js";
 export async function migratePlainSocialCredentials(limit = 100, afterId = ""): Promise<{ migrated: number; skippedLegacyEncrypted: number; nextAfterId: string | null }> {
   if (!Number.isInteger(limit) || limit < 1 || limit > 500) throw new Error("Migration batch size must be 1–500");
   const result = await pool.query(
-    `SELECT id,user_id,platform,access_token,refresh_token FROM social_accounts
+    `SELECT id,user_id,platform,access_token,refresh_token FROM public.social_accounts
      WHERE id>$2 AND ((access_token IS NOT NULL AND access_token NOT LIKE 'social:%')
         OR (refresh_token IS NOT NULL AND refresh_token NOT LIKE 'social:%'))
      ORDER BY id LIMIT $1`, [limit, afterId],
@@ -24,7 +24,7 @@ export async function migratePlainSocialCredentials(limit = 100, afterId = ""): 
     const encode = (value: string | null, kind: string) =>
       !value || value.startsWith("social:") ? value : encryptSocialCredential(value, `${row.user_id}:${row.platform}:${kind}`);
     const updated = await pool.query(
-      `UPDATE social_accounts SET access_token=$2,refresh_token=$3 WHERE id=$1
+      `UPDATE public.social_accounts SET access_token=$2,refresh_token=$3 WHERE id=$1
        AND access_token IS NOT DISTINCT FROM $4 AND refresh_token IS NOT DISTINCT FROM $5 RETURNING id`,
       [row.id, encode(row.access_token, "access"), encode(row.refresh_token, "refresh"), row.access_token, row.refresh_token],
     );

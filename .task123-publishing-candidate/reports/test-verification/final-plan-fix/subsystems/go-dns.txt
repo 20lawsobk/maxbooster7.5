@@ -1,0 +1,13 @@
+{"Time":"2026-11-06T11:48:58.731236855Z","Action":"start","Package":"github.com/maxbooster/dns-authoritative"}
+{"Time":"2026-11-06T11:48:58.735882314Z","Action":"run","Package":"github.com/maxbooster/dns-authoritative","Test":"TestPatchedPGXParsesConfigWithoutConnecting"}
+{"Time":"2026-11-06T11:48:58.736009539Z","Action":"output","Package":"github.com/maxbooster/dns-authoritative","Test":"TestPatchedPGXParsesConfigWithoutConnecting","Output":"=== RUN   TestPatchedPGXParsesConfigWithoutConnecting\n"}
+{"Time":"2026-11-06T11:48:58.736183407Z","Action":"output","Package":"github.com/maxbooster/dns-authoritative","Test":"TestPatchedPGXParsesConfigWithoutConnecting","Output":"--- PASS: TestPatchedPGXParsesConfigWithoutConnecting (0.00s)\n"}
+{"Time":"2026-11-06T11:48:58.736189073Z","Action":"pass","Package":"github.com/maxbooster/dns-authoritative","Test":"TestPatchedPGXParsesConfigWithoutConnecting","Elapsed":0}
+{"Time":"2026-11-06T11:48:58.736235914Z","Action":"run","Package":"github.com/maxbooster/dns-authoritative","Test":"TestRecordConstructionAndWireRoundtrip"}
+{"Time":"2026-11-06T11:48:58.736241676Z","Action":"output","Package":"github.com/maxbooster/dns-authoritative","Test":"TestRecordConstructionAndWireRoundtrip","Output":"=== RUN   TestRecordConstructionAndWireRoundtrip\n"}
+{"Time":"2026-11-06T11:48:58.736365522Z","Action":"output","Package":"github.com/maxbooster/dns-authoritative","Test":"TestRecordConstructionAndWireRoundtrip","Output":"[zonestore] buildRR error (A example.invalid.): dns: bad A A: \"not-an-address\" at line: 1:40\n"}
+{"Time":"2026-11-06T11:48:58.736374214Z","Action":"output","Package":"github.com/maxbooster/dns-authoritative","Test":"TestRecordConstructionAndWireRoundtrip","Output":"--- PASS: TestRecordConstructionAndWireRoundtrip (0.00s)\n"}
+{"Time":"2026-11-06T11:48:58.736379733Z","Action":"pass","Package":"github.com/maxbooster/dns-authoritative","Test":"TestRecordConstructionAndWireRoundtrip","Elapsed":0}
+{"Time":"2026-11-06T11:48:58.736384542Z","Action":"output","Package":"github.com/maxbooster/dns-authoritative","Output":"PASS\n"}
+{"Time":"2026-11-06T11:48:58.737323353Z","Action":"output","Package":"github.com/maxbooster/dns-authoritative","Output":"ok  \tgithub.com/maxbooster/dns-authoritative\t0.005s\n"}
+{"Time":"2026-11-06T11:48:58.737397854Z","Action":"pass","Package":"github.com/maxbooster/dns-authoritative","Elapsed":0.006}

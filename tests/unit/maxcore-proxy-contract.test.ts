@@ -17,10 +17,17 @@ process.env.MAXCORE_LOCAL = "0";
 process.env.AI_SERVER_URL = "https://maxcore.test";
 process.env.AI_SERVER_KEY = "gen-key-123";
 process.env.MAXCORE_ADMIN_KEY = "admin-key-456";
+process.env.ADMIN_EMAIL = "owner@example.test";
 
 vi.mock("../../server/middleware/auth.js", () => ({
   requireAuthOnly: (req: express.Request, _res: express.Response, next: express.NextFunction) => {
-    (req as express.Request & { user: unknown }).user = { id: "user-1", role: "user" };
+    const headers = req.headers as Record<string, string | undefined>;
+    const user = headers["x-test-owner"] === "1"
+      ? { id: "owner-1", role: "admin", email: "owner@example.test" }
+      : headers["x-test-other-admin"] === "1"
+        ? { id: "admin-2", role: "admin", email: "other@example.test" }
+        : { id: "user-1", role: "user" };
+    (req as express.Request & { user: unknown }).user = user;
     next();
   },
   requireAdmin: (req: express.Request, res: express.Response, next: express.NextFunction) => {
@@ -123,6 +130,34 @@ describe("MaxCore proxy route contract", () => {
     expect(body.user_id).toBe("user-1");
     expect(body.prompt).toBe("hi");
     expect(body.awareness.snapshot_id).toBe("canonical-live");
+  });
+
+  it("uses the admin credential only for the configured owner account's generation", async () => {
+    upstreamCalls.length = 0;
+    const res = await fetch(`${base}/api/generate/content`, {
+      method: "POST",
+      headers: { "content-type": "application/json", "x-test-owner": "1" },
+      body: JSON.stringify({ prompt: "owner-generated copy" }),
+    });
+    expect(res.status).toBe(200);
+    expect(upstreamCalls).toHaveLength(2);
+    const generationHeaders = upstreamCalls[1].init.headers as Record<string, string>;
+    expect(generationHeaders["X-Admin-Key"]).toBe("admin-key-456");
+    expect(generationHeaders.Authorization).toBeUndefined();
+    expect(JSON.parse(String(upstreamCalls[1].init.body)).user_id).toBe("owner-1");
+  });
+
+  it("does not grant owner training identity to another administrator", async () => {
+    upstreamCalls.length = 0;
+    const res = await fetch(`${base}/api/generate/content`, {
+      method: "POST",
+      headers: { "content-type": "application/json", "x-test-other-admin": "1" },
+      body: JSON.stringify({ prompt: "other-admin copy" }),
+    });
+    expect(res.status).toBe(200);
+    const generationHeaders = upstreamCalls[1].init.headers as Record<string, string>;
+    expect(generationHeaders.Authorization).toBe("Bearer gen-key-123");
+    expect(generationHeaders["X-Admin-Key"]).toBeUndefined();
   });
 
   it("serves allowlisted media forwarding the MaxCore Bearer key upstream", async () => {

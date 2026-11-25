@@ -1,63 +1,49 @@
-# Deployment task executive
+# Publishing build and startup execution
 
-`bash build.sh` runs the build graph through `script/deployment/executive.mjs`.
-Before cleanup, bootstrap preserves Node and compatible npm/pnpm using temporary
-launchers outside the workspace caches. Immutable Nix store installations are
-referenced directly; other installations are copied with explicit deadlines.
-npm must match the project's declared version. Verification occurs outside the
-project because pnpm rejects even its version command inside an npm-managed
-project. Temporary launchers/copies are removed after the executive exits and
-are not added to the deployment image. Bootstrap logs selection, preservation,
-verification and handoff stages before the executive starts. A lost connection
-without an exit error does not establish which operation failed.
-The packer preparation task copies the dependency-free executive and startup
-controls to `dist/deployment/` before source removal. `bash start.sh` locates
-Node, validates ports, starts the liveness stub, then enters the startup graph.
+## Publishing build
 
-## Scheduling and transition rules
+The configured `npm run deployment:build` alias delegates to `bash build.sh`,
+which first runs `script/deployment/bootstrap.sh` to recover authorized build
+inputs, preserve a compatible Node/npm/pnpm toolchain, and isolate caches.
+Bootstrap validates the dependency graph, then runs the 18 build phases one at a
+time through `script/deployment/sequential-build.mjs`.
 
-- A task starts only after all its declared prerequisites finish successfully.
-- Eligible tasks with more downstream work receive priority.
-- Admission is recalculated after task completion and while waiting, using
-  effective CPU/RAM limits, available memory (including reclaimable inactive
-  file cache), and I/O pressure. Existing jobs are not suspended mid-write.
-- Compression and Rust receive the scheduler's CPU allocation. Resource
-  estimates govern admission; they are not OS-enforced per-process limits.
-  Compression allocations expand to available capacity (up to eight source
-  block workers or four zstd threads per archive), sharing CPUs with other
-  eligible tasks. I/O admission ranges from one to four concurrent tasks.
-- Cleanup, dependency installation, source snapshot readers, packers, and source
-  deletion have explicit ordering barriers. Do not remove a barrier merely to
-  increase concurrency: the source snapshot includes MaxCore.
-- Task failures block successors. The executive terminates child process groups,
-  escalates to SIGKILL after a grace period, and waits for child closure.
-  Completed destructive tasks are not automatically retried.
+The phase order is derived from the dependencies in `script/deployment/plans.mjs`.
+Each phase must exit successfully before the next one starts. A failed phase
+stops the build and is reported with its phase name and exit status. This path
+does not use the deployment executive, scheduler admission, executor-wide or
+per-task deadlines, or automatic phase retries. Phase-local integrity checks
+and bounded commands remain in effect. A signal that terminates the Publishing
+process still terminates the build; the runner does not claim to resume a killed
+Publishing job.
 
-## Bounded waiting
+The sequential order retains the required barriers: runtime/source preparation
+finishes before the app capsule is made; pruning follows that capsule; dependency
+and runtime capsules are packed before source removal; the app remainder is
+created after source packing; and finalization verifies every capsule, filenames,
+and deployment image size. All phases share a temporary state directory, removed
+after normal completion or a reported phase failure. A hard process termination
+may leave that temporary directory behind; the runner does not resume from it.
 
-The local build safety budget defaults to 1,800 seconds; startup readiness
-defaults to 900 seconds. These are **not claimed Replit platform limits**.
-Optional process settings `DEPLOY_BUILD_BUDGET_SECONDS` and
-`DEPLOY_START_BUDGET_SECONDS` control the local totals. Build-task deadlines
-are declared in `plans.mjs`; the overall deadline also includes admission waits.
-
-Progress reports show running tasks, waiting tasks, available memory, I/O slots,
-elapsed time, and remaining budget. A deadline is an explicit failure, not
-permission to skip a prerequisite or label an incomplete capsule successful.
-Waiting kernel I/O may delay process termination even after a kill signal.
+The previous capacity-aware executor remains in the repository for startup
+supervision and its isolated scheduler tests. It is not used for Publishing
+build phases. Build-plan resource reservations, deadlines, and retry metadata
+are therefore not active in this sequential Publishing path.
 
 ## Startup
 
-All required runtime capsules are restored before application launch. Liveness
-remains separate from readiness: a successful `/api/ready` response must contain
-`status: "ok"` and `unifiedAwareness.ready: true`. Once ready, the startup deadline
-is disabled and the executive continues supervising the application process.
-SIGTERM/SIGINT terminate its process group, including sidecars.
+`bash start.sh` still uses `script/deployment/executive.mjs` and `startPlan`.
+The startup graph restores all required runtime capsules before launching the
+application. Liveness remains separate from readiness: a successful
+`/api/ready` response must contain `status: "ok"` and
+`unifiedAwareness.ready: true`. Once ready, the startup executive supervises the
+application process. SIGTERM/SIGINT terminate its owned process group.
 
 ## Verification boundaries
 
-Isolated tests exercise real subprocess overlap, prerequisites, capacity
-recovery, cycle rejection, deadline interruption, descendant cleanup, readiness
-deadline disarming, and a real `build.sh` pack task plus restoration.
-They do not establish full production build duration, final image size, or
-publication success. Never run the destructive full build in the working tree.
+The isolated sequential rehearsal completed all 18 phases, verified five
+capsules, passed the UTF-8 filename check, and passed the image-size gate. It
+is evidence for the phase sequence and package-integrity path, not proof of a
+successful Replit Publishing job or of immunity to platform-side interruption.
+Never run destructive packing in the development checkout. A completed local
+rehearsal does not count as a production publication.

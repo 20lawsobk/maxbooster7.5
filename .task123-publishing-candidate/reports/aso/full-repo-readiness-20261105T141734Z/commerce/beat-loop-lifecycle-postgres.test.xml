@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="utf-8"?>
+<testsuites>
+	<testsuite name="Beat Money Loop lifecycle on a disposable PostgreSQL database" time="20.955149" disabled="0" errors="0" tests="10" failures="1" skipped="0" hostname="repl">
+		<testcase name="concurrent initialization creates exactly one paused state row" time="0.086627" classname="test"/>
+		<testcase name="generates decoded audio, a shorter private preview, awareness artwork, atomic listing and royalty ownership" time="1.733264" classname="test"/>
+		<testcase name="a second replica cannot run or orphan an active cycle while its database lock is held" time="0.017763" classname="test"/>
+		<testcase name="only a completed marketplace settlement marks sold; replay does not duplicate seller earnings" time="0.063944" classname="test"/>
+		<testcase name="zero published posts is reported honestly while retaining the payable listing" time="1.675945" classname="test"/>
+		<testcase name="concurrent manual requests cannot overlap and pause clears queued cycles" time="1.468056" classname="test"/>
+		<testcase name="listing failure rolls back beat and royalty rows and removes public/audio uploads" time="1.490612" classname="test"/>
+		<testcase name="silent audio is rejected before listing even without renderer quality metadata" time="1.208656" classname="test"/>
+		<testcase name="renderer failure lists nothing, releases the slot and records backoff" time="0.021898" classname="test"/>
+		<testcase name="real Python ASGI synthesizes and delivers beat audio and poster into the SQL listing without a checkpoint" time="3.356981" classname="test" failure="Actual ASGI fixture exited: Traceback (most recent call last):  File &amp;quot;/home/runner/workspace/tests/payment-processing/helpers-beat-media-asgi.py&amp;quot;, line 24, in &lt;module>    from ai_model.generation.live_serving import LiveServingModel  File &amp;quot;/home/runner/workspace/external/maxcore/artifacts/ai-training-server/ai_model/generation/__init__.py&amp;quot;, line 18, in &lt;module>    from .technique import TechniqueProfile, extract_technique  File &amp;quot;/home/runner/workspace/external/maxcore/artifacts/ai-training-server/ai_model/generation/technique.py&amp;quot;, line 31, in &lt;module>    import numpy as npModuleNotFoundError: No module named 'numpy'">
+			<failure type="testCodeFailure" message="Actual ASGI fixture exited: Traceback (most recent call last):  File &amp;quot;/home/runner/workspace/tests/payment-processing/helpers-beat-media-asgi.py&amp;quot;, line 24, in &lt;module>    from ai_model.generation.live_serving import LiveServingModel  File &amp;quot;/home/runner/workspace/external/maxcore/artifacts/ai-training-server/ai_model/generation/__init__.py&amp;quot;, line 18, in &lt;module>    from .technique import TechniqueProfile, extract_technique  File &amp;quot;/home/runner/workspace/external/maxcore/artifacts/ai-training-server/ai_model/generation/technique.py&amp;quot;, line 31, in &lt;module>    import numpy as npModuleNotFoundError: No module named 'numpy'">
+Error [ERR_TEST_FAILURE]: Actual ASGI fixture exited: Traceback (most recent call last):
+  File "/home/runner/workspace/tests/payment-processing/helpers-beat-media-asgi.py", line 24, in &lt;module>
+    from ai_model.generation.live_serving import LiveServingModel
+  File "/home/runner/workspace/external/maxcore/artifacts/ai-training-server/ai_model/generation/__init__.py", line 18, in &lt;module>
+    from .technique import TechniqueProfile, extract_technique
+  File "/home/runner/workspace/external/maxcore/artifacts/ai-training-server/ai_model/generation/technique.py", line 31, in &lt;module>
+    import numpy as np
+ModuleNotFoundError: No module named 'numpy'
+
+    at async TestContext.&lt;anonymous> (file:///home/runner/workspace/tests/payment-processing/beat-loop-lifecycle-postgres.test.mjs:222:3) {
+  code: 'ERR_TEST_FAILURE',
+  failureType: 'testCodeFailure',
+  cause: Error: Actual ASGI fixture exited: Traceback (most recent call last):
+    File "/home/runner/workspace/tests/payment-processing/helpers-beat-media-asgi.py", line 24, in &lt;module>
+      from ai_model.generation.live_serving import LiveServingModel
+    File "/home/runner/workspace/external/maxcore/artifacts/ai-training-server/ai_model/generation/__init__.py", line 18, in &lt;module>
+      from .technique import TechniqueProfile, extract_technique
+    File "/home/runner/workspace/external/maxcore/artifacts/ai-training-server/ai_model/generation/technique.py", line 31, in &lt;module>
+      import numpy as np
+  ModuleNotFoundError: No module named 'numpy'
+  
+      at TestContext.&lt;anonymous> (file:///home/runner/workspace/tests/payment-processing/beat-loop-lifecycle-postgres.test.mjs:239:44)
+      at async Test.run (node:internal/test_runner/test:1054:7)
+      at async TestContext.&lt;anonymous> (file:///home/runner/workspace/tests/payment-processing/beat-loop-lifecycle-postgres.test.mjs:222:3)
+      at async Test.run (node:internal/test_runner/test:1054:7)
+      at async startSubtestAfterBootstrap (node:internal/test_runner/harness:296:3)
+}
+			</failure>
+		</testcase>
+	</testsuite>
+	<!-- tests 11 -->
+	<!-- suites 0 -->
+	<!-- pass 9 -->
+	<!-- fail 2 -->
+	<!-- cancelled 0 -->
+	<!-- skipped 0 -->
+	<!-- todo 0 -->
+	<!-- duration_ms 23107.102339 -->
+</testsuites>

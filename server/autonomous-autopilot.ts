@@ -1050,7 +1050,7 @@ export class AutonomousAutopilot extends EventEmitter {
           best_posting_times?: string[];
           style_focus?: string[];
         };
-      }>("/platform/social/autopilot", {
+      }>("/api/platform/social/autopilot", {
         method: "POST",
         authScope: "generation",
         userId: this.userId,

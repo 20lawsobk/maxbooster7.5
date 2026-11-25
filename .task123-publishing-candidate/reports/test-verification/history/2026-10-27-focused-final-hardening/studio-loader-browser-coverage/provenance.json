@@ -1,0 +1,27 @@
+{
+  "scope": "Actual Chromium source-mapped StudioLoader component only; not merged into global Vitest coverage",
+  "collectedAt": "2026-10-27T10:11:14.073Z",
+  "source": "/workspace/maxbooster7.5/client/src/components/studio/StudioLoader.tsx",
+  "sourceSha256": "a1d42a95b4a86c403d7fea8f0a737c5c09d6f7e4ceee2db4c043d31960ef4f12",
+  "testSha256": "af63e70a0b3657caf24f149da4a71ebba0b6b8d87baf80bbe437d7b7c4c2bf73",
+  "executedScripts": [
+    {
+      "scriptId": "4",
+      "url": "http://127.0.0.1:38199/fixture.js",
+      "sourceSha256": "f95f996dd1cad55ca1395f4ec35136a6e968bfab579aa5066db92f92c6c5f760"
+    },
+    {
+      "scriptId": "1733",
+      "url": "http://127.0.0.1:38199/fixture.js",
+      "sourceSha256": "f95f996dd1cad55ca1395f4ec35136a6e968bfab579aa5066db92f92c6c5f760"
+    }
+  ],
+  "snapshotCountersResetAfterCollection": true,
+  "artifacts": {
+    "browser-script.js": "f95f996dd1cad55ca1395f4ec35136a6e968bfab579aa5066db92f92c6c5f760",
+    "browser-script.js.map": "eb92669991fcf960e281be0d8c7f8a3014e8725ce7fd4b85c1372c5b91eb9a16",
+    "browser-v8.json": "2f21710c3f144058329ebd38bde034a06b32ad36df0ffdbbb99b12526a151419",
+    "coverage-final.json": "ab41fbd0f130f87573e0a1a7682fb8558fe744a165bf1aa8195e5d3610f3eb52",
+    "coverage-summary.json": "c4a85d219f3193b97f429701b38e8bf24a3e5c527ddcff7825c34db07991eaca"
+  }
+}

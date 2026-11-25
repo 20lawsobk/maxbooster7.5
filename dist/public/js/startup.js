@@ -1,7 +1,6 @@
 (function () {
   window.__MB_BOOT = Date.now();
 
-  var bar = document.getElementById("mb-loader-bar-fill");
   var msg = document.getElementById("mb-loader-msg");
   var sub = document.getElementById("mb-loader-sub");
   var btn = document.getElementById("mb-loader-reload");
@@ -13,9 +12,6 @@
     });
   }
 
-  function setProgress(pct) {
-    if (bar && !gone) bar.style.width = pct + "%";
-  }
   function setMsg(text) {
     if (msg && !gone) msg.textContent = text;
   }
@@ -26,65 +22,33 @@
     if (btn && !gone) btn.style.display = "inline-block";
   }
 
-  var isMobile = /Mobi|Android|iPhone|iPad/i.test(navigator.userAgent);
-  var conn =
-    navigator.connection ||
-    navigator.mozConnection ||
-    navigator.webkitConnection;
-  var isSlow =
-    conn &&
-    (conn.effectiveType === "2g" ||
-      conn.effectiveType === "slow-2g" ||
-      conn.saveData);
-
-  setProgress(12);
   setTimeout(function () {
-    setProgress(30);
     setMsg("Initializing\u2026");
   }, 1200);
   setTimeout(function () {
-    setProgress(52);
-  }, 3000);
-  setTimeout(function () {
-    setProgress(68);
-    setMsg("Almost ready\u2026");
+    setMsg("Still loading\u2026");
   }, 5500);
   setTimeout(function () {
-    setProgress(82);
-  }, 8000);
-  setTimeout(function () {
-    setProgress(91);
-    setMsg("Finishing up\u2026");
+    setMsg("The app is taking longer than usual.");
   }, 11000);
 
-  var warnMs = isMobile ? 8000 : 12000;
-  if (isSlow) warnMs = 5000;
-
+  var reloadMs = 20000;
   setTimeout(function () {
     if (gone) return;
-    if (isSlow) {
-      setSub("Slow connection detected \u2014 this may take a moment.");
-    } else if (isMobile) {
-      setSub("First-time visits cache the app for faster loads next time.");
-    }
-  }, warnMs);
-
-  var reloadMs = isMobile ? 15000 : 20000;
-  setTimeout(function () {
-    if (gone) return;
-    setMsg("Taking a bit longer than usual");
-    setSub("Your connection may be slow. Reloading often helps.");
+    setMsg("The app has not appeared yet.");
+    setSub("You can wait or try loading the page again.");
     showReload();
   }, reloadMs);
 
   setTimeout(function () {
     if (gone) return;
-    setMsg("Still loading \u2014 hang tight");
-    setSub("If this continues, try closing other tabs or switching to Wi-Fi.");
+    setMsg("The app is still starting.");
+    setSub("Trying again reloads the page and restarts this startup.");
   }, 30000);
 
   window.addEventListener("error", function (e) {
     if (
+      !gone &&
       document.getElementById("root") &&
       document.getElementById("root").children.length <= 1
     ) {
@@ -123,14 +87,32 @@
     if (
       root &&
       root.firstElementChild &&
-      root.firstElementChild.id !== "mb-initial-loader"
+      !root.querySelector('[role="status"][aria-label="Loading application"]')
     ) {
       gone = true;
       observer.disconnect();
 
+      var loader = document.getElementById("mb-initial-loader");
+      if (loader) {
+        loader.setAttribute("aria-hidden", "true");
+        var removeLoader = function () {
+          if (loader.parentNode) loader.parentNode.removeChild(loader);
+        };
+        var reducedMotion =
+          window.matchMedia &&
+          window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+        if (reducedMotion) {
+          removeLoader();
+        } else {
+          loader.classList.add("mb-loader-exit");
+          loader.addEventListener("transitionend", removeLoader, { once: true });
+          setTimeout(removeLoader, 220);
+        }
+      }
+
       if (window.__MB_BOOT) {
         var bootMs = Date.now() - window.__MB_BOOT;
-        console.log("[MB] App hydrated in " + bootMs + " ms");
+        console.log("[MB] App rendered in " + bootMs + " ms");
       }
 
       if ("serviceWorker" in navigator && navigator.serviceWorker.controller) {
@@ -168,6 +150,6 @@
   });
   observer.observe(document.getElementById("root"), {
     childList: true,
-    subtree: false,
+    subtree: true,
   });
 })();

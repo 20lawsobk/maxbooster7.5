@@ -24,7 +24,8 @@ test("publishing graph builds the application remainder before finalizing", () =
   assert.match(shell, /\|source\|remainder\|assets\|finalize\)/);
   assert.match(shell, /Required startup capsule or manifest missing/);
   assert.match(shell, /Required runtime social-awareness registry missing/);
-  assert.match(shell, /cp "\$_RUNTIME_REGISTRY_BACKUP" shared\/social-platform-optimization\.json/);
+  assert.match(shell, /cp shared\/social-platform-optimization\.json \\\s+"\$DEPLOY_STATE_DIR\/social-platform-optimization\.json"/);
+  assert.match(shell, /cp "\$DEPLOY_STATE_DIR\/social-platform-optimization\.json" \\\s+shared\/social-platform-optimization\.json/);
   const packer = fs.readFileSync("script/publish-capsules.ts", "utf8");
   assert.match(packer, /mode === "remainder"/);
   assert.match(packer, /preserveSource: false/);

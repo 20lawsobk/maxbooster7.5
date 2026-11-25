@@ -70,7 +70,13 @@ async function loadRegistrationRoutes() {
           if (args.path === "bcrypt") contents = `
             export default {hash:async x=>"hash:"+x};export async function hash(x){return "hash:"+x;}`;
           if (args.path === "./services/governancePolicyService.js") contents = `
-            export async function assertRegistrationEnabled(){return true;}`;
+            const testPolicy={maintenanceMode:false,userRegistrationEnabled:true,apiRateLimit:1000};
+            export function isAdminOnlyMode(){return false;}
+            export async function readGovernancePolicy(){return {...testPolicy};}
+            export async function assertRegistrationEnabled(){
+              if(isAdminOnlyMode()||!(await readGovernancePolicy()).userRegistrationEnabled)
+                throw Object.assign(new Error("New registrations are disabled"),{statusCode:403});
+            }`;
           if (args.path === "./services/sessionAuthority.js") contents = `
             export async function sessionAuthority(){return {issue:async()=> "generation"};}`;
           if (args.path === "crypto") contents = `

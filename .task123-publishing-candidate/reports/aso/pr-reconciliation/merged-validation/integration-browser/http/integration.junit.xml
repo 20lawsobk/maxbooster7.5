@@ -1,0 +1,1120 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<testsuites name="vitest tests" tests="530" failures="0" errors="0" time="152.142441586">
+    <testsuite name="tests/admin-account-parity.test.ts" timestamp="2026-11-07T00:34:34.107Z" hostname="repl" tests="16" failures="0" errors="0" skipped="0" time="5.002161883">
+        <testcase classname="tests/admin-account-parity.test.ts" name="admin and regular accounts share real feature handlers &gt; admin creates and reads a durable project through shared routes" time="0.0889898">
+        </testcase>
+        <testcase classname="tests/admin-account-parity.test.ts" name="admin and regular accounts share real feature handlers &gt; paid user creates and reads a durable project through shared routes" time="0.095277426">
+        </testcase>
+        <testcase classname="tests/admin-account-parity.test.ts" name="admin and regular accounts share real feature handlers &gt; shared listings keep admin and paid-user projects scoped to their owners" time="0.101854947">
+        </testcase>
+        <testcase classname="tests/admin-account-parity.test.ts" name="admin and regular accounts share real feature handlers &gt; admin has paid feature access without a public subscription" time="0.028723509">
+        </testcase>
+        <testcase classname="tests/admin-account-parity.test.ts" name="admin and regular accounts share real feature handlers &gt; free accounts cannot obtain paid access through forged request fields" time="0.037229172">
+        </testcase>
+        <testcase classname="tests/admin-account-parity.test.ts" name="admin and regular accounts share real feature handlers &gt; ordinary paid accounts cannot open admin-only endpoints" time="0.076826132">
+        </testcase>
+        <testcase classname="tests/admin-account-parity.test.ts" name="admin and regular accounts share real feature handlers &gt; anonymous access to private features remains denied" time="0.035684867">
+        </testcase>
+        <testcase classname="tests/admin-account-parity.test.ts" name="admin and regular accounts share real feature handlers &gt; admin reaches AI input validation without being forced to buy a plan" time="0.055099551">
+        </testcase>
+        <testcase classname="tests/admin-account-parity.test.ts" name="admin and regular accounts share real feature handlers &gt; paid conversion supersedes an old trial date without bypassing subscription expiration" time="0.078534601">
+        </testcase>
+        <testcase classname="tests/admin-account-parity.test.ts" name="admin and regular accounts share real feature handlers &gt; expired trials without active paid conversion remain denied" time="0.039243084">
+        </testcase>
+        <testcase classname="tests/admin-account-parity.test.ts" name="ordinary feature routes preserve isolation even for administrators &gt; another user cannot read or mutate another account&apos;s project" time="0.115177613">
+        </testcase>
+        <testcase classname="tests/admin-account-parity.test.ts" name="ordinary feature routes preserve isolation even for administrators &gt; admin cannot read or mutate another account&apos;s project" time="0.115970455">
+        </testcase>
+        <testcase classname="tests/admin-account-parity.test.ts" name="ordinary feature routes preserve isolation even for administrators &gt; paid user cannot read or mutate another account&apos;s project" time="0.131670414">
+        </testcase>
+        <testcase classname="tests/admin-account-parity.test.ts" name="ordinary feature routes preserve isolation even for administrators &gt; concurrent edits cannot silently overwrite an accepted project change" time="0.105180746">
+        </testcase>
+        <testcase classname="tests/admin-account-parity.test.ts" name="ordinary feature routes preserve isolation even for administrators &gt; saved projects survive logout and fresh real authentication" time="0.467921426">
+        </testcase>
+        <testcase classname="tests/admin-account-parity.test.ts" name="ordinary feature routes preserve isolation even for administrators &gt; admin privilege cannot bypass a required MFA challenge" time="0.060910903">
+        </testcase>
+    </testsuite>
+    <testsuite name="tests/ai-analytics-integration.test.ts" timestamp="2026-11-07T00:34:34.113Z" hostname="repl" tests="19" failures="0" errors="0" skipped="0" time="2.570853926">
+        <testcase classname="tests/ai-analytics-integration.test.ts" name="AI Analytics &amp; Fanbase Insights — Real Data Endpoints &gt; GET /api/analytics/music/fanbase → 401 when unauthenticated" time="0.026329673">
+        </testcase>
+        <testcase classname="tests/ai-analytics-integration.test.ts" name="AI Analytics &amp; Fanbase Insights — Real Data Endpoints &gt; GET /api/analytics/music/fanbase → 200 with correct shape" time="0.035187684">
+        </testcase>
+        <testcase classname="tests/ai-analytics-integration.test.ts" name="AI Analytics &amp; Fanbase Insights — Real Data Endpoints &gt; GET /api/analytics/music/fanbase → returns array-safe topPlatforms when available" time="0.034688025">
+        </testcase>
+        <testcase classname="tests/ai-analytics-integration.test.ts" name="AI Analytics &amp; Fanbase Insights — Real Data Endpoints &gt; POST /api/ai/analytics/predict reports missing account history without requiring a trained model" time="0.380097219">
+        </testcase>
+        <testcase classname="tests/ai-analytics-integration.test.ts" name="AI Analytics &amp; Fanbase Insights — Real Data Endpoints &gt; capability and personal summaries use the dedicated authenticated MaxCore statistics contract" time="0.145807079">
+        </testcase>
+        <testcase classname="tests/ai-analytics-integration.test.ts" name="AI Analytics &amp; Fanbase Insights — Real Data Endpoints &gt; personal insight and capability routes require the real authenticated session" time="0.07652758">
+        </testcase>
+        <testcase classname="tests/ai-analytics-integration.test.ts" name="AI Analytics &amp; Fanbase Insights — Real Data Endpoints &gt; personal insights validate the period and engagement does not reinterpret lifetime counters as daily activity" time="0.1380174">
+        </testcase>
+        <testcase classname="tests/ai-analytics-integration.test.ts" name="AI Analytics &amp; Fanbase Insights — Real Data Endpoints &gt; known owned daily values produce exact forecasts and summaries while body identity and foreign rows are ignored" time="0.16120019">
+        </testcase>
+        <testcase classname="tests/ai-analytics-integration.test.ts" name="AI Analytics &amp; Fanbase Insights — Real Data Endpoints &gt; a controlled MaxCore outage remains a retryable503 rather than an invented local prediction" time="0.259031066">
+        </testcase>
+        <testcase classname="tests/ai-analytics-integration.test.ts" name="AI Analytics &amp; Fanbase Insights — Real Data Endpoints &gt; POST /api/ai/analytics/predict rejects an invalid metric before generation" time="0.058128689">
+        </testcase>
+        <testcase classname="tests/ai-analytics-integration.test.ts" name="AI Analytics &amp; Fanbase Insights — Real Data Endpoints &gt; GET /api/analytics/dashboard → 200 with expected overview fields" time="0.049118337">
+        </testcase>
+        <testcase classname="tests/ai-analytics-integration.test.ts" name="AI Analytics &amp; Fanbase Insights — Real Data Endpoints &gt; GET /api/analytics/dashboard?timeRange=7d → authenticated 200" time="0.042991842">
+        </testcase>
+        <testcase classname="tests/ai-analytics-integration.test.ts" name="AI Analytics &amp; Fanbase Insights — Real Data Endpoints &gt; GET /api/analytics/dashboard?timeRange=90d → authenticated 200" time="0.033209252">
+        </testcase>
+        <testcase classname="tests/ai-analytics-integration.test.ts" name="AI Analytics &amp; Fanbase Insights — Real Data Endpoints &gt; GET /api/advertising/campaigns → authenticated owned campaign array" time="0.032890948">
+        </testcase>
+        <testcase classname="tests/ai-analytics-integration.test.ts" name="AI Analytics &amp; Fanbase Insights — Real Data Endpoints &gt; GET /api/analytics/anomalies requires an authenticated administrator" time="0.056371821">
+        </testcase>
+        <testcase classname="tests/ai-analytics-integration.test.ts" name="AI Analytics &amp; Fanbase Insights — Real Data Endpoints &gt; an administrator with a real verified factor reads only owned persisted anomalies" time="0.356566467">
+        </testcase>
+        <testcase classname="tests/ai-analytics-integration.test.ts" name="AI Analytics &amp; Fanbase Insights — Real Data Endpoints &gt; GET /api/analytics/music/release-strategy → 200 with missing history explicit" time="0.038538527">
+        </testcase>
+        <testcase classname="tests/ai-analytics-integration.test.ts" name="AI Analytics &amp; Fanbase Insights — Real Data Endpoints &gt; GET /api/analytics/music/milestones → 200 with owned persisted progress" time="0.044315638">
+        </testcase>
+        <testcase classname="tests/ai-analytics-integration.test.ts" name="AI Analytics &amp; Fanbase Insights — Real Data Endpoints &gt; GET /api/analytics/dashboard?limit=1000 preserves the authorized response" time="0.037960815">
+        </testcase>
+    </testsuite>
+    <testsuite name="tests/api-guards.test.ts" timestamp="2026-11-07T00:34:34.118Z" hostname="repl" tests="34" failures="0" errors="0" skipped="0" time="1.032611093">
+        <testcase classname="tests/api-guards.test.ts" name="Unauthenticated route guards &gt; GET /api/auth/me → 200 (public, returns null)" time="0.080656267">
+        </testcase>
+        <testcase classname="tests/api-guards.test.ts" name="Unauthenticated route guards &gt; GET /api/auth/notifications → 401" time="0.024585602">
+        </testcase>
+        <testcase classname="tests/api-guards.test.ts" name="Unauthenticated route guards &gt; GET /api/auth/sessions → 401" time="0.026391421">
+        </testcase>
+        <testcase classname="tests/api-guards.test.ts" name="Unauthenticated route guards &gt; GET /api/auth/login-history → 401" time="0.027748604">
+        </testcase>
+        <testcase classname="tests/api-guards.test.ts" name="Unauthenticated route guards &gt; GET /api/admin/users → 401 or 403" time="0.0369947">
+        </testcase>
+        <testcase classname="tests/api-guards.test.ts" name="Unauthenticated route guards &gt; GET /api/marketplace/my-beats → 401" time="0.025782408">
+        </testcase>
+        <testcase classname="tests/api-guards.test.ts" name="Unauthenticated route guards &gt; POST /api/marketplace/listings → 401 or 403" time="0.007703913">
+        </testcase>
+        <testcase classname="tests/api-guards.test.ts" name="Unauthenticated route guards &gt; GET /api/distribution/releases → 401" time="0.024549519">
+        </testcase>
+        <testcase classname="tests/api-guards.test.ts" name="Unauthenticated route guards &gt; GET /api/royalties → 401" time="0.022059337">
+        </testcase>
+        <testcase classname="tests/api-guards.test.ts" name="Unauthenticated route guards &gt; GET /api/workspace → 401" time="0.026178326">
+        </testcase>
+        <testcase classname="tests/api-guards.test.ts" name="Unauthenticated route guards &gt; GET /api/analytics/overview → 401" time="0.032636271">
+        </testcase>
+        <testcase classname="tests/api-guards.test.ts" name="Unauthenticated route guards &gt; POST /api/billing/create-checkout-session requires an existing account" time="0.003622411">
+        </testcase>
+        <testcase classname="tests/api-guards.test.ts" name="Unauthenticated route guards &gt; public registration checkout validates input before any provider request" time="0.002715959">
+        </testcase>
+        <testcase classname="tests/api-guards.test.ts" name="Unauthenticated route guards &gt; GET /api/files/list → 401" time="0.02665221">
+        </testcase>
+        <testcase classname="tests/api-guards.test.ts" name="Unauthenticated route guards &gt; GET /api/artist-profiles → 401" time="0.024698799">
+        </testcase>
+        <testcase classname="tests/api-guards.test.ts" name="Unauthenticated route guards &gt; GET /api/achievements → 401" time="0.025518214">
+        </testcase>
+        <testcase classname="tests/api-guards.test.ts" name="Unauthenticated route guards &gt; GET /api/shows → 401" time="0.022217301">
+        </testcase>
+        <testcase classname="tests/api-guards.test.ts" name="Unauthenticated route guards &gt; GET /api/merch → 401" time="0.023868014">
+        </testcase>
+        <testcase classname="tests/api-guards.test.ts" name="Unauthenticated route guards &gt; GET /api/label-submissions → 401" time="0.027240906">
+        </testcase>
+        <testcase classname="tests/api-guards.test.ts" name="Unauthenticated route guards &gt; GET /api/venues → 401" time="0.024366121">
+        </testcase>
+        <testcase classname="tests/api-guards.test.ts" name="Unauthenticated route guards &gt; GET /api/music-videos → 401" time="0.034273565">
+        </testcase>
+        <testcase classname="tests/api-guards.test.ts" name="Unauthenticated route guards &gt; GET /api/fan-campaigns → 401" time="0.028989941">
+        </testcase>
+        <testcase classname="tests/api-guards.test.ts" name="Unauthenticated route guards &gt; GET /api/collaboration → 401" time="0.023725305">
+        </testcase>
+        <testcase classname="tests/api-guards.test.ts" name="Param validation — UUID guard returns 400 for malformed IDs &gt; GET /api/files/not-a-uuid/download → 400 or 401" time="0.024168358">
+        </testcase>
+        <testcase classname="tests/api-guards.test.ts" name="Param validation — UUID guard returns 400 for malformed IDs &gt; GET /api/artist-profiles/bad-id → 400 or 401" time="0.023971">
+        </testcase>
+        <testcase classname="tests/api-guards.test.ts" name="Param validation — UUID guard returns 400 for malformed IDs &gt; PATCH /api/artist-profiles/bad-id → 400 or 401 or 403" time="0.003287197">
+        </testcase>
+        <testcase classname="tests/api-guards.test.ts" name="Param validation — UUID guard returns 400 for malformed IDs &gt; GET /api/files/sql-injection-attempt/download → 400 or 401" time="0.024646518">
+        </testcase>
+        <testcase classname="tests/api-guards.test.ts" name="Public routes are accessible &gt; GET /api/health is public" time="0.002164615">
+        </testcase>
+        <testcase classname="tests/api-guards.test.ts" name="Public routes are accessible &gt; GET /health is public" time="0.001699867">
+        </testcase>
+        <testcase classname="tests/api-guards.test.ts" name="Public routes are accessible &gt; GET /ready is public" time="0.00209798">
+        </testcase>
+        <testcase classname="tests/api-guards.test.ts" name="Public routes are accessible &gt; GET /api/ping is public" time="0.001441828">
+        </testcase>
+        <testcase classname="tests/api-guards.test.ts" name="Public routes are accessible &gt; GET /api/marketplace/beats is public" time="0.033542963">
+        </testcase>
+        <testcase classname="tests/api-guards.test.ts" name="Error reporting endpoint &gt; POST /api/errors accepts client error reports without auth" time="0.039588051">
+        </testcase>
+        <testcase classname="tests/api-guards.test.ts" name="Error reporting endpoint &gt; POST /api/errors rate-limits excessive reports" time="0.268939051">
+        </testcase>
+    </testsuite>
+    <testsuite name="tests/audit-persistence.test.ts" timestamp="2026-11-07T00:34:34.126Z" hostname="repl" tests="3" failures="0" errors="0" skipped="0" time="0.041032006">
+        <testcase classname="tests/audit-persistence.test.ts" name="Audit log persistence (canonical contract) &gt; persists a critical audit event to audit_logs and maps fields" time="0.028519859">
+        </testcase>
+        <testcase classname="tests/audit-persistence.test.ts" name="Audit log persistence (canonical contract) &gt; auditConfirmed() persists the row synchronously — no poll needed — before it resolves" time="0.004424633">
+        </testcase>
+        <testcase classname="tests/audit-persistence.test.ts" name="Audit log persistence (canonical contract) &gt; auditConfirmed() rejects instead of resolving when the insert fails" time="0.006285683">
+        </testcase>
+    </testsuite>
+    <testsuite name="tests/auth-2fa.test.ts" timestamp="2026-11-07T00:34:34.127Z" hostname="repl" tests="16" failures="0" errors="0" skipped="0" time="72.742622251">
+        <testcase classname="tests/auth-2fa.test.ts" name="2FA Flow (TOTP) &gt; 1. registers a new user" time="0.467271592">
+        </testcase>
+        <testcase classname="tests/auth-2fa.test.ts" name="2FA Flow (TOTP) &gt; 2. logs in with password only (no 2FA yet)" time="0.347867603">
+        </testcase>
+        <testcase classname="tests/auth-2fa.test.ts" name="2FA Flow (TOTP) &gt; 3. GET /api/auth/2fa/status shows 2FA is disabled" time="0.026148137">
+        </testcase>
+        <testcase classname="tests/auth-2fa.test.ts" name="2FA Flow (TOTP) &gt; 4. POST /api/auth/2fa/setup returns secret and QR code" time="0.080451738">
+        </testcase>
+        <testcase classname="tests/auth-2fa.test.ts" name="2FA Flow (TOTP) &gt; 5. POST /api/auth/2fa/verify with a valid TOTP code enables 2FA" time="0.047071072">
+        </testcase>
+        <testcase classname="tests/auth-2fa.test.ts" name="2FA Flow (TOTP) &gt; 6. POST /api/auth/2fa/verify rejects missing code (400)" time="0.045576092">
+        </testcase>
+        <testcase classname="tests/auth-2fa.test.ts" name="2FA Flow (TOTP) &gt; 7. GET /api/auth/2fa/status shows 2FA is now enabled" time="0.030847837">
+        </testcase>
+        <testcase classname="tests/auth-2fa.test.ts" name="2FA Flow (TOTP) &gt; 8. logout succeeds" time="0.045203977">
+        </testcase>
+        <testcase classname="tests/auth-2fa.test.ts" name="2FA Flow (TOTP) &gt; 9. login with password alone returns requiresTwoFactor:true when 2FA is enabled" time="0.380833149">
+        </testcase>
+        <testcase classname="tests/auth-2fa.test.ts" name="2FA Flow (TOTP) &gt; 10. login with password + valid TOTP code fully authenticates" time="10.845120973">
+        </testcase>
+        <testcase classname="tests/auth-2fa.test.ts" name="2FA Flow (TOTP) &gt; 11. GET /api/auth/me confirms full session is active after 2FA login" time="0.031941176">
+        </testcase>
+        <testcase classname="tests/auth-2fa.test.ts" name="2FA Flow (TOTP) &gt; 16. POST /api/auth/2fa/validate with a valid TOTP code returns { valid: true }" time="29.669859112">
+        </testcase>
+        <testcase classname="tests/auth-2fa.test.ts" name="2FA Flow (TOTP) &gt; 12. POST /api/auth/2fa/disable with wrong password requires reauthentication" time="0.350090403">
+        </testcase>
+        <testcase classname="tests/auth-2fa.test.ts" name="2FA Flow (TOTP) &gt; 13. POST /api/auth/2fa/disable with correct password + valid TOTP disables 2FA" time="29.941783771">
+        </testcase>
+        <testcase classname="tests/auth-2fa.test.ts" name="2FA Flow (TOTP) &gt; 14. GET /api/auth/2fa/status confirms 2FA is disabled" time="0.027432709">
+        </testcase>
+        <testcase classname="tests/auth-2fa.test.ts" name="2FA Flow (TOTP) &gt; 15. logout and re-login works without 2FA code after disable" time="0.400811902">
+        </testcase>
+    </testsuite>
+    <testsuite name="tests/auth-flows.test.ts" timestamp="2026-11-07T00:34:34.132Z" hostname="repl" tests="27" failures="0" errors="0" skipped="0" time="2.261777973">
+        <testcase classname="tests/auth-flows.test.ts" name="Full Auth Flow &gt; 1. registers a new user" time="0.479377335">
+        </testcase>
+        <testcase classname="tests/auth-flows.test.ts" name="Full Auth Flow &gt; 2. rejects duplicate registration" time="0.052506861">
+        </testcase>
+        <testcase classname="tests/auth-flows.test.ts" name="Full Auth Flow &gt; 3. logs in with correct credentials" time="0.364436075">
+        </testcase>
+        <testcase classname="tests/auth-flows.test.ts" name="Full Auth Flow &gt; 4. GET /api/auth/me returns user when authenticated" time="0.029958968">
+        </testcase>
+        <testcase classname="tests/auth-flows.test.ts" name="Full Auth Flow &gt; 5. onboarding status is accessible" time="0.027774433">
+        </testcase>
+        <testcase classname="tests/auth-flows.test.ts" name="Full Auth Flow &gt; 6. profile is accessible when authenticated" time="0.032173103">
+        </testcase>
+        <testcase classname="tests/auth-flows.test.ts" name="Full Auth Flow &gt; 7. sessions list is accessible" time="0.032551019">
+        </testcase>
+        <testcase classname="tests/auth-flows.test.ts" name="Full Auth Flow &gt; 8. login history is accessible" time="0.033214502">
+        </testcase>
+        <testcase classname="tests/auth-flows.test.ts" name="Full Auth Flow &gt; 9. logout succeeds" time="0.043889911">
+        </testcase>
+        <testcase classname="tests/auth-flows.test.ts" name="Full Auth Flow &gt; 10. /api/auth/me returns null or 401 after logout" time="0.037064776">
+        </testcase>
+        <testcase classname="tests/auth-flows.test.ts" name="Full Auth Flow &gt; 11. rejects login with wrong password" time="0.336480863">
+        </testcase>
+        <testcase classname="tests/auth-flows.test.ts" name="OAuth Callback Structure &gt; 12. GET /api/social/callback/:platform with no state redirects with error" time="0.027195324">
+        </testcase>
+        <testcase classname="tests/auth-flows.test.ts" name="OAuth Callback Structure &gt; 13. GET /api/social/callback/:platform with tampered/invalid state redirects with invalid_state" time="0.03465332">
+        </testcase>
+        <testcase classname="tests/auth-flows.test.ts" name="OAuth Callback Structure &gt; 14. GET /api/social/callback/:platform with base64-but-bad-HMAC state redirects with invalid_state" time="0.025080232">
+        </testcase>
+        <testcase classname="tests/auth-flows.test.ts" name="OAuth Callback Structure &gt; 15. an OAuth provider error without session-bound state is rejected as invalid_state" time="0.022491239">
+        </testcase>
+        <testcase classname="tests/auth-flows.test.ts" name="OAuth Callback Structure &gt; 16. POST /api/social/connect/:platform without auth returns 401 or 403" time="0.00527461">
+        </testcase>
+        <testcase classname="tests/auth-flows.test.ts" name="OAuth Callback Structure &gt; 17. POST /api/social/connect/:platform with valid auth returns an authUrl" time="0.024121837">
+        </testcase>
+        <testcase classname="tests/auth-flows.test.ts" name="OAuth Callback Structure &gt; 18. GET /api/social/platforms returns a platform list" time="0.032962798">
+        </testcase>
+        <testcase classname="tests/auth-flows.test.ts" name="OAuth Callback Structure &gt; 19. GET /api/social/connections requires authentication" time="0.041994073">
+        </testcase>
+        <testcase classname="tests/auth-flows.test.ts" name="OAuth Callback Structure &gt; 20. GET /api/auth/google initiates Google OAuth — redirects to Google or error page" time="0.025423582">
+        </testcase>
+        <testcase classname="tests/auth-flows.test.ts" name="OAuth Callback Structure &gt; 21. GET /api/auth/google/callback?error=access_denied redirects with google_denied" time="0.02441067">
+        </testcase>
+        <testcase classname="tests/auth-flows.test.ts" name="OAuth Callback Structure &gt; 22. GET /api/auth/google/callback with no state redirects with invalid_state" time="0.02455363">
+        </testcase>
+        <testcase classname="tests/auth-flows.test.ts" name="OAuth Callback Structure &gt; 24. GET /api/auth/oauth/initiate without auth returns 401" time="0.023791623">
+        </testcase>
+        <testcase classname="tests/auth-flows.test.ts" name="OAuth Callback Structure &gt; 24b. GET /api/auth/oauth/initiate?platform=google with auth redirects to Google or error page" time="0.40289063">
+        </testcase>
+        <testcase classname="tests/auth-flows.test.ts" name="OAuth Callback Structure &gt; 25. GET /api/auth/oauth/callback?platform=spotify&amp;error=access_denied redirects with oauth_denied" time="0.024792912">
+        </testcase>
+        <testcase classname="tests/auth-flows.test.ts" name="OAuth Callback Structure &gt; 26. GET /api/auth/oauth/callback without state redirects with invalid_state" time="0.023973603">
+        </testcase>
+        <testcase classname="tests/auth-flows.test.ts" name="OAuth Callback Structure &gt; 23. GET /api/auth/google/callback with valid state reaches a different redirect than invalid_state" time="0.024536487">
+            <system-err>
+[AuthTest] GOOGLE_CLIENT_ID not configured — skipping valid-state callback test
+
+            </system-err>
+        </testcase>
+    </testsuite>
+    <testsuite name="tests/billing-lifecycle.test.ts" timestamp="2026-11-07T00:34:34.138Z" hostname="repl" tests="17" failures="0" errors="0" skipped="0" time="3.258405249">
+        <testcase classname="tests/billing-lifecycle.test.ts" name="Billing Webhook Lifecycle &gt; 1. registers and logs in an owned fixture user and captures its ID" time="1.144986039">
+        </testcase>
+        <testcase classname="tests/billing-lifecycle.test.ts" name="Billing Webhook Lifecycle &gt; 2. webhook endpoint exists (not 404)" time="0.035435071">
+        </testcase>
+        <testcase classname="tests/billing-lifecycle.test.ts" name="Billing Webhook Lifecycle &gt; 3. rejects webhook with no stripe-signature header" time="0.030653708">
+        </testcase>
+        <testcase classname="tests/billing-lifecycle.test.ts" name="Billing Webhook Lifecycle &gt; 4. rejects webhook with an invalid stripe-signature header" time="0.03163283">
+        </testcase>
+        <testcase classname="tests/billing-lifecycle.test.ts" name="Billing Webhook Lifecycle &gt; 5. a signed subscription event cannot grant entitlement without current provider verification" time="0.332703837">
+        </testcase>
+        <testcase classname="tests/billing-lifecycle.test.ts" name="Billing Webhook Lifecycle &gt; 6. checkout.session.completed (subscription mode) updates subscription_tier" time="0.051995016">
+        </testcase>
+        <testcase classname="tests/billing-lifecycle.test.ts" name="Billing Webhook Lifecycle &gt; 7. idempotency: same event ID fired twice — second response is idempotent, tier unchanged" time="0.190908775">
+        </testcase>
+        <testcase classname="tests/billing-lifecycle.test.ts" name="Billing Webhook Lifecycle &gt; 8. a valid signed event cannot replace a user&apos;s tier from unverified payload metadata" time="0.076553184">
+        </testcase>
+        <testcase classname="tests/billing-lifecycle.test.ts" name="Billing Webhook Lifecycle &gt; 9. GET /api/billing/subscription returns complete tier shape when authenticated" time="0.060453756">
+        </testcase>
+        <testcase classname="tests/billing-lifecycle.test.ts" name="Billing Webhook Lifecycle &gt; 10. GET /api/billing/subscription returns 401 when unauthenticated" time="0.032921648">
+        </testcase>
+        <testcase classname="tests/billing-lifecycle.test.ts" name="Billing Webhook Lifecycle &gt; access policy: GET /api/billing/subscription rejects suspended session" time="0.164195616">
+        </testcase>
+        <testcase classname="tests/billing-lifecycle.test.ts" name="Billing Webhook Lifecycle &gt; access policy: GET /api/billing/subscription rejects banned session" time="0.16997744">
+        </testcase>
+        <testcase classname="tests/billing-lifecycle.test.ts" name="Billing Webhook Lifecycle &gt; access policy: GET /api/billing/subscription rejects mfa-required session" time="0.176918628">
+        </testcase>
+        <testcase classname="tests/billing-lifecycle.test.ts" name="Billing Webhook Lifecycle &gt; access policy: GET /api/billing/subscription allows trial-expired session" time="0.347609555">
+        </testcase>
+        <testcase classname="tests/billing-lifecycle.test.ts" name="Billing Webhook Lifecycle &gt; access policy: GET /api/billing/subscription allows subscription-expired session" time="0.287786005">
+        </testcase>
+        <testcase classname="tests/billing-lifecycle.test.ts" name="Billing Webhook Lifecycle &gt; 11. GET /api/billing/plans returns a non-empty plan list without auth" time="0.057732197">
+        </testcase>
+        <testcase classname="tests/billing-lifecycle.test.ts" name="Billing Webhook Lifecycle &gt; 12. POST /api/billing/create-checkout-session rejects invalid plan" time="0.061560004">
+        </testcase>
+    </testsuite>
+    <testsuite name="tests/cache-invalidation.test.ts" timestamp="2026-11-07T00:34:34.141Z" hostname="repl" tests="5" failures="0" errors="0" skipped="0" time="1.125049428">
+        <testcase classname="tests/cache-invalidation.test.ts" name="Distributed API Cache &gt; 1. health endpoint reports cache backend and pollerActive status" time="0.033071427">
+        </testcase>
+        <testcase classname="tests/cache-invalidation.test.ts" name="Distributed API Cache &gt; 2. authenticated endpoint is cached (second request returns HIT)" time="0.058363419">
+        </testcase>
+        <testcase classname="tests/cache-invalidation.test.ts" name="Distributed API Cache &gt; 3. mutation invalidates the user cache (next GET returns fresh data)" time="0.093665135">
+        </testcase>
+        <testcase classname="tests/cache-invalidation.test.ts" name="Distributed API Cache &gt; 4. unauthenticated requests do not leak cached authenticated data" time="0.052875496">
+        </testcase>
+        <testcase classname="tests/cache-invalidation.test.ts" name="Distributed API Cache &gt; 5. ETag round-trip (304 Not Modified on repeated request)" time="0.079551829">
+        </testcase>
+    </testsuite>
+    <testsuite name="tests/content-analysis-entitlement.test.ts" timestamp="2026-11-07T00:34:34.142Z" hostname="repl" tests="6" failures="0" errors="0" skipped="0" time="1.099984647">
+        <testcase classname="tests/content-analysis-entitlement.test.ts" name="content analysis uses current paid entitlements &gt; &apos;user&apos;/&apos;monthly&apos;/&apos;inactive&apos; returns 403 before provider work" time="0.046780176">
+        </testcase>
+        <testcase classname="tests/content-analysis-entitlement.test.ts" name="content analysis uses current paid entitlements &gt; &apos;user&apos;/&apos;yearly&apos;/&apos;canceled&apos; returns 403 before provider work" time="0.04830106">
+        </testcase>
+        <testcase classname="tests/content-analysis-entitlement.test.ts" name="content analysis uses current paid entitlements &gt; &apos;user&apos;/&apos;monthly&apos;/&apos;past_due&apos; returns 403 before provider work" time="0.049372093">
+        </testcase>
+        <testcase classname="tests/content-analysis-entitlement.test.ts" name="content analysis uses current paid entitlements &gt; &apos;user&apos;/&apos;pro&apos;/&apos;active&apos; returns 400 before provider work" time="0.041883135">
+        </testcase>
+        <testcase classname="tests/content-analysis-entitlement.test.ts" name="content analysis uses current paid entitlements &gt; &apos;user&apos;/&apos;monthly&apos;/&apos;active&apos; returns 400 before provider work" time="0.04522462">
+        </testcase>
+        <testcase classname="tests/content-analysis-entitlement.test.ts" name="content analysis uses current paid entitlements &gt; &apos;admin&apos;/&apos;free&apos;/&apos;none&apos; returns 400 before provider work" time="0.058614846">
+        </testcase>
+    </testsuite>
+    <testsuite name="tests/critical-paths.test.ts" timestamp="2026-11-07T00:34:34.144Z" hostname="repl" tests="50" failures="0" errors="0" skipped="3" time="4.491591843">
+        <testcase classname="tests/critical-paths.test.ts" name="Critical Path Tests - Production Readiness &gt; 1. User Registration &amp; Authentication &gt; should register a new user" time="0.625763366">
+        </testcase>
+        <testcase classname="tests/critical-paths.test.ts" name="Critical Path Tests - Production Readiness &gt; 1. User Registration &amp; Authentication &gt; should reject duplicate email registration" time="0.100456086">
+        </testcase>
+        <testcase classname="tests/critical-paths.test.ts" name="Critical Path Tests - Production Readiness &gt; 1. User Registration &amp; Authentication &gt; should reject invalid email format" time="0.063610886">
+        </testcase>
+        <testcase classname="tests/critical-paths.test.ts" name="Critical Path Tests - Production Readiness &gt; 1. User Registration &amp; Authentication &gt; should reject short password" time="0.076950234">
+        </testcase>
+        <testcase classname="tests/critical-paths.test.ts" name="Critical Path Tests - Production Readiness &gt; 1. User Registration &amp; Authentication &gt; should login with correct credentials" time="0.426687816">
+        </testcase>
+        <testcase classname="tests/critical-paths.test.ts" name="Critical Path Tests - Production Readiness &gt; 1. User Registration &amp; Authentication &gt; should reject login with wrong password" time="0.421762515">
+        </testcase>
+        <testcase classname="tests/critical-paths.test.ts" name="Critical Path Tests - Production Readiness &gt; 1. User Registration &amp; Authentication &gt; should return user from /api/auth/me when authenticated" time="0.043008993">
+        </testcase>
+        <testcase classname="tests/critical-paths.test.ts" name="Critical Path Tests - Production Readiness &gt; 1. User Registration &amp; Authentication &gt; should return null from /api/auth/me when unauthenticated" time="0.031380021">
+        </testcase>
+        <testcase classname="tests/critical-paths.test.ts" name="Critical Path Tests - Production Readiness &gt; 2. Profile Management &gt; should get user profile" time="0.043907676">
+        </testcase>
+        <testcase classname="tests/critical-paths.test.ts" name="Critical Path Tests - Production Readiness &gt; 2. Profile Management &gt; should update profile" time="0.059462779">
+        </testcase>
+        <testcase classname="tests/critical-paths.test.ts" name="Critical Path Tests - Production Readiness &gt; 2. Profile Management &gt; should strip XSS from profile fields" time="0.101700805">
+        </testcase>
+        <testcase classname="tests/critical-paths.test.ts" name="Critical Path Tests - Production Readiness &gt; 3. Distribution - Core Paid Feature &gt; should list live distribution platforms through a connected Too Lost account" time="0">
+            <skipped/>
+        </testcase>
+        <testcase classname="tests/critical-paths.test.ts" name="Critical Path Tests - Production Readiness &gt; 3. Distribution - Core Paid Feature &gt; requires a connected distributor before claiming a live DSP catalog" time="0.076314971">
+        </testcase>
+        <testcase classname="tests/critical-paths.test.ts" name="Critical Path Tests - Production Readiness &gt; 3. Distribution - Core Paid Feature &gt; should create a release" time="0.049539631">
+        </testcase>
+        <testcase classname="tests/critical-paths.test.ts" name="Critical Path Tests - Production Readiness &gt; 3. Distribution - Core Paid Feature &gt; should reject a release draft without its required title" time="0.045881277">
+        </testcase>
+        <testcase classname="tests/critical-paths.test.ts" name="Critical Path Tests - Production Readiness &gt; 3. Distribution - Core Paid Feature &gt; should list user releases" time="0.083299119">
+        </testcase>
+        <testcase classname="tests/critical-paths.test.ts" name="Critical Path Tests - Production Readiness &gt; 3. Distribution - Core Paid Feature &gt; should get provider-confirmed earnings for an owned distributor connection" time="0">
+            <skipped/>
+        </testcase>
+        <testcase classname="tests/critical-paths.test.ts" name="Critical Path Tests - Production Readiness &gt; 3. Distribution - Core Paid Feature &gt; does not present shared or missing provider earnings as personal revenue" time="0.045230745">
+        </testcase>
+        <testcase classname="tests/critical-paths.test.ts" name="Critical Path Tests - Production Readiness &gt; 3. Distribution - Core Paid Feature &gt; should get HyperFollow links" time="0.042759065">
+        </testcase>
+        <testcase classname="tests/critical-paths.test.ts" name="Critical Path Tests - Production Readiness &gt; 4. Social Media Management &gt; should schedule a post" time="0.930585682">
+        </testcase>
+        <testcase classname="tests/critical-paths.test.ts" name="Critical Path Tests - Production Readiness &gt; 4. Social Media Management &gt; should reject post without required fields" time="0.029681737">
+        </testcase>
+        <testcase classname="tests/critical-paths.test.ts" name="Critical Path Tests - Production Readiness &gt; 4. Social Media Management &gt; should list user posts" time="0.038993429">
+        </testcase>
+        <testcase classname="tests/critical-paths.test.ts" name="Critical Path Tests - Production Readiness &gt; 4. Social Media Management &gt; does not claim publication before a platform connection and provider confirmation" time="0.088111897">
+        </testcase>
+        <testcase classname="tests/critical-paths.test.ts" name="Critical Path Tests - Production Readiness &gt; 4. Social Media Management &gt; should reject publishing non-existent post" time="0.036785838">
+        </testcase>
+        <testcase classname="tests/critical-paths.test.ts" name="Critical Path Tests - Production Readiness &gt; 4. Social Media Management &gt; should get social metrics" time="0.035934544">
+        </testcase>
+        <testcase classname="tests/critical-paths.test.ts" name="Critical Path Tests - Production Readiness &gt; 4. Social Media Management &gt; should get hashtags from available MaxCore generation" time="0">
+            <skipped/>
+        </testcase>
+        <testcase classname="tests/critical-paths.test.ts" name="Critical Path Tests - Production Readiness &gt; 4. Social Media Management &gt; reports unavailable hashtag generation without invented trend metrics" time="0.041849131">
+        </testcase>
+        <testcase classname="tests/critical-paths.test.ts" name="Critical Path Tests - Production Readiness &gt; 4. Social Media Management &gt; should get inbox messages" time="0.033226473">
+        </testcase>
+        <testcase classname="tests/critical-paths.test.ts" name="Critical Path Tests - Production Readiness &gt; 4. Social Media Management &gt; should generate AI content" time="0.037949628">
+        </testcase>
+        <testcase classname="tests/critical-paths.test.ts" name="Critical Path Tests - Production Readiness &gt; 5. Billing &amp; Payments &gt; should get subscription status" time="0.068089444">
+        </testcase>
+        <testcase classname="tests/critical-paths.test.ts" name="Critical Path Tests - Production Readiness &gt; 5. Billing &amp; Payments &gt; should list billing plans" time="0.040444947">
+        </testcase>
+        <testcase classname="tests/critical-paths.test.ts" name="Critical Path Tests - Production Readiness &gt; 5. Billing &amp; Payments &gt; should get billing history" time="0.052683033">
+        </testcase>
+        <testcase classname="tests/critical-paths.test.ts" name="Critical Path Tests - Production Readiness &gt; 5. Billing &amp; Payments &gt; should get invoices" time="0.055202565">
+        </testcase>
+        <testcase classname="tests/critical-paths.test.ts" name="Critical Path Tests - Production Readiness &gt; 6. Studio - DAW Features &gt; should list projects" time="0.029371845">
+        </testcase>
+        <testcase classname="tests/critical-paths.test.ts" name="Critical Path Tests - Production Readiness &gt; 6. Studio - DAW Features &gt; should get sample library" time="0.030378638">
+        </testcase>
+        <testcase classname="tests/critical-paths.test.ts" name="Critical Path Tests - Production Readiness &gt; 6. Studio - DAW Features &gt; should get project templates" time="0.044198316">
+        </testcase>
+        <testcase classname="tests/critical-paths.test.ts" name="Critical Path Tests - Production Readiness &gt; 7. Search &amp; Discovery &gt; should perform unified search" time="0.045859238">
+        </testcase>
+        <testcase classname="tests/critical-paths.test.ts" name="Critical Path Tests - Production Readiness &gt; 7. Search &amp; Discovery &gt; should handle empty search gracefully" time="0.070615642">
+        </testcase>
+        <testcase classname="tests/critical-paths.test.ts" name="Critical Path Tests - Production Readiness &gt; 8. Career Coach &gt; should read an owned saved recommendation without claiming fresh generation" time="0.050816683">
+        </testcase>
+        <testcase classname="tests/critical-paths.test.ts" name="Critical Path Tests - Production Readiness &gt; 8. Career Coach &gt; should get goals" time="0.053668107">
+        </testcase>
+        <testcase classname="tests/critical-paths.test.ts" name="Critical Path Tests - Production Readiness &gt; 9. Contracts &amp; Collaborations &gt; should list contract templates" time="0.032985587">
+        </testcase>
+        <testcase classname="tests/critical-paths.test.ts" name="Critical Path Tests - Production Readiness &gt; 9. Contracts &amp; Collaborations &gt; should list collaboration connections" time="0.029502095">
+        </testcase>
+        <testcase classname="tests/critical-paths.test.ts" name="Critical Path Tests - Production Readiness &gt; 10. Analytics &gt; should get analytics dashboard" time="0.041350717">
+        </testcase>
+        <testcase classname="tests/critical-paths.test.ts" name="Critical Path Tests - Production Readiness &gt; 11. Security &gt; should provide CSRF token" time="0.034097209">
+        </testcase>
+        <testcase classname="tests/critical-paths.test.ts" name="Critical Path Tests - Production Readiness &gt; 11. Security &gt; should reject malformed JSON" time="0.016365774">
+        </testcase>
+        <testcase classname="tests/critical-paths.test.ts" name="Critical Path Tests - Production Readiness &gt; 11. Security &gt; should handle SQL injection attempt safely" time="0.047048893">
+        </testcase>
+        <testcase classname="tests/critical-paths.test.ts" name="Critical Path Tests - Production Readiness &gt; 11. Security &gt; should return 404 for non-existent API routes" time="0.026766556">
+        </testcase>
+        <testcase classname="tests/critical-paths.test.ts" name="Critical Path Tests - Production Readiness &gt; 12. OAuth Connection Graceful Failures &gt; should return error for unsupported platform" time="0.028131804">
+        </testcase>
+        <testcase classname="tests/critical-paths.test.ts" name="Critical Path Tests - Production Readiness &gt; 13. Logout &gt; should logout successfully" time="0.038595491">
+        </testcase>
+        <testcase classname="tests/critical-paths.test.ts" name="Critical Path Tests - Production Readiness &gt; 13. Logout &gt; should not access protected routes after logout" time="0.036420332">
+        </testcase>
+    </testsuite>
+    <testsuite name="tests/direct-upload.test.ts" timestamp="2026-11-07T00:34:34.153Z" hostname="repl" tests="4" failures="0" errors="0" skipped="0" time="1.249730205">
+        <testcase classname="tests/direct-upload.test.ts" name="Direct upload URL flow &gt; 1. registers and logs in a test user" time="0.840710358">
+        </testcase>
+        <testcase classname="tests/direct-upload.test.ts" name="Direct upload URL flow &gt; 2. issues a reserved direct upload URL" time="0.031151176">
+        </testcase>
+        <testcase classname="tests/direct-upload.test.ts" name="Direct upload URL flow &gt; 3. uploads the reserved bytes and persists the file" time="0.248431264">
+        </testcase>
+        <testcase classname="tests/direct-upload.test.ts" name="Direct upload URL flow &gt; 4. rejects reusing the same upload URL" time="0.126895697">
+        </testcase>
+    </testsuite>
+    <testsuite name="tests/feature-catalog-production.test.ts" timestamp="2026-11-07T00:34:34.154Z" hostname="repl" tests="33" failures="0" errors="0" skipped="0" time="2.566107064">
+        <testcase classname="tests/feature-catalog-production.test.ts" name="Feature: Sync Licensing, Sample Clearances, Music Videos, Songwriting &gt; setup: register and login test user" time="0.905141789">
+        </testcase>
+        <testcase classname="tests/feature-catalog-production.test.ts" name="Feature: Sync Licensing, Sample Clearances, Music Videos, Songwriting &gt; Sync Licensing &gt; GET /api/sync-licensing returns list" time="0.041633804">
+        </testcase>
+        <testcase classname="tests/feature-catalog-production.test.ts" name="Feature: Sync Licensing, Sample Clearances, Music Videos, Songwriting &gt; Sync Licensing &gt; GET /api/sync-licensing/stats returns statistics" time="0.029612002">
+        </testcase>
+        <testcase classname="tests/feature-catalog-production.test.ts" name="Feature: Sync Licensing, Sample Clearances, Music Videos, Songwriting &gt; Sync Licensing &gt; POST /api/sync-licensing creates a license opportunity" time="0.087820791">
+        </testcase>
+        <testcase classname="tests/feature-catalog-production.test.ts" name="Feature: Sync Licensing, Sample Clearances, Music Videos, Songwriting &gt; Sync Licensing &gt; GET /api/sync-licensing/:id retrieves the license" time="0.070898796">
+        </testcase>
+        <testcase classname="tests/feature-catalog-production.test.ts" name="Feature: Sync Licensing, Sample Clearances, Music Videos, Songwriting &gt; Sync Licensing &gt; PUT /api/sync-licensing/:id updates the license" time="0.087935855">
+        </testcase>
+        <testcase classname="tests/feature-catalog-production.test.ts" name="Feature: Sync Licensing, Sample Clearances, Music Videos, Songwriting &gt; Sync Licensing &gt; PATCH /api/sync-licensing/:id/status updates status" time="0.044131307">
+        </testcase>
+        <testcase classname="tests/feature-catalog-production.test.ts" name="Feature: Sync Licensing, Sample Clearances, Music Videos, Songwriting &gt; Sync Licensing &gt; DELETE /api/sync-licensing/:id removes the license" time="0.079971506">
+        </testcase>
+        <testcase classname="tests/feature-catalog-production.test.ts" name="Feature: Sync Licensing, Sample Clearances, Music Videos, Songwriting &gt; Sync Licensing &gt; GET /api/sync-licensing without auth → 401" time="0.039804127">
+        </testcase>
+        <testcase classname="tests/feature-catalog-production.test.ts" name="Feature: Sync Licensing, Sample Clearances, Music Videos, Songwriting &gt; Sample Clearances &gt; GET /api/sample-clearances returns list" time="0.034504394">
+        </testcase>
+        <testcase classname="tests/feature-catalog-production.test.ts" name="Feature: Sync Licensing, Sample Clearances, Music Videos, Songwriting &gt; Sample Clearances &gt; GET /api/sample-clearances/stats returns statistics" time="0.048530121">
+        </testcase>
+        <testcase classname="tests/feature-catalog-production.test.ts" name="Feature: Sync Licensing, Sample Clearances, Music Videos, Songwriting &gt; Sample Clearances &gt; POST /api/sample-clearances creates a clearance request" time="0.051542342">
+        </testcase>
+        <testcase classname="tests/feature-catalog-production.test.ts" name="Feature: Sync Licensing, Sample Clearances, Music Videos, Songwriting &gt; Sample Clearances &gt; GET /api/sample-clearances/:id retrieves clearance" time="0.048477837">
+        </testcase>
+        <testcase classname="tests/feature-catalog-production.test.ts" name="Feature: Sync Licensing, Sample Clearances, Music Videos, Songwriting &gt; Sample Clearances &gt; PUT /api/sample-clearances/:id updates clearance" time="0.049620747">
+        </testcase>
+        <testcase classname="tests/feature-catalog-production.test.ts" name="Feature: Sync Licensing, Sample Clearances, Music Videos, Songwriting &gt; Sample Clearances &gt; DELETE /api/sample-clearances/:id removes clearance" time="0.049528203">
+        </testcase>
+        <testcase classname="tests/feature-catalog-production.test.ts" name="Feature: Sync Licensing, Sample Clearances, Music Videos, Songwriting &gt; Sample Clearances &gt; GET /api/sample-clearances without auth → 401" time="0.035856905">
+        </testcase>
+        <testcase classname="tests/feature-catalog-production.test.ts" name="Feature: Sync Licensing, Sample Clearances, Music Videos, Songwriting &gt; Music Video Production Tracking &gt; GET /api/music-videos returns list" time="0.03402352">
+        </testcase>
+        <testcase classname="tests/feature-catalog-production.test.ts" name="Feature: Sync Licensing, Sample Clearances, Music Videos, Songwriting &gt; Music Video Production Tracking &gt; GET /api/music-videos/stats returns statistics" time="0.051170747">
+        </testcase>
+        <testcase classname="tests/feature-catalog-production.test.ts" name="Feature: Sync Licensing, Sample Clearances, Music Videos, Songwriting &gt; Music Video Production Tracking &gt; POST /api/music-videos creates a video project" time="0.050132572">
+        </testcase>
+        <testcase classname="tests/feature-catalog-production.test.ts" name="Feature: Sync Licensing, Sample Clearances, Music Videos, Songwriting &gt; Music Video Production Tracking &gt; GET /api/music-videos/:id retrieves video project" time="0.047573059">
+        </testcase>
+        <testcase classname="tests/feature-catalog-production.test.ts" name="Feature: Sync Licensing, Sample Clearances, Music Videos, Songwriting &gt; Music Video Production Tracking &gt; PUT /api/music-videos/:id updates video project" time="0.054088785">
+        </testcase>
+        <testcase classname="tests/feature-catalog-production.test.ts" name="Feature: Sync Licensing, Sample Clearances, Music Videos, Songwriting &gt; Music Video Production Tracking &gt; GET /api/music-videos/diffusion/status returns diffusion status" time="0.117464831">
+        </testcase>
+        <testcase classname="tests/feature-catalog-production.test.ts" name="Feature: Sync Licensing, Sample Clearances, Music Videos, Songwriting &gt; Music Video Production Tracking &gt; DELETE /api/music-videos/:id removes video project" time="0.057378622">
+        </testcase>
+        <testcase classname="tests/feature-catalog-production.test.ts" name="Feature: Sync Licensing, Sample Clearances, Music Videos, Songwriting &gt; Music Video Production Tracking &gt; GET /api/music-videos without auth → 401" time="0.030114116">
+        </testcase>
+        <testcase classname="tests/feature-catalog-production.test.ts" name="Feature: Sync Licensing, Sample Clearances, Music Videos, Songwriting &gt; Songwriting AI &gt; GET /api/songwriting returns list" time="0.028566718">
+        </testcase>
+        <testcase classname="tests/feature-catalog-production.test.ts" name="Feature: Sync Licensing, Sample Clearances, Music Videos, Songwriting &gt; Songwriting AI &gt; GET /api/songwriting/stats returns statistics" time="0.052273872">
+        </testcase>
+        <testcase classname="tests/feature-catalog-production.test.ts" name="Feature: Sync Licensing, Sample Clearances, Music Videos, Songwriting &gt; Songwriting AI &gt; POST /api/songwriting creates a song project" time="0.042828359">
+        </testcase>
+        <testcase classname="tests/feature-catalog-production.test.ts" name="Feature: Sync Licensing, Sample Clearances, Music Videos, Songwriting &gt; Songwriting AI &gt; GET /api/songwriting/:id retrieves song project" time="0.035267918">
+        </testcase>
+        <testcase classname="tests/feature-catalog-production.test.ts" name="Feature: Sync Licensing, Sample Clearances, Music Videos, Songwriting &gt; Songwriting AI &gt; PUT /api/songwriting/:id updates song project" time="0.057177363">
+        </testcase>
+        <testcase classname="tests/feature-catalog-production.test.ts" name="Feature: Sync Licensing, Sample Clearances, Music Videos, Songwriting &gt; Songwriting AI &gt; GET /api/songwriting/rhyme/:word returns rhyme suggestions" time="0.046756335">
+        </testcase>
+        <testcase classname="tests/feature-catalog-production.test.ts" name="Feature: Sync Licensing, Sample Clearances, Music Videos, Songwriting &gt; Songwriting AI &gt; POST /api/songwriting/ai-assist returns AI suggestions" time="0.043612923">
+        </testcase>
+        <testcase classname="tests/feature-catalog-production.test.ts" name="Feature: Sync Licensing, Sample Clearances, Music Videos, Songwriting &gt; Songwriting AI &gt; DELETE /api/songwriting/:id removes song project" time="0.065468574">
+        </testcase>
+        <testcase classname="tests/feature-catalog-production.test.ts" name="Feature: Sync Licensing, Sample Clearances, Music Videos, Songwriting &gt; Songwriting AI &gt; GET /api/songwriting without auth → 401" time="0.041444967">
+        </testcase>
+    </testsuite>
+    <testsuite name="tests/feature-marketplace-distribution.test.ts" timestamp="2026-11-07T00:34:34.165Z" hostname="repl" tests="43" failures="0" errors="0" skipped="0" time="2.627892099">
+        <testcase classname="tests/feature-marketplace-distribution.test.ts" name="Feature: Beat Marketplace &amp; Music Distribution &gt; setup: register and login test user" time="0.893499281">
+        </testcase>
+        <testcase classname="tests/feature-marketplace-distribution.test.ts" name="Feature: Beat Marketplace &amp; Music Distribution &gt; Beat Marketplace — Public Browsing &gt; GET /api/marketplace/beats returns beat listings (public)" time="0.037442896">
+        </testcase>
+        <testcase classname="tests/feature-marketplace-distribution.test.ts" name="Feature: Beat Marketplace &amp; Music Distribution &gt; Beat Marketplace — Public Browsing &gt; GET /api/marketplace/beats supports genre filter" time="0.039349907">
+        </testcase>
+        <testcase classname="tests/feature-marketplace-distribution.test.ts" name="Feature: Beat Marketplace &amp; Music Distribution &gt; Beat Marketplace — Public Browsing &gt; GET /api/marketplace/beats supports BPM range filter" time="0.024941668">
+        </testcase>
+        <testcase classname="tests/feature-marketplace-distribution.test.ts" name="Feature: Beat Marketplace &amp; Music Distribution &gt; Beat Marketplace — Public Browsing &gt; GET /api/marketplace/beats supports pagination" time="0.03641156">
+        </testcase>
+        <testcase classname="tests/feature-marketplace-distribution.test.ts" name="Feature: Beat Marketplace &amp; Music Distribution &gt; Beat Marketplace — Public Browsing &gt; GET /api/marketplace/producers returns producer list (public)" time="0.037311645">
+        </testcase>
+        <testcase classname="tests/feature-marketplace-distribution.test.ts" name="Feature: Beat Marketplace &amp; Music Distribution &gt; Beat Marketplace — Public Browsing &gt; GET /api/marketplace/license-templates returns license templates" time="0.046214191">
+        </testcase>
+        <testcase classname="tests/feature-marketplace-distribution.test.ts" name="Feature: Beat Marketplace &amp; Music Distribution &gt; Beat Marketplace — Authenticated &gt; GET /api/marketplace/my-beats returns authenticated user beats" time="0.032341553">
+        </testcase>
+        <testcase classname="tests/feature-marketplace-distribution.test.ts" name="Feature: Beat Marketplace &amp; Music Distribution &gt; Beat Marketplace — Authenticated &gt; GET /api/marketplace/purchases returns user purchases" time="0.03610573">
+        </testcase>
+        <testcase classname="tests/feature-marketplace-distribution.test.ts" name="Feature: Beat Marketplace &amp; Music Distribution &gt; Beat Marketplace — Authenticated &gt; GET /api/marketplace/for-you returns personalised recommendations" time="0.046973747">
+        </testcase>
+        <testcase classname="tests/feature-marketplace-distribution.test.ts" name="Feature: Beat Marketplace &amp; Music Distribution &gt; Beat Marketplace — Authenticated &gt; GET /api/marketplace/ai-recommendations returns AI beat recs" time="0.031892075">
+        </testcase>
+        <testcase classname="tests/feature-marketplace-distribution.test.ts" name="Feature: Beat Marketplace &amp; Music Distribution &gt; Beat Marketplace — Authenticated &gt; GET /api/marketplace/taste-profile returns listener taste profile" time="0.02953847">
+        </testcase>
+        <testcase classname="tests/feature-marketplace-distribution.test.ts" name="Feature: Beat Marketplace &amp; Music Distribution &gt; Beat Marketplace — Authenticated &gt; GET /api/marketplace/my-stems returns stems for authenticated user" time="0.030562338">
+        </testcase>
+        <testcase classname="tests/feature-marketplace-distribution.test.ts" name="Feature: Beat Marketplace &amp; Music Distribution &gt; Beat Marketplace — Authenticated &gt; GET /api/marketplace/collaborations returns collab requests" time="0.031795622">
+        </testcase>
+        <testcase classname="tests/feature-marketplace-distribution.test.ts" name="Feature: Beat Marketplace &amp; Music Distribution &gt; Beat Marketplace — Authenticated &gt; GET /api/marketplace/contracts returns contract list" time="0.031484363">
+        </testcase>
+        <testcase classname="tests/feature-marketplace-distribution.test.ts" name="Feature: Beat Marketplace &amp; Music Distribution &gt; Beat Marketplace — Authenticated &gt; GET /api/marketplace/affiliates returns affiliate program info" time="0.037515936">
+        </testcase>
+        <testcase classname="tests/feature-marketplace-distribution.test.ts" name="Feature: Beat Marketplace &amp; Music Distribution &gt; Beat Marketplace — Authenticated &gt; GET /api/marketplace/escrow returns escrow transactions" time="0.041074558">
+        </testcase>
+        <testcase classname="tests/feature-marketplace-distribution.test.ts" name="Feature: Beat Marketplace &amp; Music Distribution &gt; Beat Marketplace — Authenticated &gt; GET /api/marketplace/sales-analytics returns sales data" time="0.030153993">
+        </testcase>
+        <testcase classname="tests/feature-marketplace-distribution.test.ts" name="Feature: Beat Marketplace &amp; Music Distribution &gt; Marketplace auth guards &gt; GET /api/marketplace/my-beats without auth → 401/403" time="0.027113534">
+        </testcase>
+        <testcase classname="tests/feature-marketplace-distribution.test.ts" name="Feature: Beat Marketplace &amp; Music Distribution &gt; Marketplace auth guards &gt; GET /api/marketplace/purchases without auth → 401/403" time="0.025362714">
+        </testcase>
+        <testcase classname="tests/feature-marketplace-distribution.test.ts" name="Feature: Beat Marketplace &amp; Music Distribution &gt; Music Distribution &gt; GET /api/distribution/platforms requires a connected distributor before a live catalog is claimed" time="0.035907873">
+        </testcase>
+        <testcase classname="tests/feature-marketplace-distribution.test.ts" name="Feature: Beat Marketplace &amp; Music Distribution &gt; Music Distribution &gt; GET /api/distribution/platforms/status reports no fabricated provider connection" time="0.03511259">
+        </testcase>
+        <testcase classname="tests/feature-marketplace-distribution.test.ts" name="Feature: Beat Marketplace &amp; Music Distribution &gt; Music Distribution &gt; GET /api/distribution/releases returns user releases" time="0.030510252">
+        </testcase>
+        <testcase classname="tests/feature-marketplace-distribution.test.ts" name="Feature: Beat Marketplace &amp; Music Distribution &gt; Music Distribution &gt; GET /api/distribution/policies returns DSP submission policies" time="0.029082219">
+        </testcase>
+        <testcase classname="tests/feature-marketplace-distribution.test.ts" name="Feature: Beat Marketplace &amp; Music Distribution &gt; Music Distribution &gt; POST /api/distribution/releases rejects a draft without a title" time="0.03243668">
+        </testcase>
+        <testcase classname="tests/feature-marketplace-distribution.test.ts" name="Feature: Beat Marketplace &amp; Music Distribution &gt; Music Distribution &gt; POST /api/distribution/releases creates a release" time="0.037467756">
+        </testcase>
+        <testcase classname="tests/feature-marketplace-distribution.test.ts" name="Feature: Beat Marketplace &amp; Music Distribution &gt; Music Distribution &gt; GET /api/distribution/releases/:id retrieves release" time="0.065525911">
+        </testcase>
+        <testcase classname="tests/feature-marketplace-distribution.test.ts" name="Feature: Beat Marketplace &amp; Music Distribution &gt; Music Distribution &gt; PATCH /api/distribution/releases/:id updates release metadata" time="0.089906863">
+        </testcase>
+        <testcase classname="tests/feature-marketplace-distribution.test.ts" name="Feature: Beat Marketplace &amp; Music Distribution &gt; Music Distribution &gt; GET /api/distribution/releases/:id/status gets release status" time="0.045176393">
+        </testcase>
+        <testcase classname="tests/feature-marketplace-distribution.test.ts" name="Feature: Beat Marketplace &amp; Music Distribution &gt; Music Distribution &gt; GET /api/distribution/hyperfollow returns HyperFollow pages" time="0.038591278">
+        </testcase>
+        <testcase classname="tests/feature-marketplace-distribution.test.ts" name="Feature: Beat Marketplace &amp; Music Distribution &gt; Music Distribution &gt; POST /api/distribution/validate validates release data" time="0.039504202">
+        </testcase>
+        <testcase classname="tests/feature-marketplace-distribution.test.ts" name="Feature: Beat Marketplace &amp; Music Distribution &gt; Music Distribution &gt; DELETE /api/distribution/releases/:id removes release" time="0.086244088">
+        </testcase>
+        <testcase classname="tests/feature-marketplace-distribution.test.ts" name="Feature: Beat Marketplace &amp; Music Distribution &gt; Music Distribution &gt; GET /api/distribution/releases without auth → 401" time="0.038734489">
+        </testcase>
+        <testcase classname="tests/feature-marketplace-distribution.test.ts" name="Feature: Beat Marketplace &amp; Music Distribution &gt; Royalties &gt; GET /api/royalties/summary returns royalty summary" time="0.044618932">
+        </testcase>
+        <testcase classname="tests/feature-marketplace-distribution.test.ts" name="Feature: Beat Marketplace &amp; Music Distribution &gt; Royalties &gt; GET /api/royalties returns royalty records" time="0.080330377">
+        </testcase>
+        <testcase classname="tests/feature-marketplace-distribution.test.ts" name="Feature: Beat Marketplace &amp; Music Distribution &gt; Royalties &gt; GET /api/royalties/platform-breakdown returns per-platform breakdown" time="0.030936589">
+        </testcase>
+        <testcase classname="tests/feature-marketplace-distribution.test.ts" name="Feature: Beat Marketplace &amp; Music Distribution &gt; Royalties &gt; GET /api/royalties/top-tracks returns top earning tracks" time="0.033032499">
+        </testcase>
+        <testcase classname="tests/feature-marketplace-distribution.test.ts" name="Feature: Beat Marketplace &amp; Music Distribution &gt; Royalties &gt; GET /api/royalties/splits returns split configurations" time="0.032452716">
+        </testcase>
+        <testcase classname="tests/feature-marketplace-distribution.test.ts" name="Feature: Beat Marketplace &amp; Music Distribution &gt; Royalties &gt; GET /api/royalties/forecast returns earnings forecast" time="0.038382672">
+        </testcase>
+        <testcase classname="tests/feature-marketplace-distribution.test.ts" name="Feature: Beat Marketplace &amp; Music Distribution &gt; Royalties &gt; GET /api/royalties without auth → 401" time="0.024908277">
+        </testcase>
+        <testcase classname="tests/feature-marketplace-distribution.test.ts" name="Feature: Beat Marketplace &amp; Music Distribution &gt; Money loop: sale triggers royalty records &gt; POST /api/marketplace/checkout/initiate → 200 or 402 (Stripe gated)" time="0.075806556">
+        </testcase>
+        <testcase classname="tests/feature-marketplace-distribution.test.ts" name="Feature: Beat Marketplace &amp; Music Distribution &gt; Money loop: sale triggers royalty records &gt; GET /api/royalties/statements returns statements list" time="0.079830296">
+        </testcase>
+        <testcase classname="tests/feature-marketplace-distribution.test.ts" name="Feature: Beat Marketplace &amp; Music Distribution &gt; Money loop: sale triggers royalty records &gt; GET /api/royalties/transactions returns transactions list" time="0.029951614">
+        </testcase>
+    </testsuite>
+    <testsuite name="tests/feature-press-pitching-ar.test.ts" timestamp="2026-11-07T00:34:34.178Z" hostname="repl" tests="35" failures="0" errors="0" skipped="0" time="2.323351796">
+        <testcase classname="tests/feature-press-pitching-ar.test.ts" name="Feature: Press Kit, Venues, Pitching, Radio, Label Submissions &gt; setup: register and login test user" time="0.858047759">
+        </testcase>
+        <testcase classname="tests/feature-press-pitching-ar.test.ts" name="Feature: Press Kit, Venues, Pitching, Radio, Label Submissions &gt; Press Kit &gt; GET /api/press-kit returns press kit (empty on new account)" time="0.031224229">
+        </testcase>
+        <testcase classname="tests/feature-press-pitching-ar.test.ts" name="Feature: Press Kit, Venues, Pitching, Radio, Label Submissions &gt; Press Kit &gt; PUT /api/press-kit creates or updates press kit" time="0.033653255">
+        </testcase>
+        <testcase classname="tests/feature-press-pitching-ar.test.ts" name="Feature: Press Kit, Venues, Pitching, Radio, Label Submissions &gt; Press Kit &gt; GET /api/press-kit returns updated press kit" time="0.03903074">
+        </testcase>
+        <testcase classname="tests/feature-press-pitching-ar.test.ts" name="Feature: Press Kit, Venues, Pitching, Radio, Label Submissions &gt; Press Kit &gt; POST /api/press-kit/publish publishes the press kit" time="0.04288499">
+        </testcase>
+        <testcase classname="tests/feature-press-pitching-ar.test.ts" name="Feature: Press Kit, Venues, Pitching, Radio, Label Submissions &gt; Press Kit &gt; GET /api/press-kit without auth returns 401" time="0.028139072">
+        </testcase>
+        <testcase classname="tests/feature-press-pitching-ar.test.ts" name="Feature: Press Kit, Venues, Pitching, Radio, Label Submissions &gt; Venues / Booking CRM &gt; GET /api/venues returns empty list for new user" time="0.038648457">
+        </testcase>
+        <testcase classname="tests/feature-press-pitching-ar.test.ts" name="Feature: Press Kit, Venues, Pitching, Radio, Label Submissions &gt; Venues / Booking CRM &gt; GET /api/venues/stats returns venue statistics" time="0.074575532">
+        </testcase>
+        <testcase classname="tests/feature-press-pitching-ar.test.ts" name="Feature: Press Kit, Venues, Pitching, Radio, Label Submissions &gt; Venues / Booking CRM &gt; POST /api/venues creates a venue" time="0.04619888">
+        </testcase>
+        <testcase classname="tests/feature-press-pitching-ar.test.ts" name="Feature: Press Kit, Venues, Pitching, Radio, Label Submissions &gt; Venues / Booking CRM &gt; GET /api/venues/:id retrieves the created venue" time="0.034973179">
+        </testcase>
+        <testcase classname="tests/feature-press-pitching-ar.test.ts" name="Feature: Press Kit, Venues, Pitching, Radio, Label Submissions &gt; Venues / Booking CRM &gt; PUT /api/venues/:id updates the venue" time="0.085030257">
+        </testcase>
+        <testcase classname="tests/feature-press-pitching-ar.test.ts" name="Feature: Press Kit, Venues, Pitching, Radio, Label Submissions &gt; Venues / Booking CRM &gt; DELETE /api/venues/:id removes the venue" time="0.075612143">
+        </testcase>
+        <testcase classname="tests/feature-press-pitching-ar.test.ts" name="Feature: Press Kit, Venues, Pitching, Radio, Label Submissions &gt; Playlist Pitching &gt; GET /api/playlist-pitching/curators requires authentication" time="0.024329119">
+        </testcase>
+        <testcase classname="tests/feature-press-pitching-ar.test.ts" name="Feature: Press Kit, Venues, Pitching, Radio, Label Submissions &gt; Playlist Pitching &gt; GET /api/playlist-pitching/curators returns curators for a paid account" time="0.03156456">
+        </testcase>
+        <testcase classname="tests/feature-press-pitching-ar.test.ts" name="Feature: Press Kit, Venues, Pitching, Radio, Label Submissions &gt; Playlist Pitching &gt; GET /api/playlist-pitching returns list" time="0.031161862">
+        </testcase>
+        <testcase classname="tests/feature-press-pitching-ar.test.ts" name="Feature: Press Kit, Venues, Pitching, Radio, Label Submissions &gt; Playlist Pitching &gt; GET /api/playlist-pitching/stats returns statistics" time="0.053983297">
+        </testcase>
+        <testcase classname="tests/feature-press-pitching-ar.test.ts" name="Feature: Press Kit, Venues, Pitching, Radio, Label Submissions &gt; Playlist Pitching &gt; POST /api/playlist-pitching creates a pitch" time="0.043601453">
+        </testcase>
+        <testcase classname="tests/feature-press-pitching-ar.test.ts" name="Feature: Press Kit, Venues, Pitching, Radio, Label Submissions &gt; Playlist Pitching &gt; GET /api/playlist-pitching/:id retrieves pitch" time="0.03082173">
+        </testcase>
+        <testcase classname="tests/feature-press-pitching-ar.test.ts" name="Feature: Press Kit, Venues, Pitching, Radio, Label Submissions &gt; Playlist Pitching &gt; PATCH /api/playlist-pitching/:id/status updates status" time="0.045942033">
+        </testcase>
+        <testcase classname="tests/feature-press-pitching-ar.test.ts" name="Feature: Press Kit, Venues, Pitching, Radio, Label Submissions &gt; Playlist Pitching &gt; DELETE /api/playlist-pitching/:id removes pitch" time="0.045093552">
+        </testcase>
+        <testcase classname="tests/feature-press-pitching-ar.test.ts" name="Feature: Press Kit, Venues, Pitching, Radio, Label Submissions &gt; Radio Pitches &gt; GET /api/radio-pitches returns list" time="0.031450181">
+        </testcase>
+        <testcase classname="tests/feature-press-pitching-ar.test.ts" name="Feature: Press Kit, Venues, Pitching, Radio, Label Submissions &gt; Radio Pitches &gt; GET /api/radio-pitches/stats returns statistics" time="0.046159936">
+        </testcase>
+        <testcase classname="tests/feature-press-pitching-ar.test.ts" name="Feature: Press Kit, Venues, Pitching, Radio, Label Submissions &gt; Radio Pitches &gt; POST /api/radio-pitches creates a pitch" time="0.054907422">
+        </testcase>
+        <testcase classname="tests/feature-press-pitching-ar.test.ts" name="Feature: Press Kit, Venues, Pitching, Radio, Label Submissions &gt; Radio Pitches &gt; GET /api/radio-pitches/:id retrieves pitch" time="0.038068938">
+        </testcase>
+        <testcase classname="tests/feature-press-pitching-ar.test.ts" name="Feature: Press Kit, Venues, Pitching, Radio, Label Submissions &gt; Radio Pitches &gt; DELETE /api/radio-pitches/:id removes pitch" time="0.039858034">
+        </testcase>
+        <testcase classname="tests/feature-press-pitching-ar.test.ts" name="Feature: Press Kit, Venues, Pitching, Radio, Label Submissions &gt; Label Submissions (A&amp;R) &gt; GET /api/label-submissions returns list" time="0.04750461">
+        </testcase>
+        <testcase classname="tests/feature-press-pitching-ar.test.ts" name="Feature: Press Kit, Venues, Pitching, Radio, Label Submissions &gt; Label Submissions (A&amp;R) &gt; GET /api/label-submissions/stats returns statistics" time="0.044163265">
+        </testcase>
+        <testcase classname="tests/feature-press-pitching-ar.test.ts" name="Feature: Press Kit, Venues, Pitching, Radio, Label Submissions &gt; Label Submissions (A&amp;R) &gt; POST /api/label-submissions creates a submission" time="0.046025687">
+        </testcase>
+        <testcase classname="tests/feature-press-pitching-ar.test.ts" name="Feature: Press Kit, Venues, Pitching, Radio, Label Submissions &gt; Label Submissions (A&amp;R) &gt; GET /api/label-submissions/:id retrieves submission" time="0.036058264">
+        </testcase>
+        <testcase classname="tests/feature-press-pitching-ar.test.ts" name="Feature: Press Kit, Venues, Pitching, Radio, Label Submissions &gt; Label Submissions (A&amp;R) &gt; PATCH /api/label-submissions/:id/status updates status" time="0.059744765">
+        </testcase>
+        <testcase classname="tests/feature-press-pitching-ar.test.ts" name="Feature: Press Kit, Venues, Pitching, Radio, Label Submissions &gt; Label Submissions (A&amp;R) &gt; POST /api/label-submissions/:id/followup logs a followup" time="0.049599347">
+        </testcase>
+        <testcase classname="tests/feature-press-pitching-ar.test.ts" name="Feature: Press Kit, Venues, Pitching, Radio, Label Submissions &gt; Label Submissions (A&amp;R) &gt; DELETE /api/label-submissions/:id removes submission" time="0.049401509">
+        </testcase>
+        <testcase classname="tests/feature-press-pitching-ar.test.ts" name="Feature: Press Kit, Venues, Pitching, Radio, Label Submissions &gt; Auth guards (unauthenticated) &gt; GET /api/venues without auth → 401" time="0.029100126">
+        </testcase>
+        <testcase classname="tests/feature-press-pitching-ar.test.ts" name="Feature: Press Kit, Venues, Pitching, Radio, Label Submissions &gt; Auth guards (unauthenticated) &gt; GET /api/radio-pitches without auth → 401" time="0.027147334">
+        </testcase>
+        <testcase classname="tests/feature-press-pitching-ar.test.ts" name="Feature: Press Kit, Venues, Pitching, Radio, Label Submissions &gt; Auth guards (unauthenticated) &gt; GET /api/label-submissions without auth → 401" time="0.024887274">
+        </testcase>
+    </testsuite>
+    <testsuite name="tests/feature-revenue-merch.test.ts" timestamp="2026-11-07T00:34:34.186Z" hostname="repl" tests="37" failures="0" errors="0" skipped="0" time="2.540060384">
+        <testcase classname="tests/feature-revenue-merch.test.ts" name="Feature: Fan Campaigns, Revenue Intelligence, Budgets, Merch, Contracts &gt; setup: register and login test user" time="0.893563298">
+        </testcase>
+        <testcase classname="tests/feature-revenue-merch.test.ts" name="Feature: Fan Campaigns, Revenue Intelligence, Budgets, Merch, Contracts &gt; Fan Campaigns &gt; GET /api/fan-campaigns returns list" time="0.038171914">
+        </testcase>
+        <testcase classname="tests/feature-revenue-merch.test.ts" name="Feature: Fan Campaigns, Revenue Intelligence, Budgets, Merch, Contracts &gt; Fan Campaigns &gt; GET /api/fan-campaigns/stats returns statistics" time="0.057593874">
+        </testcase>
+        <testcase classname="tests/feature-revenue-merch.test.ts" name="Feature: Fan Campaigns, Revenue Intelligence, Budgets, Merch, Contracts &gt; Fan Campaigns &gt; POST /api/fan-campaigns creates a campaign" time="0.056270933">
+        </testcase>
+        <testcase classname="tests/feature-revenue-merch.test.ts" name="Feature: Fan Campaigns, Revenue Intelligence, Budgets, Merch, Contracts &gt; Fan Campaigns &gt; GET /api/fan-campaigns/:id retrieves campaign" time="0.055677618">
+        </testcase>
+        <testcase classname="tests/feature-revenue-merch.test.ts" name="Feature: Fan Campaigns, Revenue Intelligence, Budgets, Merch, Contracts &gt; Fan Campaigns &gt; PUT /api/fan-campaigns/:id updates campaign" time="0.091157985">
+        </testcase>
+        <testcase classname="tests/feature-revenue-merch.test.ts" name="Feature: Fan Campaigns, Revenue Intelligence, Budgets, Merch, Contracts &gt; Fan Campaigns &gt; DELETE /api/fan-campaigns/:id removes campaign" time="0.091697594">
+        </testcase>
+        <testcase classname="tests/feature-revenue-merch.test.ts" name="Feature: Fan Campaigns, Revenue Intelligence, Budgets, Merch, Contracts &gt; Fan Campaigns &gt; GET /api/fan-campaigns without auth → 401" time="0.024988129">
+        </testcase>
+        <testcase classname="tests/feature-revenue-merch.test.ts" name="Feature: Fan Campaigns, Revenue Intelligence, Budgets, Merch, Contracts &gt; Revenue Intelligence / Forecasting &gt; GET /api/revenue-forecast returns current forecast" time="0.030013035">
+        </testcase>
+        <testcase classname="tests/feature-revenue-merch.test.ts" name="Feature: Fan Campaigns, Revenue Intelligence, Budgets, Merch, Contracts &gt; Revenue Intelligence / Forecasting &gt; GET /api/revenue-forecast/projections returns projections" time="0.037391858">
+        </testcase>
+        <testcase classname="tests/feature-revenue-merch.test.ts" name="Feature: Fan Campaigns, Revenue Intelligence, Budgets, Merch, Contracts &gt; Revenue Intelligence / Forecasting &gt; GET /api/revenue-forecast/accuracy returns forecast accuracy metrics" time="0.031161583">
+        </testcase>
+        <testcase classname="tests/feature-revenue-merch.test.ts" name="Feature: Fan Campaigns, Revenue Intelligence, Budgets, Merch, Contracts &gt; Revenue Intelligence / Forecasting &gt; GET /api/revenue-forecast/rate returns growth rate" time="0.030070441">
+        </testcase>
+        <testcase classname="tests/feature-revenue-merch.test.ts" name="Feature: Fan Campaigns, Revenue Intelligence, Budgets, Merch, Contracts &gt; Revenue Intelligence / Forecasting &gt; POST /api/revenue-forecast/generate triggers AI forecast generation" time="0.05035188">
+        </testcase>
+        <testcase classname="tests/feature-revenue-merch.test.ts" name="Feature: Fan Campaigns, Revenue Intelligence, Budgets, Merch, Contracts &gt; Revenue Intelligence / Forecasting &gt; GET /api/revenue-forecast without auth → 401" time="0.02727453">
+        </testcase>
+        <testcase classname="tests/feature-revenue-merch.test.ts" name="Feature: Fan Campaigns, Revenue Intelligence, Budgets, Merch, Contracts &gt; Project Budgets &gt; GET /api/project-budgets returns list" time="0.032911648">
+        </testcase>
+        <testcase classname="tests/feature-revenue-merch.test.ts" name="Feature: Fan Campaigns, Revenue Intelligence, Budgets, Merch, Contracts &gt; Project Budgets &gt; POST /api/project-budgets creates a budget" time="0.033312522">
+        </testcase>
+        <testcase classname="tests/feature-revenue-merch.test.ts" name="Feature: Fan Campaigns, Revenue Intelligence, Budgets, Merch, Contracts &gt; Project Budgets &gt; GET /api/project-budgets/:id retrieves budget" time="0.048105236">
+        </testcase>
+        <testcase classname="tests/feature-revenue-merch.test.ts" name="Feature: Fan Campaigns, Revenue Intelligence, Budgets, Merch, Contracts &gt; Project Budgets &gt; GET /api/project-budgets/:id/items returns budget items" time="0.090745308">
+        </testcase>
+        <testcase classname="tests/feature-revenue-merch.test.ts" name="Feature: Fan Campaigns, Revenue Intelligence, Budgets, Merch, Contracts &gt; Project Budgets &gt; POST /api/project-budgets/:id/items adds a budget item" time="0.076859625">
+        </testcase>
+        <testcase classname="tests/feature-revenue-merch.test.ts" name="Feature: Fan Campaigns, Revenue Intelligence, Budgets, Merch, Contracts &gt; Project Budgets &gt; PUT /api/project-budgets/:id updates budget" time="0.091478422">
+        </testcase>
+        <testcase classname="tests/feature-revenue-merch.test.ts" name="Feature: Fan Campaigns, Revenue Intelligence, Budgets, Merch, Contracts &gt; Project Budgets &gt; DELETE /api/project-budgets/items/:id removes budget item" time="0.049434263">
+        </testcase>
+        <testcase classname="tests/feature-revenue-merch.test.ts" name="Feature: Fan Campaigns, Revenue Intelligence, Budgets, Merch, Contracts &gt; Project Budgets &gt; DELETE /api/project-budgets/:id removes budget" time="0.054154821">
+        </testcase>
+        <testcase classname="tests/feature-revenue-merch.test.ts" name="Feature: Fan Campaigns, Revenue Intelligence, Budgets, Merch, Contracts &gt; Project Budgets &gt; GET /api/project-budgets without auth → 401" time="0.026976326">
+        </testcase>
+        <testcase classname="tests/feature-revenue-merch.test.ts" name="Feature: Fan Campaigns, Revenue Intelligence, Budgets, Merch, Contracts &gt; Merch Store &gt; GET /api/merch returns merch list" time="0.033663755">
+        </testcase>
+        <testcase classname="tests/feature-revenue-merch.test.ts" name="Feature: Fan Campaigns, Revenue Intelligence, Budgets, Merch, Contracts &gt; Merch Store &gt; GET /api/merch/stats returns merch statistics" time="0.039113425">
+        </testcase>
+        <testcase classname="tests/feature-revenue-merch.test.ts" name="Feature: Fan Campaigns, Revenue Intelligence, Budgets, Merch, Contracts &gt; Merch Store &gt; GET /api/merch/orders returns order list" time="0.027669607">
+        </testcase>
+        <testcase classname="tests/feature-revenue-merch.test.ts" name="Feature: Fan Campaigns, Revenue Intelligence, Budgets, Merch, Contracts &gt; Merch Store &gt; POST /api/merch creates a merch item" time="0.034136611">
+        </testcase>
+        <testcase classname="tests/feature-revenue-merch.test.ts" name="Feature: Fan Campaigns, Revenue Intelligence, Budgets, Merch, Contracts &gt; Merch Store &gt; GET /api/merch/:id retrieves merch item" time="0.035609804">
+        </testcase>
+        <testcase classname="tests/feature-revenue-merch.test.ts" name="Feature: Fan Campaigns, Revenue Intelligence, Budgets, Merch, Contracts &gt; Merch Store &gt; PUT /api/merch/:id updates merch item" time="0.036013121">
+        </testcase>
+        <testcase classname="tests/feature-revenue-merch.test.ts" name="Feature: Fan Campaigns, Revenue Intelligence, Budgets, Merch, Contracts &gt; Merch Store &gt; DELETE /api/merch/:id removes merch item" time="0.03921313">
+        </testcase>
+        <testcase classname="tests/feature-revenue-merch.test.ts" name="Feature: Fan Campaigns, Revenue Intelligence, Budgets, Merch, Contracts &gt; Merch Store &gt; GET /api/merch without auth → 401" time="0.036424754">
+        </testcase>
+        <testcase classname="tests/feature-revenue-merch.test.ts" name="Feature: Fan Campaigns, Revenue Intelligence, Budgets, Merch, Contracts &gt; Contracts &gt; GET /api/contracts/templates returns contract templates" time="0.045443173">
+        </testcase>
+        <testcase classname="tests/feature-revenue-merch.test.ts" name="Feature: Fan Campaigns, Revenue Intelligence, Budgets, Merch, Contracts &gt; Contracts &gt; GET /api/contracts/my-contracts returns user contracts" time="0.028393732">
+        </testcase>
+        <testcase classname="tests/feature-revenue-merch.test.ts" name="Feature: Fan Campaigns, Revenue Intelligence, Budgets, Merch, Contracts &gt; Contracts &gt; GET /api/contracts/tax-rates is accessible with country param" time="0.03656396">
+        </testcase>
+        <testcase classname="tests/feature-revenue-merch.test.ts" name="Feature: Fan Campaigns, Revenue Intelligence, Budgets, Merch, Contracts &gt; Contracts &gt; GET /api/contracts/stats/summary returns contract statistics" time="0.031642551">
+        </testcase>
+        <testcase classname="tests/feature-revenue-merch.test.ts" name="Feature: Fan Campaigns, Revenue Intelligence, Budgets, Merch, Contracts &gt; Career Coach &gt; GET /api/career-coach/recommendations returns recommendations" time="0.052042808">
+        </testcase>
+        <testcase classname="tests/feature-revenue-merch.test.ts" name="Feature: Fan Campaigns, Revenue Intelligence, Budgets, Merch, Contracts &gt; Career Coach &gt; GET /api/career-coach/recommendations without auth → 401" time="0.038383464">
+        </testcase>
+    </testsuite>
+    <testsuite name="tests/feature-storefront-dns.test.ts" timestamp="2026-11-07T00:34:34.196Z" hostname="repl" tests="36" failures="0" errors="0" skipped="0" time="2.636169158">
+        <testcase classname="tests/feature-storefront-dns.test.ts" name="Feature: Storefront, Storefront Domains, DNS Manager, Domain Registrar &gt; setup: register and login test user" time="0.861072197">
+        </testcase>
+        <testcase classname="tests/feature-storefront-dns.test.ts" name="Feature: Storefront, Storefront Domains, DNS Manager, Domain Registrar &gt; Per-Artist Storefront &gt; GET /api/storefront/templates returns available templates (public)" time="0.039861558">
+        </testcase>
+        <testcase classname="tests/feature-storefront-dns.test.ts" name="Feature: Storefront, Storefront Domains, DNS Manager, Domain Registrar &gt; Per-Artist Storefront &gt; GET /api/storefront/my returns current user storefront" time="0.034696638">
+        </testcase>
+        <testcase classname="tests/feature-storefront-dns.test.ts" name="Feature: Storefront, Storefront Domains, DNS Manager, Domain Registrar &gt; Per-Artist Storefront &gt; GET /api/storefront/suggest-url returns URL suggestions" time="0.028867562">
+        </testcase>
+        <testcase classname="tests/feature-storefront-dns.test.ts" name="Feature: Storefront, Storefront Domains, DNS Manager, Domain Registrar &gt; Per-Artist Storefront &gt; GET /api/storefront/generate-slug generates a URL slug" time="0.028824129">
+        </testcase>
+        <testcase classname="tests/feature-storefront-dns.test.ts" name="Feature: Storefront, Storefront Domains, DNS Manager, Domain Registrar &gt; Per-Artist Storefront &gt; GET /api/storefront/check-domain checks domain availability (public)" time="0.025030243">
+        </testcase>
+        <testcase classname="tests/feature-storefront-dns.test.ts" name="Feature: Storefront, Storefront Domains, DNS Manager, Domain Registrar &gt; Per-Artist Storefront &gt; POST /api/storefront/create creates a storefront" time="0.037706471">
+        </testcase>
+        <testcase classname="tests/feature-storefront-dns.test.ts" name="Feature: Storefront, Storefront Domains, DNS Manager, Domain Registrar &gt; Per-Artist Storefront &gt; GET /api/storefront/:slug retrieves storefront by slug (public)" time="0.050211451">
+        </testcase>
+        <testcase classname="tests/feature-storefront-dns.test.ts" name="Feature: Storefront, Storefront Domains, DNS Manager, Domain Registrar &gt; Per-Artist Storefront &gt; GET /api/storefront/public/:slug retrieves public storefront" time="0.028423288">
+        </testcase>
+        <testcase classname="tests/feature-storefront-dns.test.ts" name="Feature: Storefront, Storefront Domains, DNS Manager, Domain Registrar &gt; Per-Artist Storefront &gt; PUT /api/storefront/:id/customize customizes the storefront" time="0.040498658">
+        </testcase>
+        <testcase classname="tests/feature-storefront-dns.test.ts" name="Feature: Storefront, Storefront Domains, DNS Manager, Domain Registrar &gt; Per-Artist Storefront &gt; PATCH /api/storefront/:id/publish publishes the storefront" time="0.071748606">
+        </testcase>
+        <testcase classname="tests/feature-storefront-dns.test.ts" name="Feature: Storefront, Storefront Domains, DNS Manager, Domain Registrar &gt; Per-Artist Storefront &gt; GET /api/storefront/:storefrontId/listings returns storefront listings" time="0.031497499">
+        </testcase>
+        <testcase classname="tests/feature-storefront-dns.test.ts" name="Feature: Storefront, Storefront Domains, DNS Manager, Domain Registrar &gt; Per-Artist Storefront &gt; GET /api/storefront/check-subdomain/:sub checks subdomain availability" time="0.028318746">
+        </testcase>
+        <testcase classname="tests/feature-storefront-dns.test.ts" name="Feature: Storefront, Storefront Domains, DNS Manager, Domain Registrar &gt; Per-Artist Storefront &gt; POST /api/storefront/generate-subdomain generates a subdomain" time="0.032961979">
+        </testcase>
+        <testcase classname="tests/feature-storefront-dns.test.ts" name="Feature: Storefront, Storefront Domains, DNS Manager, Domain Registrar &gt; Per-Artist Storefront &gt; DELETE /api/storefront/:id removes the storefront" time="0.035471281">
+        </testcase>
+        <testcase classname="tests/feature-storefront-dns.test.ts" name="Feature: Storefront, Storefront Domains, DNS Manager, Domain Registrar &gt; Per-Artist Storefront &gt; GET /api/storefront/my without auth → 401" time="0.039007554">
+        </testcase>
+        <testcase classname="tests/feature-storefront-dns.test.ts" name="Feature: Storefront, Storefront Domains, DNS Manager, Domain Registrar &gt; Storefront Domains &gt; GET /api/storefront-domains/search searches available domains (public)" time="0.427722387">
+        </testcase>
+        <testcase classname="tests/feature-storefront-dns.test.ts" name="Feature: Storefront, Storefront Domains, DNS Manager, Domain Registrar &gt; Storefront Domains &gt; POST /api/storefront-domains/managed/check checks managed domain availability (public)" time="0.030114669">
+        </testcase>
+        <testcase classname="tests/feature-storefront-dns.test.ts" name="Feature: Storefront, Storefront Domains, DNS Manager, Domain Registrar &gt; Storefront Domains &gt; POST /api/storefront-domains/platform/check checks platform domain (public)" time="0.038098681">
+        </testcase>
+        <testcase classname="tests/feature-storefront-dns.test.ts" name="Feature: Storefront, Storefront Domains, DNS Manager, Domain Registrar &gt; Storefront Domains &gt; GET /api/storefront-domains/dns/status returns DNS infrastructure status" time="0.043721787">
+        </testcase>
+        <testcase classname="tests/feature-storefront-dns.test.ts" name="Feature: Storefront, Storefront Domains, DNS Manager, Domain Registrar &gt; Storefront Domains &gt; GET /api/storefront-domains/propagation returns propagation info" time="0.03427032">
+        </testcase>
+        <testcase classname="tests/feature-storefront-dns.test.ts" name="Feature: Storefront, Storefront Domains, DNS Manager, Domain Registrar &gt; DNS Manager &gt; GET /api/dns-manager/info returns DNS system info (public)" time="0.028653895">
+        </testcase>
+        <testcase classname="tests/feature-storefront-dns.test.ts" name="Feature: Storefront, Storefront Domains, DNS Manager, Domain Registrar &gt; DNS Manager &gt; GET /api/dns-manager/usage returns DNS usage stats" time="0.029515566">
+        </testcase>
+        <testcase classname="tests/feature-storefront-dns.test.ts" name="Feature: Storefront, Storefront Domains, DNS Manager, Domain Registrar &gt; DNS Manager &gt; GET /api/dns-manager/zones returns user DNS zones" time="0.028554074">
+        </testcase>
+        <testcase classname="tests/feature-storefront-dns.test.ts" name="Feature: Storefront, Storefront Domains, DNS Manager, Domain Registrar &gt; DNS Manager &gt; POST /api/dns-manager/zones creates a DNS zone" time="0.036284811">
+        </testcase>
+        <testcase classname="tests/feature-storefront-dns.test.ts" name="Feature: Storefront, Storefront Domains, DNS Manager, Domain Registrar &gt; DNS Manager &gt; GET /api/dns-manager/zones/:zoneId/records lists zone records" time="0.033175217">
+        </testcase>
+        <testcase classname="tests/feature-storefront-dns.test.ts" name="Feature: Storefront, Storefront Domains, DNS Manager, Domain Registrar &gt; DNS Manager &gt; POST /api/dns-manager/zones/:zoneId/records adds a DNS record" time="0.042042017">
+        </testcase>
+        <testcase classname="tests/feature-storefront-dns.test.ts" name="Feature: Storefront, Storefront Domains, DNS Manager, Domain Registrar &gt; DNS Manager &gt; DELETE /api/dns-manager/zones/:zoneId removes zone" time="0.037154274">
+        </testcase>
+        <testcase classname="tests/feature-storefront-dns.test.ts" name="Feature: Storefront, Storefront Domains, DNS Manager, Domain Registrar &gt; DNS Manager &gt; GET /api/dns-manager/zones without auth → 401" time="0.03026836">
+        </testcase>
+        <testcase classname="tests/feature-storefront-dns.test.ts" name="Feature: Storefront, Storefront Domains, DNS Manager, Domain Registrar &gt; Domain Registrar &gt; GET /api/domain-registrar/config returns registrar configuration (public)" time="0.034837602">
+        </testcase>
+        <testcase classname="tests/feature-storefront-dns.test.ts" name="Feature: Storefront, Storefront Domains, DNS Manager, Domain Registrar &gt; Domain Registrar &gt; GET /api/domain-registrar/search searches domain availability (public)" time="0.20467117">
+        </testcase>
+        <testcase classname="tests/feature-storefront-dns.test.ts" name="Feature: Storefront, Storefront Domains, DNS Manager, Domain Registrar &gt; Domain Registrar &gt; GET /api/domain-registrar/whois/:domain returns WHOIS data (public)" time="0.026317955">
+        </testcase>
+        <testcase classname="tests/feature-storefront-dns.test.ts" name="Feature: Storefront, Storefront Domains, DNS Manager, Domain Registrar &gt; Domain Registrar &gt; GET /api/domain-registrar/my-domains returns user registered domains" time="0.032854764">
+        </testcase>
+        <testcase classname="tests/feature-storefront-dns.test.ts" name="Feature: Storefront, Storefront Domains, DNS Manager, Domain Registrar &gt; Domain Registrar &gt; GET /api/domain-registrar/contacts returns user contact profiles" time="0.02915007">
+        </testcase>
+        <testcase classname="tests/feature-storefront-dns.test.ts" name="Feature: Storefront, Storefront Domains, DNS Manager, Domain Registrar &gt; Domain Registrar &gt; GET /api/domain-registrar/my-domains without auth → 401" time="0.022804039">
+        </testcase>
+        <testcase classname="tests/feature-storefront-dns.test.ts" name="Feature: Storefront, Storefront Domains, DNS Manager, Domain Registrar &gt; Domain Registrar &gt; GET /api/domain-registrar/contacts without auth → 401" time="0.026100296">
+        </testcase>
+    </testsuite>
+    <testsuite name="tests/file-management.test.ts" timestamp="2026-11-07T00:34:34.203Z" hostname="repl" tests="20" failures="0" errors="0" skipped="0" time="3.07177907">
+        <testcase classname="tests/file-management.test.ts" name="File Management (Storage Round-Trip) &gt; 1. registers and logs in a test user" time="0.863515893">
+        </testcase>
+        <testcase classname="tests/file-management.test.ts" name="File Management (Storage Round-Trip) &gt; 2. rejects unauthenticated upload with 401 or 403" time="0.005858404">
+        </testcase>
+        <testcase classname="tests/file-management.test.ts" name="File Management (Storage Round-Trip) &gt; isolates private hybrid bytes on both download routes" time="0.854995703">
+        </testcase>
+        <testcase classname="tests/file-management.test.ts" name="File Management (Storage Round-Trip) &gt; 3. uploads a small audio file and receives a storage key" time="0.187235585">
+        </testcase>
+        <testcase classname="tests/file-management.test.ts" name="File Management (Storage Round-Trip) &gt; 4. downloads the uploaded file and verifies content-type and byte payload" time="0.049924379">
+        </testcase>
+        <testcase classname="tests/file-management.test.ts" name="File Management (Storage Round-Trip) &gt; 5. cross-user access to a file is rejected (403) or not found (404)" time="0.030192936">
+        </testcase>
+        <testcase classname="tests/file-management.test.ts" name="File Management (Storage Round-Trip) &gt; 6. deletes the uploaded file and returns success" time="0.034487677">
+        </testcase>
+        <testcase classname="tests/file-management.test.ts" name="File Management (Storage Round-Trip) &gt; 7. GET of a deleted file returns 404" time="0.036463811">
+        </testcase>
+        <testcase classname="tests/file-management.test.ts" name="File Management (Storage Round-Trip) &gt; 8. delete of a completely unknown file key returns 401, 403, or 404" time="0.030630974">
+        </testcase>
+        <testcase classname="tests/file-management.test.ts" name="File Management (Storage Round-Trip) &gt; 9. GET /api/storage/quota returns quota info when authenticated" time="0.037626608">
+        </testcase>
+        <testcase classname="tests/file-management.test.ts" name="File Management (Storage Round-Trip) &gt; 10a. double-encoded traversal in file key is rejected (never 200)" time="0.044074181">
+        </testcase>
+        <testcase classname="tests/file-management.test.ts" name="File Management (Storage Round-Trip) &gt; 10b. literal &apos;..&apos; segments in file key are rejected (never 200)" time="0.04627724">
+        </testcase>
+        <testcase classname="tests/file-management.test.ts" name="File Management (Storage Round-Trip) &gt; 10c. backslash and encoded-NUL keys are rejected (never 200)" time="0.081753034">
+        </testcase>
+        <testcase classname="tests/file-management.test.ts" name="File Management (Storage Round-Trip) &gt; 10d. restore of the deleted file makes it downloadable again" time="0.119300642">
+        </testcase>
+        <testcase classname="tests/file-management.test.ts" name="File Management (Storage Round-Trip) &gt; 10. GET /api/storage/quota returns 401 or 403 without authentication" time="0.029636891">
+        </testcase>
+        <testcase classname="tests/file-management.test.ts" name="File Management (Storage Round-Trip) &gt; access policy: GET /api/storage/quota rejects suspended session" time="0.114304852">
+        </testcase>
+        <testcase classname="tests/file-management.test.ts" name="File Management (Storage Round-Trip) &gt; access policy: GET /api/storage/quota rejects banned session" time="0.139273838">
+        </testcase>
+        <testcase classname="tests/file-management.test.ts" name="File Management (Storage Round-Trip) &gt; access policy: GET /api/storage/quota rejects mfa-required session" time="0.120517516">
+        </testcase>
+        <testcase classname="tests/file-management.test.ts" name="File Management (Storage Round-Trip) &gt; access policy: GET /api/storage/quota rejects trial-expired session" time="0.126229141">
+        </testcase>
+        <testcase classname="tests/file-management.test.ts" name="File Management (Storage Round-Trip) &gt; access policy: GET /api/storage/quota rejects subscription-expired session" time="0.115274442">
+        </testcase>
+    </testsuite>
+    <testsuite name="tests/health.test.ts" timestamp="2026-11-07T00:34:34.207Z" hostname="repl" tests="12" failures="0" errors="0" skipped="0" time="0.277127163">
+        <testcase classname="tests/health.test.ts" name="Liveness and Readiness Endpoints &gt; GET /health returns 200" time="0.039076026">
+        </testcase>
+        <testcase classname="tests/health.test.ts" name="Liveness and Readiness Endpoints &gt; GET /api/health returns 200" time="0.007632176">
+        </testcase>
+        <testcase classname="tests/health.test.ts" name="Liveness and Readiness Endpoints &gt; GET /ready reflects the actual admitted dependency set" time="0.005103114">
+        </testcase>
+        <testcase classname="tests/health.test.ts" name="Liveness and Readiness Endpoints &gt; GET /api/ready does not confuse a sealed fixture with full readiness" time="0.192066204">
+        </testcase>
+        <testcase classname="tests/health.test.ts" name="Liveness and Readiness Endpoints &gt; GET /healthz returns 200" time="0.013194182">
+        </testcase>
+        <testcase classname="tests/health.test.ts" name="Liveness and Readiness Endpoints &gt; GET /readyz uses the same truthful readiness contract" time="0.003136839">
+        </testcase>
+        <testcase classname="tests/health.test.ts" name="Liveness and Readiness Endpoints &gt; GET /api/ping returns ok:true" time="0.002596061">
+        </testcase>
+        <testcase classname="tests/health.test.ts" name="Liveness and Readiness Endpoints &gt; /startup returns startup phase details" time="0.00224196">
+        </testcase>
+        <testcase classname="tests/health.test.ts" name="Security Headers &gt; X-Content-Type-Options is nosniff" time="0.003574176">
+        </testcase>
+        <testcase classname="tests/health.test.ts" name="Security Headers &gt; X-Frame-Options is present" time="0.002452491">
+        </testcase>
+        <testcase classname="tests/health.test.ts" name="Security Headers &gt; X-XSS-Protection header is set" time="0.00211236">
+        </testcase>
+        <testcase classname="tests/health.test.ts" name="Security Headers &gt; Server header is absent or masked" time="0.001620084">
+        </testcase>
+    </testsuite>
+    <testsuite name="tests/paid-user-e2e.test.ts" timestamp="2026-11-07T00:34:34.209Z" hostname="repl" tests="79" failures="0" errors="0" skipped="4" time="11.297858129">
+        <testcase classname="tests/paid-user-e2e.test.ts" name="PAID USER END-TO-END INTEGRATION TESTS &gt; Phase 1: Account Creation &amp; Security Foundation &gt; should register successfully with strong password" time="0.595802117">
+        </testcase>
+        <testcase classname="tests/paid-user-e2e.test.ts" name="PAID USER END-TO-END INTEGRATION TESTS &gt; Phase 1: Account Creation &amp; Security Foundation &gt; should reject weak passwords" time="0.168659273">
+        </testcase>
+        <testcase classname="tests/paid-user-e2e.test.ts" name="PAID USER END-TO-END INTEGRATION TESTS &gt; Phase 1: Account Creation &amp; Security Foundation &gt; should prevent duplicate registration" time="0.102603707">
+        </testcase>
+        <testcase classname="tests/paid-user-e2e.test.ts" name="PAID USER END-TO-END INTEGRATION TESTS &gt; Phase 1: Account Creation &amp; Security Foundation &gt; should login with correct credentials" time="0.43741846">
+        </testcase>
+        <testcase classname="tests/paid-user-e2e.test.ts" name="PAID USER END-TO-END INTEGRATION TESTS &gt; Phase 1: Account Creation &amp; Security Foundation &gt; should reject login with wrong password" time="0.423250481">
+        </testcase>
+        <testcase classname="tests/paid-user-e2e.test.ts" name="PAID USER END-TO-END INTEGRATION TESTS &gt; Phase 1: Account Creation &amp; Security Foundation &gt; should provide CSRF token for session protection" time="0.063419744">
+        </testcase>
+        <testcase classname="tests/paid-user-e2e.test.ts" name="PAID USER END-TO-END INTEGRATION TESTS &gt; Phase 1: Account Creation &amp; Security Foundation &gt; should return authenticated user profile" time="0.043648085">
+        </testcase>
+        <testcase classname="tests/paid-user-e2e.test.ts" name="PAID USER END-TO-END INTEGRATION TESTS &gt; Phase 1: Account Creation &amp; Security Foundation &gt; should have security headers in response" time="0.040154604">
+        </testcase>
+        <testcase classname="tests/paid-user-e2e.test.ts" name="PAID USER END-TO-END INTEGRATION TESTS &gt; Phase 2: Profile Management (XSS-safe) &gt; should update profile with clean data" time="0.043577979">
+        </testcase>
+        <testcase classname="tests/paid-user-e2e.test.ts" name="PAID USER END-TO-END INTEGRATION TESTS &gt; Phase 2: Profile Management (XSS-safe) &gt; should strip HTML tags from profile fields (XSS protection)" time="0.08848657">
+        </testcase>
+        <testcase classname="tests/paid-user-e2e.test.ts" name="PAID USER END-TO-END INTEGRATION TESTS &gt; Phase 2: Profile Management (XSS-safe) &gt; should reject excessively long profile data" time="0.062999237">
+        </testcase>
+        <testcase classname="tests/paid-user-e2e.test.ts" name="PAID USER END-TO-END INTEGRATION TESTS &gt; Phase 3: Billing &amp; Stripe Payment Infrastructure &gt; should list available subscription plans with pricing" time="0.058037746">
+        </testcase>
+        <testcase classname="tests/paid-user-e2e.test.ts" name="PAID USER END-TO-END INTEGRATION TESTS &gt; Phase 3: Billing &amp; Stripe Payment Infrastructure &gt; should show current subscription status with full plan details" time="0.074003024">
+        </testcase>
+        <testcase classname="tests/paid-user-e2e.test.ts" name="PAID USER END-TO-END INTEGRATION TESTS &gt; Phase 3: Billing &amp; Stripe Payment Infrastructure &gt; should create real Stripe checkout session with checkout URL" time="0">
+            <skipped/>
+        </testcase>
+        <testcase classname="tests/paid-user-e2e.test.ts" name="PAID USER END-TO-END INTEGRATION TESTS &gt; Phase 3: Billing &amp; Stripe Payment Infrastructure &gt; should create checkout sessions for all plan types" time="0">
+            <skipped/>
+        </testcase>
+        <testcase classname="tests/paid-user-e2e.test.ts" name="PAID USER END-TO-END INTEGRATION TESTS &gt; Phase 3: Billing &amp; Stripe Payment Infrastructure &gt; reports missing Stripe configuration without claiming a checkout session was created" time="0.216073349">
+        </testcase>
+        <testcase classname="tests/paid-user-e2e.test.ts" name="PAID USER END-TO-END INTEGRATION TESTS &gt; Phase 3: Billing &amp; Stripe Payment Infrastructure &gt; should reject invalid plan IDs" time="0.069497835">
+        </testcase>
+        <testcase classname="tests/paid-user-e2e.test.ts" name="PAID USER END-TO-END INTEGRATION TESTS &gt; Phase 3: Billing &amp; Stripe Payment Infrastructure &gt; should return billing history as array" time="0.072970101">
+        </testcase>
+        <testcase classname="tests/paid-user-e2e.test.ts" name="PAID USER END-TO-END INTEGRATION TESTS &gt; Phase 3: Billing &amp; Stripe Payment Infrastructure &gt; should return payment method info" time="0.063513703">
+        </testcase>
+        <testcase classname="tests/paid-user-e2e.test.ts" name="PAID USER END-TO-END INTEGRATION TESTS &gt; Phase 3: Billing &amp; Stripe Payment Infrastructure &gt; should handle cancel-subscription gracefully when no subscription" time="0.069348868">
+        </testcase>
+        <testcase classname="tests/paid-user-e2e.test.ts" name="PAID USER END-TO-END INTEGRATION TESTS &gt; Phase 3: Billing &amp; Stripe Payment Infrastructure &gt; should map Stripe error codes to user-friendly messages" time="0.000743343">
+        </testcase>
+        <testcase classname="tests/paid-user-e2e.test.ts" name="PAID USER END-TO-END INTEGRATION TESTS &gt; Phase 4: Stripe Webhook Security &amp; Event Handling &gt; should reject webhooks without signature" time="0.04217621">
+        </testcase>
+        <testcase classname="tests/paid-user-e2e.test.ts" name="PAID USER END-TO-END INTEGRATION TESTS &gt; Phase 4: Stripe Webhook Security &amp; Event Handling &gt; should reject webhooks with invalid signature" time="0.038330662">
+        </testcase>
+        <testcase classname="tests/paid-user-e2e.test.ts" name="PAID USER END-TO-END INTEGRATION TESTS &gt; Phase 4: Stripe Webhook Security &amp; Event Handling &gt; should reject forged payment events (no valid Stripe signature)" time="0.052685381">
+        </testcase>
+        <testcase classname="tests/paid-user-e2e.test.ts" name="PAID USER END-TO-END INTEGRATION TESTS &gt; Phase 4: Stripe Webhook Security &amp; Event Handling &gt; should handle all critical webhook event types" time="0.000432442">
+        </testcase>
+        <testcase classname="tests/paid-user-e2e.test.ts" name="PAID USER END-TO-END INTEGRATION TESTS &gt; Phase 5: Distribution - Core Paid Feature &gt; should list live distribution platforms from a connected Too Lost account" time="0">
+            <skipped/>
+        </testcase>
+        <testcase classname="tests/paid-user-e2e.test.ts" name="PAID USER END-TO-END INTEGRATION TESTS &gt; Phase 5: Distribution - Core Paid Feature &gt; requires a distributor connection before live platform discovery" time="0.041968199">
+        </testcase>
+        <testcase classname="tests/paid-user-e2e.test.ts" name="PAID USER END-TO-END INTEGRATION TESTS &gt; Phase 5: Distribution - Core Paid Feature &gt; should list user releases" time="0.036792955">
+        </testcase>
+        <testcase classname="tests/paid-user-e2e.test.ts" name="PAID USER END-TO-END INTEGRATION TESTS &gt; Phase 5: Distribution - Core Paid Feature &gt; should get earnings breakdown" time="0.035781849">
+        </testcase>
+        <testcase classname="tests/paid-user-e2e.test.ts" name="PAID USER END-TO-END INTEGRATION TESTS &gt; Phase 5: Distribution - Core Paid Feature &gt; should get HyperFollow links" time="0.034183998">
+        </testcase>
+        <testcase classname="tests/paid-user-e2e.test.ts" name="PAID USER END-TO-END INTEGRATION TESTS &gt; Phase 5: Distribution - Core Paid Feature &gt; should create a distribution release with valid data" time="0.04055085">
+        </testcase>
+        <testcase classname="tests/paid-user-e2e.test.ts" name="PAID USER END-TO-END INTEGRATION TESTS &gt; Phase 5: Distribution - Core Paid Feature &gt; should reject a release draft without its required title" time="0.039495738">
+        </testcase>
+        <testcase classname="tests/paid-user-e2e.test.ts" name="PAID USER END-TO-END INTEGRATION TESTS &gt; Phase 6: Social Media Management &gt; should list social connections" time="0.041274694">
+        </testcase>
+        <testcase classname="tests/paid-user-e2e.test.ts" name="PAID USER END-TO-END INTEGRATION TESTS &gt; Phase 6: Social Media Management &gt; should schedule a post" time="0.500631221">
+        </testcase>
+        <testcase classname="tests/paid-user-e2e.test.ts" name="PAID USER END-TO-END INTEGRATION TESTS &gt; Phase 6: Social Media Management &gt; should list calendar posts" time="0.050551359">
+        </testcase>
+        <testcase classname="tests/paid-user-e2e.test.ts" name="PAID USER END-TO-END INTEGRATION TESTS &gt; Phase 6: Social Media Management &gt; should get generated hashtags without fabricated provider metrics" time="0">
+            <skipped/>
+        </testcase>
+        <testcase classname="tests/paid-user-e2e.test.ts" name="PAID USER END-TO-END INTEGRATION TESTS &gt; Phase 6: Social Media Management &gt; reports missing hashtag generation as a retryable503" time="0.060726502">
+        </testcase>
+        <testcase classname="tests/paid-user-e2e.test.ts" name="PAID USER END-TO-END INTEGRATION TESTS &gt; Phase 6: Social Media Management &gt; should get social metrics" time="0.039736979">
+        </testcase>
+        <testcase classname="tests/paid-user-e2e.test.ts" name="PAID USER END-TO-END INTEGRATION TESTS &gt; Phase 6: Social Media Management &gt; should generate AI content" time="0.037336425">
+        </testcase>
+        <testcase classname="tests/paid-user-e2e.test.ts" name="PAID USER END-TO-END INTEGRATION TESTS &gt; Phase 6: Social Media Management &gt; should get inbox messages" time="0.051936799">
+        </testcase>
+        <testcase classname="tests/paid-user-e2e.test.ts" name="PAID USER END-TO-END INTEGRATION TESTS &gt; Phase 6: Social Media Management &gt; should handle connect for unsupported platform" time="0.062236284">
+        </testcase>
+        <testcase classname="tests/paid-user-e2e.test.ts" name="PAID USER END-TO-END INTEGRATION TESTS &gt; Phase 6: Social Media Management &gt; should handle connect for Meta platform (covers Facebook+Instagram)" time="0.037454154">
+        </testcase>
+        <testcase classname="tests/paid-user-e2e.test.ts" name="PAID USER END-TO-END INTEGRATION TESTS &gt; Phase 7: Studio &amp; Music Production &gt; should list projects" time="0.051857749">
+        </testcase>
+        <testcase classname="tests/paid-user-e2e.test.ts" name="PAID USER END-TO-END INTEGRATION TESTS &gt; Phase 7: Studio &amp; Music Production &gt; should get sample library" time="0.043259943">
+        </testcase>
+        <testcase classname="tests/paid-user-e2e.test.ts" name="PAID USER END-TO-END INTEGRATION TESTS &gt; Phase 7: Studio &amp; Music Production &gt; should get project templates" time="0.040328086">
+        </testcase>
+        <testcase classname="tests/paid-user-e2e.test.ts" name="PAID USER END-TO-END INTEGRATION TESTS &gt; Phase 8: Analytics Dashboard &gt; should get analytics dashboard data" time="0.051119773">
+        </testcase>
+        <testcase classname="tests/paid-user-e2e.test.ts" name="PAID USER END-TO-END INTEGRATION TESTS &gt; Phase 8: Analytics Dashboard &gt; should handle analytics date range filtering" time="0.039857638">
+        </testcase>
+        <testcase classname="tests/paid-user-e2e.test.ts" name="PAID USER END-TO-END INTEGRATION TESTS &gt; Phase 9: AI Career Coach &gt; should read an owned saved career recommendation without claiming model generation" time="0.060172679">
+        </testcase>
+        <testcase classname="tests/paid-user-e2e.test.ts" name="PAID USER END-TO-END INTEGRATION TESTS &gt; Phase 9: AI Career Coach &gt; should get career goals" time="0.04903989">
+        </testcase>
+        <testcase classname="tests/paid-user-e2e.test.ts" name="PAID USER END-TO-END INTEGRATION TESTS &gt; Phase 10: Contracts &amp; Collaboration &gt; should list contract templates" time="0.041216746">
+        </testcase>
+        <testcase classname="tests/paid-user-e2e.test.ts" name="PAID USER END-TO-END INTEGRATION TESTS &gt; Phase 10: Contracts &amp; Collaboration &gt; should list collaboration connections" time="0.031516845">
+        </testcase>
+        <testcase classname="tests/paid-user-e2e.test.ts" name="PAID USER END-TO-END INTEGRATION TESTS &gt; Phase 11: Search Functionality &gt; should perform unified search with results" time="0.046437207">
+        </testcase>
+        <testcase classname="tests/paid-user-e2e.test.ts" name="PAID USER END-TO-END INTEGRATION TESTS &gt; Phase 11: Search Functionality &gt; should handle empty search gracefully" time="0.036600495">
+        </testcase>
+        <testcase classname="tests/paid-user-e2e.test.ts" name="PAID USER END-TO-END INTEGRATION TESTS &gt; Phase 11: Search Functionality &gt; should search with type filter" time="0.061827286">
+        </testcase>
+        <testcase classname="tests/paid-user-e2e.test.ts" name="PAID USER END-TO-END INTEGRATION TESTS &gt; Phase 11: Search Functionality &gt; should get search suggestions" time="0.039444353">
+        </testcase>
+        <testcase classname="tests/paid-user-e2e.test.ts" name="PAID USER END-TO-END INTEGRATION TESTS &gt; Phase 12: Security Hardening Verification &gt; should reject SQL injection in login" time="0.405932476">
+        </testcase>
+        <testcase classname="tests/paid-user-e2e.test.ts" name="PAID USER END-TO-END INTEGRATION TESTS &gt; Phase 12: Security Hardening Verification &gt; should reject SQL injection in search" time="0.062973789">
+        </testcase>
+        <testcase classname="tests/paid-user-e2e.test.ts" name="PAID USER END-TO-END INTEGRATION TESTS &gt; Phase 12: Security Hardening Verification &gt; should reject malformed JSON body" time="0.016540332">
+        </testcase>
+        <testcase classname="tests/paid-user-e2e.test.ts" name="PAID USER END-TO-END INTEGRATION TESTS &gt; Phase 12: Security Hardening Verification &gt; should return 404 for non-existent API routes" time="0.039725023">
+        </testcase>
+        <testcase classname="tests/paid-user-e2e.test.ts" name="PAID USER END-TO-END INTEGRATION TESTS &gt; Phase 12: Security Hardening Verification &gt; should prevent path traversal attempts" time="0.035181467">
+        </testcase>
+        <testcase classname="tests/paid-user-e2e.test.ts" name="PAID USER END-TO-END INTEGRATION TESTS &gt; Phase 12: Security Hardening Verification &gt; should not leak stack traces in production errors" time="0.046490749">
+        </testcase>
+        <testcase classname="tests/paid-user-e2e.test.ts" name="PAID USER END-TO-END INTEGRATION TESTS &gt; Phase 12: Security Hardening Verification &gt; should not expose sensitive headers" time="0.038444679">
+        </testcase>
+        <testcase classname="tests/paid-user-e2e.test.ts" name="PAID USER END-TO-END INTEGRATION TESTS &gt; Phase 13: Rate Limiting Verification &gt; should rate limit failed login attempts" time="4.032809455">
+        </testcase>
+        <testcase classname="tests/paid-user-e2e.test.ts" name="PAID USER END-TO-END INTEGRATION TESTS &gt; Phase 13: Rate Limiting Verification &gt; counts authenticated billing requests in the actual configured limiter" time="0.255771432">
+        </testcase>
+        <testcase classname="tests/paid-user-e2e.test.ts" name="PAID USER END-TO-END INTEGRATION TESTS &gt; Phase 14: Email Service Verification &gt; should have email service properly structured" time="0.055004255">
+        </testcase>
+        <testcase classname="tests/paid-user-e2e.test.ts" name="PAID USER END-TO-END INTEGRATION TESTS &gt; Phase 15: OAuth Flow Structure Verification &gt; returns OAuth URLs only when configured and reports missing configuration explicitly" time="0.467696399">
+        </testcase>
+        <testcase classname="tests/paid-user-e2e.test.ts" name="PAID USER END-TO-END INTEGRATION TESTS &gt; Phase 15: OAuth Flow Structure Verification &gt; should handle OAuth callback with missing code" time="0.058192542">
+        </testcase>
+        <testcase classname="tests/paid-user-e2e.test.ts" name="PAID USER END-TO-END INTEGRATION TESTS &gt; Phase 15: OAuth Flow Structure Verification &gt; should handle OAuth callback with invalid state" time="0.058574552">
+        </testcase>
+        <testcase classname="tests/paid-user-e2e.test.ts" name="PAID USER END-TO-END INTEGRATION TESTS &gt; Phase 16: Error Handling &amp; Graceful Degradation &gt; should return structured error responses with helpful messages" time="0.074685735">
+        </testcase>
+        <testcase classname="tests/paid-user-e2e.test.ts" name="PAID USER END-TO-END INTEGRATION TESTS &gt; Phase 16: Error Handling &amp; Graceful Degradation &gt; should handle concurrent requests without crashes" time="0.313322961">
+        </testcase>
+        <testcase classname="tests/paid-user-e2e.test.ts" name="PAID USER END-TO-END INTEGRATION TESTS &gt; Phase 16: Error Handling &amp; Graceful Degradation &gt; should handle very large request bodies gracefully" time="0.046899322">
+        </testcase>
+        <testcase classname="tests/paid-user-e2e.test.ts" name="PAID USER END-TO-END INTEGRATION TESTS &gt; Phase 17: Notifications &amp; Real-Time &gt; should get notifications when authenticated" time="0.06779832">
+        </testcase>
+        <testcase classname="tests/paid-user-e2e.test.ts" name="PAID USER END-TO-END INTEGRATION TESTS &gt; Phase 17: Notifications &amp; Real-Time &gt; should reject notifications without auth" time="0.029401358">
+        </testcase>
+        <testcase classname="tests/paid-user-e2e.test.ts" name="PAID USER END-TO-END INTEGRATION TESTS &gt; Phase 18: Data Integrity &amp; Isolation &gt; should not expose other users data in profile" time="0.042664343">
+        </testcase>
+        <testcase classname="tests/paid-user-e2e.test.ts" name="PAID USER END-TO-END INTEGRATION TESTS &gt; Phase 18: Data Integrity &amp; Isolation &gt; should scope social posts to authenticated user" time="0.037275061">
+        </testcase>
+        <testcase classname="tests/paid-user-e2e.test.ts" name="PAID USER END-TO-END INTEGRATION TESTS &gt; Phase 19: Session &amp; Logout Security &gt; should logout successfully" time="0.040121481">
+        </testcase>
+        <testcase classname="tests/paid-user-e2e.test.ts" name="PAID USER END-TO-END INTEGRATION TESTS &gt; Phase 19: Session &amp; Logout Security &gt; should deny access after logout (no cookies)" time="0.057702016">
+        </testcase>
+        <testcase classname="tests/paid-user-e2e.test.ts" name="PAID USER END-TO-END INTEGRATION TESTS &gt; Phase 19: Session &amp; Logout Security &gt; should deny access to billing after logout" time="0.048886263">
+        </testcase>
+        <testcase classname="tests/paid-user-e2e.test.ts" name="PAID USER END-TO-END INTEGRATION TESTS &gt; Phase 19: Session &amp; Logout Security &gt; should deny access to distribution after logout" time="0.034828714">
+        </testcase>
+    </testsuite>
+    <testsuite name="tests/security-hardening.test.ts" timestamp="2026-11-07T00:34:34.226Z" hostname="repl" tests="24" failures="0" errors="0" skipped="0" time="17.607563092">
+        <testcase classname="tests/security-hardening.test.ts" name="Authentication Guards &gt; GET /api/auth/notifications requires authentication (401)" time="0.092523913">
+        </testcase>
+        <testcase classname="tests/security-hardening.test.ts" name="Authentication Guards &gt; GET /api/auth/preferences requires authentication (401)" time="0.04052917">
+        </testcase>
+        <testcase classname="tests/security-hardening.test.ts" name="Authentication Guards &gt; GET /api/auth/sessions requires authentication (401)" time="0.029827675">
+        </testcase>
+        <testcase classname="tests/security-hardening.test.ts" name="Authentication Guards &gt; GET /api/auth/login-history requires authentication (401)" time="0.029300102">
+        </testcase>
+        <testcase classname="tests/security-hardening.test.ts" name="Authentication Guards &gt; GET /api/marketplace/my-beats requires authentication (401)" time="0.028618479">
+        </testcase>
+        <testcase classname="tests/security-hardening.test.ts" name="Authentication Guards &gt; GET /api/distribution/releases requires authentication (401)" time="0.0310465">
+        </testcase>
+        <testcase classname="tests/security-hardening.test.ts" name="Authentication Guards &gt; GET /api/analytics/overview requires authentication (401)" time="0.027020893">
+        </testcase>
+        <testcase classname="tests/security-hardening.test.ts" name="Authentication Guards &gt; GET /api/admin/users requires authentication (401)" time="0.034840806">
+        </testcase>
+        <testcase classname="tests/security-hardening.test.ts" name="Input Validation — Auth Endpoints &gt; register rejects missing email" time="0.066388679">
+        </testcase>
+        <testcase classname="tests/security-hardening.test.ts" name="Input Validation — Auth Endpoints &gt; register rejects missing password" time="0.080046694">
+        </testcase>
+        <testcase classname="tests/security-hardening.test.ts" name="Input Validation — Auth Endpoints &gt; register rejects malformed email" time="0.073944551">
+        </testcase>
+        <testcase classname="tests/security-hardening.test.ts" name="Input Validation — Auth Endpoints &gt; login rejects empty credentials" time="0.068154441">
+        </testcase>
+        <testcase classname="tests/security-hardening.test.ts" name="Input Validation — Auth Endpoints &gt; login returns 401 for wrong password" time="0.352957231">
+        </testcase>
+        <testcase classname="tests/security-hardening.test.ts" name="Input Validation — Auth Endpoints &gt; does not expose password in user object after register" time="0.415692962">
+        </testcase>
+        <testcase classname="tests/security-hardening.test.ts" name="CSRF Protection &gt; login without the CSRF cookie/header is rejected before credentials are checked" time="0.028366428">
+        </testcase>
+        <testcase classname="tests/security-hardening.test.ts" name="CSRF Protection &gt; health endpoints are not blocked by CSRF" time="0.002357805">
+        </testcase>
+        <testcase classname="tests/security-hardening.test.ts" name="Rate Limiting &gt; login endpoint has rate limit headers on response" time="0.354577634">
+        </testcase>
+        <testcase classname="tests/security-hardening.test.ts" name="Sliding-Window — Algorithm Unit Tests (mock Redis, fallback path) &gt; allows exactly `limit` requests and blocks the (limit+1)th immediately" time="2.995731122">
+        </testcase>
+        <testcase classname="tests/security-hardening.test.ts" name="Sliding-Window — Algorithm Unit Tests (mock Redis, fallback path) &gt; boundary-burst: filling the window then firing immediately blocks ALL extra requests" time="0.000800484">
+        </testcase>
+        <testcase classname="tests/security-hardening.test.ts" name="Sliding-Window — Algorithm Unit Tests (mock Redis, fallback path) &gt; allows requests again after the sliding window has fully elapsed" time="0.252582206">
+        </testcase>
+        <testcase classname="tests/security-hardening.test.ts" name="Sliding-Window — Algorithm Unit Tests (mock Redis, fallback path) &gt; boundary-burst at exact window boundary: limit at end of window A, limit at start of window B → all blocked" time="0.002943869">
+        </testcase>
+        <testcase classname="tests/security-hardening.test.ts" name="Sliding-Window — Algorithm Unit Tests (mock Redis, fallback path) &gt; remaining count decrements accurately as requests consume the budget" time="0.000975906">
+        </testcase>
+        <testcase classname="tests/security-hardening.test.ts" name="Sliding-Window — Real PDIM Integration &gt; allows limit requests, blocks limit+1th, recovers after window expires" time="6.068344497">
+        </testcase>
+        <testcase classname="tests/security-hardening.test.ts" name="Sliding-Window — Real PDIM Integration &gt; boundary-burst: burst fired before window expiry is blocked; request after expiry passes" time="6.524806053">
+        </testcase>
+    </testsuite>
+    <testsuite name="tests/webhook-security.test.ts" timestamp="2026-11-07T00:34:34.231Z" hostname="repl" tests="5" failures="0" errors="0" skipped="0" time="0.098379163">
+        <testcase classname="tests/webhook-security.test.ts" name="Stripe Webhook Security &gt; rejects request without Stripe-Signature header (400)" time="0.056014502">
+        </testcase>
+        <testcase classname="tests/webhook-security.test.ts" name="Stripe Webhook Security &gt; rejects request with invalid Stripe-Signature (400)" time="0.00638916">
+        </testcase>
+        <testcase classname="tests/webhook-security.test.ts" name="Stripe Webhook Security &gt; webhook endpoint exists (not 404)" time="0.004957405">
+        </testcase>
+        <testcase classname="tests/webhook-security.test.ts" name="Audit Log Endpoint Security &gt; GET /api/audit-logs requires admin auth" time="0.025342337">
+        </testcase>
+        <testcase classname="tests/webhook-security.test.ts" name="Metrics Endpoint Security &gt; GET /metrics requires auth" time="0.003485383">
+        </testcase>
+    </testsuite>
+    <testsuite name="tests/integration/maxcore-local-supervisor.integration.test.ts" timestamp="2026-11-07T00:34:34.232Z" hostname="repl" tests="2" failures="0" errors="0" skipped="0" time="12.203126463">
+        <testcase classname="tests/integration/maxcore-local-supervisor.integration.test.ts" name="MaxCore local subsystem (real spawn) &gt; launches real Python and storage and reports provider-aware generation readiness" time="12.185409861">
+        </testcase>
+        <testcase classname="tests/integration/maxcore-local-supervisor.integration.test.ts" name="MaxCore local subsystem (real spawn) &gt; stops cleanly and the port is released" time="0.005542173">
+        </testcase>
+    </testsuite>
+    <testsuite name="tests/unit/cache-cross-pod.test.ts" timestamp="2026-11-07T00:34:34.233Z" hostname="repl" tests="7" failures="0" errors="0" skipped="0" time="0.017207501">
+        <testcase classname="tests/unit/cache-cross-pod.test.ts" name="Cross-pod cache invalidation (PDIM polling simulation) &gt; PDIM pub/sub is unavailable — pollTick() is the cross-pod coordination mechanism" time="0.001887359">
+        </testcase>
+        <testcase classname="tests/unit/cache-cross-pod.test.ts" name="Cross-pod cache invalidation (PDIM polling simulation) &gt; pod A invalidateForUser → pod B bust-key check rejects stale L1 entry before poll" time="0.002875617">
+        </testcase>
+        <testcase classname="tests/unit/cache-cross-pod.test.ts" name="Cross-pod cache invalidation (PDIM polling simulation) &gt; pod A invalidatePattern → pod B pollTick() evicts matching pod B L1 entries" time="0.002188923">
+        </testcase>
+        <testcase classname="tests/unit/cache-cross-pod.test.ts" name="Cross-pod cache invalidation (PDIM polling simulation) &gt; seq counter increments on invalidation, waking pollers on other pods" time="0.001636659">
+        </testcase>
+        <testcase classname="tests/unit/cache-cross-pod.test.ts" name="Cross-pod cache invalidation (PDIM polling simulation) &gt; invalidatePattern writes &quot;{pattern}:{timestamp}&quot; event to PDIM list" time="0.001757637">
+        </testcase>
+        <testcase classname="tests/unit/cache-cross-pod.test.ts" name="Cross-pod cache invalidation (PDIM polling simulation) &gt; invalidateForUser writes userId→bustAt to PDIM hash consumed by other pod pollers" time="0.001710382">
+        </testcase>
+        <testcase classname="tests/unit/cache-cross-pod.test.ts" name="Cross-pod cache invalidation (PDIM polling simulation) &gt; keeps the bust key monotonic when an older invalidation write completes later" time="0.003342523">
+        </testcase>
+    </testsuite>
+</testsuites>

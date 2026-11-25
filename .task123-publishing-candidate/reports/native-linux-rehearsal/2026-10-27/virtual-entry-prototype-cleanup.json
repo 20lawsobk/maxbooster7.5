@@ -1,0 +1,17 @@
+{
+  "command": [
+    "docker",
+    "--host=unix:///var/run/docker.sock",
+    "rm",
+    "--force",
+    "maxbooster-linux-u3f69z18-virtual-entry-prototype"
+  ],
+  "cwd": ".",
+  "startedAt": "2026-10-28T02:19:53.322838+00:00",
+  "durationSeconds": 0.016,
+  "exitCode": 0,
+  "timedOut": false,
+  "status": "passed",
+  "log": "reports/native-linux-rehearsal/2026-10-27/virtual-entry-prototype-cleanup.txt",
+  "logSha256": "7a08c8024d7fb1208936e0a007aefcb36994ebc22a9505a7af75479b88abbd18"
+}

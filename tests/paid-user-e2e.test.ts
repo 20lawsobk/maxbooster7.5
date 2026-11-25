@@ -11,7 +11,7 @@ let csrfToken = "";
 const testUser = {
   birthdate: "1990-01-01",
   email: `paidtest_${Date.now()}@maxbooster-test.invalid`,
-  password: "SecurePass123!@#",
+  password: process.env.PASSWORD as string,
   username: `PaidUser_${Date.now()}`,
   firstName: "Paid",
   lastName: "Tester",
@@ -422,14 +422,17 @@ describe("PAID USER END-TO-END INTEGRATION TESTS", () => {
       expect(Array.isArray(res.json)).toBe(true);
     });
 
-    it("should schedule a post", async () => {
+    it("requires a connected social profile before queueing publication", async () => {
       const res = await api("POST", "/api/social/schedule-post", {
         content: "E2E test post for production verification",
         platform: "instagram",
         scheduledAt: new Date(Date.now() + 86400000).toISOString(),
       });
-      expect([200, 201]).toContain(res.status);
-      expect(res.json.success).toBe(true);
+      expect(res.status).toBe(409);
+      expect(res.json).toMatchObject({
+        success: false,
+        code: "PUBLISHING_CONNECTION_REQUIRED",
+      });
     });
 
     it("should list calendar posts", async () => {

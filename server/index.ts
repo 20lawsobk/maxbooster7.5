@@ -1,6 +1,8 @@
 // ── Self-Confinement: initialise unified config before anything else ─────────
 // Validates all env vars and builds the typed config object. Must be first.
 import "./config/index.js";
+import { ensureDnsSyncSecret } from "./lib/dnsSyncAuth.js";
+ensureDnsSyncSecret();
 
 // Reconcile stale PDIM_* credentials against the working STORAGE_* token
 // BEFORE any other module reads PDIM-related environment settings — must stay first.
@@ -37,8 +39,13 @@ import {
   buildTrustProxyValue,
 } from "./middleware/cloudflare.js";
 import path from "path";
-import fs from "fs";
 import { isProductionEnv } from "./lib/envHelpers.js";
+import type { ViteRuntime } from "./vite.js";
+import {
+  developmentVerificationFilePath,
+  isConfiguredDevHost,
+  verificationTextForHost,
+} from "./services/tiktokSiteVerification.js";
 
 // MANDATORY safety imports - these MUST load successfully
 import { initializeSafetySystems, applyMandatoryMiddleware, globalErrorHandler as safetyErrorHandler, sanitizationMiddleware, killSwitch } from "./safety/index.js";
@@ -102,12 +109,6 @@ import("./services/maxcoreLocalSupervisor.js")
 // DNS_NODE_LOCAL=1. See server/services/dnsNodeLocalSupervisor.ts for why.
 // Started after route registration below: its initial zone sync depends on
 // /api/dns/zone/:domain being mounted.
-
-// Kick off readiness probes asynchronously — /ready transitions from
-// "not_ready" → "ready"/"degraded" once DB + Redis + MaxCore have responded.
-startupProbes?.runAllProbes().catch((err) => {
-  logger.warn({ err }, "[startup-probes] runAllProbes failed");
-});
 
 import("./lib/configValidator.js")
   .then(({ validateScaleConfig }) => {
@@ -203,12 +204,21 @@ try {
 app.use(sanitizationMiddleware);
 
 // TikTok Developers Site Verification
-app.get("/tiktok-developers-site-verification.txt", (_req, res) => {
-  res
-    .type("text/plain")
-    .send(
-      "tiktok-developers-site-verification=hnfUpA9zyoJspWMdAIdZWXJzIvyo9MBx",
-    );
+app.get("/tiktok-developers-site-verification.txt", (req, res) => {
+  const verification = verificationTextForHost(
+    req.get("host"),
+    process.env.REPLIT_DEV_DOMAIN,
+  );
+  res.type("text/plain").send(verification);
+});
+app.get(developmentVerificationFilePath, (req, res, next) => {
+  if (!isConfiguredDevHost(req.get("host"), process.env.REPLIT_DEV_DOMAIN)) {
+    next();
+    return;
+  }
+  res.type("text/plain").send(
+    verificationTextForHost(req.get("host"), process.env.REPLIT_DEV_DOMAIN),
+  );
 });
 app.get(
   "/tiktok-developers-site-hnfUpA9zyoJspWMdAIdZWXJzIvyo9MBx",
@@ -342,10 +352,11 @@ app.use((req, res, next) => {
 // after boot.  During that window, any browser request to GET / (or any non-API
 // route) falls through with no handler and returns 404.
 //
-// This middleware fires BEFORE all API routes.  It serves dist/index?.html for
-// non-API GET requests during the startup window only.  Once Vite or
-// serveStatic registers its own catch-all (_spaHandlerReady = true), this
-// middleware calls next() immediately and is completely transparent.
+// This middleware fires BEFORE all API routes. During the startup window it
+// serves only a small boot page that waits for the live SPA handler. Serving a
+// previous dist/index.html here can load stale client code while auth/routes
+// still return boot-phase responses. Once Vite or serveStatic registers its
+// catch-all (_spaHandlerReady = true), this middleware becomes transparent.
 //
 // Why not call setupVite earlier?  setupVite awaits createViteServer() which
 // itself performs heavy I/O; calling it before route registration would stall
@@ -356,16 +367,10 @@ let _spaHandlerReady = false;
 // The early-boot stubs check this flag and call next() once routes are loaded,
 // handing off to the real handlers in routes?.ts.
 let _routesReady = false;
-const _spaFallbackIndexPath = path?.resolve(
-  process.cwd(),
-  "dist",
-  "public",
-  "index.html",
-);
-
 // Lightweight boot-status endpoint — always available, no proxy/header issues.
 // The boot loading page polls this instead of sniffing response headers.
 app.get("/api/boot-status", (_req: Request, res: Response) => {
+  res.setHeader("Cache-Control", "no-store");
   res.json({ ready: _spaHandlerReady });
 });
 
@@ -475,15 +480,9 @@ app.use((req: Request, res: Response, next: NextFunction) => {
   const assetExt =
     /\.(js|css|png|jpg|jpeg|gif|webp|svg|ico|woff2?|ttf|eot|map|json)$/i;
   if (req.path.startsWith("/assets/") || assetExt?.test(req.path)) return next();
-  // Serve the pre-built SPA shell if it exists.  In development this is the
-  // last production build; in production it is the freshly built dist/.
-  if (fs?.existsSync(_spaFallbackIndexPath)) {
-    res.setHeader("Cache-Control", "no-cache, no-store, must-revalidate");
-    res.setHeader("X-Boot-Fallback", "1");
-    return res.sendFile(_spaFallbackIndexPath);
-  }
-  // In dev mode (no built index?.html) serve a minimal loading page so mobile
-  // browsers see something instead of a white screen during the boot window.
+  // Never serve an old SPA bundle before the live handler is ready. This
+  // minimal page polls boot-status and reloads into the current runtime once
+  // the API routes and SPA handler are both registered.
   res.setHeader("Cache-Control", "no-cache, no-store, must-revalidate");
   res.setHeader("Content-Type", "text/html; charset=utf-8");
   res.setHeader("X-Boot-Fallback", "1");
@@ -493,10 +492,15 @@ app.use((req: Request, res: Response, next: NextFunction) => {
   <meta charset="UTF-8"/>
   <meta name="viewport" content="width=device-width,initial-scale=1"/>
   <title>Max Booster — Starting Up…</title>
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml"/>
   <style>
     *{box-sizing:border-box;margin:0;padding:0}
+    html,body{background:#0f0f1a}
     body{display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:100dvh;
-         background:#0f0f1a;color:#fff;font-family:system-ui,-apple-system,sans-serif;text-align:center;padding:24px}
+         color:#fff;font-family:system-ui,-apple-system,sans-serif;text-align:center;padding:24px;
+         transition:opacity 180ms ease}
+    body.is-ready{opacity:0;pointer-events:none}
+    @media(prefers-reduced-motion:reduce){body{transition:none}}
     .logo{width:80px;height:80px;border-radius:20px;margin-bottom:24px;
           box-shadow:0 0 40px rgba(124,58,237,0.4);display:block}
     h1{font-size:1.5rem;font-weight:700;margin-bottom:8px}
@@ -511,17 +515,28 @@ app.use((req: Request, res: Response, next: NextFunction) => {
 <body>
   <img class="logo" src="/logo.png" alt="Max Booster"/>
   <h1>Max Booster</h1>
-  <p>Initializing AI systems…</p>
+  <p>Preparing your workspace…</p>
   <div class="bar"><div class="bar-fill"></div></div>
-  <p class="note">First start takes ~1 minute. This page will reload automatically.</p>
+  <p class="note">This page will transition automatically when Max Booster is ready.</p>
   <script>
     (function(){
+      function handoff(){
+        var reducedMotion = window.matchMedia &&
+          window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+        if (!reducedMotion) {
+          document.body.classList.add("is-ready");
+          setTimeout(function(){ window.location.replace("/"); }, 180);
+        } else {
+          window.location.replace("/");
+        }
+      }
       function tryReload(){
-        fetch('/api/boot-status').then(function(r){
-          return r?.json();
+        fetch('/api/boot-status', {cache:'no-store'}).then(function(r){
+          if (!r.ok) throw new Error("Boot status is unavailable");
+          return r.json();
         }).then(function(data){
           if(data?.ready){
-            location?.reload();
+            handoff();
           } else {
             setTimeout(tryReload, 2000);
           }
@@ -535,6 +550,8 @@ app.use((req: Request, res: Response, next: NextFunction) => {
 });
 
 (async () => {
+  const developmentMode = !isProductionEnv();
+  let viteRuntime: ViteRuntime | null = null;
   // ── Option 2: Parallel deferred imports ──────────────────────────────────
   // All modules that were previously static top-level imports are loaded here
   // in one parallel Promise.all.  Removing them from the module's static
@@ -583,18 +600,18 @@ app.use((req: Request, res: Response, next: NextFunction) => {
   // express.static() calls next() for unknown paths so Vite's own module graph
   // (/@vite/client, /src/...) is unaffected.
   serveStaticFiles(app);
+  if (developmentMode) {
+    const { createViteRuntime } = await import("./vite.js");
+    viteRuntime = await createViteRuntime(httpServer);
+    viteRuntime.registerVerificationRoot(app);
+    // Vite's dev modules are static code, not user requests. Serve them before
+    // express-session so a cold PDIM/session store cannot stall the mobile
+    // preview's initial JavaScript graph. The SPA fallback stays after API
+    // registration below, preserving API and page-route precedence.
+    app.use(viteRuntime.middleware);
+  }
   logger.info(
     "✅ [Static] Pre-session asset serving registered (assets bypass session/PDIM)",
-  );
-
-  // Load optional modules in background — they're only used inside setImmediate
-  // blocks that fire after all sync setup completes, so awaiting here just adds
-  // latency without any ordering benefit.
-  const _optionalModulesReady = loadOptionalModules().catch((e) =>
-    logger.warn(
-      "[boot] Optional module load error (non-blocking):",
-      e.message,
-    ),
   );
 
   // Determine once whether this process is the designated background worker.
@@ -608,87 +625,6 @@ app.use((req: Request, res: Response, next: NextFunction) => {
   // Neon's connection limit when the regular query pool is busy, triggering
   // PG_CODE 53100 retry storms that pollute the logs.  Stdout captures all log
   // output already (pino JSON transport), so DB persistence is redundant.
-
-  // Start system intelligence layer — must be first so it sees all log entries
-  // and events from subsequent service startups.
-  try {
-    const { systemIntelligence } = await import(
-      "./services/systemIntelligence.js"
-    );
-    systemIntelligence?.initialize();
-  } catch (e) {
-    logger.warn(
-      `[SystemIntelligence] Failed to initialize: ${(e as Error).message}`,
-    );
-  }
-
-  // Start chain error auto-fixer — must run early so it catches errors from
-  // autonomous systems, BullMQ workers, and PDIM during their own startup
-  try {
-    const { chainErrorAutoFixer } = await import(
-      "./services/chainErrorAutoFixer.js"
-    );
-    chainErrorAutoFixer?.start();
-  } catch (e) {
-    logger.warn(`[ChainFixer] Failed to start: ${(e as any)?.message}`);
-  }
-
-  // Start platform auto-fixer — proactive subsystem health probing + runtime patching.
-  // The probe loop (DB/PDIM/session queries, MaxCore pings) only runs on worker 0 to
-  // avoid doubling all health-check traffic across every cluster worker.
-  // The middleware (per-route 5xx rate tracker) always runs — it has no external I/O.
-  try {
-    const { platformAutoFixer, platformFixerMiddleware } = await import(
-      "./services/platformAutoFixer.js"
-    );
-    if (isBgWorker) {
-      platformAutoFixer?.start();
-    } else {
-      logger.info(
-        `[PlatformAutoFixer] Worker ${clusterId} — middleware active, probe loop handled by worker 0`,
-      );
-    }
-    app.use(
-      platformFixerMiddleware as unknown as import("express").RequestHandler,
-    );
-  } catch (e) {
-    logger.warn(`[PlatformAutoFixer] Failed to start: ${(e as any)?.message}`);
-  }
-
-  // Directive executor — actually runs the autofix operating directive's
-  // phases (probe subsystems, classify errors via the knowledge base, honest
-  // scorecard). Worker 0 only; first cycle at boot.
-  if (isBgWorker) {
-    try {
-      const { directiveExecutor } = await import(
-        "./services/directiveExecutor.js"
-      );
-      directiveExecutor.start();
-    } catch (e) {
-      logger.warn(`[Directive] Failed to start: ${(e as any)?.message}`);
-    }
-  }
-
-  // LabelGrid is historical data only. Never load its SDK or start its sync.
-
-  // Post-deploy self-test — activates DURING deployment boot, not after.
-  // The first run starts immediately (non-blocking) so a bad deploy is caught
-  // while it is rolling out; periodic re-runs continue afterwards. Worker 0
-  // only, to avoid duplicating probe traffic across cluster workers.
-  if (isBgWorker) {
-    try {
-      const { postDeploySelfTest } = await import("./post-deploy-selftest.js");
-      postDeploySelfTest.runAllTests().catch((e: unknown) => {
-        logger.warn(
-          `[SelfTest] Deployment-time self-test error: ${(e as Error)?.message}`,
-        );
-      });
-      const selfTestTimer = postDeploySelfTest.startPeriodicTests();
-      selfTestTimer.unref?.();
-    } catch (e) {
-      logger.warn(`[SelfTest] Failed to start: ${(e as any)?.message}`);
-    }
-  }
 
   // Load permanent overrides — restores improvements accumulated across prior sessions.
   // Must run after PDIM is connected (fixers start PDIM lazily on first use, so a
@@ -735,7 +671,95 @@ app.use((req: Request, res: Response, next: NextFunction) => {
   app.use(session(sessionConfig));
   const { validateSessionAuthority } = await import("./middleware/sessionAuthority.js");
   app.use(validateSessionAuthority);
-  logger.info("✅ Session store initialized (PDIM)");
+  logger.info("✅ Authoritative PostgreSQL session store initialized");
+
+  // Establish the shared blacklist policy before database-heavy readiness and
+  // diagnostic loops begin. Until it resolves, non-operational requests remain
+  // fail-closed in selfHealingSecurityMiddleware.
+  const { selfHealingEngine } = await import(
+    "./services/selfHealingSecurityEngine.js"
+  );
+  await selfHealingEngine.start();
+
+  // The first readiness pass and diagnostic loops can open several database
+  // connections. Start them only after the authoritative session schema and
+  // security policy have established the primary connection successfully.
+  startupProbes?.runAllProbes().catch((err) => {
+    logger.warn({ err }, "[startup-probes] runAllProbes failed");
+  });
+
+  // Optional monitoring and background diagnostics are deliberately deferred
+  // until required authentication storage is online, avoiding a Neon cold-start
+  // connection burst during the critical session-store handshake.
+  const _optionalModulesReady = loadOptionalModules().catch((e) =>
+    logger.warn("[boot] Optional module load error (non-blocking)", e.message),
+  );
+
+  try {
+    const { systemIntelligence } = await import(
+      "./services/systemIntelligence.js"
+    );
+    systemIntelligence?.initialize();
+  } catch (e) {
+    logger.warn(
+      `[SystemIntelligence] Failed to initialize: ${(e as Error).message}`,
+    );
+  }
+
+  try {
+    const { chainErrorAutoFixer } = await import(
+      "./services/chainErrorAutoFixer.js"
+    );
+    chainErrorAutoFixer?.start();
+  } catch (e) {
+    logger.warn(`[ChainFixer] Failed to start: ${(e as Error)?.message}`);
+  }
+
+  try {
+    const { platformAutoFixer, platformFixerMiddleware } = await import(
+      "./services/platformAutoFixer.js"
+    );
+    if (isBgWorker) {
+      platformAutoFixer?.start();
+    } else {
+      logger.info(
+        `[PlatformAutoFixer] Worker ${clusterId} — middleware active, probe loop handled by worker 0`,
+      );
+    }
+    app.use(
+      platformFixerMiddleware as unknown as import("express").RequestHandler,
+    );
+  } catch (e) {
+    logger.warn(`[PlatformAutoFixer] Failed to start: ${(e as Error)?.message}`);
+  }
+
+  if (isBgWorker) {
+    try {
+      const { directiveExecutor } = await import(
+        "./services/directiveExecutor.js"
+      );
+      directiveExecutor.start();
+    } catch (e) {
+      logger.warn(`[Directive] Failed to start: ${(e as Error)?.message}`);
+    }
+  }
+
+  // LabelGrid is historical data only. Never load its SDK or start its sync.
+
+  if (isBgWorker) {
+    try {
+      const { postDeploySelfTest } = await import("./post-deploy-selftest.js");
+      postDeploySelfTest.runAllTests().catch((e: unknown) => {
+        logger.warn(
+          `[SelfTest] Deployment-time self-test error: ${(e as Error)?.message}`,
+        );
+      });
+      const selfTestTimer = postDeploySelfTest.startPeriodicTests();
+      selfTestTimer.unref?.();
+    } catch (e) {
+      logger.warn(`[SelfTest] Failed to start: ${(e as Error)?.message}`);
+    }
+  }
 
   // distributedCache?.connect() is deferred to the setImmediate block below.
   // Keeping it here would stall route registration for up to ~20 s if PDIM is
@@ -833,7 +857,7 @@ app.use((req: Request, res: Response, next: NextFunction) => {
       // Pass the already-initialized session store to WebSocket for secure authentication
       const { setSessionStore } = await import("./realtime/index.js");
       if (typeof setSessionStore === "function" && activeSessionStore) {
-        setSessionStore(activeSessionStore as unknown as Record<string, unknown>);
+        setSessionStore(activeSessionStore, sessionConfig.secret);
       }
       (initializeRealtimeServer as (server: import("http").Server) => void)(httpServer);
       logger.info("Realtime collaboration server initialized");
@@ -1065,7 +1089,6 @@ app.use((req: Request, res: Response, next: NextFunction) => {
 
   // Compose before routes hydrate principals and mount the containment guard.
   const { configureApplicationContainment } = await import("./services/securityContainment.js");
-  const { selfHealingEngine } = await import("./services/selfHealingSecurityEngine.js");
   const { revokeUserSessions } = await import("./middleware/sessionConfig.js");
   configureApplicationContainment(selfHealingEngine, revokeUserSessions);
 
@@ -1083,9 +1106,9 @@ app.use((req: Request, res: Response, next: NextFunction) => {
   }
   const { pool: readinessPool } = await import("./db.js");
   await assertWorkerSchema(sql => readinessPool.query(sql), backupsEnabled, fanMailEnabled);
-  // Check every durable consumer before starting any readiness background work.
+  // Check the durable consumer's full column contract before worker startup.
   await readinessPool.query(
-    "SELECT id,user_id,type,title,message,link,frequency,due_at,state,owner,provider_id,error,updated_at FROM integration_notification_digest LIMIT 0",
+    "SELECT id,user_id,type,title,message,link,frequency,due_at,state,owner,provider_id,error,updated_at FROM public.integration_notification_digest LIMIT 0",
   );
   app.use((await import("./lib/maxcoreOwnerContext.js")).maxcoreOwnerContext);
   await registerRoutes(httpServer, app);
@@ -1116,9 +1139,14 @@ app.use((req: Request, res: Response, next: NextFunction) => {
     logger.info("Fan delivery scheduler disabled; enable only after consent schema and mail configuration approval");
   }
   _routesReady = true;
-  void import("./services/dnsNodeLocalSupervisor.js")
-    .then(({ startDnsNodeLocal }) => startDnsNodeLocal())
-    .catch((err) => logger.error({ err }, "[DnsNodeLocal] failed to start supervisor"));
+  if (isBgWorker) {
+    void import("./services/dnsNodeLocalSupervisor.js")
+      .then(({ startDnsNodeLocal }) => startDnsNodeLocal())
+      .catch((err) => logger.error({ err }, "[DnsNodeLocal] failed to start supervisor"));
+    void import("./services/dnsApiSupervisor.js")
+      .then(({ startDnsApi }) => startDnsApi())
+      .catch((err) => logger.error({ err }, "[DnsApi] failed to start supervisor"));
+  }
   const { setRoutesReady: _setRoutesReady } = await import(
     "./lib/bootState.js"
   );
@@ -1450,11 +1478,13 @@ app.use((req: Request, res: Response, next: NextFunction) => {
   // MANDATORY global error handler (from safety module) - must be LAST middleware
   app.use(safetyErrorHandler);
 
-  if (isProductionEnv()) {
+  if (!developmentMode) {
     serveStatic(app);
   } else {
-    const { setupVite } = await import("./vite.js");
-    await setupVite(httpServer, app);
+    if (!viteRuntime) {
+      throw new Error("Vite runtime was not initialized in development mode.");
+    }
+    viteRuntime.registerSpaFallback(app);
   }
   // Real SPA handler is now registered — disable the boot-time fallback shim.
   _spaHandlerReady = true;
@@ -1518,7 +1548,8 @@ app.use((req: Request, res: Response, next: NextFunction) => {
         `   Monthly: ${priceIds.monthly} | Yearly: ${priceIds.yearly} | Lifetime: ${priceIds.lifetime}`,
       );
     } catch (e) {
-      logger.warn(`❌ Failed to initialize Stripe prices: ${(e as Error).message}`);
+      // The Stripe SDK message may contain credential fragments or request data.
+      logger.warn("Stripe price initialization failed; see sanitized provider diagnostics");
     }
 
     // 0b. Admin account seeding — idempotent, safe to run after listen
@@ -1853,14 +1884,15 @@ app.use((req: Request, res: Response, next: NextFunction) => {
     // A socket has one owner. The supervised node already serves this zone
     // when configured on the same port; never race a second nameserver for it.
     const supervisedDnsOwnsPort = process.env.DNS_NODE_LOCAL === "1" &&
-      (Number(process.env.DNS_NODE_LOCAL_PORT) || 5353) ===
-        Number(process.env.DNS_PORT || "53");
+      runtimePorts.dnsNodeLocal === runtimePorts.dnsAuthority;
     if (supervisedDnsOwnsPort) {
       logger.info("[DNS] Authoritative listener owned by the supervised local DNS node");
-    } else {
+    } else if (isBgWorker) {
       void import("./services/dnsServer.js")
         .then(({ startDNSServer }) => startDNSServer())
         .catch((err) => logger.error({ err }, "[DNS] Failed to start authoritative listener"));
+    } else {
+      logger.info(`[DNS] Listener owned by worker 0 on port ${runtimePorts.dnsAuthority}`);
     }
 
     // MaxCore feedback/state transport runs on worker 0 only. MaxCore owns its
@@ -1994,11 +2026,31 @@ async function gracefulShutdown(signal: string, exitCode = 0): Promise<void> {
   }
 
   try {
+    // Stop the authenticated, loopback-only DNS API child.
+    const { stopDnsApi } = await import("./services/dnsApiSupervisor.js");
+    stopDnsApi();
+    logger.info("[Shutdown] DNS API subsystem stopped");
+  } catch {
+    /* non-critical */
+  }
+
+  try {
     // 4. Stop the built-in DNS server.
     const { stopDNSServer } = await import("./services/dnsServer.js");
     await stopDNSServer();
   } catch {
     /* non-critical */
+  }
+
+  try {
+    // Close the native mediasoup worker before the database pool and process exit.
+    const { collaborationMediaPlane } = await import(
+      "./services/collaborationMediaPlane.js"
+    );
+    await collaborationMediaPlane.shutdown();
+    logger.info("[Shutdown] Collaboration media worker stopped");
+  } catch (err) {
+    logger.warn({ err }, "[Shutdown] Collaboration media cleanup failed");
   }
 
   try {

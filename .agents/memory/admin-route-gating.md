@@ -5,9 +5,9 @@ description: Every /admin* page must self-gate with useRequireAdmin because App.
 
 # Admin route-level access control
 
-Routes in `client/src/App.tsx` are NOT role-gated globally — the `<Switch>` maps paths
-straight to components with no per-route role guard. Authentication/role enforcement is
-done _inside each page_ via hooks in `client/src/hooks/useRequireAuth.ts`.
+Private-launch restrictions are not a substitute for per-page administrator
+authorization after public launch. Keep each administrator page independently
+role-gated even when the whole application currently defaults to private access.
 
 **Rule:** every `/admin*` page must gate with `useRequireAdmin()`, never `useRequireAuth()`.
 

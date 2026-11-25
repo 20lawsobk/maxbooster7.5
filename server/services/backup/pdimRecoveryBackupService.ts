@@ -203,7 +203,8 @@ async function execute(job: PublicPdimRecoveryJob): Promise<void> {
     );
     const sourceEvidence = await runActualClassVerifier(sourceRoot);
 
-    const bucketId = process.env.DATABASE_RECOVERY_BUCKET_ID;
+    const bucketId = process.env.Replit_storage_bucket_id ||
+      process.env.DATABASE_RECOVERY_BUCKET_ID || process.env.REPLIT_BUCKET_ID;
     if (!bucketId) throw new Error("Private PDIM recovery bucket is not configured");
     stage = "private-storage-contract-verification";
     const storage = await createRecoveryStorage({ bucketId });

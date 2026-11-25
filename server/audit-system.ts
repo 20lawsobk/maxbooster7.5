@@ -4,6 +4,8 @@ import fs from "fs/promises";
 import path from "path";
 import crypto from "crypto";
 import { logger } from "./logger.js";
+import { selectApplicationDatabaseUrl } from "./config/databaseTarget.js";
+import { getStripeSecretKey } from "./lib/stripeClient.js";
 
 const execAsync = promisify(exec);
 
@@ -373,7 +375,7 @@ export class AuditSystem {
     // bcrypt/argon password hashing salt rounds env is sane.
     const inProd =
       process.env.NODE_ENV === "production" || !!process.env.REPLIT_DEPLOYMENT;
-    const dbUrl = process.env.DATABASE_URL || "";
+    const dbUrl = selectApplicationDatabaseUrl(process.env);
     const dbHasSsl =
       dbUrl.includes("sslmode=require") ||
       dbUrl.includes("sslmode=verify") ||
@@ -476,7 +478,7 @@ export class AuditSystem {
 
   private async checkFinancialControls(): Promise<boolean> {
     // Real: payments routed through Stripe with webhook signature verification.
-    const hasStripe = !!process.env.STRIPE_SECRET_KEY;
+    const hasStripe = !!getStripeSecretKey();
     const hasWebhookSecret = !!process.env.STRIPE_WEBHOOK_SECRET;
     return hasStripe && hasWebhookSecret;
   }

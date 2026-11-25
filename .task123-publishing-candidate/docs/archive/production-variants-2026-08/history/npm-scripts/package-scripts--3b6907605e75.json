@@ -1,0 +1,8 @@
+{
+  "source": "package.json script entries only",
+  "scripts": {
+    "build": "pnpm run typecheck && pnpm -r --if-present run build",
+    "build:production": "pnpm --filter @workspace/api-server run build && BASE_PATH=/ pnpm --filter @workspace/ai-dashboard run build",
+    "start": "pnpm --filter @workspace/api-server run serve"
+  }
+}

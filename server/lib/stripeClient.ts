@@ -1,5 +1,20 @@
 import Stripe from "stripe";
 import { HttpsProxyAgent } from "https-proxy-agent";
+import { isProductionEnv } from "./envHelpers.js";
+import {
+  selectStripePublishableKey,
+  selectStripeSecretKey,
+} from "../../shared/stripeCredentials.js";
+
+/** Resolve the only Stripe key appropriate to this runtime. */
+export function getStripeSecretKey(): string | undefined {
+  return selectStripeSecretKey(process.env, isProductionEnv());
+}
+
+/** Publishable keys are safe to return to the browser; secret keys never are. */
+export function getStripePublishableKey(): string | undefined {
+  return selectStripePublishableKey(process.env, isProductionEnv());
+}
 
 /** Presence is configuration, not proof of authentication. Proxy-delivered
  * bindings need not expose the provider's key prefix to this process. */

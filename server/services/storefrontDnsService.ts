@@ -390,7 +390,7 @@ export async function attachDomainToStorefront(
       status: string;
       storefront_id: string;
     }>(
-      `SELECT id, status, storefront_id FROM storefront_domains WHERE domain = $1`,
+      `SELECT id, status, storefront_id FROM public.storefront_domains WHERE domain = $1`,
       [domain],
     );
     if (existing.length > 0) {
@@ -407,7 +407,7 @@ export async function attachDomainToStorefront(
           `Domain '${domain}' is already being set up by another account.`,
         );
       }
-      await client.query(`DELETE FROM storefront_domains WHERE id = $1`, [
+      await client.query(`DELETE FROM public.storefront_domains WHERE id = $1`, [
         ex.id,
       ]);
     }
@@ -481,7 +481,7 @@ export async function attachDomainToStorefront(
     const {
       rows: [sd],
     } = await client.query<{ id: string }>(
-      `INSERT INTO storefront_domains
+      `INSERT INTO public.storefront_domains
          (storefront_id, domain, type, status, verification_token, dns_zone_id)
        VALUES ($1,$2,'custom_domain','pending',$3,$4)
        RETURNING id`,
@@ -557,7 +557,7 @@ export async function verifyStorefrontDomain(
     storefront_id: string;
   }>(
     `SELECT domain, verification_token, verification_failures, status, dns_zone_id, storefront_id
-     FROM storefront_domains WHERE id = $1`,
+     FROM public.storefront_domains WHERE id = $1`,
     [storefrontDomainId],
   );
 
@@ -597,7 +597,7 @@ export async function verifyStorefrontDomain(
     newFailures >= MAX_FAILURES ? "verification_failed" : status;
 
   await pool.query(
-    `UPDATE storefront_domains
+    `UPDATE public.storefront_domains
      SET verification_failures = $1, status = $2, updated_at = now()
      WHERE id = $3`,
     [newFailures, newStatus, storefrontDomainId],
@@ -626,7 +626,7 @@ async function activateStorefrontDomain(
     await client.query("BEGIN");
 
     await client.query(
-      `UPDATE storefront_domains
+      `UPDATE public.storefront_domains
        SET status = 'active', verified_at = now(), verification_failures = 0,
            updated_at = now()
        WHERE id = $1`,
@@ -649,7 +649,7 @@ async function activateStorefrontDomain(
     }
     for (const host of hosts) {
       await client.query(
-        `INSERT INTO storefront_hosts (host, storefront_id, cert_status)
+        `INSERT INTO public.storefront_hosts (host, storefront_id, cert_status)
          VALUES ($1, $2, 'pending')
          ON CONFLICT (host) DO UPDATE
            SET storefront_id = EXCLUDED.storefront_id, updated_at = now()`,
@@ -714,7 +714,7 @@ async function activateStorefrontDomain(
  */
 export async function provisionCertificateForHost(host: string): Promise<void> {
   await pool?.query(
-    `UPDATE storefront_hosts SET cert_status = 'pending', updated_at = now() WHERE host = $1`,
+    `UPDATE public.storefront_hosts SET cert_status = 'pending', updated_at = now() WHERE host = $1`,
     [host],
   );
   const { provisionCertificate } = await import("./acmeClient.js");
@@ -738,7 +738,7 @@ export async function detachDomainFromStorefront(
       dns_zone_id: string | null;
       storefront_id: string;
     }>(
-      `SELECT domain, dns_zone_id, storefront_id FROM storefront_domains WHERE id = $1`,
+      `SELECT domain, dns_zone_id, storefront_id FROM public.storefront_domains WHERE id = $1`,
       [storefrontDomainId],
     )) ?? {};
     if (!rows[0]) {
@@ -747,11 +747,11 @@ export async function detachDomainFromStorefront(
     }
     const { domain, dns_zone_id, storefront_id } = rows[0];
 
-    await client.query(`DELETE FROM storefront_domains WHERE id = $1`, [
+    await client.query(`DELETE FROM public.storefront_domains WHERE id = $1`, [
       storefrontDomainId,
     ]);
     await client?.query(
-      `DELETE FROM storefront_hosts WHERE host = $1 OR host = $2`,
+      `DELETE FROM public.storefront_hosts WHERE host = $1 OR host = $2`,
       [domain, `www.${domain}`],
     );
     if (dns_zone_id) {
@@ -786,7 +786,7 @@ export async function lookupStorefrontByHost(
   host: string,
 ): Promise<string | null> {
   const { rows } = await poolQuery<{ storefront_id: string }>(
-    `SELECT storefront_id FROM storefront_hosts WHERE host = $1`,
+    `SELECT storefront_id FROM public.storefront_hosts WHERE host = $1`,
     [host?.toLowerCase().replace(/:\d+$/, "")],
   );
   return rows[0]?.storefront_id ?? null;
@@ -815,7 +815,7 @@ export async function getDomainStatus(storefrontDomainId: string): Promise<{
     dns_zone_id: string | null;
   }>(
     `SELECT domain, status, storefront_id, verification_token, dns_zone_id
-     FROM storefront_domains WHERE id = $1`,
+     FROM public.storefront_domains WHERE id = $1`,
     [storefrontDomainId],
   );
   if (!rows[0]) throw new Error("Domain not found");
@@ -824,7 +824,7 @@ export async function getDomainStatus(storefrontDomainId: string): Promise<{
 
   const certRow = (
     await poolQuery<{ cert_status: string }>(
-      `SELECT cert_status FROM storefront_hosts WHERE host = $1`,
+      `SELECT cert_status FROM public.storefront_hosts WHERE host = $1`,
       [domain],
     )
   ).rows[0];
@@ -891,7 +891,7 @@ export async function runDomainHealthSweep(): Promise<{
   }>(
     `SELECT sd.id, sd.domain,
             COALESCE((sd.metadata->>'healthFailures')::int, 0) AS health_failures
-     FROM storefront_domains sd
+     FROM public.storefront_domains sd
      WHERE sd.status = 'active'
      LIMIT 500`,
   );
@@ -907,7 +907,7 @@ export async function runDomainHealthSweep(): Promise<{
     if (failures !== row.health_failures) {
       await pool
         .query(
-          `UPDATE storefront_domains
+          `UPDATE public.storefront_domains
          SET metadata = jsonb_set(COALESCE(metadata, '{}'), '{healthFailures}', $1::text::jsonb),
              status = $2, updated_at = now()
          WHERE id = $3`,

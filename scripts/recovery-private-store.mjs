@@ -26,10 +26,20 @@ const assertSafeBucketId = value => {
   return value;
 };
 
+/**
+ * @param {object} options
+ * @param {string} [options.bucketId]
+ * @param {typeof fetch} [options.fetchImpl]
+ * @param {typeof Storage} [options.StorageClass]
+ * @param {number} [options.timeoutMs]
+ * @param {Record<string, boolean | number>} [options.retryOptions]
+ */
 export async function createRecoveryStorage({
   bucketId,
   fetchImpl = globalThis.fetch,
   StorageClass = Storage,
+  timeoutMs,
+  retryOptions,
 } = {}) {
   let selected = bucketId;
   if (!selected) {
@@ -40,7 +50,39 @@ export async function createRecoveryStorage({
     selected = body?.bucketId;
   }
   selected = assertSafeBucketId(selected);
-  const client = new StorageClass({ credentials: REPLIT_ADC, projectId: "" });
+  const clientOptions = { credentials: REPLIT_ADC, projectId: "" };
+  if (timeoutMs !== undefined) {
+    if (!Number.isSafeInteger(timeoutMs) || timeoutMs < 100 || timeoutMs > 120_000) {
+      throw new Error("Recovery storage request timeout is invalid");
+    }
+    clientOptions.timeout = timeoutMs;
+  }
+  if (retryOptions !== undefined) {
+    if (!retryOptions || typeof retryOptions !== "object" || Array.isArray(retryOptions)) {
+      throw new Error("Recovery storage retry options are invalid");
+    }
+    const allowedRetryOptions = new Set([
+      "autoRetry", "maxRetries", "totalTimeout", "maxRetryDelay", "retryDelayMultiplier",
+    ]);
+    for (const [key, value] of Object.entries(retryOptions)) {
+      if (!allowedRetryOptions.has(key)) throw new Error("Recovery storage retry options are invalid");
+      if (key === "autoRetry" && typeof value !== "boolean") {
+        throw new Error("Recovery storage retry options are invalid");
+      }
+      if (key !== "autoRetry" && (!Number.isFinite(value) || value < 0)) {
+        throw new Error("Recovery storage retry options are invalid");
+      }
+    }
+    if ((retryOptions.maxRetries !== undefined &&
+         (!Number.isSafeInteger(retryOptions.maxRetries) || retryOptions.maxRetries > 5)) ||
+        (retryOptions.totalTimeout !== undefined && retryOptions.totalTimeout > 120) ||
+        (retryOptions.maxRetryDelay !== undefined && retryOptions.maxRetryDelay > 30) ||
+        (retryOptions.retryDelayMultiplier !== undefined && retryOptions.retryDelayMultiplier > 10)) {
+      throw new Error("Recovery storage retry options are invalid");
+    }
+    clientOptions.retryOptions = { ...retryOptions };
+  }
+  const client = new StorageClass(clientOptions);
   return { bucket: client.bucket(selected), bucketId: selected };
 }
 

@@ -1,0 +1,41 @@
+TAP version 13
+# Subtest: security alerts use real administrator recipients and retain honest delivery outcomes
+    # Subtest: two actual admins receive FK-valid inbox alerts while an ordinary user does not
+    ok 1 - two actual admins receive FK-valid inbox alerts while an ordinary user does not
+      ---
+      duration_ms: 28.948028
+      type: 'test'
+      ...
+    # Subtest: no-admin installations retain threat and structured-log evidence without claiming an inbox delivery
+    ok 2 - no-admin installations retain threat and structured-log evidence without claiming an inbox delivery
+      ---
+      duration_ms: 8.59182
+      type: 'test'
+      ...
+    # Subtest: a real notification-write failure is recorded as failed and does not leak database diagnostics
+    ok 3 - a real notification-write failure is recorded as failed and does not leak database diagnostics
+      ---
+      duration_ms: 12.74777
+      type: 'test'
+      ...
+    # Subtest: an unavailable recipient query cannot create a false delivery acknowledgement
+    ok 4 - an unavailable recipient query cannot create a false delivery acknowledgement
+      ---
+      duration_ms: 8.523307
+      type: 'test'
+      ...
+    1..4
+ok 1 - security alerts use real administrator recipients and retain honest delivery outcomes
+  ---
+  duration_ms: 1222.462957
+  type: 'test'
+  ...
+1..1
+# tests 5
+# suites 0
+# pass 5
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 1755.463366

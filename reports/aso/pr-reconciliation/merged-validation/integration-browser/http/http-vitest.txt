@@ -1,0 +1,151 @@
+
+[globalSetup] Server ready at http://127.0.0.1:43853 ✅  (0s elapsed)
+[00:31:53.508] [32mINFO[39m (255457): [36m[LocalPDIM] Local PDIM exec server started on port 42133 (local fsynced AOF and snapshots)[39m
+[00:31:53.536] [32mINFO[39m (255457): [36m[MaxCoreLocal] Starting MaxCore api-server (port 33701, model port 45609)…[39m
+[00:31:54.390] [32mINFO[39m (255457): [36m[MaxCoreLocal] [Cluster] Primary 255488 — forking 2 workers on port 33701[39m
+[00:31:54.391] [32mINFO[39m (255457): [36m[MaxCoreLocal] [WarmService] Polling /api/warm/status until deep-warm completes…[39m
+[00:31:55.116] [32mINFO[39m (255457): [36m[MaxCoreLocal] [Cluster] Worker 255498 listening on port 33701[39m
+[00:31:55.252] [32mINFO[39m (255457): [36m[MaxCoreLocal] [Cluster] Worker 255499 listening on port 33701[39m
+[00:31:55.577] [32mINFO[39m (255457): [36m[MaxCoreLocal] [Proxy] Error proxying to /health (6ms): Error: connect ECONNREFUSED [REDACTED]:45609
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1638:16) {
+  errno: -111,
+  code: 'ECONNREFUSED',
+  syscall: 'connect',
+  address: '[REDACTED]',
+  port: 45609
+}[39m
+[00:31:55.578] [32mINFO[39m (255457): [36m[MaxCoreLocal] [Proxy] Network error proxying to /health: Error: connect ECONNREFUSED [REDACTED]:45609
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1638:16) {
+  errno: -111,
+  code: 'ECONNREFUSED',
+  syscall: 'connect',
+  address: '[REDACTED]',
+  port: 45609
+}[39m
+[00:31:57.597] [32mINFO[39m (255457): [36m[MaxCoreLocal] [Proxy] Error proxying to /health (2ms): Error: connect ECONNREFUSED [REDACTED]:45609
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1638:16) {
+  errno: -111,
+  code: 'ECONNREFUSED',
+  syscall: 'connect',
+  address: '[REDACTED]',
+  port: 45609
+}[39m
+[00:31:57.597] [32mINFO[39m (255457): [36m[MaxCoreLocal] [Proxy] Network error proxying to /health: Error: connect ECONNREFUSED [REDACTED]:45609
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1638:16) {
+  errno: -111,
+  code: 'ECONNREFUSED',
+  syscall: 'connect',
+  address: '[REDACTED]',
+  port: 45609
+}[39m
+[00:31:59.603] [32mINFO[39m (255457): [36m[MaxCoreLocal] [Proxy] Error proxying to /health (1ms): Error: connect ECONNREFUSED [REDACTED]:45609
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1638:16) {
+  errno: -111,
+  code: 'ECONNREFUSED',
+  syscall: 'connect',
+  address: '[REDACTED]',
+  port: 45609
+}[39m
+[00:31:59.603] [32mINFO[39m (255457): [36m[MaxCoreLocal] [Proxy] Network error proxying to /health: Error: connect ECONNREFUSED [REDACTED]:45609
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1638:16) {
+  errno: -111,
+  code: 'ECONNREFUSED',
+  syscall: 'connect',
+  address: '[REDACTED]',
+  port: 45609
+}[39m
+[00:32:00.434] [32mINFO[39m (255457): [36m[MaxCoreLocal] [Python] Starting AI training server (port 45609)...[39m
+[00:32:01.449] [32mINFO[39m (255457): [36m[MaxCoreLocal] [Python] [Server] Director API mounted at /api/director[39m
+[00:32:01.479] [32mINFO[39m (255457): [36m[MaxCoreLocal] [Python] /home/runner/workspace/external/maxcore/artifacts/ai-training-server/server.py:1893: DeprecationWarning: 
+        on_event is deprecated, use lifespan event handlers instead.
+
+        Read more about it in the
+        [FastAPI docs for Lifespan Events](https://fastapi.tiangolo.com/advanced/events/).
+        
+  @app.on_event("startup")
+/home/runner/workspace/external/maxcore/artifacts/ai-training-server/server.py:2642: DeprecationWarning: 
+        on_event is deprecated, use lifespan event handlers instead.
+
+        Read more about it in the
+        [FastAPI docs for Lifespan Events](https://fastapi.tiangolo.com/advanced/events/).
+        
+  @app.on_event("shutdown")[39m
+[00:32:01.609] [32mINFO[39m (255457): [36m[MaxCoreLocal] [Proxy] Error proxying to /health (2ms): Error: connect ECONNREFUSED [REDACTED]:45609
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1638:16) {
+  errno: -111,
+  code: 'ECONNREFUSED',
+  syscall: 'connect',
+  address: '[REDACTED]',
+  port: 45609
+}[39m
+[00:32:01.609] [32mINFO[39m (255457): [36m[MaxCoreLocal] [Proxy] Network error proxying to /health: Error: connect ECONNREFUSED [REDACTED]:45609
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1638:16) {
+  errno: -111,
+  code: 'ECONNREFUSED',
+  syscall: 'connect',
+  address: '[REDACTED]',
+  port: 45609
+}[39m
+[00:32:03.616] [32mINFO[39m (255457): [36m[MaxCoreLocal] [Proxy] Error proxying to /health (1ms): Error: connect ECONNREFUSED [REDACTED]:45609
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1638:16) {
+  errno: -111,
+  code: 'ECONNREFUSED',
+  syscall: 'connect',
+  address: '[REDACTED]',
+  port: 45609
+}[39m
+[00:32:03.617] [32mINFO[39m (255457): [36m[MaxCoreLocal] [Proxy] Network error proxying to /health: Error: connect ECONNREFUSED [REDACTED]:45609
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1638:16) {
+  errno: -111,
+  code: 'ECONNREFUSED',
+  syscall: 'connect',
+  address: '[REDACTED]',
+  port: 45609
+}
+[CircuitBreaker] Opened after 5 consecutive failures — half-open probe in 1500ms[39m
+[00:32:04.045] [32mINFO[39m (255457): [36m[MaxCoreLocal] [Python] /home/runner/workspace/external/maxcore/artifacts/ai-training-server/server.py:7765: DeprecationWarning: 
+        on_event is deprecated, use lifespan event handlers instead.
+
+        Read more about it in the
+        [FastAPI docs for Lifespan Events](https://fastapi.tiangolo.com/advanced/events/).
+        
+  @app.on_event("startup")[39m
+[00:32:04.358] [32mINFO[39m (255457): [36m[MaxCoreLocal] [Python] [Server] Starting MaxBooster AI Training Server on port 45609 (1 uvicorn workers, 8 CPUs detected)[39m
+[00:32:04.443] [32mINFO[39m (255457): [36m[MaxCoreLocal] [Python] [Server] Director API mounted at /api/director[39m
+[00:32:04.818] [32mINFO[39m (255457): [36m[MaxCoreLocal] [Python] INFO:     Started server process [255516]
+INFO:     Waiting for application startup.[39m
+[00:32:04.860] [32mINFO[39m (255457): [36m[MaxCoreLocal] [Python] [Server] Healthz liveness server on port 45610 (event-loop-independent)[39m
+[00:32:04.882] [32mINFO[39m (255457): [36m[MaxCoreLocal] [Python] [Server] Bootstrap administrator credential stored in private state directory[39m
+[00:32:04.923] [32mINFO[39m (255457): [36m[MaxCoreLocal] [Python] INFO:     Application startup complete.[39m
+[00:32:04.927] [32mINFO[39m (255457): [36m[MaxCoreLocal] [Python] INFO:     Uvicorn running on http://[REDACTED]:45609 (Press CTRL+C to quit)[39m
+[00:32:04.946] [32mINFO[39m (255457): [36m[MaxCoreLocal] [Python] AI training server ready on port 45609[39m
+[00:32:04.947] [32mINFO[39m (255457): [36m[MaxCoreLocal] [Python] [Storage] Connected to MaxBooster storage server[39m
+[00:32:04.969] [32mINFO[39m (255457): [36m[MaxCoreLocal] [Python] [Storage] DataPuller auto-started (30-min pull cycle, audio auto-growth enabled)[39m
+[00:32:04.970] [32mINFO[39m (255457): [36m[MaxCoreLocal] [Python][39m
+[00:32:04.975] [32mINFO[39m (255457): [36m[MaxCoreLocal] [Python] [Workers] DataPuller, ContinuousTrainer, and Watchdog initialized and running[39m
+[00:32:04.975] [32mINFO[39m (255457): [36m[MaxCoreLocal] [Python][39m
+[00:32:04.980] [32mINFO[39m (255457): [36m[MaxCoreLocal] [Python] INFO:     [REDACTED]:49596 - "GET /health HTTP/1.1" 200 OK[39m
+[00:32:05.240] [32mINFO[39m (255457): [36m[MaxCoreLocal] [Python] awareness source failed source=bluesky_peak_culture exception_chain=SafeHTTPError failure_code=source_http_response http_status=403[39m
+[00:32:05.303] [32mINFO[39m (255457): [36m[MaxCoreLocal] [Python] awareness source failed source=bluesky_peak_advertising exception_chain=SafeHTTPError failure_code=source_http_response http_status=403[39m
+[00:32:05.404] [32mINFO[39m (255457): [36m[MaxCoreLocal] [Python] awareness source failed source=bluesky_peak_music exception_chain=SafeHTTPError failure_code=source_http_response http_status=403[39m
+[00:32:05.470] [32mINFO[39m (255457): [36m[MaxCoreLocal] [Python] awareness source failed source=bluesky_peak_social exception_chain=SafeHTTPError failure_code=source_http_response http_status=403[39m
+[00:32:05.637] [32mINFO[39m (255457): [36m[MaxCoreLocal] [Python] awareness source failed source=distrokid exception_chain=SafeHTTPError>gaierror failure_code=source_dns_failed[39m
+[00:32:05.641] [32mINFO[39m (255457): [36m[MaxCoreLocal] [Python] INFO:     [REDACTED]:49598 - "GET /health HTTP/1.1" 200 OK[39m
+[00:32:05.663] [32mINFO[39m (255457): [36m[MaxCoreLocal] [Python] INFO:     [REDACTED]:49598 - "GET /health HTTP/1.1" 200 OK[39m
+[00:32:05.678] [32mINFO[39m (255457): [36m[MaxCoreLocal] [Python] INFO:     [REDACTED]:49610 - "GET /api/ready HTTP/1.1" 503 Service Unavailable[39m
+[00:32:05.684] [32mINFO[39m (255457): [36m[MaxCoreLocal] [Python] INFO:     [REDACTED]:49612 - "GET /api/ready HTTP/1.1" 503 Service Unavailable[39m
+[00:32:05.696] [32mINFO[39m (255457): [36m[MaxCoreLocal] Stopping MaxCore api-server…[39m
+[00:32:05.701] [32mINFO[39m (255457): [36m[MaxCoreLocal] [Cluster] Primary shutting down…
+[Keepalive] Stopped
+[Python] Stopping AI training server...[39m
+[00:32:05.704] [32mINFO[39m (255457): [36m[MaxCoreLocal] [Cluster] Worker 255499 died (code=0, signal=none) — respawning…[39m
+[00:32:05.707] [32mINFO[39m (255457): [36m[MaxCoreLocal] [Cluster] Worker 255498 died (code=0, signal=none) — respawning…[39m
+[00:34:04.227] [32mINFO[39m (256323): [36m[PDIM] Auto multiplier: 4 (clusterWorkers=1 × ceil(cpuCores=8/2)=4) — AIMD init=1ms, floor=6ms (1workers×6ms, combined≤167 req/s), ZPOPMIN gap=4ms[39m
+[00:34:05.953] [32mINFO[39m (256323): [36m[Redis] PDIM active — routing Redis operations through PDIM[39m
+[00:34:05.964] [32mINFO[39m (256323): [36m✅ [PDIM] Connected via HTTP exec endpoint[39m
+[00:34:06.221] [32mINFO[39m (256323): [36m[PDIM] First successful response after 1996ms — entering 10s settling window[39m
+(node:256627) DeprecationWarning: Calling client.query() when the client is already executing a query is deprecated and will be removed in pg@9.0. Use async/await or an external async flow control mechanism instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+JUNIT report written to /home/runner/workspace/reports/aso/pr-reconciliation/merged-validation/integration-browser/http/integration.junit.xml
+[globalTeardown] Removing 21 test user(s)...
+[globalTeardown] Cleanup complete — removed 21 test user(s)

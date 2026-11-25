@@ -28,6 +28,7 @@ const mocks = vi.hoisted(() => {
   const mockWorkerRun = vi.fn().mockResolvedValue(undefined);
   const mockWorkerClose = vi.fn().mockResolvedValue(undefined);
   const mockWorkerOn = vi.fn();
+  const mockLoggerWarn = vi.fn();
 
   // Queue constructor — use function declaration so `new Queue()` works
   const MockQueue = vi.fn(function (this: Record<string, unknown>) {
@@ -66,6 +67,7 @@ const mocks = vi.hoisted(() => {
     mockWorkerRun,
     mockWorkerClose,
     mockWorkerOn,
+    mockLoggerWarn,
     MockQueue,
     MockWorker,
     mockRedisSet,
@@ -95,7 +97,7 @@ vi.mock("../../server/db.js", () => ({
 }));
 
 vi.mock("../../server/logger.js", () => ({
-  logger: { info: vi.fn(), warn: vi.fn(), error: vi.fn() },
+  logger: { info: vi.fn(), warn: mocks.mockLoggerWarn, error: vi.fn() },
 }));
 
 vi.mock("../../server/lib/luaExecutor.js", () => ({
@@ -125,6 +127,7 @@ function resetMocks() {
   mocks.mockWorkerRun.mockClear();
   mocks.mockWorkerClose.mockClear();
   mocks.mockWorkerOn.mockClear();
+  mocks.mockLoggerWarn.mockClear();
   mocks.MockQueue.mockClear();
   mocks.MockWorker.mockClear();
   mocks.mockRedisSet.mockClear();
@@ -244,6 +247,57 @@ describe("BullMQ autonomous scheduler — teardown & shutdown", () => {
 
   it("teardownRepeatableJobs() is safe when no worker is running", async () => {
     await expect(teardownRepeatableJobs()).resolves.not.toThrow();
+  });
+
+  it("suppresses only intentional disconnects during teardown and never logs raw error text", async () => {
+    await setupRepeatableJobs();
+    const errorHandler = mocks.mockWorkerOn.mock.calls.find(
+      ([event]: [string]) => event === "error",
+    )?.[1] as (error: Error) => void;
+    expect(errorHandler).toBeTypeOf("function");
+
+    mocks.mockWorkerClose.mockImplementationOnce(async () => {
+      errorHandler(new Error("[PDIM] Redis client disconnected"));
+    });
+    await teardownRepeatableJobs();
+    expect(mocks.mockLoggerWarn).not.toHaveBeenCalledWith(
+      expect.anything(),
+      "[AutonomousScheduler] Unexpected worker error",
+    );
+
+    await setupRepeatableJobs();
+    const activeErrorHandler = mocks.mockWorkerOn.mock.calls
+      .filter(([event]: [string]) => event === "error")
+      .at(-1)?.[1] as (error: Error) => void;
+    mocks.mockLoggerWarn.mockClear();
+    activeErrorHandler(new Error("[PDIM] Redis client disconnected"));
+    expect(mocks.mockLoggerWarn).toHaveBeenCalledWith(
+      { errorType: "Error" },
+      "[AutonomousScheduler] Unexpected worker error",
+    );
+
+    mocks.mockLoggerWarn.mockClear();
+    const sensitiveMessage = "provider failure with private-token=do-not-log";
+    activeErrorHandler(new Error(sensitiveMessage));
+
+    expect(mocks.mockLoggerWarn).toHaveBeenCalledWith(
+      { errorType: "Error" },
+      "[AutonomousScheduler] Unexpected worker error",
+    );
+    expect(JSON.stringify(mocks.mockLoggerWarn.mock.calls)).not.toContain(
+      sensitiveMessage,
+    );
+
+    mocks.mockLoggerWarn.mockClear();
+    mocks.mockWorkerClose.mockImplementationOnce(async () => {
+      activeErrorHandler(new Error("[PDIM] Redis client disconnected"));
+    });
+    await setupRepeatableJobs();
+    expect(mocks.mockLoggerWarn).not.toHaveBeenCalledWith(
+      expect.anything(),
+      "[AutonomousScheduler] Unexpected worker error",
+    );
+    await closeScheduler();
   });
 
   it("closeScheduler() closes both worker and queue", async () => {

@@ -15,6 +15,7 @@ import { probeSession, SessionProbeUnavailable } from "@/lib/sessionProbe";
 interface AuthContextType {
   authenticate: <T extends AuthenticationExchange>(request: () => Promise<T>) => Promise<T>;
   user: User | null;
+  adminOnlyMode: boolean | null;
   login: (credentials: { username: string; password: string }) => Promise<void>;
   register: (data: {
     username: string;
@@ -27,11 +28,12 @@ interface AuthContextType {
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
+type SessionUser = User & { adminOnlyMode: boolean };
 
 // Temporary transport failures are not authoritative anonymous sessions.
-async function silentAuthCheck(): Promise<User | null> {
+async function silentAuthCheck(): Promise<SessionUser | null> {
   await acquireAccountLease();
-  return probeSession<User>();
+  return probeSession<SessionUser>();
 }
 
 export function AuthProvider({ children }: { children: ReactNode }) {
@@ -62,6 +64,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   });
 
   const user = !accountLocked && userData && userData.id ? userData : null;
+  const adminOnlyMode = userData?.adminOnlyMode ?? null;
   const sessionUnavailable = !accountLocked && (authFailed || authFailures > 0);
   const isLoading = (queryLoading && !isFetched) || (sessionUnavailable && !userData);
   const { data: accountPreferences, isSuccess: preferencesLoaded } = useQuery<{ theme?: string }>({
@@ -122,6 +125,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       verify: silentAuthCheck,
       commit: loginUser => {
         queryClient.setQueryData(["/api/auth/me"], loginUser);
+        void queryClient.invalidateQueries({ queryKey: ["/api/auth/me"] });
         authTransition.current = false;
         setAccountLocked(false);
       },
@@ -170,13 +174,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const value = useMemo(
     () => ({
       user,
+      adminOnlyMode,
       authenticate,
       login,
       register,
       logout,
       isLoading,
     }),
-    [user, isLoading],
+    [user, adminOnlyMode, isLoading],
   );
 
   return <AuthContext.Provider value={value}>

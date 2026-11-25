@@ -35,6 +35,7 @@ describe("production simulation filtered copy", () => {
     const fixtureFiles = new Map<string, string>([
       [".npmrc", "root credential fixture"],
       [".env.production", "root env fixture"],
+      ["max_booster_apis_v2.env", "legacy credential fixture"],
       [".config/local/credentials.json", "local config fixture"],
       [".agents/memory/MEMORY.md", "workspace memory fixture"],
       [".cloudflared/config.yml", "tunnel config fixture"],
@@ -96,6 +97,10 @@ describe("production simulation filtered copy", () => {
         "external/maxcore/artifacts/ai-training-server/ai_model/__pycache__/trainer.pyc",
         "bytecode fixture",
       ],
+      [
+        "external/maxcore/artifacts/ai-training-server/.pytest_cache/v/cache/nodeids",
+        "workspace-only pytest cache",
+      ],
       ["external/pdim/.npmrc", "PDIM credential fixture"],
       ["external/pdim/src/index.py", "PDIM source fixture"],
       ["external/pdim/venv/lib/site-packages/nested-dependency.py", "nested dependency environment fixture"],
@@ -123,6 +128,12 @@ describe("production simulation filtered copy", () => {
     );
     const wrapperTargetBefore = await fs.readlink(workspaceWrapper);
     const externalInterpreterBefore = await fs.readFile(outsideInterpreter);
+    const maxcoreVenvPython = path.join(
+      sourceRoot,
+      "external/maxcore/artifacts/ai-training-server/.venv/bin/python",
+    );
+    await fs.mkdir(path.dirname(maxcoreVenvPython), { recursive: true });
+    await fs.symlink(outsideInterpreter, maxcoreVenvPython);
     await fs.chmod(path.join(sourceRoot, "server/index.ts"), 0o640);
     await fs.symlink(
       "index.ts",
@@ -141,6 +152,7 @@ describe("production simulation filtered copy", () => {
     for (const omitted of [
       ".npmrc",
       ".env.production",
+      "max_booster_apis_v2.env",
       ".cloudflared/config.yml",
       "dns-node/keys/private.pem",
       ".config/local/credentials.json",
@@ -150,6 +162,8 @@ describe("production simulation filtered copy", () => {
       ".pdim-cluster-test-123",
       ".github/workflows/deploy.yml",
       ".pythonlibs/lib/python3.12/site-packages/large-cache",
+      "external/maxcore/artifacts/ai-training-server/.venv",
+      "external/maxcore/artifacts/ai-training-server/.pytest_cache",
       "ai_model/weights/model.pt",
       "boosterstate-data/state.bin",
       "tests/unit/example.test.ts",
@@ -195,7 +209,15 @@ describe("production simulation filtered copy", () => {
     expect(await fs.readlink(workspaceWrapper)).toBe(wrapperTargetBefore);
     expect(await fs.readFile(outsideInterpreter)).toEqual(externalInterpreterBefore);
     expect(shouldCopyProductionSimulationPath("venv/bin/python")).toBe(false);
+    expect(shouldCopyProductionSimulationPath("max_booster_apis_v2.env")).toBe(
+      false,
+    );
     expect(shouldCopyProductionSimulationPath("external/pdim/venv/lib/site-packages/nested-dependency.py")).toBe(true);
+    expect(
+      shouldCopyProductionSimulationPath(
+        "external/maxcore/artifacts/ai-training-server/.venv/bin/python",
+      ),
+    ).toBe(false);
 
     expect(shouldCopyProductionSimulationPath("node_modules/example/.npmrc")).toBe(
       true,
@@ -203,6 +225,29 @@ describe("production simulation filtered copy", () => {
     expect(shouldCopyProductionSimulationPath(".cloudflared/config.yml")).toBe(
       false,
     );
+  });
+
+  it("excludes non-dot-prefixed environment files from release inputs", async () => {
+    temporaryRoot = await fs.mkdtemp(
+      path.join(os.tmpdir(), "release-environment-file-"),
+    );
+    await fs.mkdir(path.join(temporaryRoot, "server"));
+    await fs.writeFile(
+      path.join(temporaryRoot, "server", "app.ts"),
+      "runtime source",
+    );
+    await fs.writeFile(
+      path.join(temporaryRoot, "max_booster_apis_v2.env"),
+      "fixture-only=not-a-real-credential",
+    );
+
+    const entries = await inventory(temporaryRoot, sourceIncluded);
+    const paths = entries.map((entry) => entry.path);
+    expect(paths).toContain("server/app.ts");
+    expect(paths).not.toContain("max_booster_apis_v2.env");
+    expect(
+      shouldCopyProductionSimulationPath("server/local-secrets.env"),
+    ).toBe(false);
   });
 
   it("ignores changing restore/test scratch in release identity while binding runtime changes", async () => {
@@ -254,6 +299,44 @@ describe("production simulation filtered copy", () => {
     expect(await inventory(source, sourceIncluded)).not.toEqual(before);
     await expect(fs.readFile(external, "utf8")).resolves.toBe("owned private fixture remains untouched");
     await expect(fs.readlink(path.join(source, prefix, "uploads", "private-link"))).resolves.toBe(external);
+  });
+
+  it("omits the workspace MaxCore venv before inventory can follow its Nix symlink", async () => {
+    temporaryRoot = await fs.mkdtemp(path.join(os.tmpdir(), "maxcore-workspace-venv-"));
+    const source = path.join(temporaryRoot, "source");
+    const destination = path.join(temporaryRoot, "copy");
+    const prefix = "external/maxcore/artifacts/ai-training-server/";
+    await fs.mkdir(source);
+    await fs.mkdir(destination);
+    const appSource = path.join(source, prefix, "server.py");
+    const venvPython = path.join(source, prefix, ".venv/bin/python");
+    const venvMetadata = path.join(source, prefix, ".venv/pyvenv.cfg");
+    const pytestCache = path.join(source, prefix, ".pytest_cache/v/cache/nodeids");
+    const externalInterpreter = path.join(temporaryRoot, "nix-store", "python");
+    await fs.mkdir(path.dirname(appSource), { recursive: true });
+    await fs.mkdir(path.dirname(venvPython), { recursive: true });
+    await fs.mkdir(path.dirname(venvMetadata), { recursive: true });
+    await fs.mkdir(path.dirname(pytestCache), { recursive: true });
+    await fs.mkdir(path.dirname(externalInterpreter), { recursive: true });
+    await fs.writeFile(appSource, "release source");
+    await fs.writeFile(venvMetadata, "workspace interpreter metadata");
+    await fs.writeFile(pytestCache, "generated test cache");
+    await fs.writeFile(externalInterpreter, "portable-system-python");
+    await fs.symlink(externalInterpreter, venvPython);
+
+    const before = await inventory(source, sourceIncluded);
+    expect(before.some((entry) => entry.path.startsWith(prefix + ".venv/"))).toBe(false);
+    expect(before.some((entry) => entry.path.startsWith(prefix + ".pytest_cache/"))).toBe(false);
+    copyProductionSimulationTree(source, destination);
+    await expect(fs.readFile(path.join(destination, prefix, "server.py"), "utf8"))
+      .resolves.toBe("release source");
+    await expect(fs.access(path.join(destination, prefix, ".venv"))).rejects.toThrow();
+    await expect(fs.access(path.join(destination, prefix, ".pytest_cache"))).rejects.toThrow();
+
+    await fs.writeFile(venvMetadata, "changed workspace-only metadata");
+    await fs.writeFile(pytestCache, "changed generated cache");
+    expect(await inventory(source, sourceIncluded)).toEqual(before);
+    await expect(fs.readFile(externalInterpreter, "utf8")).resolves.toBe("portable-system-python");
   });
 });
 

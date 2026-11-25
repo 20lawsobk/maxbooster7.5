@@ -9,7 +9,7 @@ const BASE = process.env.TEST_BASE_URL || "http://localhost:5000";
 const testUser = {
   birthdate: "1990-01-01",
   email: `feat_revenue_${Date.now()}@maxbooster-test.invalid`,
-  password: "SecurePass123!@#",
+  password: process.env.PASSWORD as string,
   firstName: "Feature",
   lastName: "Revenue",
 };

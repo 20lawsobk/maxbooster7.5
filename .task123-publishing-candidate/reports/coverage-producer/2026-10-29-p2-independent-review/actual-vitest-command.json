@@ -1,0 +1,14 @@
+{
+  "command": [
+    "/workspace/.cloud-tools/node_modules/node/bin/node",
+    "/workspace/maxbooster7.5/node_modules/vitest/vitest.mjs",
+    "run",
+    "--config",
+    "/workspace/onboarding-results/c5-admission-independent-review/runtime-control/vitest.config.mjs",
+    "--coverage",
+    "--reporter=junit",
+    "--outputFile=/workspace/onboarding-results/c5-admission-independent-review/runtime-control/junit.xml"
+  ],
+  "exitCode": 1,
+  "scope": "Owned tiny outside fixture with one intentionally unhandled rejection; no application imports/providers"
+}

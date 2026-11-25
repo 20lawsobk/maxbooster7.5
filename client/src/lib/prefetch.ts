@@ -9,48 +9,67 @@
  *   bootstrapUserData(qc)        — Call /api/bootstrap once after auth and
  *                                  pre-populate the query cache so the Dashboard
  *                                  renders instantly without individual API calls.
- *   prefetchAllAuthChunks()      — Eagerly download JS chunks for every auth
- *                                  route on idle so navigation is instant.
  *   prefetchRoute(importFn)      — Lazy-load a page JS chunk on idle
- *   prefetchRouteByPath(path)    — Load chunk + key API data for a path
+ *   prefetchRouteByPath(path)    — Load a route chunk on user navigation intent
  *   setupLinkPrefetching()       — Register pointer-over listener on links;
  *                                  prefetches after 65ms hover (cancels on out)
- *   prefetchAdjacentRoutes(path) — Background-prefetch likely next routes
- *                                  (called on route change, idle-queued)
  *
- * All prefetching is suppressed on 2G/slow-2g connections and when
- * navigator?.connection.saveData is true.
- *
- * Authentication-gated API endpoints are skipped when the user is logged out
- * (call setAuthState(true) after successful login to enable them).
+ * Speculative downloads are suppressed for data-saving, slow-network, and
+ * low-capacity clients. Unknown/mobile clients get intent-based prefetch only.
  */
 
 import type { QueryClient } from "@tanstack/react-query";
 import { offlineIdentity, assertOfflineIdentity } from "./offline/identity";
+import { getPrefetchMode, isIdlePrefetchAllowed } from "./prefetchPolicy";
 
 const prefetchedRoutes = new Set<string>();
-const prefetchedData = new Set<string>();
 let _bootstrapped: ReturnType<typeof offlineIdentity> | null = null;
 
-let isAuthenticated = false;
-
 export function setAuthState(authenticated: boolean): void {
-  isAuthenticated = authenticated;
-  if (!authenticated) {
-    _bootstrapped = null;
-    prefetchedData.clear();
-  }
+  if (!authenticated) _bootstrapped = null;
 }
 
 function shouldPrefetch(): boolean {
   if (typeof navigator === "undefined") return false;
-  const conn = (navigator as Record<string, unknown>).connection;
-  if (conn) {
-    if (conn?.saveData) return false;
-    if (conn?.effectiveType === "2g" || conn?.effectiveType === "slow-2g")
-      return false;
-  }
-  return true;
+  const clientNavigator = navigator as Navigator & {
+    connection?: {
+      saveData?: boolean;
+      effectiveType?: string;
+      downlink?: number;
+    };
+    deviceMemory?: number;
+  };
+  return getPrefetchMode({
+    saveData: clientNavigator.connection?.saveData,
+    effectiveType: clientNavigator.connection?.effectiveType,
+    downlink: clientNavigator.connection?.downlink,
+    deviceMemory: clientNavigator.deviceMemory,
+    hardwareConcurrency: clientNavigator.hardwareConcurrency,
+    viewportWidth: typeof window === "undefined" ? 0 : window.innerWidth,
+  }) !== "none";
+}
+
+function canPrefetchDuringIdle(): boolean {
+  if (typeof navigator === "undefined") return false;
+  const clientNavigator = navigator as Navigator & {
+    connection?: {
+      saveData?: boolean;
+      effectiveType?: string;
+      downlink?: number;
+    };
+    deviceMemory?: number;
+  };
+  return isIdlePrefetchAllowed(
+    import.meta.env.DEV,
+    getPrefetchMode({
+      saveData: clientNavigator.connection?.saveData,
+      effectiveType: clientNavigator.connection?.effectiveType,
+      downlink: clientNavigator.connection?.downlink,
+      deviceMemory: clientNavigator.deviceMemory,
+      hardwareConcurrency: clientNavigator.hardwareConcurrency,
+      viewportWidth: typeof window === "undefined" ? 0 : window.innerWidth,
+    }),
+  );
 }
 
 const routeImportMap: Record<string, () => Promise<unknown>> = {
@@ -70,18 +89,6 @@ const routeImportMap: Record<string, () => Promise<unknown>> = {
   "/collaborations": () => import("@/pages/Collaborations"),
   "/career-coach": () => import("@/pages/CareerCoach"),
   "/invoices": () => import("@/pages/Invoices"),
-};
-
-const publicEndpoints = new Set(["/api/auth/me"]);
-
-const routeDataMap: Record<string, string[]> = {
-  "/dashboard": ["/api/auth/me", "/api/projects?limit=5"],
-  "/projects": ["/api/projects"],
-  "/studio": ["/api/studio/projects"],
-  "/marketplace": ["/api/marketplace/beats?limit=12"],
-  "/analytics": ["/api/analytics/dashboard"],
-  "/settings": ["/api/auth/me"],
-  "/royalties": ["/api/royalties/summary"],
 };
 
 export function prefetchRoute(importFn: () => Promise<unknown>) {
@@ -106,29 +113,15 @@ export function prefetchRouteByPath(path: string) {
   if (importFn) {
     prefetchRoute(importFn);
   }
-
-  const endpoints = routeDataMap[normalizedPath];
-  if (endpoints) {
-    for (const endpoint of endpoints) {
-      const requiresAuth = !publicEndpoints?.has(endpoint?.split("?")[0]);
-      if (requiresAuth && !isAuthenticated) continue;
-      if (prefetchedData?.has(endpoint)) continue;
-      prefetchedData?.add(endpoint);
-      fetch(endpoint, { credentials: "include" })
-        .then((r) => {
-          if (r?.status === 401) prefetchedData?.delete(endpoint);
-        })
-        .catch(() => {
-          prefetchedData?.delete(endpoint);
-        });
-    }
-  }
 }
 
 export function setupLinkPrefetching() {
   let hoverTimeout: ReturnType<typeof setTimeout> | null = null;
 
   const handlePointerOver = (e: Event) => {
+    // Touch users navigate by tapping; do not turn touch pointer events into
+    // speculative downloads on phones and tablets.
+    if ((e as PointerEvent).pointerType === "touch") return;
     const target = (e?.target as HTMLElement)?.closest("a[href], [data-href]");
     if (!target) return;
 
@@ -161,6 +154,7 @@ export function setupLinkPrefetching() {
 }
 
 export function prefetchAdjacentRoutes(currentPath: string) {
+  if (!canPrefetchDuringIdle()) return;
   const adjacencyMap: Record<string, string[]> = {
     "/": ["/dashboard", "/login", "/register", "/pricing"],
     "/login": ["/dashboard", "/register"],
@@ -279,28 +273,39 @@ const ALL_AUTH_CHUNKS: Array<() => Promise<unknown>> = [
 ];
 
 /**
- * Eagerly download JS for every high-traffic auth route during idle time.
- * After this finishes, navigating between pages feels instant — no download
- * delay, no Suspense skeleton, just an immediate render.
+ * Download high-traffic auth route chunks during idle time on production
+ * desktop clients. Development keeps Vite's module graph bounded and relies
+ * on intent prefetching instead.
  */
 export function prefetchAllAuthChunks(): void {
-  if (!shouldPrefetch()) return;
+  if (!canPrefetchDuringIdle()) return;
 
-  const load = () => {
-    for (const fn of ALL_AUTH_CHUNKS) {
-      const key = fn?.toString();
-      if (!prefetchedRoutes?.has(key)) {
-        prefetchedRoutes?.add(key);
-        fn().catch(() => {});
+  let index = 0;
+  const scheduleNext = () => {
+    if (index >= ALL_AUTH_CHUNKS.length) return;
+
+    const loadOne = (deadline?: IdleDeadline) => {
+      if (deadline && !deadline.didTimeout && deadline.timeRemaining() < 8) {
+        scheduleNext();
+        return;
       }
+
+      const importFn = ALL_AUTH_CHUNKS[index++];
+      const key = importFn.toString();
+      if (prefetchedRoutes.has(key)) {
+        scheduleNext();
+        return;
+      }
+      prefetchedRoutes.add(key);
+      void importFn().catch(() => {}).finally(scheduleNext);
+    };
+
+    if ("requestIdleCallback" in window) {
+      window.requestIdleCallback(loadOne, { timeout: 5000 });
+    } else {
+      window.setTimeout(() => loadOne(), 2000);
     }
   };
 
-  if ("requestIdleCallback" in window) {
-    (window as Record<string, unknown>).requestIdleCallback(load, {
-      timeout: 5000,
-    });
-  } else {
-    setTimeout(load, 2000);
-  }
+  scheduleNext();
 }

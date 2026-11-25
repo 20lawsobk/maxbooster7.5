@@ -58,6 +58,7 @@ const evidence = {
   capacityAdmission: "not_run",
   schemaGeneration: "not_run",
   postgres: "not_run",
+  schemaManagedMigrations: [],
   appProcess: "not_run",
   health: "not_run",
   readiness: "not_run",
@@ -244,7 +245,7 @@ async function runHttpAuthJourney(email, username, password) {
   return { userId: registered.id };
 }
 
-async function runProjectCrud(jar, csrf, ownerId) {
+async function runProjectCrud(jar, csrf, ownerId, otherOwnerSession) {
   const createdResponse = await authRequest(jar, "/api/projects", { method: "POST", csrf,
     body: { title: "Disposable CRUD project", description: "sealed acceptance" } });
   const created = jsonBody(createdResponse);
@@ -261,7 +262,12 @@ async function runProjectCrud(jar, csrf, ownerId) {
   const stale = await authRequest(jar, path, { method: "PATCH", csrf,
     body: { title: "stale overwrite", expectedUpdatedAt: originalVersion } });
   if (stale.status !== 409) throw new Error("stale project write was not rejected");
-  const second = await createLoadSession(`owner-${randomBytes(8).toString("hex")}@example.invalid`, `owner_${randomBytes(8).toString("hex")}`, `Owner!${randomBytes(12).toString("hex")}9a`, true);
+  const second = otherOwnerSession ?? await createLoadSession(
+    `owner-${randomBytes(8).toString("hex")}@example.invalid`,
+    `owner_${randomBytes(8).toString("hex")}`,
+    `Owner!${randomBytes(12).toString("hex")}9a`,
+    true,
+  );
   for (const method of ["GET", "PATCH", "DELETE"]) {
     const denied = await authRequest(second.jar, path, { method, csrf: second.csrf,
       ...(method === "GET" ? {} : {body: { title: "cross-owner mutation", expectedUpdatedAt: jsonBody(updated).updatedAt }}) });
@@ -786,7 +792,12 @@ async function runAuthenticatedHttpLoad() {
     sessions.push(await createLoadSession(email, username, password, false));
   }
 
-  evidence.projectCrud = await runProjectCrud(sessions[0].jar, sessions[0].csrf, sessions[0].userId);
+  evidence.projectCrud = await runProjectCrud(
+    sessions[0].jar,
+    sessions[0].csrf,
+    sessions[0].userId,
+    sessions[2],
+  );
   const invalidCsrf = await authRequest(sessions[0].jar, "/api/auth/heartbeat", { method: "POST" });
   if (invalidCsrf.status !== 403) {
     throw new Error(`missing-CSRF mutation was not rejected (HTTP ${invalidCsrf.status})`);
@@ -984,9 +995,25 @@ try {
   for (const file of readdirSync(join(temp, "generated")).filter((name) => name.endsWith(".sql")).sort()) {
     await client.query(readFileSync(join(temp, "generated", file), "utf8"));
   }
+  const schemaManagedMigrations = new Set([
+    // The current Drizzle schema already creates these objects; applying the
+    // upgrade migration over that generated baseline causes duplicate DDL.
+    "0100_maxcore_cognitive_registry.sql",
+    "0101_collaboration_rooms.sql",
+  ]);
   for (const file of readdirSync(join(root, "migrations")).filter((name) => /^\d+.*\.sql$/.test(name) && Number(name.split("_")[0]) >= 20).sort()) {
+    if (schemaManagedMigrations.has(file)) {
+      evidence.schemaManagedMigrations.push(file);
+      continue;
+    }
     await client.query(readFileSync(join(root, "migrations", file), "utf8"));
   }
+  await client.query(
+    "INSERT INTO system_settings (key, value, description) VALUES ($1, $2::jsonb, $3)",
+    ["platform.userRegistrationEnabled", "true", "sealed acceptance fixture"],
+  );
+  evidence.acceptancePolicy =
+    "registration enabled only in the isolated test database and process";
   evidence.postgres = "pass";
 
   const sessionSecret = randomBytes(48).toString("hex");
@@ -996,6 +1023,7 @@ try {
     PORT: String(appPort),
     DATABASE_URL: `postgresql://acceptance@127.0.0.1:${pgPort}/postgres`,
     SESSION_SECRET: sessionSecret,
+    MAXBOOSTER_PUBLIC_LAUNCH_ENABLED: "true",
     READINESS_ISOLATED_PG: "1",
     READINESS_EGRESS_GUARD: "1",
     MAXCORE_LOCAL: "0",

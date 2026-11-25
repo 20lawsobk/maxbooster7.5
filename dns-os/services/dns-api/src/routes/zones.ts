@@ -1,5 +1,5 @@
 import { FastifyInstance } from "fastify";
-import { pool } from "../db/pool.js";
+import { pool, schema } from "../db/pool.js";
 
 export default async function zonesRoutes(app: FastifyInstance) {
   app.post<{ Body: { tenant_id: string; name: string } }>(
@@ -21,7 +21,7 @@ export default async function zonesRoutes(app: FastifyInstance) {
       const normalised = name.toLowerCase().replace(/\.$/, "");
 
       const { rows } = await pool.query(
-        `INSERT INTO zones (tenant_id, name)
+        `INSERT INTO ${schema}.zones (tenant_id, name)
        VALUES ($1, $2)
        RETURNING id, tenant_id, name, status, serial, created_at`,
         [tenant_id, normalised],
@@ -33,7 +33,7 @@ export default async function zonesRoutes(app: FastifyInstance) {
   app.get<{ Params: { id: string } }>("/:id", async (req, reply) => {
     const { rows } = await pool.query(
       `SELECT id, tenant_id, name, status, serial, created_at, updated_at
-       FROM zones WHERE id = $1`,
+       FROM ${schema}.zones WHERE id = $1`,
       [req.params.id],
     );
     if (!rows[0]) return reply.code(404).send({ error: "not_found" });
@@ -44,11 +44,11 @@ export default async function zonesRoutes(app: FastifyInstance) {
     const { tenant_id } = req.query;
     const { rows } = tenant_id
       ? await pool.query(
-          `SELECT id, tenant_id, name, status, serial FROM zones WHERE tenant_id = $1 ORDER BY name`,
+          `SELECT id, tenant_id, name, status, serial FROM ${schema}.zones WHERE tenant_id = $1 ORDER BY name`,
           [tenant_id],
         )
       : await pool.query(
-          `SELECT id, tenant_id, name, status, serial FROM zones ORDER BY name`,
+          `SELECT id, tenant_id, name, status, serial FROM ${schema}.zones ORDER BY name`,
         );
     return reply.send(rows);
   });
@@ -59,7 +59,7 @@ export default async function zonesRoutes(app: FastifyInstance) {
       const { status } = req.body;
       if (!status) return reply.code(400).send({ error: "nothing_to_update" });
       const { rows } = await pool.query(
-        `UPDATE zones SET status = $1, updated_at = now() WHERE id = $2 RETURNING *`,
+        `UPDATE ${schema}.zones SET status = $1, updated_at = now() WHERE id = $2 RETURNING *`,
         [status, req.params.id],
       );
       if (!rows[0]) return reply.code(404).send({ error: "not_found" });
@@ -68,7 +68,7 @@ export default async function zonesRoutes(app: FastifyInstance) {
   );
 
   app.delete<{ Params: { id: string } }>("/:id", async (req, reply) => {
-    const { rowCount } = await pool.query(`DELETE FROM zones WHERE id = $1`, [
+    const { rowCount } = await pool.query(`DELETE FROM ${schema}.zones WHERE id = $1`, [
       req.params.id,
     ]);
     if (!rowCount) return reply.code(404).send({ error: "not_found" });

@@ -9,6 +9,9 @@ from unittest.mock import patch
 spec = importlib.util.spec_from_file_location("portable_rust", Path(__file__).resolve().parents[1] / "scripts/prepare-rust-toolchain.py")
 portable = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(portable)
+tls_spec = importlib.util.spec_from_file_location("rust_glibc_tunables", Path(__file__).resolve().parents[1] / "scripts/rust-glibc-tunables.py")
+rust_glibc_tunables = importlib.util.module_from_spec(tls_spec)
+tls_spec.loader.exec_module(rust_glibc_tunables)
 
 
 class PortableRustVerification(unittest.TestCase):
@@ -51,6 +54,38 @@ class PortableRustVerification(unittest.TestCase):
             (root / "provenance.json").write_text(json.dumps(record))
             with self.assertRaisesRegex(RuntimeError, "provenance"):
                 portable.verify(root)
+
+
+class RustGlibcTunables(unittest.TestCase):
+    def test_sets_minimum_static_tls_without_disabling_other_tunables(self):
+        self.assertEqual(
+            rust_glibc_tunables.merge_glibc_tunables(
+                "glibc.malloc.trim_threshold=65536:glibc.rtld.optional_static_tls=4096"
+            ),
+            "glibc.malloc.trim_threshold=65536:glibc.rtld.optional_static_tls=131072",
+        )
+
+    def test_preserves_a_higher_existing_static_tls_reserve(self):
+        self.assertEqual(
+            rust_glibc_tunables.merge_glibc_tunables(
+                "glibc.rtld.optional_static_tls=0x40000:glibc.malloc.trim_threshold=4096"
+            ),
+            "glibc.malloc.trim_threshold=4096:glibc.rtld.optional_static_tls=262144",
+        )
+
+    def test_deduplicates_static_tls_and_uses_the_largest_existing_value(self):
+        self.assertEqual(
+            rust_glibc_tunables.merge_glibc_tunables(
+                "glibc.rtld.optional_static_tls=65536:glibc.rtld.optional_static_tls=262144"
+            ),
+            "glibc.rtld.optional_static_tls=262144",
+        )
+
+    def test_rejects_malformed_existing_tunable_instead_of_silently_dropping_it(self):
+        with self.assertRaisesRegex(ValueError, "decimal or hexadecimal"):
+            rust_glibc_tunables.merge_glibc_tunables(
+                "glibc.rtld.optional_static_tls=invalid"
+            )
 
 
 if __name__ == "__main__":

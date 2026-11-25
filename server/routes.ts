@@ -25,12 +25,22 @@ import { createMfaChallengeRouter } from "./routes/mfaChallenge.js";
 import { factorRepository } from "./services/factorRepository.js";
 import { getApplicationContainment } from "./services/securityContainment.js";
 import { governanceBoundary } from "./middleware/governanceBoundary.js";
-import { assertRegistrationEnabled } from "./services/governancePolicyService.js";
+import {
+  assertRegistrationEnabled,
+  isAdminOnlyMode,
+  readGovernancePolicy,
+  GovernancePolicyUnavailableError,
+  RegistrationDisabledError,
+} from "./services/governancePolicyService.js";
+import {
+  isRegularE2eRegistration,
+  isRegularE2eUser,
+} from "./services/regularE2eAccountPolicy.js";
 import { issueAdminApiToken, revokeAdminApiToken } from "./services/adminApiTokenService.js";
 import { consumeTotp } from "./services/totpReplay.js";
 import { requireUUIDParam } from "./middleware/requestValidation.js";
 import Stripe from "stripe";
-import { createStripeClient } from "./lib/stripeClient";
+import { createStripeClient, getStripeSecretKey } from "./lib/stripeClient";
 import { getStripePriceIds } from "./services/stripeSetup.js";
 import {
   createSubscriptionCheckout,
@@ -51,7 +61,7 @@ import {
   invalidateCacheOnMutation,
 } from "./middleware/apiCache.js";
 import { blockDemoWrite } from "./auth.js";
-import { requireAuth, requireAdmin, require2FA } from "./middleware/auth.js";
+import { requireAuth, requireAdmin, require2FA, hasPaidFeatureAccess } from "./middleware/auth.js";
 import { AIUnavailableError } from "./lib/aiSource.js";
 import { generateSocialDirect } from "./services/maxcoreDomainAdapter.js";
 
@@ -275,6 +285,27 @@ export async function registerRoutes(
   app.get("/api/csrf-token", getCsrfToken);
 
   // Auth: Get current user
+  app.get("/api/auth/public-policy", async (_req: Request, res: Response) => {
+    res.setHeader("Cache-Control", "no-store");
+    const adminOnlyMode = isAdminOnlyMode();
+    if (adminOnlyMode) {
+      return res.json({ adminOnlyMode: true, registrationEnabled: false });
+    }
+
+    try {
+      const policy = await readGovernancePolicy();
+      return res.json({
+        adminOnlyMode: false,
+        registrationEnabled: policy.userRegistrationEnabled,
+      });
+    } catch {
+      return res.status(503).json({
+        adminOnlyMode: false,
+        registrationEnabled: false,
+      });
+    }
+  });
+
   app.get("/api/auth/me", async (req: Request, res: Response) => {
     const isProduction = isProductionEnv();
 
@@ -309,7 +340,11 @@ export async function registerRoutes(
       if (safeUser.email === "demo@maxbooster.ai") {
         (safeUser as any).isDemo = true;
       }
-      return res.json({ ...safeUser, preferences: publicPaymentPreferences(safeUser.preferences) });
+      return res.json({
+        ...safeUser,
+        preferences: publicPaymentPreferences(safeUser.preferences),
+        adminOnlyMode: isAdminOnlyMode(),
+      });
     }
     return res.json(null);
   });
@@ -322,6 +357,11 @@ export async function registerRoutes(
       try {
         const { email, password, username, firstName, lastName, artistName, birthdate } =
           req.body ?? {};
+        const isRegularE2eAccount = isRegularE2eRegistration({
+          email,
+          password,
+          username,
+        });
 
         const eligibilityError = getAccountEligibilityError(birthdate);
         if (eligibilityError) return res.status(400).json({ message: eligibilityError });
@@ -373,7 +413,7 @@ export async function registerRoutes(
         const hashedPassword = await bcrypt.hash(password, 12);
         let user;
         try {
-          await assertRegistrationEnabled();
+          if (!isRegularE2eAccount) await assertRegistrationEnabled();
           user = await storage.createUser({
             email,
             password: hashedPassword,
@@ -420,26 +460,28 @@ export async function registerRoutes(
             .json({ message: "Registration failed - session error" });
         }
 
-        emailService
-          .sendWelcomeEmail({
-            firstName: firstName || username || "there",
-            email,
-          })
-          .catch((err: unknown) =>
-            logger.info({ err: err }, "Welcome email failed (non-blocking)"),
-          );
+        if (!isRegularE2eAccount) {
+          emailService
+            .sendWelcomeEmail({
+              firstName: firstName || username || "there",
+              email,
+            })
+            .catch((err: unknown) =>
+              logger.info({ err: err }, "Welcome email failed (non-blocking)"),
+            );
 
-        Promise?.race([
-          notificationService?.sendAdminNewUserNotification(email, user?.id),
-          new Promise<never>((_, rej) =>
-            setTimeout(() => rej(new Error("bg-timeout")), 3000),
-          ),
-        ]).catch((err: unknown) =>
-          logger.info(
-            { err: err },
-            "Admin new-user notification failed (non-blocking)",
-          ),
-        );
+          Promise?.race([
+            notificationService?.sendAdminNewUserNotification(email, user?.id),
+            new Promise<never>((_, rej) =>
+              setTimeout(() => rej(new Error("bg-timeout")), 3000),
+            ),
+          ]).catch((err: unknown) =>
+            logger.info(
+              { err: err },
+              "Admin new-user notification failed (non-blocking)",
+            ),
+          );
+        }
 
         if (
           artistName &&
@@ -475,6 +517,12 @@ export async function registerRoutes(
         return res.json({ ...safeUser, preferences: publicPaymentPreferences(safeUser.preferences) });
       } catch (error) {
         logger.warn({ err: error }, "Registration error");
+        if (error instanceof RegistrationDisabledError) {
+          return res.status(error.statusCode).json({ message: error.message });
+        }
+        if (error instanceof GovernancePolicyUnavailableError) {
+          return res.status(error.statusCode).json({ message: "Registration policy unavailable" });
+        }
         return res.status(500).json({ message: "Registration failed" });
       }
     },
@@ -577,14 +625,16 @@ export async function registerRoutes(
             logger.warn({ err: e }, "[Login] Failed to update login streak:"),
           );
 
-          Promise.race([
-            notificationService.sendLoginSecurityNotification(
-              user.id,
-              req.ip || undefined,
-              req.headers["user-agent"] || undefined,
-            ),
-            _bgTimeout(3000),
-          ]).catch(() => {});
+          if (!isRegularE2eUser(user)) {
+            Promise.race([
+              notificationService.sendLoginSecurityNotification(
+                user.id,
+                req.ip || undefined,
+                req.headers["user-agent"] || undefined,
+              ),
+              _bgTimeout(3000),
+            ]).catch(() => {});
+          }
 
           const {
             password: _,
@@ -2980,11 +3030,10 @@ export async function registerRoutes(
         studioProjects,
         releases,
         socialAccounts,
-        subscriptions: subscriptionsTable,
       } = await import("@shared/schema");
       const { count, eq, and } = await import("drizzle-orm");
 
-      const [trackCount, releaseCount, socialCount, subResult] =
+      const [trackCount, releaseCount, socialCount] =
         await Promise.all([
           db
             .select({ count: count() })
@@ -3003,22 +3052,12 @@ export async function registerRoutes(
                 eq(socialAccounts.isActive, true),
               ),
             ),
-          db
-            .select()
-            .from(subscriptionsTable)
-            .where(
-              and(
-                eq(subscriptionsTable.userId, userId),
-                eq(subscriptionsTable.status, "active"),
-              ),
-            )
-            .limit(1),
         ]);
 
       const tracks = trackCount[0]?.count ?? 0;
       const releasesCount = releaseCount[0]?.count ?? 0;
       const socials = socialCount[0]?.count ?? 0;
-      const hasActiveSub = subResult.length > 0;
+      const hasActiveSub = hasPaidFeatureAccess(req.user!);
 
       if (!hasActiveSub) {
         return res.json({
@@ -6992,6 +7031,9 @@ export async function registerRoutes(
   const { default: trainingRouter } = await import("./routes/training.js");
   app.use("/api/training", trainingRouter);
 
+  const { default: maxcoreCognitiveRouter } = await import("./routes/maxcoreCognitive.js");
+  app.use("/api/maxcore/cognitive", maxcoreCognitiveRouter);
+
   const { default: maxcoreRouter } = await import("./routes/maxcore.js");
   app.use("/api/maxcore", maxcoreRouter);
   app.use("/api/paid", paidRouter);
@@ -7016,11 +7058,7 @@ export async function registerRoutes(
         return res.status(401).json({ message: "Not authenticated" });
       }
       try {
-        if (
-          !req.user?.subscriptionTier ||
-          req.user.subscriptionTier === "free" ||
-          req.user.subscriptionTier === "trial"
-        ) {
+        if (!req.user || !hasPaidFeatureAccess(req.user)) {
           return res.status(403).json({
             message:
               "AI content optimization requires an active paid subscription",
@@ -8080,8 +8118,9 @@ export async function registerRoutes(
   }
 
   // Stripe checkout session creation for subscription plans
-  const stripe = process.env.STRIPE_SECRET_KEY
-    ? createStripeClient(process.env.STRIPE_SECRET_KEY, {
+  const stripeSecretKey = getStripeSecretKey();
+  const stripe = stripeSecretKey
+    ? createStripeClient(stripeSecretKey, {
         apiVersion: "2026-02-25.clover",
       })
     : null;
@@ -8575,6 +8614,18 @@ export async function registerRoutes(
   } catch (error) {
     log(
       `Warning: Could not load collaboration routes - ${error instanceof Error ? error.message : String(error)}`,
+    );
+  }
+
+  try {
+    const collaborationRoomsRouter = (
+      await import("./routes/collaborationRooms.js")
+    ).default;
+    app.use("/api/collaboration/rooms", collaborationRoomsRouter);
+    log("Collaboration room routes registered");
+  } catch (error) {
+    log(
+      `Warning: Could not load collaboration room routes - ${error instanceof Error ? error.message : String(error)}`,
     );
   }
 

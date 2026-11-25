@@ -1,0 +1,1 @@
+PASS pure local interface/schema preflight: FetchResult.final_url, Engine snapshot/status/follower/conditioning/expiry, source-ledger schema and PDIM methods. Controlled unit fixtures only; NOT public-ingestion/publication acceptance.

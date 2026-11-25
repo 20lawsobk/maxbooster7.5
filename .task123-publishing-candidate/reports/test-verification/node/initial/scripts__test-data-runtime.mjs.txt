@@ -1,0 +1,26 @@
+PASS D6: set/touch/destroy await commit, propagate failures; read failure explicit; touch UPDATE-only
+PASS D6 auth integration: uncached generation validation, authority errors explicit, durable revoke waits and confirms
+PASS D7: eleven malformed records retained as failed; valid processor runs; no startup sweep
+node:internal/modules/run_main:123
+    triggerUncaughtException(
+    ^
+
+AssertionError [ERR_ASSERTION]: The input did not match the regular expression /snapshot recovery failed/. Input:
+
+'Error: PDIM fabric persistence was not supplied by the owner'
+
+    at process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+    at async <anonymous> (/workspace/maxbooster7.5/scripts/test-data-runtime.mjs:152:3) {
+  generatedMessage: true,
+  code: 'ERR_ASSERTION',
+  actual: Error: PDIM fabric persistence was not supplied by the owner
+      at _RedisStore.getPersistence (file:///tmp/maxbooster-test-op63o0rl/runtime-tests-aqz4ot/0.07081942836301813.mjs:261:34)
+      at _RedisStore.load (file:///tmp/maxbooster-test-op63o0rl/runtime-tests-aqz4ot/0.07081942836301813.mjs:403:32)
+      at <anonymous> (/workspace/maxbooster7.5/scripts/test-data-runtime.mjs:152:30)
+      at process.processTicksAndRejections (node:internal/process/task_queues:103:5),
+  expected: /snapshot recovery failed/,
+  operator: 'rejects',
+  diff: 'simple'
+}
+
+Node.js v22.23.3

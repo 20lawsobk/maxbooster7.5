@@ -52,6 +52,62 @@ class LiveServingTests(unittest.TestCase):
             self.model.generate("prompt")
         self.assertNotIn('"text"', (Path(self.temp.name) / "live-learning.json").read_text())
 
+    def test_internal_owner_and_simulation_source_uses_existing_candidate_worker(self):
+        from ai_model.training.internal_training_sources import (
+            collect_internal_training_bundle,
+        )
+
+        class Storage:
+            is_available = True
+            _local_canonical = True
+
+            def __init__(self):
+                self.values = {}
+
+            def get(self, key):
+                return self.values.get(key)
+
+            def set(self, key, value):
+                self.values[key] = value
+                return True
+
+            def lrange(self, *_args):
+                return []
+
+        with patch.dict(os.environ, {"AI_SERVER_KEY": "test-internal-source-key"}):
+            bundle = collect_internal_training_bundle(Storage(), now=120)
+            loop = self.loop(internal_source=lambda: bundle)
+            status = loop.tick()
+            self.assertEqual(status["training"], "candidate_trained_unreviewed")
+            self.assertEqual(status["internal_source"]["simulation_horizon_days_per_track"], 3650)
+            self.assertEqual(self.trainer.call_args.kwargs["internal_bundle"]["id"], bundle["id"])
+            self.assertFalse(self.trainer.call_args.kwargs["peak_content"])
+
+    def test_awareness_use_wakes_the_existing_worker_with_bounded_coalescing(self):
+        loop = self.loop()
+        loop.poll = 10
+        first_tick, second_tick = threading.Event(), threading.Event()
+        ticks = []
+
+        def tick():
+            ticks.append(True)
+            (first_tick if len(ticks) == 1 else second_tick).set()
+            return loop.status()
+
+        loop.tick = tick
+        loop.start()
+        try:
+            self.assertTrue(first_tick.wait(2))
+            self.assertTrue(loop.request_learning_check())
+            self.assertFalse(loop.request_learning_check())
+            self.assertTrue(second_tick.wait(.5), "endpoint use should wake the worker before its poll interval")
+            usage = loop.status()["awareness_endpoint_usage"]
+            self.assertEqual(usage["uses"], 2)
+            self.assertEqual(usage["learning_check_signals"], 1)
+            self.assertEqual(usage["signal_min_interval_seconds"], 5)
+        finally:
+            loop.stop()
+
     def test_recovered_training_and_selection_clear_previous_error_labels(self):
         loop = self.loop()
         loop._status.update(training_error="Blocked", release_error="AwarenessUnavailable")
@@ -173,6 +229,37 @@ class LiveServingTests(unittest.TestCase):
         with self.assertRaises(ValueError):
             self.model.install(adapter, status)
         self.assertFalse(self.model.available)
+
+    def test_currently_selected_candidate_is_unloaded_when_evidence_becomes_invalid(self):
+        adapter, status = release("stale")
+        self.model.install(adapter, {**status, "trained_checkpoint_loaded": True})
+        loop = LiveLearningLoop(
+            lambda: self.engine, self.model, Path(self.temp.name),
+            peak_content=False, interval=60, poll=1, clock=lambda: self.now,
+        )
+        with patch("ai_model.training.auto_selection.auto_select", return_value={
+            "state": "waiting_for_candidate",
+            "selected_candidate_invalid": True,
+        }):
+            loop._refresh_release()
+        self.assertFalse(self.model.available)
+        self.assertEqual(loop.status()["serving"], "blocked_release")
+        self.assertEqual(loop.status()["release_error"], "SelectedCandidateInvalid")
+
+    def test_loaded_candidate_is_unloaded_when_selection_disappears(self):
+        adapter, status = release("withdrawn")
+        self.model.install(adapter, {**status, "trained_checkpoint_loaded": True})
+        loop = LiveLearningLoop(
+            lambda: self.engine, self.model, Path(self.temp.name),
+            peak_content=False, interval=60, poll=1, clock=lambda: self.now,
+        )
+        with patch("ai_model.training.auto_selection.auto_select", return_value={
+            "state": "waiting_for_candidate",
+        }):
+            loop._refresh_release()
+        self.assertFalse(self.model.available)
+        self.assertEqual(loop.status()["serving"], "blocked_release")
+        self.assertTrue(loop.status()["selection"]["selected_candidate_invalid"])
 
     def test_default_startup_uses_live_pipeline_without_legacy_checkpoint(self):
         tree = ast.parse((ROOT / "server.py").read_text())

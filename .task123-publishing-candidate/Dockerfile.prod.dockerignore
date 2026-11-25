@@ -1,0 +1,5 @@
+# Fail closed: never send the checkout, credentials, model state or caches.
+**
+!.prepared-release/
+!.prepared-release/payload/
+!.prepared-release/payload/**

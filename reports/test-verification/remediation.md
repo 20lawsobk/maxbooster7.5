@@ -1,6 +1,6 @@
 # Actionable test and feature repair guide
 
-Generated: `2026-10-29T23:24:11.749300+00:00`. Status: **needs_work**. Unresolved tasks: **3421**.
+Generated: `2026-11-10T14:49:10.124600+00:00`. Status: **needs_work**. Unresolved tasks: **3946**.
 
 Observations come from the linked reports. A likely diagnosis is not a confirmed application bug. Run the reproduction command in the prepared isolated environment, complete the listed actions, and retain fresh proof. Generating this guide does not change a test result.
 
@@ -9,48 +9,77 @@ Observations come from the linked reports. A likely diagnosis is not a confirmed
 | assertion_failure | 1 |
 | blocked_check | 20 |
 | command_failure | 1 |
-| coverage_gap | 2494 |
-| feature_acceptance_gap | 833 |
+| coverage_gap | 2500 |
+| feature_acceptance_gap | 838 |
 | mapping_gap | 20 |
-| missing_execution | 29 |
-| skipped_case | 23 |
+| missing_evidence | 1 |
+| missing_execution | 547 |
+| skipped_case | 18 |
 
 ## Failure families
 
 | Observed boundary / diagnosis | Tasks |
 | --- | ---: |
-| Source-defined behavior lacks the required execution/feature evidence. | 3323 |
-| This check was not executed under its required conditions. | 72 |
+| Source-defined behavior lacks the required execution/feature evidence. | 3334 |
+| This check was not executed under its required conditions. | 583 |
 | The source inventory cannot resolve the actual target of a dynamic registration or interaction. | 20 |
-| A required capability/readiness condition was not established. | 3 |
+| A required capability/readiness condition was not established. | 2 |
+| An immutable historical diagnostic record or its referenced bytes no longer verifies. | 2 |
+| The captured assertion/process failure needs source-level diagnosis; its cause has not been inferred. | 2 |
 | The deletion test imports a source module that is absent from this checkout. | 2 |
-| The captured assertion/process failure needs source-level diagnosis; its cause has not been inferred. | 1 |
+| The master run cannot establish this verification boundary without its expected artifact. | 1 |
 
 Machine details, exact uncovered source locations and platform acceptance IDs are in `remediation.json`. The platform register provides every page/API/control requirement; these tasks link to it without copying the entire register.
 
-This Markdown shows the first 100 prioritized tasks of 3421. The JSON retains every task and every uncovered location. Use `--markdown-limit N` to expand this review without changing the machine results.
+This Markdown shows the first 100 prioritized tasks of 3946. The JSON retains every task and every uncovered location. Use `--markdown-limit N` to expand this review without changing the machine results.
 
-## `repair-e9ca68ef654083c1` — coverage
+## `repair-00be17a09cfff36c` — Invalid feature evidence links
 
-Source: `scripts/testing/run-all.py`. Group: `coverage`. Kind: `command_failure`. Priority: **P1**.
+Source: `platform-register.json`. Group: `platform`. Kind: `missing_evidence`. Priority: **P0**.
 
-Observed: [23:07:39.068] INFO (410040): ✅ [PDIM] Connected via HTTP exec endpoint [23:07:40.980] WARN (410380): Mobile token remove error:     err: {       "type": "Error",       "message": "database unavailable",       "stack":           [ACCESSOR]     } [23:07:41.003] WARN (410380): Push unsubscribe error:     err: {
+Observed: The platform register rejected one or more proposed proof links.
 
-Diagnosis (**needs_verification**): A required capability/readiness condition was not established.
+Diagnosis (**confirmed**): The master run cannot establish this verification boundary without its expected artifact.
 
-Evidence: `reports/test-verification/orchestration/coverage.txt`.
+Evidence: `platform-register.json`.
 
 Reproduce from the documented working directory:
 
 ```sh
-node node_modules/vitest/vitest.mjs run --config vitest.platform.config.ts --reporter=junit --outputFile=/workspace/maxbooster7.5/reports/test-verification/root/coverage-unit.junit.xml
+npm run test:all -- --plan
 ```
 
 Required changes:
 
-1. Capture the disposable service readiness details and identify the exact unavailable component or candidate-quality gate.
-2. Implement or configure the required operational capability and verify actual text/media output, quality and durable delivery with the same public-signal conditioning.
-3. Keep separate unconfigured-state 503 tests and configured-state success tests. Do not forge a certificate, report model_loaded=true without proof, or turn a failing readiness gate into a blanket 200.
+1. Run the owning catalog/coverage/platform/test producer using the documented isolated master command.
+2. Retain a complete machine report, its current source identity and real process exit. Do not treat an absent report as zero failures.
+
+Proof needed:
+
+- The expected artifact exists, parses and describes an actually executed producer.
+
+## `repair-2ea8738838bd9745` — audit
+
+Source: `scripts/testing/run-all.py`. Group: `checks`. Kind: `command_failure`. Priority: **P1**.
+
+Observed: > max-booster@3.0.0 security:audit > npm audit --omit=dev --audit-level=high  undefined npm error audit endpoint returned an error npm error A complete log of this run can be found in: /tmp/maxbooster-test-ucqnshdb/.npm/_logs/2026-10-25T15_36_28_281Z-debug-0.log
+
+Diagnosis (**needs_verification**): The captured assertion/process failure needs source-level diagnosis; its cause has not been inferred.
+
+Evidence: `reports/test-verification/final-checks/orchestration/audit.txt`.
+
+Reproduce from the documented working directory:
+
+```sh
+npm run security:audit
+```
+
+Required changes:
+
+1. Reproduce the exact named case in scripts/testing/run-all.py using the command below and inspect its first expected/actual difference.
+2. Trace the asserted handler/function and its owning frontend, authorization, validation and persistence dependencies; compare the current public contract with the fixture.
+3. Repair the implementation when the contract is still required, or update an obsolete fixture using valid current inputs while retaining equivalent business/negative assertions.
+4. Add a regression for the demonstrated root cause and rerun the dependent group; do not suppress the assertion or broaden accepted results merely to obtain green output.
 
 Proof needed:
 
@@ -85,6 +114,35 @@ Proof needed:
 - Rerun the exact affected case/file and retain its original failure plus successful new evidence.
 - Re-run dependent feature journeys; do not replace a required business result with a broad accepted-status list.
 
+## `repair-d79fcd37e3f95df8` — No final execution evidence
+
+Source: `tests/payment-processing/beat-loop-lifecycle-postgres.test.mjs`. Group: `commerce`. Kind: `missing_execution`. Priority: **P2**.
+
+Observed: The source inventory contains this check, but the reconciled run has no result for it.
+
+Diagnosis (**confirmed**): This check was not executed under its required conditions.
+
+Evidence: `file-status.json`.
+
+Reproduce from the documented working directory:
+
+```sh
+python3 scripts/testing/run-commerce.py --only beat-loop-lifecycle-postgres.test.mjs
+```
+
+Required changes:
+
+1. Provision the exact documented prerequisite: Node.js >=22.12
+2. Provision the exact documented prerequisite: npm ci
+3. Provision the exact documented prerequisite: Disposable PostgreSQL where required; see commerce.md
+4. Inspect the file's skip/opt-in guard and catalog prerequisites; prepare its disposable fixture rather than targeting the running application.
+5. Run the exact source-defined assertions and record a fresh command exit plus artifact identity.
+
+Proof needed:
+
+- Rerun the exact affected case/file and retain its original failure plus successful new evidence.
+- Re-run dependent feature journeys; do not replace a required business result with a broad accepted-status list.
+
 ## `repair-761120b343ef94b0` — Provider execution mode
 
 Source: `tests/payment-processing/browser-fixture.mjs`. Group: `commerce`. Kind: `blocked_check`. Priority: **P2**.
@@ -112,15 +170,102 @@ Proof needed:
 - Rerun the exact affected case/file and retain its original failure plus successful new evidence.
 - Re-run dependent feature journeys; do not replace a required business result with a broad accepted-status list.
 
-## `repair-a580722c947ba8ba` — real Stripe test-mode checkout and PaymentIntent settle through production code in disposable SQL
+## `repair-0c012154771268c3` — No final execution evidence
 
-Source: `tests/payment-processing/database-commerce.test.mjs`. Group: `commerce`. Kind: `skipped_case`. Priority: **P2**.
+Source: `tests/payment-processing/business-integrity-postgres.test.mjs`. Group: `commerce`. Kind: `missing_execution`. Priority: **P2**.
 
-Observed: JUnit records this case as skipped; inspect its skip condition.
+Observed: The source inventory contains this check, but the reconciled run has no result for it.
 
 Diagnosis (**confirmed**): This check was not executed under its required conditions.
 
-Evidence: `reports/test-verification/commerce/database-commerce.test.xml`.
+Evidence: `file-status.json`.
+
+Reproduce from the documented working directory:
+
+```sh
+python3 scripts/testing/run-commerce.py --only business-integrity-postgres.test.mjs
+```
+
+Required changes:
+
+1. Provision the exact documented prerequisite: Node.js >=22.12
+2. Provision the exact documented prerequisite: npm ci
+3. Provision the exact documented prerequisite: Disposable PostgreSQL where required; see commerce.md
+4. Inspect the file's skip/opt-in guard and catalog prerequisites; prepare its disposable fixture rather than targeting the running application.
+5. Run the exact source-defined assertions and record a fresh command exit plus artifact identity.
+
+Proof needed:
+
+- Rerun the exact affected case/file and retain its original failure plus successful new evidence.
+- Re-run dependent feature journeys; do not replace a required business result with a broad accepted-status list.
+
+## `repair-b1f9ee0a2e294d31` — No final execution evidence
+
+Source: `tests/payment-processing/business-integrity.test.mjs`. Group: `commerce`. Kind: `missing_execution`. Priority: **P2**.
+
+Observed: The source inventory contains this check, but the reconciled run has no result for it.
+
+Diagnosis (**confirmed**): This check was not executed under its required conditions.
+
+Evidence: `file-status.json`.
+
+Reproduce from the documented working directory:
+
+```sh
+python3 scripts/testing/run-commerce.py --only business-integrity.test.mjs
+```
+
+Required changes:
+
+1. Provision the exact documented prerequisite: Node.js >=22.12
+2. Provision the exact documented prerequisite: npm ci
+3. Provision the exact documented prerequisite: Disposable PostgreSQL where required; see commerce.md
+4. Inspect the file's skip/opt-in guard and catalog prerequisites; prepare its disposable fixture rather than targeting the running application.
+5. Run the exact source-defined assertions and record a fresh command exit plus artifact identity.
+
+Proof needed:
+
+- Rerun the exact affected case/file and retain its original failure plus successful new evidence.
+- Re-run dependent feature journeys; do not replace a required business result with a broad accepted-status list.
+
+## `repair-37ffda9abf76fa6a` — No final execution evidence
+
+Source: `tests/payment-processing/compensation-races-postgres.test.mjs`. Group: `commerce`. Kind: `missing_execution`. Priority: **P2**.
+
+Observed: The source inventory contains this check, but the reconciled run has no result for it.
+
+Diagnosis (**confirmed**): This check was not executed under its required conditions.
+
+Evidence: `file-status.json`.
+
+Reproduce from the documented working directory:
+
+```sh
+python3 scripts/testing/run-commerce.py --only compensation-races-postgres.test.mjs
+```
+
+Required changes:
+
+1. Provision the exact documented prerequisite: Node.js >=22.12
+2. Provision the exact documented prerequisite: npm ci
+3. Provision the exact documented prerequisite: Disposable PostgreSQL where required; see commerce.md
+4. Inspect the file's skip/opt-in guard and catalog prerequisites; prepare its disposable fixture rather than targeting the running application.
+5. Run the exact source-defined assertions and record a fresh command exit plus artifact identity.
+
+Proof needed:
+
+- Rerun the exact affected case/file and retain its original failure plus successful new evidence.
+- Re-run dependent feature journeys; do not replace a required business result with a broad accepted-status list.
+
+## `repair-f22f445fcfb1f580` — No final execution evidence
+
+Source: `tests/payment-processing/database-commerce.test.mjs`. Group: `commerce`. Kind: `missing_execution`. Priority: **P2**.
+
+Observed: The source inventory contains this check, but the reconciled run has no result for it.
+
+Diagnosis (**confirmed**): This check was not executed under its required conditions.
+
+Evidence: `file-status.json`.
 
 Reproduce from the documented working directory:
 
@@ -133,8 +278,95 @@ Required changes:
 1. Provision the exact documented prerequisite: Node.js >=22.12
 2. Provision the exact documented prerequisite: npm ci
 3. Provision the exact documented prerequisite: Disposable PostgreSQL where required; see commerce.md
-4. Use an explicitly selected dedicated Stripe TEST account with no shared enabled webhook endpoints and the documented test-only binding names.
-5. Run the opt-in isolated provider suite only after its ownership/cleanup preflight; retain created-resource receipts, signature checks and cleanup evidence. Never fall back to production keys.
+4. Inspect the file's skip/opt-in guard and catalog prerequisites; prepare its disposable fixture rather than targeting the running application.
+5. Run the exact source-defined assertions and record a fresh command exit plus artifact identity.
+
+Proof needed:
+
+- Rerun the exact affected case/file and retain its original failure plus successful new evidence.
+- Re-run dependent feature journeys; do not replace a required business result with a broad accepted-status list.
+
+## `repair-ccf9566962ad8811` — No final execution evidence
+
+Source: `tests/payment-processing/inbound-billing.test.mjs`. Group: `commerce`. Kind: `missing_execution`. Priority: **P2**.
+
+Observed: The source inventory contains this check, but the reconciled run has no result for it.
+
+Diagnosis (**confirmed**): This check was not executed under its required conditions.
+
+Evidence: `file-status.json`.
+
+Reproduce from the documented working directory:
+
+```sh
+python3 scripts/testing/run-commerce.py --only inbound-billing.test.mjs
+```
+
+Required changes:
+
+1. Provision the exact documented prerequisite: Node.js >=22.12
+2. Provision the exact documented prerequisite: npm ci
+3. Provision the exact documented prerequisite: Disposable PostgreSQL where required; see commerce.md
+4. Inspect the file's skip/opt-in guard and catalog prerequisites; prepare its disposable fixture rather than targeting the running application.
+5. Run the exact source-defined assertions and record a fresh command exit plus artifact identity.
+
+Proof needed:
+
+- Rerun the exact affected case/file and retain its original failure plus successful new evidence.
+- Re-run dependent feature journeys; do not replace a required business result with a broad accepted-status list.
+
+## `repair-c69f0d9819f5525f` — No final execution evidence
+
+Source: `tests/payment-processing/inbound-commerce.test.mjs`. Group: `commerce`. Kind: `missing_execution`. Priority: **P2**.
+
+Observed: The source inventory contains this check, but the reconciled run has no result for it.
+
+Diagnosis (**confirmed**): This check was not executed under its required conditions.
+
+Evidence: `file-status.json`.
+
+Reproduce from the documented working directory:
+
+```sh
+python3 scripts/testing/run-commerce.py --only inbound-commerce.test.mjs
+```
+
+Required changes:
+
+1. Provision the exact documented prerequisite: Node.js >=22.12
+2. Provision the exact documented prerequisite: npm ci
+3. Provision the exact documented prerequisite: Disposable PostgreSQL where required; see commerce.md
+4. Inspect the file's skip/opt-in guard and catalog prerequisites; prepare its disposable fixture rather than targeting the running application.
+5. Run the exact source-defined assertions and record a fresh command exit plus artifact identity.
+
+Proof needed:
+
+- Rerun the exact affected case/file and retain its original failure plus successful new evidence.
+- Re-run dependent feature journeys; do not replace a required business result with a broad accepted-status list.
+
+## `repair-7ed92a0919e3c5d9` — No final execution evidence
+
+Source: `tests/payment-processing/inbound-legacy-services.test.mjs`. Group: `commerce`. Kind: `missing_execution`. Priority: **P2**.
+
+Observed: The source inventory contains this check, but the reconciled run has no result for it.
+
+Diagnosis (**confirmed**): This check was not executed under its required conditions.
+
+Evidence: `file-status.json`.
+
+Reproduce from the documented working directory:
+
+```sh
+python3 scripts/testing/run-commerce.py --only inbound-legacy-services.test.mjs
+```
+
+Required changes:
+
+1. Provision the exact documented prerequisite: Node.js >=22.12
+2. Provision the exact documented prerequisite: npm ci
+3. Provision the exact documented prerequisite: Disposable PostgreSQL where required; see commerce.md
+4. Inspect the file's skip/opt-in guard and catalog prerequisites; prepare its disposable fixture rather than targeting the running application.
+5. Run the exact source-defined assertions and record a fresh command exit plus artifact identity.
 
 Proof needed:
 
@@ -163,6 +395,296 @@ Required changes:
 2. Provision the exact documented prerequisite: Use the commerce runner's offline mode; see commerce.md
 3. Use an explicitly selected dedicated Stripe TEST account with no shared enabled webhook endpoints and the documented test-only binding names.
 4. Run the opt-in isolated provider suite only after its ownership/cleanup preflight; retain created-resource receipts, signature checks and cleanup evidence. Never fall back to production keys.
+
+Proof needed:
+
+- Rerun the exact affected case/file and retain its original failure plus successful new evidence.
+- Re-run dependent feature journeys; do not replace a required business result with a broad accepted-status list.
+
+## `repair-1d253b6d3507cf18` — No final execution evidence
+
+Source: `tests/payment-processing/inbound-registration.test.mjs`. Group: `commerce`. Kind: `missing_execution`. Priority: **P2**.
+
+Observed: The source inventory contains this check, but the reconciled run has no result for it.
+
+Diagnosis (**confirmed**): This check was not executed under its required conditions.
+
+Evidence: `file-status.json`.
+
+Reproduce from the documented working directory:
+
+```sh
+python3 scripts/testing/run-commerce.py --only inbound-registration.test.mjs
+```
+
+Required changes:
+
+1. Provision the exact documented prerequisite: Node.js >=22.12
+2. Provision the exact documented prerequisite: npm ci
+3. Provision the exact documented prerequisite: Disposable PostgreSQL where required; see commerce.md
+4. Inspect the file's skip/opt-in guard and catalog prerequisites; prepare its disposable fixture rather than targeting the running application.
+5. Run the exact source-defined assertions and record a fresh command exit plus artifact identity.
+
+Proof needed:
+
+- Rerun the exact affected case/file and retain its original failure plus successful new evidence.
+- Re-run dependent feature journeys; do not replace a required business result with a broad accepted-status list.
+
+## `repair-23814049718141b7` — No final execution evidence
+
+Source: `tests/payment-processing/inbound-storefront.test.mjs`. Group: `commerce`. Kind: `missing_execution`. Priority: **P2**.
+
+Observed: The source inventory contains this check, but the reconciled run has no result for it.
+
+Diagnosis (**confirmed**): This check was not executed under its required conditions.
+
+Evidence: `file-status.json`.
+
+Reproduce from the documented working directory:
+
+```sh
+python3 scripts/testing/run-commerce.py --only inbound-storefront.test.mjs
+```
+
+Required changes:
+
+1. Provision the exact documented prerequisite: Node.js >=22.12
+2. Provision the exact documented prerequisite: npm ci
+3. Provision the exact documented prerequisite: Disposable PostgreSQL where required; see commerce.md
+4. Inspect the file's skip/opt-in guard and catalog prerequisites; prepare its disposable fixture rather than targeting the running application.
+5. Run the exact source-defined assertions and record a fresh command exit plus artifact identity.
+
+Proof needed:
+
+- Rerun the exact affected case/file and retain its original failure plus successful new evidence.
+- Re-run dependent feature journeys; do not replace a required business result with a broad accepted-status list.
+
+## `repair-226626c315c00bbe` — No final execution evidence
+
+Source: `tests/payment-processing/maxcore-cognitive-registry-migration.test.mjs`. Group: `commerce`. Kind: `missing_execution`. Priority: **P2**.
+
+Observed: The source inventory contains this check, but the reconciled run has no result for it.
+
+Diagnosis (**confirmed**): This check was not executed under its required conditions.
+
+Evidence: `file-status.json`.
+
+Reproduce from the documented working directory:
+
+```sh
+python3 scripts/testing/run-commerce.py --only maxcore-cognitive-registry-migration.test.mjs
+```
+
+Required changes:
+
+1. Provision the exact documented prerequisite: Node.js >=22.12
+2. Provision the exact documented prerequisite: npm ci
+3. Provision the exact documented prerequisite: Disposable PostgreSQL where required; see commerce.md
+4. Inspect the file's skip/opt-in guard and catalog prerequisites; prepare its disposable fixture rather than targeting the running application.
+5. Run the exact source-defined assertions and record a fresh command exit plus artifact identity.
+
+Proof needed:
+
+- Rerun the exact affected case/file and retain its original failure plus successful new evidence.
+- Re-run dependent feature journeys; do not replace a required business result with a broad accepted-status list.
+
+## `repair-e8eee6480879d52f` — No final execution evidence
+
+Source: `tests/payment-processing/outbound-commerce.mjs`. Group: `commerce`. Kind: `missing_execution`. Priority: **P2**.
+
+Observed: The source inventory contains this check, but the reconciled run has no result for it.
+
+Diagnosis (**confirmed**): This check was not executed under its required conditions.
+
+Evidence: `file-status.json`.
+
+Reproduce from the documented working directory:
+
+```sh
+python3 scripts/testing/run-commerce.py --only outbound-commerce.mjs
+```
+
+Required changes:
+
+1. Provision the exact documented prerequisite: Node.js >=22.12
+2. Provision the exact documented prerequisite: npm ci
+3. Provision the exact documented prerequisite: Disposable PostgreSQL where required; see commerce.md
+4. Inspect the file's skip/opt-in guard and catalog prerequisites; prepare its disposable fixture rather than targeting the running application.
+5. Run the exact source-defined assertions and record a fresh command exit plus artifact identity.
+
+Proof needed:
+
+- Rerun the exact affected case/file and retain its original failure plus successful new evidence.
+- Re-run dependent feature journeys; do not replace a required business result with a broad accepted-status list.
+
+## `repair-4caf95beb4a05176` — No final execution evidence
+
+Source: `tests/payment-processing/outbound-membership-auth.mjs`. Group: `commerce`. Kind: `missing_execution`. Priority: **P2**.
+
+Observed: The source inventory contains this check, but the reconciled run has no result for it.
+
+Diagnosis (**confirmed**): This check was not executed under its required conditions.
+
+Evidence: `file-status.json`.
+
+Reproduce from the documented working directory:
+
+```sh
+python3 scripts/testing/run-commerce.py --only outbound-membership-auth.mjs
+```
+
+Required changes:
+
+1. Provision the exact documented prerequisite: Node.js >=22.12
+2. Provision the exact documented prerequisite: npm ci
+3. Provision the exact documented prerequisite: Disposable PostgreSQL where required; see commerce.md
+4. Inspect the file's skip/opt-in guard and catalog prerequisites; prepare its disposable fixture rather than targeting the running application.
+5. Run the exact source-defined assertions and record a fresh command exit plus artifact identity.
+
+Proof needed:
+
+- Rerun the exact affected case/file and retain its original failure plus successful new evidence.
+- Re-run dependent feature journeys; do not replace a required business result with a broad accepted-status list.
+
+## `repair-6279bf909e40a8e4` — No final execution evidence
+
+Source: `tests/payment-processing/outbound-services-webhooks.mjs`. Group: `commerce`. Kind: `missing_execution`. Priority: **P2**.
+
+Observed: The source inventory contains this check, but the reconciled run has no result for it.
+
+Diagnosis (**confirmed**): This check was not executed under its required conditions.
+
+Evidence: `file-status.json`.
+
+Reproduce from the documented working directory:
+
+```sh
+python3 scripts/testing/run-commerce.py --only outbound-services-webhooks.mjs
+```
+
+Required changes:
+
+1. Provision the exact documented prerequisite: Node.js >=22.12
+2. Provision the exact documented prerequisite: npm ci
+3. Provision the exact documented prerequisite: Disposable PostgreSQL where required; see commerce.md
+4. Inspect the file's skip/opt-in guard and catalog prerequisites; prepare its disposable fixture rather than targeting the running application.
+5. Run the exact source-defined assertions and record a fresh command exit plus artifact identity.
+
+Proof needed:
+
+- Rerun the exact affected case/file and retain its original failure plus successful new evidence.
+- Re-run dependent feature journeys; do not replace a required business result with a broad accepted-status list.
+
+## `repair-362c30fb468ae586` — No final execution evidence
+
+Source: `tests/payment-processing/outbound-stripe-resource-ownership.test.mjs`. Group: `commerce`. Kind: `missing_execution`. Priority: **P2**.
+
+Observed: The source inventory contains this check, but the reconciled run has no result for it.
+
+Diagnosis (**confirmed**): This check was not executed under its required conditions.
+
+Evidence: `file-status.json`.
+
+Reproduce from the documented working directory:
+
+```sh
+python3 scripts/testing/run-commerce.py --only outbound-stripe-resource-ownership.test.mjs
+```
+
+Required changes:
+
+1. Provision the exact documented prerequisite: Node.js >=22.12
+2. Provision the exact documented prerequisite: npm ci
+3. Provision the exact documented prerequisite: Disposable PostgreSQL where required; see commerce.md
+4. Use an explicitly selected dedicated Stripe TEST account with no shared enabled webhook endpoints and the documented test-only binding names.
+5. Run the opt-in isolated provider suite only after its ownership/cleanup preflight; retain created-resource receipts, signature checks and cleanup evidence. Never fall back to production keys.
+
+Proof needed:
+
+- Rerun the exact affected case/file and retain its original failure plus successful new evidence.
+- Re-run dependent feature journeys; do not replace a required business result with a broad accepted-status list.
+
+## `repair-f3c57b84becb8958` — No final execution evidence
+
+Source: `tests/payment-processing/outbound-stripe-test-transport.test.mjs`. Group: `commerce`. Kind: `missing_execution`. Priority: **P2**.
+
+Observed: The source inventory contains this check, but the reconciled run has no result for it.
+
+Diagnosis (**confirmed**): This check was not executed under its required conditions.
+
+Evidence: `file-status.json`.
+
+Reproduce from the documented working directory:
+
+```sh
+python3 scripts/testing/run-commerce.py --only outbound-stripe-test-transport.test.mjs
+```
+
+Required changes:
+
+1. Provision the exact documented prerequisite: Node.js >=22.12
+2. Provision the exact documented prerequisite: npm ci
+3. Provision the exact documented prerequisite: Disposable PostgreSQL where required; see commerce.md
+4. Use an explicitly selected dedicated Stripe TEST account with no shared enabled webhook endpoints and the documented test-only binding names.
+5. Run the opt-in isolated provider suite only after its ownership/cleanup preflight; retain created-resource receipts, signature checks and cleanup evidence. Never fall back to production keys.
+
+Proof needed:
+
+- Rerun the exact affected case/file and retain its original failure plus successful new evidence.
+- Re-run dependent feature journeys; do not replace a required business result with a broad accepted-status list.
+
+## `repair-b9a64b5342323d18` — No final execution evidence
+
+Source: `tests/payment-processing/outbound-topup-journal.mjs`. Group: `commerce`. Kind: `missing_execution`. Priority: **P2**.
+
+Observed: The source inventory contains this check, but the reconciled run has no result for it.
+
+Diagnosis (**confirmed**): This check was not executed under its required conditions.
+
+Evidence: `file-status.json`.
+
+Reproduce from the documented working directory:
+
+```sh
+python3 scripts/testing/run-commerce.py --only outbound-topup-journal.mjs
+```
+
+Required changes:
+
+1. Provision the exact documented prerequisite: Node.js >=22.12
+2. Provision the exact documented prerequisite: npm ci
+3. Provision the exact documented prerequisite: Disposable PostgreSQL where required; see commerce.md
+4. Inspect the file's skip/opt-in guard and catalog prerequisites; prepare its disposable fixture rather than targeting the running application.
+5. Run the exact source-defined assertions and record a fresh command exit plus artifact identity.
+
+Proof needed:
+
+- Rerun the exact affected case/file and retain its original failure plus successful new evidence.
+- Re-run dependent feature journeys; do not replace a required business result with a broad accepted-status list.
+
+## `repair-63dc3fc16d48b3d3` — No final execution evidence
+
+Source: `tests/payment-processing/provider-only-preferences.test.mjs`. Group: `commerce`. Kind: `missing_execution`. Priority: **P2**.
+
+Observed: The source inventory contains this check, but the reconciled run has no result for it.
+
+Diagnosis (**confirmed**): This check was not executed under its required conditions.
+
+Evidence: `file-status.json`.
+
+Reproduce from the documented working directory:
+
+```sh
+python3 scripts/testing/run-commerce.py --only provider-only-preferences.test.mjs
+```
+
+Required changes:
+
+1. Provision the exact documented prerequisite: Node.js >=22.12
+2. Provision the exact documented prerequisite: npm ci
+3. Provision the exact documented prerequisite: Disposable PostgreSQL where required; see commerce.md
+4. Inspect the file's skip/opt-in guard and catalog prerequisites; prepare its disposable fixture rather than targeting the running application.
+5. Run the exact source-defined assertions and record a fresh command exit plus artifact identity.
 
 Proof needed:
 
@@ -219,6 +741,120 @@ Required changes:
 2. Provision the exact documented prerequisite: Use the commerce runner's offline mode; see commerce.md
 3. Use an explicitly selected dedicated Stripe TEST account with no shared enabled webhook endpoints and the documented test-only binding names.
 4. Run the opt-in isolated provider suite only after its ownership/cleanup preflight; retain created-resource receipts, signature checks and cleanup evidence. Never fall back to production keys.
+
+Proof needed:
+
+- Rerun the exact affected case/file and retain its original failure plus successful new evidence.
+- Re-run dependent feature journeys; do not replace a required business result with a broad accepted-status list.
+
+## `repair-3196f974a5407361` — No final execution evidence
+
+Source: `tests/payment-processing/run.mjs`. Group: `commerce`. Kind: `missing_execution`. Priority: **P2**.
+
+Observed: The source inventory contains this check, but the reconciled run has no result for it.
+
+Diagnosis (**confirmed**): This check was not executed under its required conditions.
+
+Evidence: `file-status.json`.
+
+Reproduce from the documented working directory:
+
+```sh
+node tests/payment-processing/run.mjs
+```
+
+Required changes:
+
+1. Provision the exact documented prerequisite: Node.js >=22.12 and npm ci
+2. Provision the exact documented prerequisite: Use the commerce runner's offline mode; see commerce.md
+3. Inspect the file's skip/opt-in guard and catalog prerequisites; prepare its disposable fixture rather than targeting the running application.
+4. Run the exact source-defined assertions and record a fresh command exit plus artifact identity.
+
+Proof needed:
+
+- Rerun the exact affected case/file and retain its original failure plus successful new evidence.
+- Re-run dependent feature journeys; do not replace a required business result with a broad accepted-status list.
+
+## `repair-799dc29fce5270db` — No final execution evidence
+
+Source: `tests/payment-processing/settlement-dispute-hold-postgres.test.mjs`. Group: `commerce`. Kind: `missing_execution`. Priority: **P2**.
+
+Observed: The source inventory contains this check, but the reconciled run has no result for it.
+
+Diagnosis (**confirmed**): This check was not executed under its required conditions.
+
+Evidence: `file-status.json`.
+
+Reproduce from the documented working directory:
+
+```sh
+python3 scripts/testing/run-commerce.py --only settlement-dispute-hold-postgres.test.mjs
+```
+
+Required changes:
+
+1. Provision the exact documented prerequisite: Node.js >=22.12
+2. Provision the exact documented prerequisite: npm ci
+3. Provision the exact documented prerequisite: Disposable PostgreSQL where required; see commerce.md
+4. Inspect the file's skip/opt-in guard and catalog prerequisites; prepare its disposable fixture rather than targeting the running application.
+5. Run the exact source-defined assertions and record a fresh command exit plus artifact identity.
+
+Proof needed:
+
+- Rerun the exact affected case/file and retain its original failure plus successful new evidence.
+- Re-run dependent feature journeys; do not replace a required business result with a broad accepted-status list.
+
+## `repair-bd32dac151679284` — No final execution evidence
+
+Source: `tests/payment-processing/subscription-authority-postgres.test.mjs`. Group: `commerce`. Kind: `missing_execution`. Priority: **P2**.
+
+Observed: The source inventory contains this check, but the reconciled run has no result for it.
+
+Diagnosis (**confirmed**): This check was not executed under its required conditions.
+
+Evidence: `file-status.json`.
+
+Reproduce from the documented working directory:
+
+```sh
+python3 scripts/testing/run-commerce.py --only subscription-authority-postgres.test.mjs
+```
+
+Required changes:
+
+1. Provision the exact documented prerequisite: Node.js >=22.12
+2. Provision the exact documented prerequisite: npm ci
+3. Provision the exact documented prerequisite: Disposable PostgreSQL where required; see commerce.md
+4. Inspect the file's skip/opt-in guard and catalog prerequisites; prepare its disposable fixture rather than targeting the running application.
+5. Run the exact source-defined assertions and record a fresh command exit plus artifact identity.
+
+Proof needed:
+
+- Rerun the exact affected case/file and retain its original failure plus successful new evidence.
+- Re-run dependent feature journeys; do not replace a required business result with a broad accepted-status list.
+
+## `repair-7041ebdeaecd388f` — No final execution evidence
+
+Source: `tests/unit/beat-sale-money-loop.test.ts`. Group: `commerce`. Kind: `missing_execution`. Priority: **P2**.
+
+Observed: The source inventory contains this check, but the reconciled run has no result for it.
+
+Diagnosis (**confirmed**): This check was not executed under its required conditions.
+
+Evidence: `file-status.json`.
+
+Reproduce from the documented working directory:
+
+```sh
+python3 scripts/testing/run-commerce.py --only legacy-beat
+```
+
+Required changes:
+
+1. Provision the exact documented prerequisite: Disposable, fully migrated PostgreSQL distinct from the app database
+2. Provision the exact documented prerequisite: The sealed commerce runner prepares the fixture; see commerce.md
+3. Inspect the file's skip/opt-in guard and catalog prerequisites; prepare its disposable fixture rather than targeting the running application.
+4. Run the exact source-defined assertions and record a fresh command exit plus artifact identity.
 
 Proof needed:
 
@@ -2204,622 +2840,6 @@ npm run test:all -- --plan
 Required changes:
 
 1. Add a meaningful isolated regression for the named source: built-in plugins dsp/mb-creative-exciter.ts. Follow its actual caller, route/owner and persistence boundary.
-2. Exercise the listed zero-hit functions/branches or required feature checks with valid, boundary, malformed and unauthorized inputs; include unavailable dependencies and retry/restart behavior where applicable.
-3. For UI controls, use real DOM/browser interactions and assert loading, empty, error and delivered-success states plus the resulting backend effect.
-4. Register the new test in the owning runnable group, then regenerate the catalog, coverage and platform register. File-name associations and expect(true) placeholders do not close acceptance gaps.
-
-Proof needed:
-
-- Rerun the exact affected case/file and retain its original failure plus successful new evidence.
-- Re-run dependent feature journeys; do not replace a required business result with a broad accepted-status list.
-
-## `repair-4d611c13eace45cf` — Unexecuted source branches/functions
-
-Source: `built-in plugins dsp/mb-creative-freqshift.ts`. Group: `coverage`. Kind: `coverage_gap`. Priority: **P2**.
-
-Observed: 1 statements, 0 functions and 0 branch arms have zero hits.
-
-Diagnosis (**confirmed**): Source-defined behavior lacks the required execution/feature evidence.
-
-Evidence: `reports/test-verification/coverage/coverage-final.json`.
-
-Reproduce from the documented working directory:
-
-```sh
-npm run test:all -- --plan
-```
-
-Required changes:
-
-1. Add a meaningful isolated regression for the named source: built-in plugins dsp/mb-creative-freqshift.ts. Follow its actual caller, route/owner and persistence boundary.
-2. Exercise the listed zero-hit functions/branches or required feature checks with valid, boundary, malformed and unauthorized inputs; include unavailable dependencies and retry/restart behavior where applicable.
-3. For UI controls, use real DOM/browser interactions and assert loading, empty, error and delivered-success states plus the resulting backend effect.
-4. Register the new test in the owning runnable group, then regenerate the catalog, coverage and platform register. File-name associations and expect(true) placeholders do not close acceptance gaps.
-
-Proof needed:
-
-- Rerun the exact affected case/file and retain its original failure plus successful new evidence.
-- Re-run dependent feature journeys; do not replace a required business result with a broad accepted-status list.
-
-## `repair-69327a3521a78d11` — Unexecuted source branches/functions
-
-Source: `built-in plugins dsp/mb-creative-grandelay.ts`. Group: `coverage`. Kind: `coverage_gap`. Priority: **P2**.
-
-Observed: 1 statements, 0 functions and 0 branch arms have zero hits.
-
-Diagnosis (**confirmed**): Source-defined behavior lacks the required execution/feature evidence.
-
-Evidence: `reports/test-verification/coverage/coverage-final.json`.
-
-Reproduce from the documented working directory:
-
-```sh
-npm run test:all -- --plan
-```
-
-Required changes:
-
-1. Add a meaningful isolated regression for the named source: built-in plugins dsp/mb-creative-grandelay.ts. Follow its actual caller, route/owner and persistence boundary.
-2. Exercise the listed zero-hit functions/branches or required feature checks with valid, boundary, malformed and unauthorized inputs; include unavailable dependencies and retry/restart behavior where applicable.
-3. For UI controls, use real DOM/browser interactions and assert loading, empty, error and delivered-success states plus the resulting backend effect.
-4. Register the new test in the owning runnable group, then regenerate the catalog, coverage and platform register. File-name associations and expect(true) placeholders do not close acceptance gaps.
-
-Proof needed:
-
-- Rerun the exact affected case/file and retain its original failure plus successful new evidence.
-- Re-run dependent feature journeys; do not replace a required business result with a broad accepted-status list.
-
-## `repair-6ee9e66046f6524a` — Unexecuted source branches/functions
-
-Source: `built-in plugins dsp/mb-creative-harmonics.ts`. Group: `coverage`. Kind: `coverage_gap`. Priority: **P2**.
-
-Observed: 1 statements, 0 functions and 0 branch arms have zero hits.
-
-Diagnosis (**confirmed**): Source-defined behavior lacks the required execution/feature evidence.
-
-Evidence: `reports/test-verification/coverage/coverage-final.json`.
-
-Reproduce from the documented working directory:
-
-```sh
-npm run test:all -- --plan
-```
-
-Required changes:
-
-1. Add a meaningful isolated regression for the named source: built-in plugins dsp/mb-creative-harmonics.ts. Follow its actual caller, route/owner and persistence boundary.
-2. Exercise the listed zero-hit functions/branches or required feature checks with valid, boundary, malformed and unauthorized inputs; include unavailable dependencies and retry/restart behavior where applicable.
-3. For UI controls, use real DOM/browser interactions and assert loading, empty, error and delivered-success states plus the resulting backend effect.
-4. Register the new test in the owning runnable group, then regenerate the catalog, coverage and platform register. File-name associations and expect(true) placeholders do not close acceptance gaps.
-
-Proof needed:
-
-- Rerun the exact affected case/file and retain its original failure plus successful new evidence.
-- Re-run dependent feature journeys; do not replace a required business result with a broad accepted-status list.
-
-## `repair-fff90519a48731b6` — Unexecuted source branches/functions
-
-Source: `built-in plugins dsp/mb-creative-pitchshift.ts`. Group: `coverage`. Kind: `coverage_gap`. Priority: **P2**.
-
-Observed: 1 statements, 0 functions and 0 branch arms have zero hits.
-
-Diagnosis (**confirmed**): Source-defined behavior lacks the required execution/feature evidence.
-
-Evidence: `reports/test-verification/coverage/coverage-final.json`.
-
-Reproduce from the documented working directory:
-
-```sh
-npm run test:all -- --plan
-```
-
-Required changes:
-
-1. Add a meaningful isolated regression for the named source: built-in plugins dsp/mb-creative-pitchshift.ts. Follow its actual caller, route/owner and persistence boundary.
-2. Exercise the listed zero-hit functions/branches or required feature checks with valid, boundary, malformed and unauthorized inputs; include unavailable dependencies and retry/restart behavior where applicable.
-3. For UI controls, use real DOM/browser interactions and assert loading, empty, error and delivered-success states plus the resulting backend effect.
-4. Register the new test in the owning runnable group, then regenerate the catalog, coverage and platform register. File-name associations and expect(true) placeholders do not close acceptance gaps.
-
-Proof needed:
-
-- Rerun the exact affected case/file and retain its original failure plus successful new evidence.
-- Re-run dependent feature journeys; do not replace a required business result with a broad accepted-status list.
-
-## `repair-8fd1ec0ddff304d9` — Unexecuted source branches/functions
-
-Source: `built-in plugins dsp/mb-creative-psycho.ts`. Group: `coverage`. Kind: `coverage_gap`. Priority: **P2**.
-
-Observed: 1 statements, 0 functions and 0 branch arms have zero hits.
-
-Diagnosis (**confirmed**): Source-defined behavior lacks the required execution/feature evidence.
-
-Evidence: `reports/test-verification/coverage/coverage-final.json`.
-
-Reproduce from the documented working directory:
-
-```sh
-npm run test:all -- --plan
-```
-
-Required changes:
-
-1. Add a meaningful isolated regression for the named source: built-in plugins dsp/mb-creative-psycho.ts. Follow its actual caller, route/owner and persistence boundary.
-2. Exercise the listed zero-hit functions/branches or required feature checks with valid, boundary, malformed and unauthorized inputs; include unavailable dependencies and retry/restart behavior where applicable.
-3. For UI controls, use real DOM/browser interactions and assert loading, empty, error and delivered-success states plus the resulting backend effect.
-4. Register the new test in the owning runnable group, then regenerate the catalog, coverage and platform register. File-name associations and expect(true) placeholders do not close acceptance gaps.
-
-Proof needed:
-
-- Rerun the exact affected case/file and retain its original failure plus successful new evidence.
-- Re-run dependent feature journeys; do not replace a required business result with a broad accepted-status list.
-
-## `repair-113c3df028c1d755` — Unexecuted source branches/functions
-
-Source: `built-in plugins dsp/mb-creative-ringmod.ts`. Group: `coverage`. Kind: `coverage_gap`. Priority: **P2**.
-
-Observed: 1 statements, 0 functions and 0 branch arms have zero hits.
-
-Diagnosis (**confirmed**): Source-defined behavior lacks the required execution/feature evidence.
-
-Evidence: `reports/test-verification/coverage/coverage-final.json`.
-
-Reproduce from the documented working directory:
-
-```sh
-npm run test:all -- --plan
-```
-
-Required changes:
-
-1. Add a meaningful isolated regression for the named source: built-in plugins dsp/mb-creative-ringmod.ts. Follow its actual caller, route/owner and persistence boundary.
-2. Exercise the listed zero-hit functions/branches or required feature checks with valid, boundary, malformed and unauthorized inputs; include unavailable dependencies and retry/restart behavior where applicable.
-3. For UI controls, use real DOM/browser interactions and assert loading, empty, error and delivered-success states plus the resulting backend effect.
-4. Register the new test in the owning runnable group, then regenerate the catalog, coverage and platform register. File-name associations and expect(true) placeholders do not close acceptance gaps.
-
-Proof needed:
-
-- Rerun the exact affected case/file and retain its original failure plus successful new evidence.
-- Re-run dependent feature journeys; do not replace a required business result with a broad accepted-status list.
-
-## `repair-95b3da036477db2b` — Unexecuted source branches/functions
-
-Source: `built-in plugins dsp/mb-creative-sample-hold.ts`. Group: `coverage`. Kind: `coverage_gap`. Priority: **P2**.
-
-Observed: 1 statements, 0 functions and 0 branch arms have zero hits.
-
-Diagnosis (**confirmed**): Source-defined behavior lacks the required execution/feature evidence.
-
-Evidence: `reports/test-verification/coverage/coverage-final.json`.
-
-Reproduce from the documented working directory:
-
-```sh
-npm run test:all -- --plan
-```
-
-Required changes:
-
-1. Add a meaningful isolated regression for the named source: built-in plugins dsp/mb-creative-sample-hold.ts. Follow its actual caller, route/owner and persistence boundary.
-2. Exercise the listed zero-hit functions/branches or required feature checks with valid, boundary, malformed and unauthorized inputs; include unavailable dependencies and retry/restart behavior where applicable.
-3. For UI controls, use real DOM/browser interactions and assert loading, empty, error and delivered-success states plus the resulting backend effect.
-4. Register the new test in the owning runnable group, then regenerate the catalog, coverage and platform register. File-name associations and expect(true) placeholders do not close acceptance gaps.
-
-Proof needed:
-
-- Rerun the exact affected case/file and retain its original failure plus successful new evidence.
-- Re-run dependent feature journeys; do not replace a required business result with a broad accepted-status list.
-
-## `repair-bdd2f3df6e56c0dc` — Unexecuted source branches/functions
-
-Source: `built-in plugins dsp/mb-creative-saturation.ts`. Group: `coverage`. Kind: `coverage_gap`. Priority: **P2**.
-
-Observed: 1 statements, 0 functions and 0 branch arms have zero hits.
-
-Diagnosis (**confirmed**): Source-defined behavior lacks the required execution/feature evidence.
-
-Evidence: `reports/test-verification/coverage/coverage-final.json`.
-
-Reproduce from the documented working directory:
-
-```sh
-npm run test:all -- --plan
-```
-
-Required changes:
-
-1. Add a meaningful isolated regression for the named source: built-in plugins dsp/mb-creative-saturation.ts. Follow its actual caller, route/owner and persistence boundary.
-2. Exercise the listed zero-hit functions/branches or required feature checks with valid, boundary, malformed and unauthorized inputs; include unavailable dependencies and retry/restart behavior where applicable.
-3. For UI controls, use real DOM/browser interactions and assert loading, empty, error and delivered-success states plus the resulting backend effect.
-4. Register the new test in the owning runnable group, then regenerate the catalog, coverage and platform register. File-name associations and expect(true) placeholders do not close acceptance gaps.
-
-Proof needed:
-
-- Rerun the exact affected case/file and retain its original failure plus successful new evidence.
-- Re-run dependent feature journeys; do not replace a required business result with a broad accepted-status list.
-
-## `repair-2223b819769dfc65` — Unexecuted source branches/functions
-
-Source: `built-in plugins dsp/mb-creative-spectral-gate.ts`. Group: `coverage`. Kind: `coverage_gap`. Priority: **P2**.
-
-Observed: 1 statements, 0 functions and 0 branch arms have zero hits.
-
-Diagnosis (**confirmed**): Source-defined behavior lacks the required execution/feature evidence.
-
-Evidence: `reports/test-verification/coverage/coverage-final.json`.
-
-Reproduce from the documented working directory:
-
-```sh
-npm run test:all -- --plan
-```
-
-Required changes:
-
-1. Add a meaningful isolated regression for the named source: built-in plugins dsp/mb-creative-spectral-gate.ts. Follow its actual caller, route/owner and persistence boundary.
-2. Exercise the listed zero-hit functions/branches or required feature checks with valid, boundary, malformed and unauthorized inputs; include unavailable dependencies and retry/restart behavior where applicable.
-3. For UI controls, use real DOM/browser interactions and assert loading, empty, error and delivered-success states plus the resulting backend effect.
-4. Register the new test in the owning runnable group, then regenerate the catalog, coverage and platform register. File-name associations and expect(true) placeholders do not close acceptance gaps.
-
-Proof needed:
-
-- Rerun the exact affected case/file and retain its original failure plus successful new evidence.
-- Re-run dependent feature journeys; do not replace a required business result with a broad accepted-status list.
-
-## `repair-e7c5d09b6fc7af28` — Unexecuted source branches/functions
-
-Source: `built-in plugins dsp/mb-creative-subenhance.ts`. Group: `coverage`. Kind: `coverage_gap`. Priority: **P2**.
-
-Observed: 1 statements, 0 functions and 0 branch arms have zero hits.
-
-Diagnosis (**confirmed**): Source-defined behavior lacks the required execution/feature evidence.
-
-Evidence: `reports/test-verification/coverage/coverage-final.json`.
-
-Reproduce from the documented working directory:
-
-```sh
-npm run test:all -- --plan
-```
-
-Required changes:
-
-1. Add a meaningful isolated regression for the named source: built-in plugins dsp/mb-creative-subenhance.ts. Follow its actual caller, route/owner and persistence boundary.
-2. Exercise the listed zero-hit functions/branches or required feature checks with valid, boundary, malformed and unauthorized inputs; include unavailable dependencies and retry/restart behavior where applicable.
-3. For UI controls, use real DOM/browser interactions and assert loading, empty, error and delivered-success states plus the resulting backend effect.
-4. Register the new test in the owning runnable group, then regenerate the catalog, coverage and platform register. File-name associations and expect(true) placeholders do not close acceptance gaps.
-
-Proof needed:
-
-- Rerun the exact affected case/file and retain its original failure plus successful new evidence.
-- Re-run dependent feature journeys; do not replace a required business result with a broad accepted-status list.
-
-## `repair-6ce898ed168153a3` — Unexecuted source branches/functions
-
-Source: `built-in plugins dsp/mb-creative-vocoder.ts`. Group: `coverage`. Kind: `coverage_gap`. Priority: **P2**.
-
-Observed: 1 statements, 0 functions and 0 branch arms have zero hits.
-
-Diagnosis (**confirmed**): Source-defined behavior lacks the required execution/feature evidence.
-
-Evidence: `reports/test-verification/coverage/coverage-final.json`.
-
-Reproduce from the documented working directory:
-
-```sh
-npm run test:all -- --plan
-```
-
-Required changes:
-
-1. Add a meaningful isolated regression for the named source: built-in plugins dsp/mb-creative-vocoder.ts. Follow its actual caller, route/owner and persistence boundary.
-2. Exercise the listed zero-hit functions/branches or required feature checks with valid, boundary, malformed and unauthorized inputs; include unavailable dependencies and retry/restart behavior where applicable.
-3. For UI controls, use real DOM/browser interactions and assert loading, empty, error and delivered-success states plus the resulting backend effect.
-4. Register the new test in the owning runnable group, then regenerate the catalog, coverage and platform register. File-name associations and expect(true) placeholders do not close acceptance gaps.
-
-Proof needed:
-
-- Rerun the exact affected case/file and retain its original failure plus successful new evidence.
-- Re-run dependent feature journeys; do not replace a required business result with a broad accepted-status list.
-
-## `repair-9ef95f53d1f45cea` — Unexecuted source branches/functions
-
-Source: `built-in plugins dsp/mb-deesser.ts`. Group: `coverage`. Kind: `coverage_gap`. Priority: **P2**.
-
-Observed: 1 statements, 0 functions and 0 branch arms have zero hits.
-
-Diagnosis (**confirmed**): Source-defined behavior lacks the required execution/feature evidence.
-
-Evidence: `reports/test-verification/coverage/coverage-final.json`.
-
-Reproduce from the documented working directory:
-
-```sh
-npm run test:all -- --plan
-```
-
-Required changes:
-
-1. Add a meaningful isolated regression for the named source: built-in plugins dsp/mb-deesser.ts. Follow its actual caller, route/owner and persistence boundary.
-2. Exercise the listed zero-hit functions/branches or required feature checks with valid, boundary, malformed and unauthorized inputs; include unavailable dependencies and retry/restart behavior where applicable.
-3. For UI controls, use real DOM/browser interactions and assert loading, empty, error and delivered-success states plus the resulting backend effect.
-4. Register the new test in the owning runnable group, then regenerate the catalog, coverage and platform register. File-name associations and expect(true) placeholders do not close acceptance gaps.
-
-Proof needed:
-
-- Rerun the exact affected case/file and retain its original failure plus successful new evidence.
-- Re-run dependent feature journeys; do not replace a required business result with a broad accepted-status list.
-
-## `repair-fa87eaff38eed73d` — Unexecuted source branches/functions
-
-Source: `built-in plugins dsp/mb-delay-analog.ts`. Group: `coverage`. Kind: `coverage_gap`. Priority: **P2**.
-
-Observed: 1 statements, 0 functions and 0 branch arms have zero hits.
-
-Diagnosis (**confirmed**): Source-defined behavior lacks the required execution/feature evidence.
-
-Evidence: `reports/test-verification/coverage/coverage-final.json`.
-
-Reproduce from the documented working directory:
-
-```sh
-npm run test:all -- --plan
-```
-
-Required changes:
-
-1. Add a meaningful isolated regression for the named source: built-in plugins dsp/mb-delay-analog.ts. Follow its actual caller, route/owner and persistence boundary.
-2. Exercise the listed zero-hit functions/branches or required feature checks with valid, boundary, malformed and unauthorized inputs; include unavailable dependencies and retry/restart behavior where applicable.
-3. For UI controls, use real DOM/browser interactions and assert loading, empty, error and delivered-success states plus the resulting backend effect.
-4. Register the new test in the owning runnable group, then regenerate the catalog, coverage and platform register. File-name associations and expect(true) placeholders do not close acceptance gaps.
-
-Proof needed:
-
-- Rerun the exact affected case/file and retain its original failure plus successful new evidence.
-- Re-run dependent feature journeys; do not replace a required business result with a broad accepted-status list.
-
-## `repair-d9c376c2bb03ec07` — Unexecuted source branches/functions
-
-Source: `built-in plugins dsp/mb-delay-dub.ts`. Group: `coverage`. Kind: `coverage_gap`. Priority: **P2**.
-
-Observed: 1 statements, 0 functions and 0 branch arms have zero hits.
-
-Diagnosis (**confirmed**): Source-defined behavior lacks the required execution/feature evidence.
-
-Evidence: `reports/test-verification/coverage/coverage-final.json`.
-
-Reproduce from the documented working directory:
-
-```sh
-npm run test:all -- --plan
-```
-
-Required changes:
-
-1. Add a meaningful isolated regression for the named source: built-in plugins dsp/mb-delay-dub.ts. Follow its actual caller, route/owner and persistence boundary.
-2. Exercise the listed zero-hit functions/branches or required feature checks with valid, boundary, malformed and unauthorized inputs; include unavailable dependencies and retry/restart behavior where applicable.
-3. For UI controls, use real DOM/browser interactions and assert loading, empty, error and delivered-success states plus the resulting backend effect.
-4. Register the new test in the owning runnable group, then regenerate the catalog, coverage and platform register. File-name associations and expect(true) placeholders do not close acceptance gaps.
-
-Proof needed:
-
-- Rerun the exact affected case/file and retain its original failure plus successful new evidence.
-- Re-run dependent feature journeys; do not replace a required business result with a broad accepted-status list.
-
-## `repair-b368e4bda68acca9` — Unexecuted source branches/functions
-
-Source: `built-in plugins dsp/mb-delay-grain.ts`. Group: `coverage`. Kind: `coverage_gap`. Priority: **P2**.
-
-Observed: 1 statements, 0 functions and 0 branch arms have zero hits.
-
-Diagnosis (**confirmed**): Source-defined behavior lacks the required execution/feature evidence.
-
-Evidence: `reports/test-verification/coverage/coverage-final.json`.
-
-Reproduce from the documented working directory:
-
-```sh
-npm run test:all -- --plan
-```
-
-Required changes:
-
-1. Add a meaningful isolated regression for the named source: built-in plugins dsp/mb-delay-grain.ts. Follow its actual caller, route/owner and persistence boundary.
-2. Exercise the listed zero-hit functions/branches or required feature checks with valid, boundary, malformed and unauthorized inputs; include unavailable dependencies and retry/restart behavior where applicable.
-3. For UI controls, use real DOM/browser interactions and assert loading, empty, error and delivered-success states plus the resulting backend effect.
-4. Register the new test in the owning runnable group, then regenerate the catalog, coverage and platform register. File-name associations and expect(true) placeholders do not close acceptance gaps.
-
-Proof needed:
-
-- Rerun the exact affected case/file and retain its original failure plus successful new evidence.
-- Re-run dependent feature journeys; do not replace a required business result with a broad accepted-status list.
-
-## `repair-f2bf31304bfb68e7` — Unexecuted source branches/functions
-
-Source: `built-in plugins dsp/mb-delay-mod.ts`. Group: `coverage`. Kind: `coverage_gap`. Priority: **P2**.
-
-Observed: 1 statements, 0 functions and 0 branch arms have zero hits.
-
-Diagnosis (**confirmed**): Source-defined behavior lacks the required execution/feature evidence.
-
-Evidence: `reports/test-verification/coverage/coverage-final.json`.
-
-Reproduce from the documented working directory:
-
-```sh
-npm run test:all -- --plan
-```
-
-Required changes:
-
-1. Add a meaningful isolated regression for the named source: built-in plugins dsp/mb-delay-mod.ts. Follow its actual caller, route/owner and persistence boundary.
-2. Exercise the listed zero-hit functions/branches or required feature checks with valid, boundary, malformed and unauthorized inputs; include unavailable dependencies and retry/restart behavior where applicable.
-3. For UI controls, use real DOM/browser interactions and assert loading, empty, error and delivered-success states plus the resulting backend effect.
-4. Register the new test in the owning runnable group, then regenerate the catalog, coverage and platform register. File-name associations and expect(true) placeholders do not close acceptance gaps.
-
-Proof needed:
-
-- Rerun the exact affected case/file and retain its original failure plus successful new evidence.
-- Re-run dependent feature journeys; do not replace a required business result with a broad accepted-status list.
-
-## `repair-1698a976b35b9840` — Unexecuted source branches/functions
-
-Source: `built-in plugins dsp/mb-delay-multi.ts`. Group: `coverage`. Kind: `coverage_gap`. Priority: **P2**.
-
-Observed: 1 statements, 0 functions and 0 branch arms have zero hits.
-
-Diagnosis (**confirmed**): Source-defined behavior lacks the required execution/feature evidence.
-
-Evidence: `reports/test-verification/coverage/coverage-final.json`.
-
-Reproduce from the documented working directory:
-
-```sh
-npm run test:all -- --plan
-```
-
-Required changes:
-
-1. Add a meaningful isolated regression for the named source: built-in plugins dsp/mb-delay-multi.ts. Follow its actual caller, route/owner and persistence boundary.
-2. Exercise the listed zero-hit functions/branches or required feature checks with valid, boundary, malformed and unauthorized inputs; include unavailable dependencies and retry/restart behavior where applicable.
-3. For UI controls, use real DOM/browser interactions and assert loading, empty, error and delivered-success states plus the resulting backend effect.
-4. Register the new test in the owning runnable group, then regenerate the catalog, coverage and platform register. File-name associations and expect(true) placeholders do not close acceptance gaps.
-
-Proof needed:
-
-- Rerun the exact affected case/file and retain its original failure plus successful new evidence.
-- Re-run dependent feature journeys; do not replace a required business result with a broad accepted-status list.
-
-## `repair-b3633d80b81ff8fa` — Unexecuted source branches/functions
-
-Source: `built-in plugins dsp/mb-delay-pingpong.ts`. Group: `coverage`. Kind: `coverage_gap`. Priority: **P2**.
-
-Observed: 1 statements, 0 functions and 0 branch arms have zero hits.
-
-Diagnosis (**confirmed**): Source-defined behavior lacks the required execution/feature evidence.
-
-Evidence: `reports/test-verification/coverage/coverage-final.json`.
-
-Reproduce from the documented working directory:
-
-```sh
-npm run test:all -- --plan
-```
-
-Required changes:
-
-1. Add a meaningful isolated regression for the named source: built-in plugins dsp/mb-delay-pingpong.ts. Follow its actual caller, route/owner and persistence boundary.
-2. Exercise the listed zero-hit functions/branches or required feature checks with valid, boundary, malformed and unauthorized inputs; include unavailable dependencies and retry/restart behavior where applicable.
-3. For UI controls, use real DOM/browser interactions and assert loading, empty, error and delivered-success states plus the resulting backend effect.
-4. Register the new test in the owning runnable group, then regenerate the catalog, coverage and platform register. File-name associations and expect(true) placeholders do not close acceptance gaps.
-
-Proof needed:
-
-- Rerun the exact affected case/file and retain its original failure plus successful new evidence.
-- Re-run dependent feature journeys; do not replace a required business result with a broad accepted-status list.
-
-## `repair-9253a58e8812bc9f` — Unexecuted source branches/functions
-
-Source: `built-in plugins dsp/mb-delay-reverse.ts`. Group: `coverage`. Kind: `coverage_gap`. Priority: **P2**.
-
-Observed: 1 statements, 0 functions and 0 branch arms have zero hits.
-
-Diagnosis (**confirmed**): Source-defined behavior lacks the required execution/feature evidence.
-
-Evidence: `reports/test-verification/coverage/coverage-final.json`.
-
-Reproduce from the documented working directory:
-
-```sh
-npm run test:all -- --plan
-```
-
-Required changes:
-
-1. Add a meaningful isolated regression for the named source: built-in plugins dsp/mb-delay-reverse.ts. Follow its actual caller, route/owner and persistence boundary.
-2. Exercise the listed zero-hit functions/branches or required feature checks with valid, boundary, malformed and unauthorized inputs; include unavailable dependencies and retry/restart behavior where applicable.
-3. For UI controls, use real DOM/browser interactions and assert loading, empty, error and delivered-success states plus the resulting backend effect.
-4. Register the new test in the owning runnable group, then regenerate the catalog, coverage and platform register. File-name associations and expect(true) placeholders do not close acceptance gaps.
-
-Proof needed:
-
-- Rerun the exact affected case/file and retain its original failure plus successful new evidence.
-- Re-run dependent feature journeys; do not replace a required business result with a broad accepted-status list.
-
-## `repair-b3b03fc7a6eba8b2` — Unexecuted source branches/functions
-
-Source: `built-in plugins dsp/mb-delay-slapback.ts`. Group: `coverage`. Kind: `coverage_gap`. Priority: **P2**.
-
-Observed: 1 statements, 0 functions and 0 branch arms have zero hits.
-
-Diagnosis (**confirmed**): Source-defined behavior lacks the required execution/feature evidence.
-
-Evidence: `reports/test-verification/coverage/coverage-final.json`.
-
-Reproduce from the documented working directory:
-
-```sh
-npm run test:all -- --plan
-```
-
-Required changes:
-
-1. Add a meaningful isolated regression for the named source: built-in plugins dsp/mb-delay-slapback.ts. Follow its actual caller, route/owner and persistence boundary.
-2. Exercise the listed zero-hit functions/branches or required feature checks with valid, boundary, malformed and unauthorized inputs; include unavailable dependencies and retry/restart behavior where applicable.
-3. For UI controls, use real DOM/browser interactions and assert loading, empty, error and delivered-success states plus the resulting backend effect.
-4. Register the new test in the owning runnable group, then regenerate the catalog, coverage and platform register. File-name associations and expect(true) placeholders do not close acceptance gaps.
-
-Proof needed:
-
-- Rerun the exact affected case/file and retain its original failure plus successful new evidence.
-- Re-run dependent feature journeys; do not replace a required business result with a broad accepted-status list.
-
-## `repair-e351da1b59a2c2dc` — Unexecuted source branches/functions
-
-Source: `built-in plugins dsp/mb-delay-stereo.ts`. Group: `coverage`. Kind: `coverage_gap`. Priority: **P2**.
-
-Observed: 1 statements, 0 functions and 0 branch arms have zero hits.
-
-Diagnosis (**confirmed**): Source-defined behavior lacks the required execution/feature evidence.
-
-Evidence: `reports/test-verification/coverage/coverage-final.json`.
-
-Reproduce from the documented working directory:
-
-```sh
-npm run test:all -- --plan
-```
-
-Required changes:
-
-1. Add a meaningful isolated regression for the named source: built-in plugins dsp/mb-delay-stereo.ts. Follow its actual caller, route/owner and persistence boundary.
-2. Exercise the listed zero-hit functions/branches or required feature checks with valid, boundary, malformed and unauthorized inputs; include unavailable dependencies and retry/restart behavior where applicable.
-3. For UI controls, use real DOM/browser interactions and assert loading, empty, error and delivered-success states plus the resulting backend effect.
-4. Register the new test in the owning runnable group, then regenerate the catalog, coverage and platform register. File-name associations and expect(true) placeholders do not close acceptance gaps.
-
-Proof needed:
-
-- Rerun the exact affected case/file and retain its original failure plus successful new evidence.
-- Re-run dependent feature journeys; do not replace a required business result with a broad accepted-status list.
-
-## `repair-4eed3d57375e9e0f` — Unexecuted source branches/functions
-
-Source: `built-in plugins dsp/mb-delay-tape.ts`. Group: `coverage`. Kind: `coverage_gap`. Priority: **P2**.
-
-Observed: 1 statements, 0 functions and 0 branch arms have zero hits.
-
-Diagnosis (**confirmed**): Source-defined behavior lacks the required execution/feature evidence.
-
-Evidence: `reports/test-verification/coverage/coverage-final.json`.
-
-Reproduce from the documented working directory:
-
-```sh
-npm run test:all -- --plan
-```
-
-Required changes:
-
-1. Add a meaningful isolated regression for the named source: built-in plugins dsp/mb-delay-tape.ts. Follow its actual caller, route/owner and persistence boundary.
 2. Exercise the listed zero-hit functions/branches or required feature checks with valid, boundary, malformed and unauthorized inputs; include unavailable dependencies and retry/restart behavior where applicable.
 3. For UI controls, use real DOM/browser interactions and assert loading, empty, error and delivered-success states plus the resulting backend effect.
 4. Register the new test in the owning runnable group, then regenerate the catalog, coverage and platform register. File-name associations and expect(true) placeholders do not close acceptance gaps.

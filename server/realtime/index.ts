@@ -1,8 +1,12 @@
 import type { Server as HttpServer, IncomingMessage } from "http";
 import { WebSocketServer, WebSocket } from "ws";
 import { parse as parseUrl } from "url";
-import { parse as parseCookie } from "cookie";
 import { logger } from "../logger.js";
+import type session from "express-session";
+import {
+  authenticateRealtimeSession,
+  setRealtimeSessionStore,
+} from "./sessionAuth.js";
 import {
   initRedisPubSub,
   registerHandlers,
@@ -34,11 +38,8 @@ const userConnections: Map<string, Set<WebSocket>> = new Map();
 const MAX_GLOBAL_WS_CONNECTIONS = 50_000; // per process; multiply by # replicas
 const MAX_WS_CONNECTIONS_PER_USER = 5; // tabs + mobile + desktop
 
-// Session store reference - set by main server during initialization
-let sessionStore: Record<string, unknown> | null = null;
-
-export function setSessionStore(store: Record<string, unknown>): void {
-  sessionStore = store;
+export function setSessionStore(store: session.Store, secret: string): void {
+  setRealtimeSessionStore(store, secret);
   logger.info("WebSocket session store configured");
 }
 
@@ -50,43 +51,7 @@ interface AuthenticatedWebSocket extends WebSocket {
 async function authenticateFromSession(
   request: IncomingMessage,
 ): Promise<string | null> {
-  try {
-    const cookies = parseCookie(request?.headers.cookie || "");
-    const sessionId = cookies?.sessionId;
-
-    if (!sessionId || !sessionStore) {
-      return null;
-    }
-
-    // Parse the signed session ID (format: s:<sessionId>.<signature> or just sessionId)
-    let rawSessionId = sessionId;
-    if (sessionId?.startsWith("s:")) {
-      rawSessionId = sessionId?.slice(2).split(".")[0];
-    }
-
-    return new Promise((resolve) => {
-      (sessionStore as {
-        get: (
-          id: string,
-          cb: (err: Record<string, unknown>, session: Record<string, unknown>) => void,
-        ) => void;
-      }).get(
-        rawSessionId,
-        (err: Record<string, unknown>, session: Record<string, unknown>) => {
-          if (err || !session) {
-            resolve(null);
-            return;
-          }
-
-          const userId = (session?.passport as any)?.user || session?.userId;
-          resolve(userId || null);
-        },
-      );
-    });
-  } catch (error) {
-    logger.warn({ err: error }, "WebSocket session auth error:");
-    return null;
-  }
+  return authenticateRealtimeSession(request);
 }
 
 function initializeNotificationServer(httpServer: HttpServer): void {

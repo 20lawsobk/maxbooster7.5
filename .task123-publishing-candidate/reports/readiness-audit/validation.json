@@ -1,0 +1,4938 @@
+{
+  "date": "2026-09-19",
+  "verdict": "Not ready for full advertised scope",
+  "outputs": [
+    "reports/max-booster-production-readiness-audit-2026-09-19.md",
+    "reports/max-booster-production-readiness-audit-2026-09-19.html",
+    "reports/readiness-audit/validation.json"
+  ],
+  "totals": {
+    "domains": 12,
+    "uniqueFindingIds": 80,
+    "repairOptions": 320,
+    "numberedSteps": 1600,
+    "dependencyObservations": 206,
+    "distinctDependencyScannerIds": 172,
+    "privacyObservations": 79,
+    "sastIncomplete": true
+  },
+  "issues": [],
+  "structuralValidationPassed": true,
+  "brokenHtmlAnchors": [],
+  "artifactChecks": {
+    "markdownRepairAnchors": 80,
+    "htmlRepairHeadings": 80,
+    "sanitizedDependencyInventoryRows": 206,
+    "sanitizedPrivacyInventoryRows": 79,
+    "unsafeActiveHtmlMarkupPresent": false,
+    "visualBrowserReviewPerformed": true
+  },
+  "distinctnessValidation": "Distinct A–D strategy titles checked; full source approaches retained. Architecture-level distinctness and sufficiency require human review; no findings edited.",
+  "sources": [
+    {
+      "path": "reports/readiness-audit/security.md",
+      "sha256": "63812571ee6a666402268ddf90d342b86cfd2157ec4bd140ed1aec88999a49bd",
+      "ids": [
+        "SEC-01",
+        "SEC-02",
+        "SEC-03",
+        "SEC-04",
+        "SEC-05",
+        "SEC-06"
+      ],
+      "findingCount": 6,
+      "fullEvidenceAndRepairAndCoveragePreserved": true
+    },
+    {
+      "path": "reports/readiness-audit/commerce.md",
+      "sha256": "7b7f521dec30d1dafe8ad450680b8414196adfa7a83c62f7f1adaaef71982481",
+      "ids": [
+        "C1",
+        "C2",
+        "C3",
+        "C4",
+        "C5",
+        "C6",
+        "C7",
+        "C8",
+        "C9"
+      ],
+      "findingCount": 9,
+      "fullEvidenceAndRepairAndCoveragePreserved": true
+    },
+    {
+      "path": "reports/readiness-audit/integrations.md",
+      "sha256": "880ffd4505ff7a23a5ff3137515ff86bb1f58ca476f303aa2dbda10c167358e2",
+      "ids": [
+        "I1",
+        "I2",
+        "I3",
+        "I4",
+        "I5",
+        "I6",
+        "I7",
+        "I8",
+        "I9"
+      ],
+      "findingCount": 9,
+      "fullEvidenceAndRepairAndCoveragePreserved": true
+    },
+    {
+      "path": "reports/readiness-audit/ai-media.md",
+      "sha256": "e0d0ea07972c8769442991252c1658cdf065a5ae0df8a2c96632f26049fc6e3b",
+      "ids": [
+        "AM-1",
+        "AM-2",
+        "AM-3",
+        "AM-4",
+        "AM-5",
+        "AM-6"
+      ],
+      "findingCount": 6,
+      "fullEvidenceAndRepairAndCoveragePreserved": true
+    },
+    {
+      "path": "reports/readiness-audit/data-runtime.md",
+      "sha256": "4e664193f1e13be7adab205b77d9e01cd0b46f8e225835aa486d06f89be339b3",
+      "ids": [
+        "D1",
+        "D2",
+        "D3",
+        "D4",
+        "D5",
+        "D6",
+        "D7",
+        "D8"
+      ],
+      "findingCount": 8,
+      "fullEvidenceAndRepairAndCoveragePreserved": true
+    },
+    {
+      "path": "reports/readiness-audit/deployment.md",
+      "sha256": "8212599d8e2b817f3e92d7784a32e65f4565b1497c0d6fe547fdffa79e8fc79c",
+      "ids": [
+        "DEP-01",
+        "DEP-02",
+        "DEP-03",
+        "DEP-04",
+        "DEP-05",
+        "DEP-06",
+        "DEP-07"
+      ],
+      "findingCount": 7,
+      "fullEvidenceAndRepairAndCoveragePreserved": true
+    },
+    {
+      "path": "reports/readiness-audit/product-autonomous.md",
+      "sha256": "a986ec4c768091cd5c81dc26bc8a65d03636f455288c99713848c316e15d22a1",
+      "ids": [
+        "PA-1",
+        "PA-2",
+        "PA-3",
+        "PA-4",
+        "PA-5",
+        "PA-6"
+      ],
+      "findingCount": 6,
+      "fullEvidenceAndRepairAndCoveragePreserved": true
+    },
+    {
+      "path": "reports/readiness-audit/scanners.md",
+      "sha256": "954df5e1cf0264d8da7d47bd4927dd5d96c190e9e5940526fee5b8cdb18b1299",
+      "ids": [
+        "SCAN-01",
+        "SCAN-02",
+        "SCAN-03",
+        "SCAN-04",
+        "SCAN-05"
+      ],
+      "findingCount": 5,
+      "fullEvidenceAndRepairAndCoveragePreserved": true
+    },
+    {
+      "path": "reports/readiness-audit/coverage-gaps.md",
+      "sha256": "329cd96d4efa97f7621615b645bf476ee9cfad88cbfe3c67f2845cf83864f567",
+      "ids": [
+        "CG-1",
+        "CG-2",
+        "CG-3",
+        "CG-4",
+        "CG-5"
+      ],
+      "findingCount": 5,
+      "fullEvidenceAndRepairAndCoveragePreserved": true
+    },
+    {
+      "path": "reports/readiness-audit/growth-rights.md",
+      "sha256": "9b4914b96d56653e41774e60cb51cb3b0fb76ec016319dd13b3b5012b6c51507",
+      "ids": [
+        "GR-1",
+        "GR-2",
+        "GR-3",
+        "GR-4",
+        "GR-5"
+      ],
+      "findingCount": 5,
+      "fullEvidenceAndRepairAndCoveragePreserved": true
+    },
+    {
+      "path": "reports/readiness-audit/admin-governance.md",
+      "sha256": "0d78b5c21dd729709e4e3e3938872c0c6ea1fc36c5c6b67ae133a22f608e296f",
+      "ids": [
+        "AG-1",
+        "AG-2",
+        "AG-3",
+        "AG-4",
+        "AG-5",
+        "AG-6"
+      ],
+      "findingCount": 6,
+      "fullEvidenceAndRepairAndCoveragePreserved": true
+    },
+    {
+      "path": "reports/readiness-audit/client-offline.md",
+      "sha256": "f41fa64fb307ef7ffc72ae3b3d62ab15d76a6422498eae0e0c5e6f3830c85fc5",
+      "ids": [
+        "CO-1",
+        "CO-2",
+        "CO-3",
+        "CO-4",
+        "CO-5",
+        "CO-6",
+        "CO-7",
+        "CO-8"
+      ],
+      "findingCount": 8,
+      "fullEvidenceAndRepairAndCoveragePreserved": true
+    }
+  ],
+  "findings": [
+    {
+      "id": "SEC-01",
+      "title": "Revocation is a temporary, fail-open flag rather than durable invalidation; fallback sessions can survive password reset.",
+      "type": "CONFIRMED defect",
+      "priority": "P1",
+      "scope": "all authenticated releases",
+      "source": "reports/readiness-audit/security.md",
+      "optionCount": 4,
+      "options": [
+        {
+          "label": "A",
+          "title": "A — Durable user/session generation (recommended; compact migration, one authority).",
+          "stepCount": 5,
+          "stepNumbers": [
+            1,
+            2,
+            3,
+            4,
+            5
+          ]
+        },
+        {
+          "label": "B",
+          "title": "B — Authoritative session ledger (strong per-device control; more database traffic).",
+          "stepCount": 5,
+          "stepNumbers": [
+            1,
+            2,
+            3,
+            4,
+            5
+          ]
+        },
+        {
+          "label": "C",
+          "title": "C — Dedicated identity/session authority (central policy; integration and operational cost).",
+          "stepCount": 5,
+          "stepNumbers": [
+            1,
+            2,
+            3,
+            4,
+            5
+          ]
+        },
+        {
+          "label": "D",
+          "title": "D — Durable event-driven revocation ledger (low read latency; greatest consistency complexity).",
+          "stepCount": 5,
+          "stepNumbers": [
+            1,
+            2,
+            3,
+            4,
+            5
+          ]
+        }
+      ]
+    },
+    {
+      "id": "SEC-02",
+      "title": "MFA assurance is inconsistent across sign-in and authenticator replacement.",
+      "type": "CONFIRMED defect",
+      "priority": "P1",
+      "scope": "MFA, Google sign-in, privileged users",
+      "source": "reports/readiness-audit/security.md",
+      "optionCount": 4,
+      "options": [
+        {
+          "label": "A",
+          "title": "A — Shared assurance state machine (recommended; preserves existing UX with explicit invariants).",
+          "stepCount": 5,
+          "stepNumbers": [
+            1,
+            2,
+            3,
+            4,
+            5
+          ]
+        },
+        {
+          "label": "B",
+          "title": "B — Managed MFA identity broker (less bespoke security code; provider dependency).",
+          "stepCount": 5,
+          "stepNumbers": [
+            1,
+            2,
+            3,
+            4,
+            5
+          ]
+        },
+        {
+          "label": "C",
+          "title": "C — WebAuthn-first assurance (phishing-resistant; device/recovery migration cost).",
+          "stepCount": 5,
+          "stepNumbers": [
+            1,
+            2,
+            3,
+            4,
+            5
+          ]
+        },
+        {
+          "label": "D",
+          "title": "D — Isolated authentication gateway (central boundary; larger architectural change).",
+          "stepCount": 5,
+          "stepNumbers": [
+            1,
+            2,
+            3,
+            4,
+            5
+          ]
+        }
+      ]
+    },
+    {
+      "id": "SEC-03",
+      "title": "URL string checks do not constrain the destination reached by the server.",
+      "type": "CONFIRMED defect",
+      "priority": "P1",
+      "scope": "custom workflow webhooks",
+      "source": "reports/readiness-audit/security.md",
+      "optionCount": 4,
+      "options": [
+        {
+          "label": "A",
+          "title": "A — Address-pinned outbound HTTP client (recommended; supports arbitrary public webhooks).",
+          "stepCount": 5,
+          "stepNumbers": [
+            1,
+            2,
+            3,
+            4,
+            5
+          ]
+        },
+        {
+          "label": "B",
+          "title": "B — Controlled egress proxy (network-enforced; additional service).",
+          "stepCount": 5,
+          "stepNumbers": [
+            1,
+            2,
+            3,
+            4,
+            5
+          ]
+        },
+        {
+          "label": "C",
+          "title": "C — Verified destination registry (smaller attack surface; less URL flexibility).",
+          "stepCount": 5,
+          "stepNumbers": [
+            1,
+            2,
+            3,
+            4,
+            5
+          ]
+        },
+        {
+          "label": "D",
+          "title": "D — Isolated webhook delivery workers (strong containment; queue/operations cost).",
+          "stepCount": 5,
+          "stepNumbers": [
+            1,
+            2,
+            3,
+            4,
+            5
+          ]
+        }
+      ]
+    },
+    {
+      "id": "SEC-04",
+      "title": "Public deletion removes only the user row; complete erasure orchestration and OAuth reauthentication are missing from that path.",
+      "type": "CONFIRMED defect + CAPABILITY GAP",
+      "priority": "P1",
+      "scope": "account erasure and privacy promises",
+      "source": "reports/readiness-audit/security.md",
+      "optionCount": 4,
+      "options": [
+        {
+          "label": "A",
+          "title": "A — Durable erasure saga (recommended; works across database and external objects).",
+          "stepCount": 5,
+          "stepNumbers": [
+            1,
+            2,
+            3,
+            4,
+            5
+          ]
+        },
+        {
+          "label": "B",
+          "title": "B — Data-ownership registry with lifecycle workers (systematic extensibility; migration effort).",
+          "stepCount": 5,
+          "stepNumbers": [
+            1,
+            2,
+            3,
+            4,
+            5
+          ]
+        },
+        {
+          "label": "C",
+          "title": "C — Subject-isolated encrypted storage (efficient crypto-erasure; major redesign).",
+          "stepCount": 5,
+          "stepNumbers": [
+            1,
+            2,
+            3,
+            4,
+            5
+          ]
+        },
+        {
+          "label": "D",
+          "title": "D — Privacy orchestration service with adapters (dedicated ownership; service/vendor overhead).",
+          "stepCount": 5,
+          "stepNumbers": [
+            1,
+            2,
+            3,
+            4,
+            5
+          ]
+        }
+      ]
+    },
+    {
+      "id": "SEC-05",
+      "title": "CSRF middleware load failure is explicitly allowed to continue startup.",
+      "type": "CONFIRMED defect",
+      "priority": "P1",
+      "scope": "browser-authenticated production",
+      "source": "reports/readiness-audit/security.md",
+      "optionCount": 4,
+      "options": [
+        {
+          "label": "A",
+          "title": "A — Mandatory startup dependency (recommended; smallest repair).",
+          "stepCount": 5,
+          "stepNumbers": [
+            1,
+            2,
+            3,
+            4,
+            5
+          ]
+        },
+        {
+          "label": "B",
+          "title": "B — Required browser router factory (localized composition; route migration needed).",
+          "stepCount": 5,
+          "stepNumbers": [
+            1,
+            2,
+            3,
+            4,
+            5
+          ]
+        },
+        {
+          "label": "C",
+          "title": "C — Session-bound synchronizer tokens (strong binding; client/session migration).",
+          "stepCount": 5,
+          "stepNumbers": [
+            1,
+            2,
+            3,
+            4,
+            5
+          ]
+        },
+        {
+          "label": "D",
+          "title": "D — Browser-facing security gateway/BFF (central enforcement; extra boundary).",
+          "stepCount": 5,
+          "stepNumbers": [
+            1,
+            2,
+            3,
+            4,
+            5
+          ]
+        }
+      ]
+    },
+    {
+      "id": "SEC-06",
+      "title": "Edge trust, deployed cookie settings, secret custody and negative authorization tests need deployment evidence.",
+      "type": "VERIFICATION GATE",
+      "priority": "P1 (conditional details in scope)",
+      "scope": "public deployment; P2 for non-public development",
+      "source": "reports/readiness-audit/security.md",
+      "optionCount": 4,
+      "options": [
+        {
+          "label": "A",
+          "title": "A — Harden current edge and secret manager (recommended; least migration).",
+          "stepCount": 5,
+          "stepNumbers": [
+            1,
+            2,
+            3,
+            4,
+            5
+          ]
+        },
+        {
+          "label": "B",
+          "title": "B — Private origin behind authenticated gateway (strong ingress trust; topology change).",
+          "stepCount": 5,
+          "stepNumbers": [
+            1,
+            2,
+            3,
+            4,
+            5
+          ]
+        },
+        {
+          "label": "C",
+          "title": "C — Separate browser/API deployments with workload identity (less shared-secret exposure; larger migration).",
+          "stepCount": 5,
+          "stepNumbers": [
+            1,
+            2,
+            3,
+            4,
+            5
+          ]
+        },
+        {
+          "label": "D",
+          "title": "D — Reproducible immutable security baseline (repeatable acceptance; pipeline investment).",
+          "stepCount": 5,
+          "stepNumbers": [
+            1,
+            2,
+            3,
+            4,
+            5
+          ]
+        }
+      ]
+    },
+    {
+      "id": "C1",
+      "title": "Paid marketplace booking calls a nonexistent storage method; settlement also commits completion before its dependent work",
+      "type": "CONFIRMED defect",
+      "priority": "P0",
+      "scope": "All paid beat purchases",
+      "source": "reports/readiness-audit/commerce.md",
+      "optionCount": 4,
+      "options": [
+        {
+          "label": "A",
+          "title": "A. Typed transactional booking plus outbox — recommended. Best incremental fit; introduces a worker/outbox.",
+          "stepCount": 5,
+          "stepNumbers": [
+            1,
+            2,
+            3,
+            4,
+            5
+          ]
+        },
+        {
+          "label": "B",
+          "title": "B. Database settlement procedure. Strong centralized invariants; more SQL ownership.",
+          "stepCount": 5,
+          "stepNumbers": [
+            1,
+            2,
+            3,
+            4,
+            5
+          ]
+        },
+        {
+          "label": "C",
+          "title": "C. Dedicated payment-settlement service. Clear ownership; operationally heavier.",
+          "stepCount": 5,
+          "stepNumbers": [
+            1,
+            2,
+            3,
+            4,
+            5
+          ]
+        },
+        {
+          "label": "D",
+          "title": "D. Event-sourced sale aggregate. Best traceability; largest data-model change.",
+          "stepCount": 5,
+          "stepNumbers": [
+            1,
+            2,
+            3,
+            4,
+            5
+          ]
+        }
+      ]
+    },
+    {
+      "id": "C2",
+      "title": "Authenticated refund route lacks order-owner or privileged-actor authorization",
+      "type": "CONFIRMED defect",
+      "priority": "P0",
+      "scope": "Customer refunds",
+      "source": "reports/readiness-audit/commerce.md",
+      "optionCount": 4,
+      "options": [
+        {
+          "label": "A",
+          "title": "A. Ownership-scoped service authorization — recommended. Smallest comprehensive fix; requires explicit refund policy.",
+          "stepCount": 5,
+          "stepNumbers": [
+            1,
+            2,
+            3,
+            4,
+            5
+          ]
+        },
+        {
+          "label": "B",
+          "title": "B. Approval-case workflow. Strong review controls; slower customer refunds.",
+          "stepCount": 5,
+          "stepNumbers": [
+            1,
+            2,
+            3,
+            4,
+            5
+          ]
+        },
+        {
+          "label": "C",
+          "title": "C. Row-level authorization boundary. Defense in depth; database/session-context complexity.",
+          "stepCount": 5,
+          "stepNumbers": [
+            1,
+            2,
+            3,
+            4,
+            5
+          ]
+        },
+        {
+          "label": "D",
+          "title": "D. Short-lived signed refund capability. Useful for support-assisted flows; token lifecycle overhead.",
+          "stepCount": 5,
+          "stepNumbers": [
+            1,
+            2,
+            3,
+            4,
+            5
+          ]
+        }
+      ]
+    },
+    {
+      "id": "C3",
+      "title": "Withdrawable balance mixes gross earnings, transfer debits and bank withdrawals; in-transit funds are not reserved",
+      "type": "CONFIRMED defect",
+      "priority": "P0",
+      "scope": "Connect seller/royalty withdrawals",
+      "source": "reports/readiness-audit/commerce.md",
+      "optionCount": 4,
+      "options": [
+        {
+          "label": "A",
+          "title": "A. Double-entry, currency-partitioned ledger — recommended. Broadest correctness; requires audited migration.",
+          "stepCount": 5,
+          "stepNumbers": [
+            1,
+            2,
+            3,
+            4,
+            5
+          ]
+        },
+        {
+          "label": "B",
+          "title": "B. Immutable payable-allocation records. Less machinery than a full general ledger; external GL still needed.",
+          "stepCount": 5,
+          "stepNumbers": [
+            1,
+            2,
+            3,
+            4,
+            5
+          ]
+        },
+        {
+          "label": "C",
+          "title": "C. Destination-charge funding model. Provider handles the primary marketplace funding split; royalties still need explicit funding.",
+          "stepCount": 5,
+          "stepNumbers": [
+            1,
+            2,
+            3,
+            4,
+            5
+          ]
+        },
+        {
+          "label": "D",
+          "title": "D. External accounting subledger as authority. Mature reconciliation tooling; integration cost/vendor dependency.",
+          "stepCount": 5,
+          "stepNumbers": [
+            1,
+            2,
+            3,
+            4,
+            5
+          ]
+        }
+      ]
+    },
+    {
+      "id": "C4",
+      "title": "Collaborator credits are not connected to an executable payable balance",
+      "type": "CONFIRMED defect",
+      "priority": "P1",
+      "scope": "Marketplace revenue splits",
+      "source": "reports/readiness-audit/commerce.md",
+      "optionCount": 4,
+      "options": [
+        {
+          "label": "A",
+          "title": "A. Unified beneficiary allocations — recommended. Reuses C3; requires split-contract migration.",
+          "stepCount": 5,
+          "stepNumbers": [
+            1,
+            2,
+            3,
+            4,
+            5
+          ]
+        },
+        {
+          "label": "B",
+          "title": "B. Direct multi-beneficiary transfers. Fast collaborator settlement; more provider operations and reversals.",
+          "stepCount": 5,
+          "stepNumbers": [
+            1,
+            2,
+            3,
+            4,
+            5
+          ]
+        },
+        {
+          "label": "C",
+          "title": "C. Periodic royalty clearing. Lower transaction volume; delayed collaborator cash.",
+          "stepCount": 5,
+          "stepNumbers": [
+            1,
+            2,
+            3,
+            4,
+            5
+          ]
+        },
+        {
+          "label": "D",
+          "title": "D. Contract escrow and release service. Handles disputed/unresolved rights; adds operations.",
+          "stepCount": 5,
+          "stepNumbers": [
+            1,
+            2,
+            3,
+            4,
+            5
+          ]
+        }
+      ]
+    },
+    {
+      "id": "C5",
+      "title": "Scheduled royalty drain reads nonexistent payable fields and “executes” payments without a provider",
+      "type": "CONFIRMED defect + CAPABILITY GAP",
+      "priority": "P1",
+      "scope": "Automatic royalty payouts and statements",
+      "source": "reports/readiness-audit/commerce.md",
+      "optionCount": 4,
+      "options": [
+        {
+          "label": "A",
+          "title": "A. Consolidate onto a corrected payable engine — recommended. Avoids parallel financial systems; depends on C3/C4.",
+          "stepCount": 5,
+          "stepNumbers": [
+            1,
+            2,
+            3,
+            4,
+            5
+          ]
+        },
+        {
+          "label": "B",
+          "title": "B. Complete a dedicated royalty payout service. Preserves separation; duplicates operational responsibilities.",
+          "stepCount": 5,
+          "stepNumbers": [
+            1,
+            2,
+            3,
+            4,
+            5
+          ]
+        },
+        {
+          "label": "C",
+          "title": "C. Controlled bank batch settlement. Practical for periodic royalties; bank approval latency.",
+          "stepCount": 5,
+          "stepNumbers": [
+            1,
+            2,
+            3,
+            4,
+            5
+          ]
+        },
+        {
+          "label": "D",
+          "title": "D. Managed payables provider. Broad methods/compliance support; commercial and integration overhead.",
+          "stepCount": 5,
+          "stepNumbers": [
+            1,
+            2,
+            3,
+            4,
+            5
+          ]
+        }
+      ]
+    },
+    {
+      "id": "C6",
+      "title": "Refund/dispute ingestion does not reconcile the actual commerce ledger or recover seller funds",
+      "type": "CONFIRMED defect",
+      "priority": "P0",
+      "scope": "Refunds, chargebacks, external dashboard refunds",
+      "source": "reports/readiness-audit/commerce.md",
+      "optionCount": 4,
+      "options": [
+        {
+          "label": "A",
+          "title": "A. Unified compensation state machine — recommended. Most direct fit; requires careful historical reconciliation.",
+          "stepCount": 5,
+          "stepNumbers": [
+            1,
+            2,
+            3,
+            4,
+            5
+          ]
+        },
+        {
+          "label": "B",
+          "title": "B. Provider balance-transaction reconciliation authority. Catches missing webhooks; settlement latency.",
+          "stepCount": 5,
+          "stepNumbers": [
+            1,
+            2,
+            3,
+            4,
+            5
+          ]
+        },
+        {
+          "label": "C",
+          "title": "C. Event-sourced reversal aggregate. Strong auditability; greater redesign.",
+          "stepCount": 5,
+          "stepNumbers": [
+            1,
+            2,
+            3,
+            4,
+            5
+          ]
+        },
+        {
+          "label": "D",
+          "title": "D. Operational case management with durable financial execution. Human judgment for disputes; staffing requirement.",
+          "stepCount": 5,
+          "stepNumbers": [
+            1,
+            2,
+            3,
+            4,
+            5
+          ]
+        }
+      ]
+    },
+    {
+      "id": "C7",
+      "title": "Plan metadata and payment-mode handling disagree across subscription producers/consumers",
+      "type": "CONFIRMED defect",
+      "priority": "P1",
+      "scope": "Existing-user upgrades, yearly/lifetime billing",
+      "source": "reports/readiness-audit/commerce.md",
+      "optionCount": 4,
+      "options": [
+        {
+          "label": "A",
+          "title": "A. Canonical billing contract and entitlement resolver — recommended. Least migration risk; must normalize old subscriptions.",
+          "stepCount": 5,
+          "stepNumbers": [
+            1,
+            2,
+            3,
+            4,
+            5
+          ]
+        },
+        {
+          "label": "B",
+          "title": "B. Price-ID-driven entitlements. Avoids metadata dependence; catalogue versioning required.",
+          "stepCount": 5,
+          "stepNumbers": [
+            1,
+            2,
+            3,
+            4,
+            5
+          ]
+        },
+        {
+          "label": "C",
+          "title": "C. Durable billing purchase aggregate. Clean lifecycle ownership; more application state.",
+          "stepCount": 5,
+          "stepNumbers": [
+            1,
+            2,
+            3,
+            4,
+            5
+          ]
+        },
+        {
+          "label": "D",
+          "title": "D. Provider-backed entitlement synchronizer. Robust against missed events; provider dependency and latency.",
+          "stepCount": 5,
+          "stepNumbers": [
+            1,
+            2,
+            3,
+            4,
+            5
+          ]
+        }
+      ]
+    },
+    {
+      "id": "C8",
+      "title": "Webhook deduplication is a non-atomic, expiring check; provider disbursement requests lack stable idempotency",
+      "type": "CONFIRMED defect",
+      "priority": "P1",
+      "scope": "Multi-worker/retry/restart payment processing",
+      "source": "reports/readiness-audit/commerce.md",
+      "optionCount": 4,
+      "options": [
+        {
+          "label": "A",
+          "title": "A. PostgreSQL inbox/outbox with stable operation IDs — recommended. Fits existing database; worker lifecycle needed.",
+          "stepCount": 5,
+          "stepNumbers": [
+            1,
+            2,
+            3,
+            4,
+            5
+          ]
+        },
+        {
+          "label": "B",
+          "title": "B. Durable workflow engine. Built-in recovery; extra infrastructure.",
+          "stepCount": 5,
+          "stepNumbers": [
+            1,
+            2,
+            3,
+            4,
+            5
+          ]
+        },
+        {
+          "label": "C",
+          "title": "C. Database-native financial command executor. Minimal queue infrastructure; SQL locking complexity.",
+          "stepCount": 5,
+          "stepNumbers": [
+            1,
+            2,
+            3,
+            4,
+            5
+          ]
+        },
+        {
+          "label": "D",
+          "title": "D. Dedicated payment gateway service. Centralizes policy for all callers; service migration overhead.",
+          "stepCount": 5,
+          "stepNumbers": [
+            1,
+            2,
+            3,
+            4,
+            5
+          ]
+        }
+      ]
+    },
+    {
+      "id": "C9",
+      "title": "No current end-to-end evidence establishes settlement and deployment invariants",
+      "type": "VERIFICATION GATE",
+      "priority": "P2",
+      "scope": "Any production money release",
+      "source": "reports/readiness-audit/commerce.md",
+      "optionCount": 4,
+      "options": [
+        {
+          "label": "A",
+          "title": "A. Disposable integration environment and Stripe test mode — recommended. Reproducible; cannot certify live banking availability.",
+          "stepCount": 5,
+          "stepNumbers": [
+            1,
+            2,
+            3,
+            4,
+            5
+          ]
+        },
+        {
+          "label": "B",
+          "title": "B. Dedicated staging payment certification environment. Close deployment fidelity; ongoing cost.",
+          "stepCount": 5,
+          "stepNumbers": [
+            1,
+            2,
+            3,
+            4,
+            5
+          ]
+        },
+        {
+          "label": "C",
+          "title": "C. Finance-led release reconciliation drill. Strong accounting scrutiny; more manual effort.",
+          "stepCount": 5,
+          "stepNumbers": [
+            1,
+            2,
+            3,
+            4,
+            5
+          ]
+        },
+        {
+          "label": "D",
+          "title": "D. Independent payment certification engagement. External challenge; cost and lead time.",
+          "stepCount": 5,
+          "stepNumbers": [
+            1,
+            2,
+            3,
+            4,
+            5
+          ]
+        }
+      ]
+    },
+    {
+      "id": "I1",
+      "title": "LabelGrid submission/delivery claims exceed provider evidence: local drafts become submissions and unknown outlet states become processing",
+      "type": "CONFIRMED defect",
+      "priority": "P1",
+      "scope": "Spotify, Apple Music, YouTube Music direct-submit routes and configured LabelGrid delivery-status consumers",
+      "source": "reports/readiness-audit/integrations.md",
+      "optionCount": 4,
+      "options": [
+        {
+          "label": "A",
+          "title": "A — Typed submission outcomes (recommended; least disruptive).",
+          "stepCount": 5,
+          "stepNumbers": [
+            1,
+            2,
+            3,
+            4,
+            5
+          ]
+        },
+        {
+          "label": "B",
+          "title": "B — Durable submission command API (higher infrastructure cost; better resilience).",
+          "stepCount": 5,
+          "stepNumbers": [
+            1,
+            2,
+            3,
+            4,
+            5
+          ]
+        },
+        {
+          "label": "C",
+          "title": "C — Route consolidation through a shared distribution orchestrator (broader refactor).",
+          "stepCount": 5,
+          "stepNumbers": [
+            1,
+            2,
+            3,
+            4,
+            5
+          ]
+        },
+        {
+          "label": "D",
+          "title": "D — Real draft-to-submit resource lifecycle (best draft UX; larger API migration).",
+          "stepCount": 5,
+          "stepNumbers": [
+            1,
+            2,
+            3,
+            4,
+            5
+          ]
+        }
+      ]
+    },
+    {
+      "id": "I2",
+      "title": "Distribution creation retries lack application-level idempotency and durable remote checkpoints",
+      "type": "CONFIRMED defect",
+      "priority": "P1",
+      "scope": "Too Lost primary submission and LabelGrid release creation",
+      "source": "reports/readiness-audit/integrations.md",
+      "optionCount": 4,
+      "options": [
+        {
+          "label": "A",
+          "title": "A — Persistent saga with provider-supported idempotency (recommended where supported).",
+          "stepCount": 5,
+          "stepNumbers": [
+            1,
+            2,
+            3,
+            4,
+            5
+          ]
+        },
+        {
+          "label": "B",
+          "title": "B — Reconcile-before-retry protocol (works without provider idempotency; requires reliable lookup).",
+          "stepCount": 5,
+          "stepNumbers": [
+            1,
+            2,
+            3,
+            4,
+            5
+          ]
+        },
+        {
+          "label": "C",
+          "title": "C — Serialized delivery ledger and operator-assisted ambiguity resolution (more operational work).",
+          "stepCount": 5,
+          "stepNumbers": [
+            1,
+            2,
+            3,
+            4,
+            5
+          ]
+        },
+        {
+          "label": "D",
+          "title": "D — Provider-draft-first resumable submission API (larger client change).",
+          "stepCount": 5,
+          "stepNumbers": [
+            1,
+            2,
+            3,
+            4,
+            5
+          ]
+        }
+      ]
+    },
+    {
+      "id": "I3",
+      "title": "Catalog completeness is inferred independently of actual scanner termination",
+      "type": "CONFIRMED defect",
+      "priority": "P1",
+      "scope": "DSP catalog previews/imports, especially SoundCloud and Deezer",
+      "source": "reports/readiness-audit/integrations.md",
+      "optionCount": 4,
+      "options": [
+        {
+          "label": "A",
+          "title": "A — Structured scanner result contract (recommended; preserves current adapters).",
+          "stepCount": 5,
+          "stepNumbers": [
+            1,
+            2,
+            3,
+            4,
+            5
+          ]
+        },
+        {
+          "label": "B",
+          "title": "B — Durable cursor crawl engine (larger investment; supports large catalogs).",
+          "stepCount": 5,
+          "stepNumbers": [
+            1,
+            2,
+            3,
+            4,
+            5
+          ]
+        },
+        {
+          "label": "C",
+          "title": "C — Authoritative catalog manifest ingestion (provider/export dependency).",
+          "stepCount": 5,
+          "stepNumbers": [
+            1,
+            2,
+            3,
+            4,
+            5
+          ]
+        },
+        {
+          "label": "D",
+          "title": "D — Reconciliation-based coverage certification (more API traffic; handles weak scanners).",
+          "stepCount": 5,
+          "stepNumbers": [
+            1,
+            2,
+            3,
+            4,
+            5
+          ]
+        }
+      ]
+    },
+    {
+      "id": "I4",
+      "title": "Automatic artist discovery/import has no durable job handoff/checkpoint in this path",
+      "type": "CAPABILITY GAP",
+      "priority": "P1",
+      "scope": "Automatic catalog import after artist creation and transfer-job progress",
+      "source": "reports/readiness-audit/integrations.md",
+      "optionCount": 4,
+      "options": [
+        {
+          "label": "A",
+          "title": "A — PostgreSQL job ledger and worker leases (recommended; reuses existing persistence).",
+          "stepCount": 5,
+          "stepNumbers": [
+            1,
+            2,
+            3,
+            4,
+            5
+          ]
+        },
+        {
+          "label": "B",
+          "title": "B — Transactional outbox plus durable queue (more moving parts; scalable).",
+          "stepCount": 5,
+          "stepNumbers": [
+            1,
+            2,
+            3,
+            4,
+            5
+          ]
+        },
+        {
+          "label": "C",
+          "title": "C — Durable workflow engine (operational dependency; strongest orchestration tooling).",
+          "stepCount": 5,
+          "stepNumbers": [
+            1,
+            2,
+            3,
+            4,
+            5
+          ]
+        },
+        {
+          "label": "D",
+          "title": "D — Desired-state reconciliation controller (less event dependence; slower convergence).",
+          "stepCount": 5,
+          "stepNumbers": [
+            1,
+            2,
+            3,
+            4,
+            5
+          ]
+        }
+      ]
+    },
+    {
+      "id": "I5",
+      "title": "OAuth callbacks persist reusable social credentials in plaintext application columns",
+      "type": "CONFIRMED defect",
+      "priority": "P1",
+      "scope": "Connected social accounts, refresh and publishing credential boundary",
+      "source": "reports/readiness-audit/integrations.md",
+      "optionCount": 4,
+      "options": [
+        {
+          "label": "A",
+          "title": "A — Shared versioned encryption envelope (recommended; manageable migration).",
+          "stepCount": 5,
+          "stepNumbers": [
+            1,
+            2,
+            3,
+            4,
+            5
+          ]
+        },
+        {
+          "label": "B",
+          "title": "B — External secrets vault references (strong isolation; vault availability required).",
+          "stepCount": 5,
+          "stepNumbers": [
+            1,
+            2,
+            3,
+            4,
+            5
+          ]
+        },
+        {
+          "label": "C",
+          "title": "C — OAuth credential broker (largest service change; narrows token exposure).",
+          "stepCount": 5,
+          "stepNumbers": [
+            1,
+            2,
+            3,
+            4,
+            5
+          ]
+        },
+        {
+          "label": "D",
+          "title": "D — Database cryptographic access boundary (DB/key-management complexity).",
+          "stepCount": 5,
+          "stepNumbers": [
+            1,
+            2,
+            3,
+            4,
+            5
+          ]
+        }
+      ]
+    },
+    {
+      "id": "I6",
+      "title": "Autopilot publishing has no recovery path for stranded posting records or ambiguous per-platform outcomes",
+      "type": "CONFIRMED defect",
+      "priority": "P1",
+      "scope": "Scheduled/manual/autopilot posts through AutoPostingServiceV2",
+      "source": "reports/readiness-audit/integrations.md",
+      "optionCount": 4,
+      "options": [
+        {
+          "label": "A",
+          "title": "A — Per-platform delivery ledger with leases (recommended; explicit remote state).",
+          "stepCount": 5,
+          "stepNumbers": [
+            1,
+            2,
+            3,
+            4,
+            5
+          ]
+        },
+        {
+          "label": "B",
+          "title": "B — Durable workflow per scheduled post (workflow dependency; strong replay visibility).",
+          "stepCount": 5,
+          "stepNumbers": [
+            1,
+            2,
+            3,
+            4,
+            5
+          ]
+        },
+        {
+          "label": "C",
+          "title": "C — Queue visibility/ack protocol plus recovery sweeper (queue work required).",
+          "stepCount": 5,
+          "stepNumbers": [
+            1,
+            2,
+            3,
+            4,
+            5
+          ]
+        },
+        {
+          "label": "D",
+          "title": "D — Provider-operation reconciliation scheduler (more polling; useful for asynchronous APIs).",
+          "stepCount": 5,
+          "stepNumbers": [
+            1,
+            2,
+            3,
+            4,
+            5
+          ]
+        }
+      ]
+    },
+    {
+      "id": "I7",
+      "title": "Notification delivery reads a different preference schema than the preference API writes",
+      "type": "CONFIRMED defect",
+      "priority": "P1",
+      "scope": "Release/social/other notifications through NotificationService; email and browser opt-ins",
+      "source": "reports/readiness-audit/integrations.md",
+      "optionCount": 4,
+      "options": [
+        {
+          "label": "A",
+          "title": "A — Canonical preference evaluator (recommended; smallest architectural change).",
+          "stepCount": 5,
+          "stepNumbers": [
+            1,
+            2,
+            3,
+            4,
+            5
+          ]
+        },
+        {
+          "label": "B",
+          "title": "B — Central notification orchestration service (broader consolidation).",
+          "stepCount": 5,
+          "stepNumbers": [
+            1,
+            2,
+            3,
+            4,
+            5
+          ]
+        },
+        {
+          "label": "C",
+          "title": "C — Normalized relational consent model (schema-heavy; strongest auditability).",
+          "stepCount": 5,
+          "stepNumbers": [
+            1,
+            2,
+            3,
+            4,
+            5
+          ]
+        },
+        {
+          "label": "D",
+          "title": "D — Versioned policy compilation (fast dispatch; cache invalidation burden).",
+          "stepCount": 5,
+          "stepNumbers": [
+            1,
+            2,
+            3,
+            4,
+            5
+          ]
+        }
+      ]
+    },
+    {
+      "id": "I8",
+      "title": "SMS verification claims active notifications, but notification dispatch has no SMS channel",
+      "type": "CAPABILITY GAP",
+      "priority": "P2",
+      "scope": "General SMS notification offering; P1 if SMS is a required security-alert channel",
+      "source": "reports/readiness-audit/integrations.md",
+      "optionCount": 4,
+      "options": [
+        {
+          "label": "A",
+          "title": "A — Twilio Messaging adapter in the existing notification pipeline (recommended; reuses verification provider).",
+          "stepCount": 5,
+          "stepNumbers": [
+            1,
+            2,
+            3,
+            4,
+            5
+          ]
+        },
+        {
+          "label": "B",
+          "title": "B — Dedicated SMS delivery worker and outbox (more infrastructure; isolates send reliability).",
+          "stepCount": 5,
+          "stepNumbers": [
+            1,
+            2,
+            3,
+            4,
+            5
+          ]
+        },
+        {
+          "label": "C",
+          "title": "C — Multi-channel provider orchestration (vendor coupling; centralized channel tooling).",
+          "stepCount": 5,
+          "stepNumbers": [
+            1,
+            2,
+            3,
+            4,
+            5
+          ]
+        },
+        {
+          "label": "D",
+          "title": "D — Owned SMS gateway service with multiple carriers (highest cost; resilience/control).",
+          "stepCount": 5,
+          "stepNumbers": [
+            1,
+            2,
+            3,
+            4,
+            5
+          ]
+        }
+      ]
+    },
+    {
+      "id": "I9",
+      "title": "Both mounted distributor payout actions call a method that always throws; a token cannot enable the absent provider endpoint",
+      "type": "CAPABILITY GAP",
+      "priority": "P1",
+      "scope": "LabelGrid earnings/royalty payout execution, not internal balance accounting",
+      "source": "reports/readiness-audit/integrations.md",
+      "optionCount": 4,
+      "options": [
+        {
+          "label": "A",
+          "title": "A — Account-holder dashboard execution with receipt reconciliation (recommended; uses the documented-in-source mechanism).",
+          "stepCount": 5,
+          "stepNumbers": [
+            1,
+            2,
+            3,
+            4,
+            5
+          ]
+        },
+        {
+          "label": "B",
+          "title": "B — Delegated operations dashboard execution (staff accountability; operational throughput cost).",
+          "stepCount": 5,
+          "stepNumbers": [
+            1,
+            2,
+            3,
+            4,
+            5
+          ]
+        },
+        {
+          "label": "C",
+          "title": "C — Contracted provider-assisted payout instruction workflow (conditional on provider agreement; avoids inventing an API).",
+          "stepCount": 5,
+          "stepNumbers": [
+            1,
+            2,
+            3,
+            4,
+            5
+          ]
+        },
+        {
+          "label": "D",
+          "title": "D — Migration to a distributor with a supported payout execution contract (largest migration; enables real automation where available).",
+          "stepCount": 5,
+          "stepNumbers": [
+            1,
+            2,
+            3,
+            4,
+            5
+          ]
+        }
+      ]
+    },
+    {
+      "id": "AM-1",
+      "title": "Fabricated A/B performance and locally authored AI variants",
+      "type": "CONFIRMED defect",
+      "priority": "P1",
+      "scope": "social AI A/B generation and any ranking/selection based on its scores.",
+      "source": "reports/readiness-audit/ai-media.md",
+      "optionCount": 4,
+      "options": [
+        {
+          "label": "A",
+          "title": "A — MaxCore variant-and-score endpoint (recommended). Lowest ambiguity; requires a calibrated scorer.",
+          "stepCount": 5,
+          "stepNumbers": [
+            1,
+            2,
+            3,
+            4,
+            5
+          ]
+        },
+        {
+          "label": "B",
+          "title": "B — Measured online A/B experiments. Strong causal evidence; slower and requires sufficient audience traffic.",
+          "stepCount": 5,
+          "stepNumbers": [
+            1,
+            2,
+            3,
+            4,
+            5
+          ]
+        },
+        {
+          "label": "C",
+          "title": "C — MaxCore pairwise preference model. Easier than absolute engagement calibration; ranking is not an engagement-rate prediction.",
+          "stepCount": 5,
+          "stepNumbers": [
+            1,
+            2,
+            3,
+            4,
+            5
+          ]
+        },
+        {
+          "label": "D",
+          "title": "D — Authoritative asynchronous batch scoring. Supports expensive scoring and reuse; adds pending-job UX.",
+          "stepCount": 5,
+          "stepNumbers": [
+            1,
+            2,
+            3,
+            4,
+            5
+          ]
+        }
+      ]
+    },
+    {
+      "id": "AM-2",
+      "title": "Predictive analytics and engagement capabilities have no working authoritative contract",
+      "type": "CAPABILITY GAP",
+      "priority": "P1",
+      "scope": "engagement/best-time predictions, AI analytics/forecasting, A&R forecast and release-timing promises. Ordinary observed analytics are not implicated.",
+      "source": "reports/readiness-audit/ai-media.md",
+      "optionCount": 4,
+      "options": [
+        {
+          "label": "A",
+          "title": "A — Dedicated supervised MaxCore services (recommended). Best contract clarity; largest labeled-data requirement.",
+          "stepCount": 5,
+          "stepNumbers": [
+            1,
+            2,
+            3,
+            4,
+            5
+          ]
+        },
+        {
+          "label": "B",
+          "title": "B — MaxCore probabilistic time-series service. Shared quantitative foundation; less suited to sparse creator histories.",
+          "stepCount": 5,
+          "stepNumbers": [
+            1,
+            2,
+            3,
+            4,
+            5
+          ]
+        },
+        {
+          "label": "C",
+          "title": "C — Retrieval-conditioned MaxCore reasoning with quantitative tools. More explainable insights; tool correctness becomes critical.",
+          "stepCount": 5,
+          "stepNumbers": [
+            1,
+            2,
+            3,
+            4,
+            5
+          ]
+        },
+        {
+          "label": "D",
+          "title": "D — Scheduled MaxCore decision bundles. Efficient for dashboards; freshness and interactive latency differ.",
+          "stepCount": 5,
+          "stepNumbers": [
+            1,
+            2,
+            3,
+            4,
+            5
+          ]
+        }
+      ]
+    },
+    {
+      "id": "AM-3",
+      "title": "Requested video narration/audio may silently disappear",
+      "type": "CONFIRMED defect",
+      "priority": "P1",
+      "scope": "MaxCore videos requested with voiceover or generated audio.",
+      "source": "reports/readiness-audit/ai-media.md",
+      "optionCount": 4,
+      "options": [
+        {
+          "label": "A",
+          "title": "A — Strict audio fulfillment before finalization (recommended). Most predictable user contract; optional audio failures become explicit failed jobs.",
+          "stepCount": 5,
+          "stepNumbers": [
+            1,
+            2,
+            3,
+            4,
+            5
+          ]
+        },
+        {
+          "label": "B",
+          "title": "B — Audio-first two-stage media pipeline. Avoids wasted rendering; increases orchestration complexity.",
+          "stepCount": 5,
+          "stepNumbers": [
+            1,
+            2,
+            3,
+            4,
+            5
+          ]
+        },
+        {
+          "label": "C",
+          "title": "C — Multiple qualified speech/audio backends inside MaxCore. Higher resilience; greater maintenance and licensing burden.",
+          "stepCount": 5,
+          "stepNumbers": [
+            1,
+            2,
+            3,
+            4,
+            5
+          ]
+        },
+        {
+          "label": "D",
+          "title": "D — Repairable partial-production workflow. Preserves useful video work; requires clear user approval states.",
+          "stepCount": 5,
+          "stepNumbers": [
+            1,
+            2,
+            3,
+            4,
+            5
+          ]
+        }
+      ]
+    },
+    {
+      "id": "AM-4",
+      "title": "Image-to-video accepts assets/options that the active MaxCore handoff drops",
+      "type": "CONFIRMED defect",
+      "priority": "P2",
+      "scope": "multi-image music-video generation and its advanced controls.",
+      "source": "reports/readiness-audit/ai-media.md",
+      "optionCount": 4,
+      "options": [
+        {
+          "label": "A",
+          "title": "A — Full MaxCore media manifest (recommended). Preserves existing product promises; requires expanded upstream contract.",
+          "stepCount": 5,
+          "stepNumbers": [
+            1,
+            2,
+            3,
+            4,
+            5
+          ]
+        },
+        {
+          "label": "B",
+          "title": "B — MaxCore storyboard subjobs and assembly. Works with limited reference windows; more render coordination.",
+          "stepCount": 5,
+          "stepNumbers": [
+            1,
+            2,
+            3,
+            4,
+            5
+          ]
+        },
+        {
+          "label": "C",
+          "title": "C — MaxCore-owned asset preprocessing and compositing. Decouples generation from presentation; adds intermediate asset handling.",
+          "stepCount": 5,
+          "stepNumbers": [
+            1,
+            2,
+            3,
+            4,
+            5
+          ]
+        },
+        {
+          "label": "D",
+          "title": "D — Interactive authoritative storyboard editor. Gives users explicit control; largest UX change.",
+          "stepCount": 5,
+          "stepNumbers": [
+            1,
+            2,
+            3,
+            4,
+            5
+          ]
+        }
+      ]
+    },
+    {
+      "id": "AM-5",
+      "title": "Native model loading does not establish trained, compatible, qualified readiness",
+      "type": "VERIFICATION GATE",
+      "priority": "P1",
+      "scope": "all native-model inference and training-readiness claims.",
+      "source": "reports/readiness-audit/ai-media.md",
+      "optionCount": 4,
+      "options": [
+        {
+          "label": "A",
+          "title": "A — Signed qualified checkpoint manifest (recommended). Reproducible promotion; requires model-release discipline.",
+          "stepCount": 5,
+          "stepNumbers": [
+            1,
+            2,
+            3,
+            4,
+            5
+          ]
+        },
+        {
+          "label": "B",
+          "title": "B — Shadow qualification before model promotion. Captures integration regressions; consumes extra compute.",
+          "stepCount": 5,
+          "stepNumbers": [
+            1,
+            2,
+            3,
+            4,
+            5
+          ]
+        },
+        {
+          "label": "C",
+          "title": "C — Mandatory startup qualification suite. Simple deployment-independent gate; slower cold starts.",
+          "stepCount": 5,
+          "stepNumbers": [
+            1,
+            2,
+            3,
+            4,
+            5
+          ]
+        },
+        {
+          "label": "D",
+          "title": "D — Immutable inference snapshots from training service. Strong training/serving separation; more model lifecycle machinery.",
+          "stepCount": 5,
+          "stepNumbers": [
+            1,
+            2,
+            3,
+            4,
+            5
+          ]
+        }
+      ]
+    },
+    {
+      "id": "AM-6",
+      "title": "Audio render errors can leave jobs retrying forever",
+      "type": "CONFIRMED defect",
+      "priority": "P1",
+      "scope": "MaxCore audio generation job completion, caller polling, and resource availability.",
+      "source": "reports/readiness-audit/ai-media.md",
+      "optionCount": 4,
+      "options": [
+        {
+          "label": "A",
+          "title": "A — Bounded classified retries (recommended). Smallest execution change; terminal failures need user-facing recovery.",
+          "stepCount": 5,
+          "stepNumbers": [
+            1,
+            2,
+            3,
+            4,
+            5
+          ]
+        },
+        {
+          "label": "B",
+          "title": "B — Deadline-enforced isolated render workers. Strong resource containment; adds process supervision.",
+          "stepCount": 5,
+          "stepNumbers": [
+            1,
+            2,
+            3,
+            4,
+            5
+          ]
+        },
+        {
+          "label": "C",
+          "title": "C — Preflight plus resumable staged rendering. Avoids repeated expensive work; larger pipeline refactor.",
+          "stepCount": 5,
+          "stepNumbers": [
+            1,
+            2,
+            3,
+            4,
+            5
+          ]
+        },
+        {
+          "label": "D",
+          "title": "D — Bounded alternate render plans inside MaxCore. Can recover unsupported combinations; must preserve user intent.",
+          "stepCount": 5,
+          "stepNumbers": [
+            1,
+            2,
+            3,
+            4,
+            5
+          ]
+        }
+      ]
+    },
+    {
+      "id": "D1",
+      "title": "Backup objects and their catalog are written under generated keys but subsequently read using different, fixed keys.",
+      "type": "CONFIRMED defect",
+      "priority": "P0",
+      "scope": "Application-managed database backups and backup automation",
+      "source": "reports/readiness-audit/data-runtime.md",
+      "optionCount": 4,
+      "options": [
+        {
+          "label": "A",
+          "title": "A. Repair fixed-key objects plus transactional catalog — recommended. Lowest disruption; requires a catalog migration.",
+          "stepCount": 5,
+          "stepNumbers": [
+            1,
+            2,
+            3,
+            4,
+            5
+          ]
+        },
+        {
+          "label": "B",
+          "title": "B. Immutable object manifests. Avoids a DB dependency for disaster discovery; needs provider conditional writes/listing.",
+          "stepCount": 5,
+          "stepNumbers": [
+            1,
+            2,
+            3,
+            4,
+            5
+          ]
+        },
+        {
+          "label": "C",
+          "title": "C. Dedicated backup repository service. Stronger separation; adds a service and operational cost.",
+          "stepCount": 5,
+          "stepNumbers": [
+            1,
+            2,
+            3,
+            4,
+            5
+          ]
+        },
+        {
+          "label": "D",
+          "title": "D. Managed database backup/PITR with application control adapter. Less custom backup storage; provider coupling and retention cost.",
+          "stepCount": 5,
+          "stepNumbers": [
+            1,
+            2,
+            3,
+            4,
+            5
+          ]
+        }
+      ]
+    },
+    {
+      "id": "D2",
+      "title": "Backup scheduling is not wired in current server sources; backup target selection differs from application DB selection.",
+      "type": "CONFIRMED defect",
+      "priority": "P1",
+      "scope": "Scheduled backups, especially installations using NEON_DATABASE_URL",
+      "source": "reports/readiness-audit/data-runtime.md",
+      "optionCount": 4,
+      "options": [
+        {
+          "label": "A",
+          "title": "A. Shared DB resolver and leased scheduler — recommended. Keeps existing service; requires lease/observability work.",
+          "stepCount": 5,
+          "stepNumbers": [
+            1,
+            2,
+            3,
+            4,
+            5
+          ]
+        },
+        {
+          "label": "B",
+          "title": "B. Dedicated backup worker. Separates process lifetime; introduces another worker.",
+          "stepCount": 5,
+          "stepNumbers": [
+            1,
+            2,
+            3,
+            4,
+            5
+          ]
+        },
+        {
+          "label": "C",
+          "title": "C. Provider-native schedule with reconciliation. Reduced scheduler code; provider dependence.",
+          "stepCount": 5,
+          "stepNumbers": [
+            1,
+            2,
+            3,
+            4,
+            5
+          ]
+        },
+        {
+          "label": "D",
+          "title": "D. External scheduler invoking an idempotent backup job. Clear ownership; scheduler availability becomes a dependency.",
+          "stepCount": 5,
+          "stepNumbers": [
+            1,
+            2,
+            3,
+            4,
+            5
+          ]
+        }
+      ]
+    },
+    {
+      "id": "D3",
+      "title": "No demonstrated end-to-end safe restore workflow; existing helper can report success after SQL errors.",
+      "type": "CAPABILITY GAP with confirmed helper defect",
+      "priority": "P1",
+      "scope": "Disaster-recovery readiness claims",
+      "source": "reports/readiness-audit/data-runtime.md",
+      "optionCount": 4,
+      "options": [
+        {
+          "label": "A",
+          "title": "A. Isolated logical restore with validation — recommended for current dump format. Minimal format change; restore speed limits remain.",
+          "stepCount": 5,
+          "stepNumbers": [
+            1,
+            2,
+            3,
+            4,
+            5
+          ]
+        },
+        {
+          "label": "B",
+          "title": "B. Custom-format dump and pg_restore pipeline. Better selective/parallel recovery; changes backup format.",
+          "stepCount": 5,
+          "stepNumbers": [
+            1,
+            2,
+            3,
+            4,
+            5
+          ]
+        },
+        {
+          "label": "C",
+          "title": "C. Managed PITR restoration. Handles larger databases well; needs provider recovery operations.",
+          "stepCount": 5,
+          "stepNumbers": [
+            1,
+            2,
+            3,
+            4,
+            5
+          ]
+        },
+        {
+          "label": "D",
+          "title": "D. Physical backup/WAL recovery service. Strong control and scale; highest database-operations burden.",
+          "stepCount": 5,
+          "stepNumbers": [
+            1,
+            2,
+            3,
+            4,
+            5
+          ]
+        }
+      ]
+    },
+    {
+      "id": "D4",
+      "title": "External PDIM treats unreadable/corrupt recovery state as absent and proceeds; AOF replay can skip failed records; streams are excluded from persistence.",
+      "type": "CONFIRMED defect",
+      "priority": "P0",
+      "scope": "Deployments with external/pdim enabled as durable Redis-compatible state",
+      "source": "reports/readiness-audit/data-runtime.md",
+      "optionCount": 4,
+      "options": [
+        {
+          "label": "A",
+          "title": "A. Typed recovery errors plus durable recovery manifest — recommended. Preserves PDIM API; changes recovery protocol.",
+          "stepCount": 5,
+          "stepNumbers": [
+            1,
+            2,
+            3,
+            4,
+            5
+          ]
+        },
+        {
+          "label": "B",
+          "title": "B. Transactional database-backed Redis state. Removes custom snapshot authority; can increase command latency.",
+          "stepCount": 5,
+          "stepNumbers": [
+            1,
+            2,
+            3,
+            4,
+            5
+          ]
+        },
+        {
+          "label": "C",
+          "title": "C. Native durable Redis-compatible service behind the adapter. Mature persistence; new operational dependency and compatibility testing.",
+          "stepCount": 5,
+          "stepNumbers": [
+            1,
+            2,
+            3,
+            4,
+            5
+          ]
+        },
+        {
+          "label": "D",
+          "title": "D. Replicated append-before-ack command journal. Strong custom durability; highest complexity.",
+          "stepCount": 5,
+          "stepNumbers": [
+            1,
+            2,
+            3,
+            4,
+            5
+          ]
+        }
+      ]
+    },
+    {
+      "id": "D5",
+      "title": "External fabric deletion removes authoritative metadata before cleanup is recoverable and decrements capacity after failed physical deletion.",
+      "type": "CONFIRMED defect",
+      "priority": "P1",
+      "scope": "External fabric object deletion, deduplicated storage and capacity accounting",
+      "source": "reports/readiness-audit/data-runtime.md",
+      "optionCount": 4,
+      "options": [
+        {
+          "label": "A",
+          "title": "A. Transactional deletion outbox — recommended. Fits current metadata model; adds a cleanup worker.",
+          "stepCount": 5,
+          "stepNumbers": [
+            1,
+            2,
+            3,
+            4,
+            5
+          ]
+        },
+        {
+          "label": "B",
+          "title": "B. Mark-and-sweep garbage collection. Simpler foreground delete; delayed reclamation and scan cost.",
+          "stepCount": 5,
+          "stepNumbers": [
+            1,
+            2,
+            3,
+            4,
+            5
+          ]
+        },
+        {
+          "label": "C",
+          "title": "C. Storage-node durable deletion jobs. Distributes cleanup; requires node protocol changes.",
+          "stepCount": 5,
+          "stepNumbers": [
+            1,
+            2,
+            3,
+            4,
+            5
+          ]
+        },
+        {
+          "label": "D",
+          "title": "D. Managed immutable blob lifecycle with manifest accounting. Less bespoke chunk cleanup; changes storage architecture.",
+          "stepCount": 5,
+          "stepNumbers": [
+            1,
+            2,
+            3,
+            4,
+            5
+          ]
+        }
+      ]
+    },
+    {
+      "id": "D6",
+      "title": "Session save/delete callbacks acknowledge before durable backing operations complete; PG errors are swallowed even in PG-only mode.",
+      "type": "CONFIRMED defect",
+      "priority": "P1",
+      "scope": "Session continuity across worker handoff/restart and backing-store outages",
+      "source": "reports/readiness-audit/data-runtime.md",
+      "optionCount": 4,
+      "options": [
+        {
+          "label": "A",
+          "title": "A. Await authoritative PG writes — recommended. Straightforward consistency; adds DB latency/load.",
+          "stepCount": 5,
+          "stepNumbers": [
+            1,
+            2,
+            3,
+            4,
+            5
+          ]
+        },
+        {
+          "label": "B",
+          "title": "B. Durable PDIM authority with ordered fallback replication. Preserves PDIM-first architecture; depends on D4.",
+          "stepCount": 5,
+          "stepNumbers": [
+            1,
+            2,
+            3,
+            4,
+            5
+          ]
+        },
+        {
+          "label": "C",
+          "title": "C. Transactional dual-store session coordinator. Stronger multi-store recovery; higher coordination cost.",
+          "stepCount": 5,
+          "stepNumbers": [
+            1,
+            2,
+            3,
+            4,
+            5
+          ]
+        },
+        {
+          "label": "D",
+          "title": "D. Established durable session backend/store implementation. Less custom code; migration and dependency cost.",
+          "stepCount": 5,
+          "stepNumbers": [
+            1,
+            2,
+            3,
+            4,
+            5
+          ]
+        }
+      ]
+    },
+    {
+      "id": "D7",
+      "title": "Retention-worker startup cleanup can drain valid queued work along with malformed jobs.",
+      "type": "CONFIRMED defect",
+      "priority": "P1",
+      "scope": "Retention queue startup/restarts and multi-worker operation",
+      "source": "reports/readiness-audit/data-runtime.md",
+      "optionCount": 4,
+      "options": [
+        {
+          "label": "A",
+          "title": "A. Targeted quarantine, normal stalled recovery — recommended. Minimal architecture change; requires bounded scanning.",
+          "stepCount": 5,
+          "stepNumbers": [
+            1,
+            2,
+            3,
+            4,
+            5
+          ]
+        },
+        {
+          "label": "B",
+          "title": "B. Versioned queues and controlled migration. Separates incompatible legacy jobs; temporary operational complexity.",
+          "stepCount": 5,
+          "stepNumbers": [
+            1,
+            2,
+            3,
+            4,
+            5
+          ]
+        },
+        {
+          "label": "C",
+          "title": "C. SQL job ledger/outbox as authority. Strong reconciliation; database cost and added dispatcher.",
+          "stepCount": 5,
+          "stepNumbers": [
+            1,
+            2,
+            3,
+            4,
+            5
+          ]
+        },
+        {
+          "label": "D",
+          "title": "D. Durable workflow engine migration. Rich recovery semantics; broadest implementation effort.",
+          "stepCount": 5,
+          "stepNumbers": [
+            1,
+            2,
+            3,
+            4,
+            5
+          ]
+        }
+      ]
+    },
+    {
+      "id": "D8",
+      "title": "Schema rollout provenance is incomplete; checked-in migration journal stops before later SQL, and the merge push pipeline masks command failure.",
+      "type": "VERIFICATION GATE with confirmed tooling defect",
+      "priority": "P1",
+      "scope": "Releases needing schema changes; fresh installs and upgrades",
+      "source": "reports/readiness-audit/data-runtime.md",
+      "optionCount": 4,
+      "options": [
+        {
+          "label": "A",
+          "title": "A. Repair an ordered migration chain — recommended. Strong auditability; requires careful historical reconciliation.",
+          "stepCount": 5,
+          "stepNumbers": [
+            1,
+            2,
+            3,
+            4,
+            5
+          ]
+        },
+        {
+          "label": "B",
+          "title": "B. Flyway/Liquibase-style versioned SQL authority. Mature ledger/checksums; tooling migration overhead.",
+          "stepCount": 5,
+          "stepNumbers": [
+            1,
+            2,
+            3,
+            4,
+            5
+          ]
+        },
+        {
+          "label": "C",
+          "title": "C. Reviewed desired-state SQL plans with independent ledger. Retains schema-as-code; custom release process.",
+          "stepCount": 5,
+          "stepNumbers": [
+            1,
+            2,
+            3,
+            4,
+            5
+          ]
+        },
+        {
+          "label": "D",
+          "title": "D. New baseline database with logical migration/cutover. Useful for badly divergent histories; highest migration burden.",
+          "stepCount": 5,
+          "stepNumbers": [
+            1,
+            2,
+            3,
+            4,
+            5
+          ]
+        }
+      ]
+    },
+    {
+      "id": "DEP-01",
+      "title": "The active build does not establish a complete, current runtime artifact set",
+      "type": "CONFIRMED defect",
+      "priority": "P1",
+      "scope": "fresh builds, gateway-dependent features, relocation to minimal runtimes",
+      "source": "reports/readiness-audit/deployment.md",
+      "optionCount": 4,
+      "options": [
+        {
+          "label": "A",
+          "title": "A. Build every executable from source in the active pipeline — recommended. Lowest architectural change; adds toolchain/build time.",
+          "stepCount": 5,
+          "stepNumbers": [
+            1,
+            2,
+            3,
+            4,
+            5
+          ]
+        },
+        {
+          "label": "B",
+          "title": "B. Promote a signed immutable OCI image. Best environment reproducibility; requires an image-capable deployment path and registry operations.",
+          "stepCount": 5,
+          "stepNumbers": [
+            1,
+            2,
+            3,
+            4,
+            5
+          ]
+        },
+        {
+          "label": "C",
+          "title": "C. Independently release auxiliary binaries with strict provenance verification. Preserves fast app builds; adds cross-release compatibility management.",
+          "stepCount": 5,
+          "stepNumbers": [
+            1,
+            2,
+            3,
+            4,
+            5
+          ]
+        },
+        {
+          "label": "D",
+          "title": "D. Move auxiliary execution into independently deployed services. Removes local native coupling; adds network latency, auth and service operations.",
+          "stepCount": 5,
+          "stepNumbers": [
+            1,
+            2,
+            3,
+            4,
+            5
+          ]
+        }
+      ]
+    },
+    {
+      "id": "DEP-02",
+      "title": "Python feature readiness can be permanently decided before its background runtime arrives",
+      "type": "CONFIRMED defect",
+      "priority": "P1",
+      "scope": "Python-backed audio/video features and enabled legacy sidecar on cold capsule boots",
+      "source": "reports/readiness-audit/deployment.md",
+      "optionCount": 4,
+      "options": [
+        {
+          "label": "A",
+          "title": "A. Make Python a critical-tier runtime for the full-feature release — recommended. Simplest deterministic correction; longer cold starts.",
+          "stepCount": 5,
+          "stepNumbers": [
+            1,
+            2,
+            3,
+            4,
+            5
+          ]
+        },
+        {
+          "label": "B",
+          "title": "B. Keep asynchronous restore, implement a readiness-driven supervisor. Faster HTTP boot; more lifecycle/state-machine complexity.",
+          "stepCount": 5,
+          "stepNumbers": [
+            1,
+            2,
+            3,
+            4,
+            5
+          ]
+        },
+        {
+          "label": "C",
+          "title": "C. Deploy a dedicated Python worker service. Isolates native dependencies and resource peaks; introduces service/queue operations.",
+          "stepCount": 5,
+          "stepNumbers": [
+            1,
+            2,
+            3,
+            4,
+            5
+          ]
+        },
+        {
+          "label": "D",
+          "title": "D. Pre-expand Python into a verified runtime layer. Eliminates extraction race; larger image/layer footprint.",
+          "stepCount": 5,
+          "stepNumbers": [
+            1,
+            2,
+            3,
+            4,
+            5
+          ]
+        }
+      ]
+    },
+    {
+      "id": "DEP-03",
+      "title": "Periodic readiness checks temporarily withdraw healthy instances and can overlap",
+      "type": "CONFIRMED defect",
+      "priority": "P1",
+      "scope": "/ready, /readyz, /status consumers and production readiness-based routing",
+      "source": "reports/readiness-audit/deployment.md",
+      "optionCount": 4,
+      "options": [
+        {
+          "label": "A",
+          "title": "A. Single-flight refresh with atomic snapshots — recommended. Smallest change; requires a defined maximum age.",
+          "stepCount": 5,
+          "stepNumbers": [
+            1,
+            2,
+            3,
+            4,
+            5
+          ]
+        },
+        {
+          "label": "B",
+          "title": "B. Independent bounded dependency checks with aggregate freshness. Faster per-service updates; more policy complexity.",
+          "stepCount": 5,
+          "stepNumbers": [
+            1,
+            2,
+            3,
+            4,
+            5
+          ]
+        },
+        {
+          "label": "C",
+          "title": "C. Dedicated supervised health coordinator. Centralizes multi-worker truth; introduces an additional local service.",
+          "stepCount": 5,
+          "stepNumbers": [
+            1,
+            2,
+            3,
+            4,
+            5
+          ]
+        },
+        {
+          "label": "D",
+          "title": "D. Use real dependency lifecycle events plus periodic reconciliation. Avoids repeated heavy probes; depends on reliable lifecycle instrumentation.",
+          "stepCount": 5,
+          "stepNumbers": [
+            1,
+            2,
+            3,
+            4,
+            5
+          ]
+        }
+      ]
+    },
+    {
+      "id": "DEP-04",
+      "title": "CI does not enforce the shipped deployment lifecycle or the stated load-quality result",
+      "type": "CONFIRMED defect plus CAPABILITY GAP",
+      "priority": "P1",
+      "scope": "release promotion confidence for the complete web/worker/capsule platform",
+      "source": "reports/readiness-audit/deployment.md",
+      "optionCount": 4,
+      "options": [
+        {
+          "label": "A",
+          "title": "A. Upgrade existing CI into a release-equivalent gate — recommended. Reuses current workflow; increases runtime and runner resource requirements.",
+          "stepCount": 5,
+          "stepNumbers": [
+            1,
+            2,
+            3,
+            4,
+            5
+          ]
+        },
+        {
+          "label": "B",
+          "title": "B. Add a dedicated ephemeral release-candidate environment. Highest end-to-end fidelity; costs more than unit CI.",
+          "stepCount": 5,
+          "stepNumbers": [
+            1,
+            2,
+            3,
+            4,
+            5
+          ]
+        },
+        {
+          "label": "C",
+          "title": "C. Build once, certify in a separate artifact-validation pipeline. Keeps PR feedback fast; requires promotion orchestration.",
+          "stepCount": 5,
+          "stepNumbers": [
+            1,
+            2,
+            3,
+            4,
+            5
+          ]
+        },
+        {
+          "label": "D",
+          "title": "D. Protected canary promotion after isolated preflight. Measures real routing/resources; requires careful traffic and side-effect controls.",
+          "stepCount": 5,
+          "stepNumbers": [
+            1,
+            2,
+            3,
+            4,
+            5
+          ]
+        }
+      ]
+    },
+    {
+      "id": "DEP-05",
+      "title": "Resource sizing is host-based and independently allocates shared capacity",
+      "type": "CONFIRMED portability defect; production capacity VERIFICATION GATE",
+      "priority": "P1",
+      "scope": "constrained containers/VMs and co-located app + MaxCore workers",
+      "source": "reports/readiness-audit/deployment.md",
+      "optionCount": 4,
+      "options": [
+        {
+          "label": "A",
+          "title": "A. One cgroup-aware host budget allocator — recommended for continued co-location. Preserves architecture; must model native/AI peaks realistically.",
+          "stepCount": 5,
+          "stepNumbers": [
+            1,
+            2,
+            3,
+            4,
+            5
+          ]
+        },
+        {
+          "label": "B",
+          "title": "B. Isolate app and AI into separately limited deployments. Strong isolation; higher network and operational cost.",
+          "stepCount": 5,
+          "stepNumbers": [
+            1,
+            2,
+            3,
+            4,
+            5
+          ]
+        },
+        {
+          "label": "C",
+          "title": "C. Certified machine profiles with validated allocations. Predictable operations; less elastic and requires recertification for new hardware.",
+          "stepCount": 5,
+          "stepNumbers": [
+            1,
+            2,
+            3,
+            4,
+            5
+          ]
+        },
+        {
+          "label": "D",
+          "title": "D. Admission-controlled elastic worker pool. Better utilization for variable jobs; most scheduling complexity.",
+          "stepCount": 5,
+          "stepNumbers": [
+            1,
+            2,
+            3,
+            4,
+            5
+          ]
+        }
+      ]
+    },
+    {
+      "id": "DEP-06",
+      "title": "Sentry silence watchdog never reaches its threshold if delivery has never succeeded",
+      "type": "CONFIRMED defect",
+      "priority": "P1",
+      "scope": "initial deployment or restart with an unavailable error-reporting transport",
+      "source": "reports/readiness-audit/deployment.md",
+      "optionCount": 4,
+      "options": [
+        {
+          "label": "A",
+          "title": "A. Track the first unconfirmed attempt, not the latest — recommended immediate fix. Small change; process restarts still need a deliberate policy.",
+          "stepCount": 5,
+          "stepNumbers": [
+            1,
+            2,
+            3,
+            4,
+            5
+          ]
+        },
+        {
+          "label": "B",
+          "title": "B. External dead-man heartbeat monitor. Detects whole-app death too; needs an independent monitoring provider/service.",
+          "stepCount": 5,
+          "stepNumbers": [
+            1,
+            2,
+            3,
+            4,
+            5
+          ]
+        },
+        {
+          "label": "C",
+          "title": "C. End-to-end ingestion canary with an independent verifier. Stronger than transport completion; additional provider permissions and API cost.",
+          "stepCount": 5,
+          "stepNumbers": [
+            1,
+            2,
+            3,
+            4,
+            5
+          ]
+        },
+        {
+          "label": "D",
+          "title": "D. Durable observability outbox and delivery-state worker. Auditable delivery/retries; larger implementation and storage footprint.",
+          "stepCount": 5,
+          "stepNumbers": [
+            1,
+            2,
+            3,
+            4,
+            5
+          ]
+        }
+      ]
+    },
+    {
+      "id": "DEP-07",
+      "title": "Public-origin and custom-domain DNS/TLS acceptance remains unverified",
+      "type": "VERIFICATION GATE",
+      "priority": "P1 for an internet launch/custom-domain release",
+      "scope": "published primary origin, storefront domains, callbacks/webhooks and certificate renewal",
+      "source": "reports/readiness-audit/deployment.md",
+      "optionCount": 4,
+      "options": [
+        {
+          "label": "A",
+          "title": "A. Platform-managed primary origin plus verified existing storefront ACME — recommended if retaining current architecture. Least migration; two certificate owners remain.",
+          "stepCount": 5,
+          "stepNumbers": [
+            1,
+            2,
+            3,
+            4,
+            5
+          ]
+        },
+        {
+          "label": "B",
+          "title": "B. Managed edge/custom-hostname TLS in front of the application. Offloads tenant certificate operations; adds vendor integration and proxy policy.",
+          "stepCount": 5,
+          "stepNumbers": [
+            1,
+            2,
+            3,
+            4,
+            5
+          ]
+        },
+        {
+          "label": "C",
+          "title": "C. Dedicated reverse-proxy/certificate service. More control and portability; additional infrastructure/security ownership.",
+          "stepCount": 5,
+          "stepNumbers": [
+            1,
+            2,
+            3,
+            4,
+            5
+          ]
+        },
+        {
+          "label": "D",
+          "title": "D. Infrastructure-as-code domain and certificate control plane. Strong auditability at scale; highest provisioning/migration effort.",
+          "stepCount": 5,
+          "stepNumbers": [
+            1,
+            2,
+            3,
+            4,
+            5
+          ]
+        }
+      ]
+    },
+    {
+      "id": "PA-1",
+      "title": "Settings theme selector persists a different state from the actual theme consumer.",
+      "type": "CONFIRMED defect",
+      "priority": "P2",
+      "scope": "settings/appearance release",
+      "source": "reports/readiness-audit/product-autonomous.md",
+      "optionCount": 4,
+      "options": [
+        {
+          "label": "A",
+          "title": "A — Account-authoritative theme provider (recommended). Best cross-device consistency; requires a loading/anonymous policy.",
+          "stepCount": 5,
+          "stepNumbers": [
+            1,
+            2,
+            3,
+            4,
+            5
+          ]
+        },
+        {
+          "label": "B",
+          "title": "B — Explicit local device appearance. Fast, predictable offline behavior; sacrifices account-wide theme synchronization.",
+          "stepCount": 5,
+          "stepNumbers": [
+            1,
+            2,
+            3,
+            4,
+            5
+          ]
+        },
+        {
+          "label": "C",
+          "title": "C — Shared preference store with synchronization. Supports offline use; more conflict-resolution complexity.",
+          "stepCount": 5,
+          "stepNumbers": [
+            1,
+            2,
+            3,
+            4,
+            5
+          ]
+        },
+        {
+          "label": "D",
+          "title": "D — Server-rendered/bootstrap preference authority. Avoids initial theme flash; adds bootstrap coupling.",
+          "stepCount": 5,
+          "stepNumbers": [
+            1,
+            2,
+            3,
+            4,
+            5
+          ]
+        }
+      ]
+    },
+    {
+      "id": "PA-2",
+      "title": "Concurrent preference edits can restore a stale whole-form snapshot after a failure.",
+      "type": "CONFIRMED defect",
+      "priority": "P2",
+      "scope": "settings preference editing",
+      "source": "reports/readiness-audit/product-autonomous.md",
+      "optionCount": 4,
+      "options": [
+        {
+          "label": "A",
+          "title": "A — Serialized mutation queue (recommended). Smallest behavioral change; a slow request delays subsequent saves.",
+          "stepCount": 5,
+          "stepNumbers": [
+            1,
+            2,
+            3,
+            4,
+            5
+          ]
+        },
+        {
+          "label": "B",
+          "title": "B — Versioned compare-and-set API. Strong multi-device safety; needs schema/API evolution.",
+          "stepCount": 5,
+          "stepNumbers": [
+            1,
+            2,
+            3,
+            4,
+            5
+          ]
+        },
+        {
+          "label": "C",
+          "title": "C — Explicit draft-and-save form. Easier transactional UX; removes instant saving.",
+          "stepCount": 5,
+          "stepNumbers": [
+            1,
+            2,
+            3,
+            4,
+            5
+          ]
+        },
+        {
+          "label": "D",
+          "title": "D — Per-key sequenced optimistic mutations. Responsive independent controls; more client bookkeeping.",
+          "stepCount": 5,
+          "stepNumbers": [
+            1,
+            2,
+            3,
+            4,
+            5
+          ]
+        }
+      ]
+    },
+    {
+      "id": "PA-3",
+      "title": "Security healing cannot execute session invalidation, circuit breaking, or feature isolation.",
+      "type": "CAPABILITY GAP",
+      "priority": "P1",
+      "scope": "autonomous security containment claims, not every platform release",
+      "source": "reports/readiness-audit/product-autonomous.md",
+      "optionCount": 4,
+      "options": [
+        {
+          "label": "A",
+          "title": "A — In-process typed enforcement adapters (recommended). Reuses existing infrastructure; tightly couples engine and consumers.",
+          "stepCount": 5,
+          "stepNumbers": [
+            1,
+            2,
+            3,
+            4,
+            5
+          ]
+        },
+        {
+          "label": "B",
+          "title": "B — Durable remediation worker. Better retry/restart handling; adds queue latency.",
+          "stepCount": 5,
+          "stepNumbers": [
+            1,
+            2,
+            3,
+            4,
+            5
+          ]
+        },
+        {
+          "label": "C",
+          "title": "C — External policy control plane. Centralized fleet enforcement; operationally heavier.",
+          "stepCount": 5,
+          "stepNumbers": [
+            1,
+            2,
+            3,
+            4,
+            5
+          ]
+        },
+        {
+          "label": "D",
+          "title": "D — Approval-mediated security operations. Safer for high-impact actions; not fully unattended.",
+          "stepCount": 5,
+          "stepNumbers": [
+            1,
+            2,
+            3,
+            4,
+            5
+          ]
+        }
+      ]
+    },
+    {
+      "id": "PA-4",
+      "title": "Evolution only has live consumers for posting/content knobs, not its other declared enhancement categories.",
+      "type": "CAPABILITY GAP",
+      "priority": "P1",
+      "scope": "broad autonomous feature/distribution/compliance evolution claims",
+      "source": "reports/readiness-audit/product-autonomous.md",
+      "optionCount": 4,
+      "options": [
+        {
+          "label": "A",
+          "title": "A — Typed runtime consumers (recommended for bounded settings). Direct and auditable; unsuitable for arbitrary new features.",
+          "stepCount": 5,
+          "stepNumbers": [
+            1,
+            2,
+            3,
+            4,
+            5
+          ]
+        },
+        {
+          "label": "B",
+          "title": "B — GitOps evolution delivery. Strong review/build guarantees; slower delivery.",
+          "stepCount": 5,
+          "stepNumbers": [
+            1,
+            2,
+            3,
+            4,
+            5
+          ]
+        },
+        {
+          "label": "C",
+          "title": "C — Domain command orchestration. Uses existing business workflows; requires idempotent domain APIs.",
+          "stepCount": 5,
+          "stepNumbers": [
+            1,
+            2,
+            3,
+            4,
+            5
+          ]
+        },
+        {
+          "label": "D",
+          "title": "D — Versioned policy bundle engine. Unified declarative approach; requires a new policy evaluator.",
+          "stepCount": 5,
+          "stepNumbers": [
+            1,
+            2,
+            3,
+            4,
+            5
+          ]
+        }
+      ]
+    },
+    {
+      "id": "PA-5",
+      "title": "Evolution post-apply validation measures local liveness, not the changed consumer's correctness.",
+      "type": "CAPABILITY GAP",
+      "priority": "P1",
+      "scope": "unattended evolution promotion",
+      "source": "reports/readiness-audit/product-autonomous.md",
+      "optionCount": 4,
+      "options": [
+        {
+          "label": "A",
+          "title": "A — Consumer-specific canary gate (recommended). Targeted evidence; requires representative acceptance contracts.",
+          "stepCount": 5,
+          "stepNumbers": [
+            1,
+            2,
+            3,
+            4,
+            5
+          ]
+        },
+        {
+          "label": "B",
+          "title": "B — Cohort rollout with outcome telemetry. Measures real effects; slower and needs adequate sample sizes.",
+          "stepCount": 5,
+          "stepNumbers": [
+            1,
+            2,
+            3,
+            4,
+            5
+          ]
+        },
+        {
+          "label": "C",
+          "title": "C — Shadow execution and replay gate. Avoids initial user exposure; shadow equivalence needs maintenance.",
+          "stepCount": 5,
+          "stepNumbers": [
+            1,
+            2,
+            3,
+            4,
+            5
+          ]
+        },
+        {
+          "label": "D",
+          "title": "D — Approval-gated evidence workflow. Lowest unattended risk; adds operator work.",
+          "stepCount": 5,
+          "stepNumbers": [
+            1,
+            2,
+            3,
+            4,
+            5
+          ]
+        }
+      ]
+    },
+    {
+      "id": "PA-6",
+      "title": "Latest simulations are component/fixture evidence, not deployment integration acceptance.",
+      "type": "VERIFICATION GATE",
+      "priority": "P1",
+      "scope": "production promotion of evolution, security healing and autofix",
+      "source": "reports/readiness-audit/product-autonomous.md",
+      "optionCount": 4,
+      "options": [
+        {
+          "label": "A",
+          "title": "A — Hermetic integration environment (recommended). Reproducible and safe; requires infrastructure matching.",
+          "stepCount": 5,
+          "stepNumbers": [
+            1,
+            2,
+            3,
+            4,
+            5
+          ]
+        },
+        {
+          "label": "B",
+          "title": "B — Dedicated deployed staging acceptance. Closest topology match; higher cost and drift risk.",
+          "stepCount": 5,
+          "stepNumbers": [
+            1,
+            2,
+            3,
+            4,
+            5
+          ]
+        },
+        {
+          "label": "C",
+          "title": "C — Adapter certification plus ephemeral assembled system. Parallelizes ownership; requires disciplined versioning.",
+          "stepCount": 5,
+          "stepNumbers": [
+            1,
+            2,
+            3,
+            4,
+            5
+          ]
+        },
+        {
+          "label": "D",
+          "title": "D — Controlled internal canary deployment. Highest environment fidelity; needs strict authorization and blast-radius limits.",
+          "stepCount": 5,
+          "stepNumbers": [
+            1,
+            2,
+            3,
+            4,
+            5
+          ]
+        }
+      ]
+    },
+    {
+      "id": "SCAN-01",
+      "title": "Current root lock retains scanner-advised runtime packages; advisory applicability and final artifact patches are not demonstrated",
+      "type": "VERIFICATION GATE; confirmed affected-version lock matches",
+      "priority": "P1",
+      "scope": "web runtime, media/upload and data-import consumers",
+      "source": "reports/readiness-audit/scanners.md",
+      "optionCount": 4,
+      "options": [
+        {
+          "label": "A",
+          "title": "A. Upgrade dependency graph (recommended; least bespoke maintenance, possible compatibility changes).",
+          "stepCount": 5,
+          "stepNumbers": [
+            1,
+            2,
+            3,
+            4,
+            5
+          ]
+        },
+        {
+          "label": "B",
+          "title": "B. Maintained backport (smaller API delta, higher internal security ownership).",
+          "stepCount": 5,
+          "stepNumbers": [
+            1,
+            2,
+            3,
+            4,
+            5
+          ]
+        },
+        {
+          "label": "C",
+          "title": "C. Replace vulnerable implementations (larger migration, less legacy debt).",
+          "stepCount": 5,
+          "stepNumbers": [
+            1,
+            2,
+            3,
+            4,
+            5
+          ]
+        },
+        {
+          "label": "D",
+          "title": "D. Hardened service migration (isolation plus patched parsers, operational cost).",
+          "stepCount": 5,
+          "stepNumbers": [
+            1,
+            2,
+            3,
+            4,
+            5
+          ]
+        }
+      ]
+    },
+    {
+      "id": "SCAN-02",
+      "title": "Scanner lacks dependency occurrence paths; nested Python, Rust, developer, Go and duplicate findings cannot be equated to one deployed web service",
+      "type": "VERIFICATION GATE",
+      "priority": "P1 (conditional details in scope)",
+      "scope": "whole release portfolio; P0 only if critical AnyIO certificate-spoofing preconditions are confirmed on a shipped consumer",
+      "source": "reports/readiness-audit/scanners.md",
+      "optionCount": 4,
+      "options": [
+        {
+          "label": "A",
+          "title": "A. Artifact-first SBOM reconciliation (recommended; strongest shipped-scope evidence, extra build integration).",
+          "stepCount": 5,
+          "stepNumbers": [
+            1,
+            2,
+            3,
+            4,
+            5
+          ]
+        },
+        {
+          "label": "B",
+          "title": "B. Component-owned hermetic lock builds (more repositories/jobs, clear ownership).",
+          "stepCount": 5,
+          "stepNumbers": [
+            1,
+            2,
+            3,
+            4,
+            5
+          ]
+        },
+        {
+          "label": "C",
+          "title": "C. Curated internal distribution pipeline (supply-chain control, substantial infrastructure).",
+          "stepCount": 5,
+          "stepNumbers": [
+            1,
+            2,
+            3,
+            4,
+            5
+          ]
+        },
+        {
+          "label": "D",
+          "title": "D. Scanner provenance adapter plus release graph (lighter build changes, scanner integration burden).",
+          "stepCount": 5,
+          "stepNumbers": [
+            1,
+            2,
+            3,
+            4,
+            5
+          ]
+        }
+      ]
+    },
+    {
+      "id": "SCAN-03",
+      "title": "Raw email/IP/username logging is not covered by central key-path redaction, including message interpolation",
+      "type": "CONFIRMED defect",
+      "priority": "P1",
+      "scope": "server logs and operational tools with personal data",
+      "source": "reports/readiness-audit/scanners.md",
+      "optionCount": 4,
+      "options": [
+        {
+          "label": "A",
+          "title": "A. Typed allowlisted events (recommended; strongest source control, broad call-site migration).",
+          "stepCount": 5,
+          "stepNumbers": [
+            1,
+            2,
+            3,
+            4,
+            5
+          ]
+        },
+        {
+          "label": "B",
+          "title": "B. Pseudonymous audit identity service (supports investigations, key lifecycle complexity).",
+          "stepCount": 5,
+          "stepNumbers": [
+            1,
+            2,
+            3,
+            4,
+            5
+          ]
+        },
+        {
+          "label": "C",
+          "title": "C. Dedicated privacy-aware audit pipeline (preserves justified raw audits, more infrastructure).",
+          "stepCount": 5,
+          "stepNumbers": [
+            1,
+            2,
+            3,
+            4,
+            5
+          ]
+        },
+        {
+          "label": "D",
+          "title": "D. Enforced logging boundary/serialization layer (central rollout, requires careful adapters).",
+          "stepCount": 5,
+          "stepNumbers": [
+            1,
+            2,
+            3,
+            4,
+            5
+          ]
+        }
+      ]
+    },
+    {
+      "id": "SCAN-04",
+      "title": "Global tar override substitutes success-returning no-op archive APIs",
+      "type": "CONFIRMED defect",
+      "priority": "P1",
+      "scope": "build/install and any archive consumer; conditional runtime impact",
+      "source": "reports/readiness-audit/scanners.md",
+      "optionCount": 4,
+      "options": [
+        {
+          "label": "A",
+          "title": "A. Restore patched upstream tar (recommended; faithful API, installation compatibility work).",
+          "stepCount": 5,
+          "stepNumbers": [
+            1,
+            2,
+            3,
+            4,
+            5
+          ]
+        },
+        {
+          "label": "B",
+          "title": "B. Upgrade tar-dependent parents (less global override risk, multiple upstream migrations).",
+          "stepCount": 5,
+          "stepNumbers": [
+            1,
+            2,
+            3,
+            4,
+            5
+          ]
+        },
+        {
+          "label": "C",
+          "title": "C. Implement a real compatible archive adapter (maximum control, high maintenance).",
+          "stepCount": 5,
+          "stepNumbers": [
+            1,
+            2,
+            3,
+            4,
+            5
+          ]
+        },
+        {
+          "label": "D",
+          "title": "D. Replace archive-dependent build workflows (larger redesign, removes obsolete dependency paths).",
+          "stepCount": 5,
+          "stepNumbers": [
+            1,
+            2,
+            3,
+            4,
+            5
+          ]
+        }
+      ]
+    },
+    {
+      "id": "SCAN-05",
+      "title": "SAST is explicitly incomplete, not a clean scan",
+      "type": "VERIFICATION GATE",
+      "priority": "P1",
+      "scope": "all production release candidates",
+      "source": "reports/readiness-audit/scanners.md",
+      "optionCount": 4,
+      "options": [
+        {
+          "label": "A",
+          "title": "A. Repair and rerun existing scanner (recommended; continuity, tool-specific troubleshooting).",
+          "stepCount": 5,
+          "stepNumbers": [
+            1,
+            2,
+            3,
+            4,
+            5
+          ]
+        },
+        {
+          "label": "B",
+          "title": "B. Alternate maintained SAST engine (different coverage, rule migration cost).",
+          "stepCount": 5,
+          "stepNumbers": [
+            1,
+            2,
+            3,
+            4,
+            5
+          ]
+        },
+        {
+          "label": "C",
+          "title": "C. Per-language scanner federation (better specialization, orchestration cost).",
+          "stepCount": 5,
+          "stepNumbers": [
+            1,
+            2,
+            3,
+            4,
+            5
+          ]
+        },
+        {
+          "label": "D",
+          "title": "D. Independent assessed release pipeline (external expertise, cost and scheduling).",
+          "stepCount": 5,
+          "stepNumbers": [
+            1,
+            2,
+            3,
+            4,
+            5
+          ]
+        }
+      ]
+    },
+    {
+      "id": "CG-1",
+      "title": "Admin token issue and revoke actions explicitly return 501.",
+      "type": "CAPABILITY GAP",
+      "priority": "P1",
+      "scope": "admin-issued API credentials; not a blocker for session login",
+      "source": "reports/readiness-audit/coverage-gaps.md",
+      "optionCount": 4,
+      "options": [
+        {
+          "label": "A",
+          "title": "A — Adapt the existing developer-key subsystem (recommended). Lowest duplication, but requires proving that its principal/scopes fit admin delegation.",
+          "stepCount": 5,
+          "stepNumbers": [
+            1,
+            2,
+            3,
+            4,
+            5
+          ]
+        },
+        {
+          "label": "B",
+          "title": "B — Build dedicated opaque service tokens. Strong server-side control; extra schema and verification work.",
+          "stepCount": 5,
+          "stepNumbers": [
+            1,
+            2,
+            3,
+            4,
+            5
+          ]
+        },
+        {
+          "label": "C",
+          "title": "C — Short-lived signed tokens plus durable revocation state. Efficient verification; signing-key and revocation-cache complexity.",
+          "stepCount": 5,
+          "stepNumbers": [
+            1,
+            2,
+            3,
+            4,
+            5
+          ]
+        },
+        {
+          "label": "D",
+          "title": "D — Delegate credentials to an OAuth authorization server. Mature lifecycle support; external dependency and operational cost.",
+          "stepCount": 5,
+          "stepNumbers": [
+            1,
+            2,
+            3,
+            4,
+            5
+          ]
+        }
+      ]
+    },
+    {
+      "id": "CG-2",
+      "title": "Timer-driven exports announce completion without rendering; downloads return JSON acknowledgements, not files.",
+      "type": "CONFIRMED defect",
+      "priority": "P1",
+      "scope": "the generic export API and consumers promising downloadable artifacts",
+      "source": "reports/readiness-audit/coverage-gaps.md",
+      "optionCount": 4,
+      "options": [
+        {
+          "label": "A",
+          "title": "A — Durable application export jobs (recommended). Reuses the application and storage stack; requires worker capacity and recovery design.",
+          "stepCount": 5,
+          "stepNumbers": [
+            1,
+            2,
+            3,
+            4,
+            5
+          ]
+        },
+        {
+          "label": "B",
+          "title": "B — Dedicated rendering/export service. Isolates expensive processing; adds network/API/versioning obligations.",
+          "stepCount": 5,
+          "stepNumbers": [
+            1,
+            2,
+            3,
+            4,
+            5
+          ]
+        },
+        {
+          "label": "C",
+          "title": "C — Browser-side rendering/packaging with server artifact commit. Reduces server rendering load; device memory/performance becomes a constraint.",
+          "stepCount": 5,
+          "stepNumbers": [
+            1,
+            2,
+            3,
+            4,
+            5
+          ]
+        },
+        {
+          "label": "D",
+          "title": "D — Synchronous streaming exports for bounded workloads. Simpler recovery for small jobs; needs strict size/time limits and backpressure.",
+          "stepCount": 5,
+          "stepNumbers": [
+            1,
+            2,
+            3,
+            4,
+            5
+          ]
+        }
+      ]
+    },
+    {
+      "id": "CG-3",
+      "title": "Offline project/cache operations authenticate the caller but do not consistently authorize the target or scope global operations to that caller.",
+      "type": "CONFIRMED defect",
+      "priority": "P1",
+      "scope": "deployments exposing the mounted offline API",
+      "source": "reports/readiness-audit/coverage-gaps.md",
+      "optionCount": 4,
+      "options": [
+        {
+          "label": "A",
+          "title": "A — Actor-aware offline service (recommended). Central invariant protects future callers; requires updating every listed method.",
+          "stepCount": 5,
+          "stepNumbers": [
+            1,
+            2,
+            3,
+            4,
+            5
+          ]
+        },
+        {
+          "label": "B",
+          "title": "B — Central resource-policy middleware and scoped repositories. Reusable across APIs; every entrypoint must use the policy boundary.",
+          "stepCount": 5,
+          "stepNumbers": [
+            1,
+            2,
+            3,
+            4,
+            5
+          ]
+        },
+        {
+          "label": "C",
+          "title": "C — Database row-level isolation and durable offline metadata. Strong persistence boundary; transaction identity and file isolation are substantial work.",
+          "stepCount": 5,
+          "stepNumbers": [
+            1,
+            2,
+            3,
+            4,
+            5
+          ]
+        },
+        {
+          "label": "D",
+          "title": "D — Per-user offline agent/storage boundary. Strong physical/logical isolation; highest operational complexity.",
+          "stepCount": 5,
+          "stepNumbers": [
+            1,
+            2,
+            3,
+            4,
+            5
+          ]
+        }
+      ]
+    },
+    {
+      "id": "CG-4",
+      "title": "Project access calls a nonexistent storage method and rejects legitimate connections.",
+      "type": "CONFIRMED defect",
+      "priority": "P1",
+      "scope": "the initialized studio collaboration WebSocket endpoint",
+      "source": "reports/readiness-audit/coverage-gaps.md",
+      "optionCount": 4,
+      "options": [
+        {
+          "label": "A",
+          "title": "A — Typed project-access repository (recommended). Smallest durable fix; requires choosing canonical project/membership tables.",
+          "stepCount": 5,
+          "stepNumbers": [
+            1,
+            2,
+            3,
+            4,
+            5
+          ]
+        },
+        {
+          "label": "B",
+          "title": "B — Implement the missing storage contract. Minimizes consumer churn; enlarges an already broad storage interface.",
+          "stepCount": 5,
+          "stepNumbers": [
+            1,
+            2,
+            3,
+            4,
+            5
+          ]
+        },
+        {
+          "label": "C",
+          "title": "C — Dedicated project authorization service. Consistent policy across protocols; adds service availability and policy-version management.",
+          "stepCount": 5,
+          "stepNumbers": [
+            1,
+            2,
+            3,
+            4,
+            5
+          ]
+        },
+        {
+          "label": "D",
+          "title": "D — Scoped collaboration session grants. Avoids database lookup on every upgrade; introduces grant issuance/revocation lifecycle.",
+          "stepCount": 5,
+          "stepNumbers": [
+            1,
+            2,
+            3,
+            4,
+            5
+          ]
+        }
+      ]
+    },
+    {
+      "id": "CG-5",
+      "title": "Modulation routing is acknowledged into a capped process-local map; first reads also dereference missing state.",
+      "type": "CONFIRMED defect",
+      "priority": "P1 (conditional details in scope)",
+      "scope": "durable modulation-routing API; P2 for exploratory/session-only controls",
+      "source": "reports/readiness-audit/coverage-gaps.md",
+      "optionCount": 4,
+      "options": [
+        {
+          "label": "A",
+          "title": "A — Relational routing records (recommended). Fits existing project ownership; adds migration and concurrency handling.",
+          "stepCount": 5,
+          "stepNumbers": [
+            1,
+            2,
+            3,
+            4,
+            5
+          ]
+        },
+        {
+          "label": "B",
+          "title": "B — Store routing in the canonical project document. Atomic project portability; document merges become more complex.",
+          "stepCount": 5,
+          "stepNumbers": [
+            1,
+            2,
+            3,
+            4,
+            5
+          ]
+        },
+        {
+          "label": "C",
+          "title": "C — CRDT-backed durable routing state. Better collaborative editing; more complicated semantic validation.",
+          "stepCount": 5,
+          "stepNumbers": [
+            1,
+            2,
+            3,
+            4,
+            5
+          ]
+        },
+        {
+          "label": "D",
+          "title": "D — Versioned object-store routing documents. Separates large routing state from DB rows; needs compare-and-swap and garbage collection.",
+          "stepCount": 5,
+          "stepNumbers": [
+            1,
+            2,
+            3,
+            4,
+            5
+          ]
+        }
+      ]
+    },
+    {
+      "id": "GR-1",
+      "title": "Fan campaign “send” records delivery without sending; the separate real broadcast path lacks durable recipient outcomes",
+      "type": "CONFIRMED defect",
+      "priority": "P1",
+      "scope": "Fan marketing campaigns and restart/retry-safe broadcasts",
+      "source": "reports/readiness-audit/growth-rights.md",
+      "optionCount": 4,
+      "options": [
+        {
+          "label": "A",
+          "title": "A — Transactional outbox and recipient ledger (recommended; strongest local control, ongoing worker operations).",
+          "stepCount": 5,
+          "stepNumbers": [
+            1,
+            2,
+            3,
+            4,
+            5
+          ]
+        },
+        {
+          "label": "B",
+          "title": "B — Provider-managed campaign execution (less in-house delivery infrastructure, provider coupling).",
+          "stepCount": 5,
+          "stepNumbers": [
+            1,
+            2,
+            3,
+            4,
+            5
+          ]
+        },
+        {
+          "label": "C",
+          "title": "C — Durable workflow orchestration (strong recovery history, higher infrastructure cost).",
+          "stepCount": 5,
+          "stepNumbers": [
+            1,
+            2,
+            3,
+            4,
+            5
+          ]
+        },
+        {
+          "label": "D",
+          "title": "D — Relay service with acknowledgement protocol (isolates email operations, adds service boundary).",
+          "stepCount": 5,
+          "stepNumbers": [
+            1,
+            2,
+            3,
+            4,
+            5
+          ]
+        }
+      ]
+    },
+    {
+      "id": "GR-2",
+      "title": "Fan broadcasts have no application-level consent/suppression/unsubscribe lifecycle",
+      "type": "CAPABILITY GAP",
+      "priority": "P1",
+      "scope": "Production artist-to-fan email marketing",
+      "source": "reports/readiness-audit/growth-rights.md",
+      "optionCount": 4,
+      "options": [
+        {
+          "label": "A",
+          "title": "A — First-party consent registry (recommended; explicit control, regulatory/product maintenance).",
+          "stepCount": 5,
+          "stepNumbers": [
+            1,
+            2,
+            3,
+            4,
+            5
+          ]
+        },
+        {
+          "label": "B",
+          "title": "B — Marketing provider as consent authority (faster operational maturity, vendor dependence).",
+          "stepCount": 5,
+          "stepNumbers": [
+            1,
+            2,
+            3,
+            4,
+            5
+          ]
+        },
+        {
+          "label": "C",
+          "title": "C — Dedicated preference-center service (reusable across products, additional service ownership).",
+          "stepCount": 5,
+          "stepNumbers": [
+            1,
+            2,
+            3,
+            4,
+            5
+          ]
+        },
+        {
+          "label": "D",
+          "title": "D — Customer-owned audience-system federation (best for established artist CRM users, integration complexity).",
+          "stepCount": 5,
+          "stepNumbers": [
+            1,
+            2,
+            3,
+            4,
+            5
+          ]
+        }
+      ]
+    },
+    {
+      "id": "GR-3",
+      "title": "Merch management has no order-ingestion/purchase producer behind its fulfillment UI",
+      "type": "CAPABILITY GAP",
+      "priority": "P1",
+      "scope": "Selling/fulfilling physical merchandise inside this platform; catalog-only management is narrower",
+      "source": "reports/readiness-audit/growth-rights.md",
+      "optionCount": 4,
+      "options": [
+        {
+          "label": "A",
+          "title": "A — Native physical-commerce workflow (recommended for native checkout promise; largest implementation burden).",
+          "stepCount": 5,
+          "stepNumbers": [
+            1,
+            2,
+            3,
+            4,
+            5
+          ]
+        },
+        {
+          "label": "B",
+          "title": "B — Commerce-platform connector (fast mature checkout, platform fees and synchronization).",
+          "stepCount": 5,
+          "stepNumbers": [
+            1,
+            2,
+            3,
+            4,
+            5
+          ]
+        },
+        {
+          "label": "C",
+          "title": "C — Print-on-demand merchant integration (reduced stock operations, margin/provider limitations).",
+          "stepCount": 5,
+          "stepNumbers": [
+            1,
+            2,
+            3,
+            4,
+            5
+          ]
+        },
+        {
+          "label": "D",
+          "title": "D — External-order management/import workflow (appropriate for multichannel sellers; not native checkout).",
+          "stepCount": 5,
+          "stepNumbers": [
+            1,
+            2,
+            3,
+            4,
+            5
+          ]
+        }
+      ]
+    },
+    {
+      "id": "GR-4",
+      "title": "Split-sheet amendments bypass allocation invariants and overwrite mutable signatures without revision-bound assent",
+      "type": "CONFIRMED defect",
+      "priority": "P1",
+      "scope": "Split-sheet execution through mounted contracts API",
+      "source": "reports/readiness-audit/growth-rights.md",
+      "optionCount": 4,
+      "options": [
+        {
+          "label": "A",
+          "title": "A — Normalized revision/signature tables (recommended; robust invariants, schema migration).",
+          "stepCount": 5,
+          "stepNumbers": [
+            1,
+            2,
+            3,
+            4,
+            5
+          ]
+        },
+        {
+          "label": "B",
+          "title": "B — Optimistic concurrency on versioned documents (smaller migration, explicit conflict handling).",
+          "stepCount": 5,
+          "stepNumbers": [
+            1,
+            2,
+            3,
+            4,
+            5
+          ]
+        },
+        {
+          "label": "C",
+          "title": "C — Event-sourced agreement aggregate (best audit history, greater complexity).",
+          "stepCount": 5,
+          "stepNumbers": [
+            1,
+            2,
+            3,
+            4,
+            5
+          ]
+        },
+        {
+          "label": "D",
+          "title": "D — E-signature envelope authority (external evidentiary tooling, provider cost/lock-in).",
+          "stepCount": 5,
+          "stepNumbers": [
+            1,
+            2,
+            3,
+            4,
+            5
+          ]
+        }
+      ]
+    },
+    {
+      "id": "GR-5",
+      "title": "Revenue forecast API returns invented accuracy and substitutes assumptions for measured zero revenue without provenance",
+      "type": "CONFIRMED defect",
+      "priority": "P1",
+      "scope": "Mounted revenue forecast API and any consumer relying on its financial estimates",
+      "source": "reports/readiness-audit/growth-rights.md",
+      "optionCount": 4,
+      "options": [
+        {
+          "label": "A",
+          "title": "A — Explicit empirical/scenario model contract (recommended; retains useful heuristic work without invented certainty).",
+          "stepCount": 5,
+          "stepNumbers": [
+            1,
+            2,
+            3,
+            4,
+            5
+          ]
+        },
+        {
+          "label": "B",
+          "title": "B — Statement-based cash forecast (strong financial grounding, statement lag).",
+          "stepCount": 5,
+          "stepNumbers": [
+            1,
+            2,
+            3,
+            4,
+            5
+          ]
+        },
+        {
+          "label": "C",
+          "title": "C — Versioned forecasting service with calibration (more modeling capability, operating/model risk).",
+          "stepCount": 5,
+          "stepNumbers": [
+            1,
+            2,
+            3,
+            4,
+            5
+          ]
+        },
+        {
+          "label": "D",
+          "title": "D — Transparent financial planning engine (user-controlled assumptions, not automated predictive accuracy).",
+          "stepCount": 5,
+          "stepNumbers": [
+            1,
+            2,
+            3,
+            4,
+            5
+          ]
+        }
+      ]
+    },
+    {
+      "id": "AG-1",
+      "title": "Removal and warning endpoints acknowledge effects they do not perform; review actions also misrepresent completion.",
+      "type": "CONFIRMED defect",
+      "priority": "P1",
+      "scope": "moderation operations",
+      "source": "reports/readiness-audit/admin-governance.md",
+      "optionCount": 4,
+      "options": [
+        {
+          "label": "A",
+          "title": "A — Transactional internal case/action service (recommended). Lowest architectural overhead; remote actions still require separate completion tracking.",
+          "stepCount": 5,
+          "stepNumbers": [
+            1,
+            2,
+            3,
+            4,
+            5
+          ]
+        },
+        {
+          "label": "B",
+          "title": "B — Durable moderation workflow engine. Strong retry/remote-effect semantics; greater operational complexity.",
+          "stepCount": 5,
+          "stepNumbers": [
+            1,
+            2,
+            3,
+            4,
+            5
+          ]
+        },
+        {
+          "label": "C",
+          "title": "C — Integrated specialist moderation/case provider. Faster case tooling; vendor cost and data-sharing obligations.",
+          "stepCount": 5,
+          "stepNumbers": [
+            1,
+            2,
+            3,
+            4,
+            5
+          ]
+        },
+        {
+          "label": "D",
+          "title": "D — Human-reviewed command ledger and fulfillment queue. Useful for low-volume operations; slower response, explicit staffing required.",
+          "stepCount": 5,
+          "stepNumbers": [
+            1,
+            2,
+            3,
+            4,
+            5
+          ]
+        }
+      ]
+    },
+    {
+      "id": "AG-2",
+      "title": "Settings persist but have no corresponding runtime enforcement consumer.",
+      "type": "CONFIRMED defect",
+      "priority": "P1",
+      "scope": "operator maintenance, registration and rate-limit controls",
+      "source": "reports/readiness-audit/admin-governance.md",
+      "optionCount": 4,
+      "options": [
+        {
+          "label": "A",
+          "title": "A — Typed runtime policy service (recommended). Reuses existing storage; requires careful cache consistency.",
+          "stepCount": 5,
+          "stepNumbers": [
+            1,
+            2,
+            3,
+            4,
+            5
+          ]
+        },
+        {
+          "label": "B",
+          "title": "B — Distributed configuration/event control plane. Fast fleet propagation; additional infrastructure.",
+          "stepCount": 5,
+          "stepNumbers": [
+            1,
+            2,
+            3,
+            4,
+            5
+          ]
+        },
+        {
+          "label": "C",
+          "title": "C — Gateway enforcement plus registration admission service. Central traffic controls; bypass paths must be eliminated.",
+          "stepCount": 5,
+          "stepNumbers": [
+            1,
+            2,
+            3,
+            4,
+            5
+          ]
+        },
+        {
+          "label": "D",
+          "title": "D — Versioned deploy-time policy artifacts. Simpler consistency model; slower operational changes.",
+          "stepCount": 5,
+          "stepNumbers": [
+            1,
+            2,
+            3,
+            4,
+            5
+          ]
+        }
+      ]
+    },
+    {
+      "id": "AG-3",
+      "title": "Status crashes when a required document has not yet been uploaded.",
+      "type": "CONFIRMED defect",
+      "priority": "P1",
+      "scope": "applicant KYC onboarding",
+      "source": "reports/readiness-audit/admin-governance.md",
+      "optionCount": 4,
+      "options": [
+        {
+          "label": "A",
+          "title": "A — Explicit optional-document mapping (recommended). Small targeted change; retains current storage model.",
+          "stepCount": 5,
+          "stepNumbers": [
+            1,
+            2,
+            3,
+            4,
+            5
+          ]
+        },
+        {
+          "label": "B",
+          "title": "B — Materialized requirement rows. Stronger relational integrity; schema migration cost.",
+          "stepCount": 5,
+          "stepNumbers": [
+            1,
+            2,
+            3,
+            4,
+            5
+          ]
+        },
+        {
+          "label": "C",
+          "title": "C — Database left-join projection. Centralized read semantics; more complex SQL.",
+          "stepCount": 5,
+          "stepNumbers": [
+            1,
+            2,
+            3,
+            4,
+            5
+          ]
+        },
+        {
+          "label": "D",
+          "title": "D — Dedicated validated status read model. Scales complex KYC views; eventual consistency must be explicit.",
+          "stepCount": 5,
+          "stepNumbers": [
+            1,
+            2,
+            3,
+            4,
+            5
+          ]
+        }
+      ]
+    },
+    {
+      "id": "AG-4",
+      "title": "Approval is not bound to reviewed evidence; approved identity information remains editable without invalidation.",
+      "type": "CONFIRMED defect",
+      "priority": "P1",
+      "scope": "internally verified identity assertions",
+      "source": "reports/readiness-audit/admin-governance.md",
+      "optionCount": 4,
+      "options": [
+        {
+          "label": "A",
+          "title": "A — Immutable revision plus transactional state machine (recommended). Clear assurance boundary; requires revision migration.",
+          "stepCount": 5,
+          "stepNumbers": [
+            1,
+            2,
+            3,
+            4,
+            5
+          ]
+        },
+        {
+          "label": "B",
+          "title": "B — Identity provider authoritative decisions. Outsourced verification capability; cost, integration and custody tradeoffs.",
+          "stepCount": 5,
+          "stepNumbers": [
+            1,
+            2,
+            3,
+            4,
+            5
+          ]
+        },
+        {
+          "label": "C",
+          "title": "C — Dual-review evidence case management. Strong manual accountability; staffing and latency costs.",
+          "stepCount": 5,
+          "stepNumbers": [
+            1,
+            2,
+            3,
+            4,
+            5
+          ]
+        },
+        {
+          "label": "D",
+          "title": "D — Separate attestations from editable profiles. Preserves profile flexibility; consumers must adopt new semantics.",
+          "stepCount": 5,
+          "stepNumbers": [
+            1,
+            2,
+            3,
+            4,
+            5
+          ]
+        }
+      ]
+    },
+    {
+      "id": "AG-5",
+      "title": "Concurrent message/tag mutations overwrite each other's JSONB state.",
+      "type": "CONFIRMED defect",
+      "priority": "P1",
+      "scope": "multi-agent support operations",
+      "source": "reports/readiness-audit/admin-governance.md",
+      "optionCount": 4,
+      "options": [
+        {
+          "label": "A",
+          "title": "A — Normalize messages and tags (recommended). Strong constraints and growth properties; migration required.",
+          "stepCount": 5,
+          "stepNumbers": [
+            1,
+            2,
+            3,
+            4,
+            5
+          ]
+        },
+        {
+          "label": "B",
+          "title": "B — Atomic JSONB SQL mutations. Minimal schema change; JSON arrays remain less scalable.",
+          "stepCount": 5,
+          "stepNumbers": [
+            1,
+            2,
+            3,
+            4,
+            5
+          ]
+        },
+        {
+          "label": "C",
+          "title": "C — Row locking within transactions. Straightforward correctness; contention on busy tickets.",
+          "stepCount": 5,
+          "stepNumbers": [
+            1,
+            2,
+            3,
+            4,
+            5
+          ]
+        },
+        {
+          "label": "D",
+          "title": "D — Optimistic versioned writes. Avoids blocking; conflicts need retry UX.",
+          "stepCount": 5,
+          "stepNumbers": [
+            1,
+            2,
+            3,
+            4,
+            5
+          ]
+        }
+      ]
+    },
+    {
+      "id": "AG-6",
+      "title": "Reply notifications point to an absent customer ticket page; detail/reply APIs are admin-only.",
+      "type": "CAPABILITY GAP with confirmed broken link",
+      "priority": "P1",
+      "scope": "customer support conversation lifecycle",
+      "source": "reports/readiness-audit/admin-governance.md",
+      "optionCount": 4,
+      "options": [
+        {
+          "label": "A",
+          "title": "A — First-party owner-scoped portal (recommended). Best integrated experience; new UI/API work.",
+          "stepCount": 5,
+          "stepNumbers": [
+            1,
+            2,
+            3,
+            4,
+            5
+          ]
+        },
+        {
+          "label": "B",
+          "title": "B — Inbound-email conversation channel. Familiar experience; sender verification and threading complexity.",
+          "stepCount": 5,
+          "stepNumbers": [
+            1,
+            2,
+            3,
+            4,
+            5
+          ]
+        },
+        {
+          "label": "C",
+          "title": "C — Integrated helpdesk portal. Mature customer tooling; vendor dependency and data migration.",
+          "stepCount": 5,
+          "stepNumbers": [
+            1,
+            2,
+            3,
+            4,
+            5
+          ]
+        },
+        {
+          "label": "D",
+          "title": "D — Authenticated in-app support inbox. Avoids separate ticket-page UX; requires notification-to-thread routing.",
+          "stepCount": 5,
+          "stepNumbers": [
+            1,
+            2,
+            3,
+            4,
+            5
+          ]
+        }
+      ]
+    },
+    {
+      "id": "CO-1",
+      "title": "Browser-private state is not bound to the authenticated account",
+      "type": "CONFIRMED defect",
+      "priority": "P1",
+      "scope": "production browser/PWA account switching, logout and offline reads; queue/draft isolation also blocks enabling those utilities broadly.",
+      "source": "reports/readiness-audit/client-offline.md",
+      "optionCount": 4,
+      "options": [
+        {
+          "label": "A",
+          "title": "A — Account-and-session namespaces (recommended; preserves offline UX, requires migration).",
+          "stepCount": 5,
+          "stepNumbers": [
+            1,
+            2,
+            3,
+            4,
+            5
+          ]
+        },
+        {
+          "label": "B",
+          "title": "B — Public worker cache plus authenticated encrypted local repository (strong privacy boundary, more key management).",
+          "stepCount": 5,
+          "stepNumbers": [
+            1,
+            2,
+            3,
+            4,
+            5
+          ]
+        },
+        {
+          "label": "C",
+          "title": "C — Isolated per-account application origins (large hosting/auth cost, strong browser isolation).",
+          "stepCount": 5,
+          "stepNumbers": [
+            1,
+            2,
+            3,
+            4,
+            5
+          ]
+        },
+        {
+          "label": "D",
+          "title": "D — Encrypted session vault with explicit recoverable handoff (privacy-first, less seamless offline relogin).",
+          "stepCount": 5,
+          "stepNumbers": [
+            1,
+            2,
+            3,
+            4,
+            5
+          ]
+        }
+      ]
+    },
+    {
+      "id": "CO-2",
+      "title": "The local outbox does not have a recoverable, exclusive scheduler",
+      "type": "CONFIRMED scheduler defect",
+      "priority": "P1 for existing/future queued actions",
+      "scope": "the generic offline scheduler and any pre-existing or subsequently enrolled queued work. No current mounted mutation producer was established. Initialization proves scheduler reachability, not that a current page enqueues mutations; this finding does not assert current queued Projects data loss.",
+      "source": "reports/readiness-audit/client-offline.md",
+      "optionCount": 4,
+      "options": [
+        {
+          "label": "A",
+          "title": "A — Transactional IndexedDB leases (recommended; incremental but careful schema work).",
+          "stepCount": 5,
+          "stepNumbers": [
+            1,
+            2,
+            3,
+            4,
+            5
+          ]
+        },
+        {
+          "label": "B",
+          "title": "B — Single worker-owned outbox (one client authority, worker lifecycle complexity).",
+          "stepCount": 5,
+          "stepNumbers": [
+            1,
+            2,
+            3,
+            4,
+            5
+          ]
+        },
+        {
+          "label": "C",
+          "title": "C — Server-coordinated operation journal (strong authoritative recovery, larger backend change).",
+          "stepCount": 5,
+          "stepNumbers": [
+            1,
+            2,
+            3,
+            4,
+            5
+          ]
+        },
+        {
+          "label": "D",
+          "title": "D — Local-first command log and deterministic materialization (best offline model, highest redesign cost).",
+          "stepCount": 5,
+          "stepNumbers": [
+            1,
+            2,
+            3,
+            4,
+            5
+          ]
+        }
+      ]
+    },
+    {
+      "id": "CO-3",
+      "title": "Background queue acceptance is confused with completed business synchronization",
+      "type": "CONFIRMED transport defect",
+      "priority": "P1 for existing/future queued actions",
+      "scope": "PWA background sync on browsers supporting the Sync API, and local sync-status UX when generic queued work exists. No current mounted mutation producer was established. The initialization path is not evidence of a producer, and this finding does not assert current queued Projects data loss.",
+      "source": "reports/readiness-audit/client-offline.md",
+      "optionCount": 4,
+      "options": [
+        {
+          "label": "A",
+          "title": "A — Versioned handoff/receipt protocol (recommended; least disruption to dual-context design).",
+          "stepCount": 5,
+          "stepNumbers": [
+            1,
+            2,
+            3,
+            4,
+            5
+          ]
+        },
+        {
+          "label": "B",
+          "title": "B — Eliminate dual ownership with foreground durable outbox (simpler protocol, background trigger still required).",
+          "stepCount": 5,
+          "stepNumbers": [
+            1,
+            2,
+            3,
+            4,
+            5
+          ]
+        },
+        {
+          "label": "C",
+          "title": "C — Durable server batch jobs (clear asynchronous contract, needs backend storage).",
+          "stepCount": 5,
+          "stepNumbers": [
+            1,
+            2,
+            3,
+            4,
+            5
+          ]
+        },
+        {
+          "label": "D",
+          "title": "D — Individually acknowledged command transport (more requests, simpler partial-failure semantics).",
+          "stepCount": 5,
+          "stepNumbers": [
+            1,
+            2,
+            3,
+            4,
+            5
+          ]
+        }
+      ]
+    },
+    {
+      "id": "CO-4",
+      "title": "Worker activation discards old application generations before open clients are safe",
+      "type": "CONFIRMED lifecycle defect",
+      "priority": "P1",
+      "scope": "deployed PWA upgrades with open tabs/offline navigation and lazy chunks.",
+      "source": "reports/readiness-audit/client-offline.md",
+      "optionCount": 4,
+      "options": [
+        {
+          "label": "A",
+          "title": "A — Waiting worker plus dirty-state handshake (recommended; extra update UX).",
+          "stepCount": 5,
+          "stepNumbers": [
+            1,
+            2,
+            3,
+            4,
+            5
+          ]
+        },
+        {
+          "label": "B",
+          "title": "B — Multi-generation worker and asset retention (seamless updates, higher storage cost).",
+          "stepCount": 5,
+          "stepNumbers": [
+            1,
+            2,
+            3,
+            4,
+            5
+          ]
+        },
+        {
+          "label": "C",
+          "title": "C — Stable compatibility worker with versioned app shells (less worker churn, more protocol design).",
+          "stepCount": 5,
+          "stepNumbers": [
+            1,
+            2,
+            3,
+            4,
+            5
+          ]
+        },
+        {
+          "label": "D",
+          "title": "D — Atomic snapshot update with recoverable session restart (more interruption, clear boundary).",
+          "stepCount": 5,
+          "stepNumbers": [
+            1,
+            2,
+            3,
+            4,
+            5
+          ]
+        }
+      ]
+    },
+    {
+      "id": "CO-5",
+      "title": "First-save draft storage dereferences an absent draft",
+      "type": "CONFIRMED defect",
+      "priority": "P2 for present reachability; P1 before promising draft-backed forms",
+      "scope": "reusable draft API and any form enrolled through it, not every current form.",
+      "source": "reports/readiness-audit/client-offline.md",
+      "optionCount": 4,
+      "options": [
+        {
+          "label": "A",
+          "title": "A — Safe transactional upsert (recommended; smallest change, last-writer policy needs definition).",
+          "stepCount": 5,
+          "stepNumbers": [
+            1,
+            2,
+            3,
+            4,
+            5
+          ]
+        },
+        {
+          "label": "B",
+          "title": "B — Explicit create/update repository methods (clear invariants, more caller changes).",
+          "stepCount": 5,
+          "stepNumbers": [
+            1,
+            2,
+            3,
+            4,
+            5
+          ]
+        },
+        {
+          "label": "C",
+          "title": "C — Append-only draft revisions (strong recovery history, storage/compaction overhead).",
+          "stepCount": 5,
+          "stepNumbers": [
+            1,
+            2,
+            3,
+            4,
+            5
+          ]
+        },
+        {
+          "label": "D",
+          "title": "D — Replace the draft module with a shared transactional entity repository (larger refactor, removes duplicated persistence rules).",
+          "stepCount": 5,
+          "stepNumbers": [
+            1,
+            2,
+            3,
+            4,
+            5
+          ]
+        }
+      ]
+    },
+    {
+      "id": "CO-6",
+      "title": "Global offline assurance exceeds actual persistence capability",
+      "type": "CAPABILITY GAP, with confirmed state-reporting defect",
+      "priority": "P1",
+      "scope": "all pages under the root offline provider, especially project editing and storage-restricted devices.",
+      "source": "reports/readiness-audit/client-offline.md",
+      "optionCount": 4,
+      "options": [
+        {
+          "label": "A",
+          "title": "A — Enroll explicit commands in the durable outbox (recommended; incremental per-feature work).",
+          "stepCount": 5,
+          "stepNumbers": [
+            1,
+            2,
+            3,
+            4,
+            5
+          ]
+        },
+        {
+          "label": "B",
+          "title": "B — Local-first entity workspace (broad offline capability, substantial domain migration).",
+          "stepCount": 5,
+          "stepNumbers": [
+            1,
+            2,
+            3,
+            4,
+            5
+          ]
+        },
+        {
+          "label": "C",
+          "title": "C — Durable draft plus explicit online publish (simpler than offline deletion, an extra user step).",
+          "stepCount": 5,
+          "stepNumbers": [
+            1,
+            2,
+            3,
+            4,
+            5
+          ]
+        },
+        {
+          "label": "D",
+          "title": "D — File-backed portable working documents (user-controlled durability, permission/support cost).",
+          "stepCount": 5,
+          "stepNumbers": [
+            1,
+            2,
+            3,
+            4,
+            5
+          ]
+        }
+      ]
+    },
+    {
+      "id": "CO-7",
+      "title": "Projects renders a failed initial fetch as an empty account",
+      "type": "CONFIRMED defect",
+      "priority": "P2",
+      "scope": "authenticated /projects initial-load failure/no cached data.",
+      "source": "reports/readiness-audit/client-offline.md",
+      "optionCount": 4,
+      "options": [
+        {
+          "label": "A",
+          "title": "A — Explicit query-state rendering (recommended; small local change).",
+          "stepCount": 5,
+          "stepNumbers": [
+            1,
+            2,
+            3,
+            4,
+            5
+          ]
+        },
+        {
+          "label": "B",
+          "title": "B — Shared resource-state component (wider reuse, migration work).",
+          "stepCount": 5,
+          "stepNumbers": [
+            1,
+            2,
+            3,
+            4,
+            5
+          ]
+        },
+        {
+          "label": "C",
+          "title": "C — Route-loader error boundary (central navigation recovery, architectural change).",
+          "stepCount": 5,
+          "stepNumbers": [
+            1,
+            2,
+            3,
+            4,
+            5
+          ]
+        },
+        {
+          "label": "D",
+          "title": "D — Discriminated domain repository results (strong API contract, more layers).",
+          "stepCount": 5,
+          "stepNumbers": [
+            1,
+            2,
+            3,
+            4,
+            5
+          ]
+        }
+      ]
+    },
+    {
+      "id": "CO-8",
+      "title": "Cross-device, accessible and reconnect-safe critical journeys remain an acceptance gate",
+      "type": "VERIFICATION GATE",
+      "priority": "P1 for full platform/browser release",
+      "scope": "source cannot certify keyboard/screen-reader completion, touch/mobile audio behavior, quota/eviction survival, deployed lazy-route recovery, or reconciliation after disconnect/multiple tabs. No major accessibility barrier was conclusively established in this pass; lack of a browser run is not itself proof of an accessibility defect. Full release requires demonstrated contracts across the unexamined pages below, not an inference from shared components.",
+      "source": "reports/readiness-audit/client-offline.md",
+      "optionCount": 4,
+      "options": [
+        {
+          "label": "A",
+          "title": "A — Risk-ranked cross-browser journey suite (recommended; repeatable regression gate).",
+          "stepCount": 5,
+          "stepNumbers": [
+            1,
+            2,
+            3,
+            4,
+            5
+          ]
+        },
+        {
+          "label": "B",
+          "title": "B — Independent manual accessibility/device qualification (strong assistive-tech coverage, less regression automation).",
+          "stepCount": 5,
+          "stepNumbers": [
+            1,
+            2,
+            3,
+            4,
+            5
+          ]
+        },
+        {
+          "label": "C",
+          "title": "C — Model-based state-transition qualification (best concurrency depth, greater setup cost).",
+          "stepCount": 5,
+          "stepNumbers": [
+            1,
+            2,
+            3,
+            4,
+            5
+          ]
+        },
+        {
+          "label": "D",
+          "title": "D — Controlled beta with instrumented acceptance and specialist audit (real device diversity, slower and requires strong containment).",
+          "stepCount": 5,
+          "stepNumbers": [
+            1,
+            2,
+            3,
+            4,
+            5
+          ]
+        }
+      ]
+    }
+  ],
+  "limitations": [
+    "Source plus scanner evidence only; no application execution, new tests/typecheck, live database/provider/load/destructive payment runs.",
+    "Prior 786 tests/typecheck not rerun and not certification of real boundaries.",
+    "Coverage exclusions retained; not proof every defect discovered.",
+    "Scanner observation counts are not independent confirmed defects; token-value critical alerts are false positives; SAST incomplete.",
+    "HTML uses safe escaped limited Markdown rendering, inline CSS, native anchors; no scripts, remote fonts, assets or fetches."
+  ]
+}

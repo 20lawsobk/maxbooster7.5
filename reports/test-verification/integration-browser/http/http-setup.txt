@@ -1,9 +1,9 @@
 git rev-parse HEAD
-5eb416a04021f66c9bfc8af93997ec9fe8a55e31
+d56e075bfcc2b6ff9e258a691042d8dae8506f16
 
-/workspace/.cloud-tools/node_modules/node/bin/node node_modules/drizzle-kit/bin.cjs generate --config=/tmp/maxbooster-http-tests-h6x3BX/drizzle.json
-Reading config file '/tmp/maxbooster-http-tests-h6x3BX/drizzle.json'
-282 tables
+/nix/store/k6wnq86zjb42sm845vgv795cwsnwvj07-nodejs-slim-22.23.4/bin/node node_modules/drizzle-kit/bin.cjs generate --config=/tmp/maxbooster-http-tests-MHLgqS/drizzle.json
+Reading config file '/tmp/maxbooster-http-tests-MHLgqS/drizzle.json'
+284 tables
 achievements 11 columns 0 indexes 0 fks
 ad_campaigns 21 columns 0 indexes 0 fks
 ad_creatives 15 columns 0 indexes 0 fks
@@ -145,6 +145,8 @@ lyrics_syncs 12 columns 0 indexes 0 fks
 markers 8 columns 0 indexes 0 fks
 marketplace_disputes 15 columns 3 indexes 0 fks
 marketplace_recommendations 12 columns 0 indexes 0 fks
+maxcore_cognitive_entities 10 columns 2 indexes 1 fks
+maxcore_cognitive_relationships 7 columns 2 indexes 3 fks
 membership_tiers 14 columns 1 indexes 0 fks
 merch_items 17 columns 2 indexes 0 fks
 merch_orders 11 columns 2 indexes 0 fks
@@ -287,10 +289,10 @@ workspaces 10 columns 0 indexes 0 fks
 youtube_connections 10 columns 0 indexes 0 fks
 youtube_uploads 13 columns 0 indexes 0 fks
 
-[✓] Your SQL migration file ➜ /tmp/maxbooster-http-tests-h6x3BX/generated/0000_demonic_unus.sql 🚀
+[✓] Your SQL migration file ➜ /tmp/maxbooster-http-tests-MHLgqS/generated/0000_faulty_morbius.sql 🚀
 
-initdb -D /tmp/maxbooster-http-tests-h6x3BX/pg -U test_fixture --auth=trust --no-locale --encoding=UTF8
-The files belonging to this database system will be owned by user "agent".
+initdb -D /tmp/maxbooster-http-tests-MHLgqS/pg -U test_fixture --auth=trust --no-locale --encoding=UTF8
+The files belonging to this database system will be owned by user "runner".
 This user must also own the server process.
 
 The database cluster will be initialized with locale "C".
@@ -298,7 +300,7 @@ The default text search configuration will be set to "english".
 
 Data page checksums are disabled.
 
-creating directory /tmp/maxbooster-http-tests-h6x3BX/pg ... ok
+creating directory /tmp/maxbooster-http-tests-MHLgqS/pg ... ok
 creating subdirectories ... ok
 selecting dynamic shared memory implementation ... posix
 selecting default "max_connections" ... 100
@@ -311,10 +313,10 @@ syncing data to disk ... ok
 
 Success. You can now start the database server using:
 
-    pg_ctl -D /tmp/maxbooster-http-tests-h6x3BX/pg -l logfile start
+    pg_ctl -D /tmp/maxbooster-http-tests-MHLgqS/pg -l logfile start
 
 
-pg_ctl -D /tmp/maxbooster-http-tests-h6x3BX/pg -l /tmp/maxbooster-http-tests-h6x3BX/postgres.txt -o -h 127.0.0.1 -k /tmp/maxbooster-http-tests-h6x3BX -p 39707 -c shared_buffers=32MB -c max_connections=40 -w start
+pg_ctl -D /tmp/maxbooster-http-tests-MHLgqS/pg -l /tmp/maxbooster-http-tests-MHLgqS/postgres.txt -o -h 127.0.0.1 -k /tmp/maxbooster-http-tests-MHLgqS -p 46379 -c shared_buffers=32MB -c max_connections=40 -w start
 waiting for server to start.... done
 server started
 

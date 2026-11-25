@@ -24,6 +24,7 @@ import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
+import { applyAllFixableQcChecks } from "@/lib/distributionQcFixes";
 import { CheckCircle, XCircle, AlertTriangle, Volume2, Image, FileText, Hash, Wand2, RefreshCw, Play, Pause, Shield, Download } from "lucide-react";
 
 interface QCCheck {
@@ -260,29 +261,46 @@ export function AutomatedQC({
   });
 
   const applyAllFixesMutation = useMutation({
-    mutationFn: async () => {
-      const fixableChecks =
-        qcResponse?.report?.checks.filter(
-          (c) => c.fixable && c.status === "failed",
-        ) || [];
-      for (const check of fixableChecks) {
-        if (check.fixAction) {
-          await apiRequest("POST", "/api/distribution/qc/fix", {
-            releaseId,
-            checkId: check.id,
-            fixAction: check.fixAction,
-          });
-        }
-      }
-    },
-    onSuccess: () => {
+    mutationFn: async () =>
+      applyAllFixableQcChecks(
+        releaseId || "",
+        qcResponse?.report?.checks || [],
+        async (payload) => {
+          const response = await apiRequest(
+            "POST",
+            "/api/distribution/qc/fix",
+            payload,
+          );
+          return {
+            ok: response.ok,
+            json: () => response.json(),
+          };
+        },
+      ),
+    onSuccess: (result) => {
       queryClient.invalidateQueries({
         queryKey: ["/api/distribution/qc", releaseId],
       });
-      toast({
-        title: "All Fixes Applied",
-        description: "All fixable issues have been resolved",
-      });
+      for (const attempt of result.results) {
+        if (attempt.success) onApplyFix?.(attempt.checkId, attempt.fixAction);
+      }
+      if (result.attempted === 0) {
+        toast({
+          title: "No automatic fixes available",
+          description: "The current QC report has no failed checks with an automatic fix.",
+        });
+      } else if (result.failed === 0) {
+        toast({
+          title: "All fixes confirmed",
+          description: `The server confirmed ${result.succeeded} fix(es).`,
+        });
+      } else {
+        toast({
+          title: "Some fixes need attention",
+          description: `The server confirmed ${result.succeeded} of ${result.attempted}; ${result.failed} were not applied.`,
+          variant: "destructive",
+        });
+      }
     },
   });
 

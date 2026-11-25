@@ -1,0 +1,541 @@
+{
+  "id": "video-studio",
+  "case": {
+    "id": "video-studio",
+    "handler": "api_video_generate_ai",
+    "request_class": null,
+    "kind": "video",
+    "body": {
+      "idea": "Paper lanterns reflected in a quiet harbor at dusk",
+      "platform": "tiktok",
+      "duration": 4,
+      "tone": "calm"
+    }
+  },
+  "fixture_sha256": "155c31cfeaf2b38561063861cdb55e9129fb95532894d811d96ece7ca5083923",
+  "before": {
+    "ai_model/weights/model.pt": "80c19ffc3ec155808f0a2a3ce5b75f09e203d336ebf3e076144dd6e970d3b419",
+    "ai_model/weights/model.release.json": "84b2d85f4ba64d97bd1e35bf939bd7faef533c5abaa1edd62d6aff6121dedef3"
+  },
+  "status": "returned",
+  "scope": "in-process real handler, not HTTP/auth",
+  "calls": {
+    "ai_model/generation/orchestrator.py:merge_awareness": 1,
+    "ai_model/generation/orchestrator.py:_as_text": 5,
+    "ai_model/request_intelligence.py:<module>": 1,
+    "ai_model/request_intelligence.py:GenerationBrief": 1,
+    "ai_model/generation/orchestrator.py:<genexpr>": 3,
+    "ai_model/generation/orchestrator.py:_safe_envelope_text": 3,
+    "ai_model/generation/orchestrator.py:_coerce_aw": 1,
+    "ai_model/quality_awareness.py:<module>": 1,
+    "ai_model/quality_awareness.py:platform_awareness_string": 1,
+    "ai_model/quality_awareness.py:self_sufficiency": 8,
+    "ai_model/quality_awareness.py:_own_corpus_size": 8,
+    "ai_model/quality_awareness.py:_store": 2,
+    "ai_model/quality_awareness.py:_modality_retire_threshold": 8,
+    "ai_model/quality_awareness.py:retire_threshold": 8,
+    "ai_model/quality_awareness.py:get_doc": 6,
+    "ai_model/quality_awareness.py:_doc_age_seconds": 1,
+    "ai_model/quality_awareness.py:_max_age_seconds": 1,
+    "ai_model/request_intelligence.py:build_brief": 1,
+    "ai_model/request_intelligence.py:_norm": 70,
+    "ai_model/request_intelligence.py:_narrative_clause": 1,
+    "ai_model/request_intelligence.py:load_brand_voice": 1,
+    "ai_model/request_intelligence.py:_profile_for": 1,
+    "ai_model/request_intelligence.py:classify_intent": 1,
+    "ai_model/request_intelligence.py:<lambda>": 64,
+    "ai_model/request_intelligence.py:extract_keywords": 2,
+    "ai_model/request_intelligence.py:infer_audience": 1,
+    "ai_model/request_intelligence.py:_resolve_tone": 1,
+    "ai_model/request_intelligence.py:_producer_energy": 1,
+    "ai_model/request_intelligence.py:_build_directives": 1,
+    "ai_model/quality_awareness.py:brief_enrichment": 1,
+    "ai_model/request_intelligence.py:_sync_intent_with_trends": 1,
+    "ai_model/request_intelligence.py:<genexpr>": 716,
+    "ai_model/quality_awareness.py:scene_phrases": 3,
+    "ai_model/request_intelligence.py:rank_scene_phrases": 3,
+    "ai_model/request_intelligence.py:score_scene_phrase": 47,
+    "ai_model/request_intelligence.py:to_dict": 2,
+    "ai_model/quality_awareness.py:editing_pattern": 1,
+    "ai_model/quality_awareness.py:_modality_corpus_size": 1,
+    "ai_model/quality_awareness.py:_stable_bucket": 1,
+    "ai_model/video/diffusion/awareness_conditioner.py:<module>": 1,
+    "ai_model/video/diffusion/awareness_conditioner.py:AwarenessConditioner": 1,
+    "ai_model/video/diffusion/awareness_conditioner.py:__init__": 1,
+    "ai_model/gpu/sizing.py:hyper_gpu_sizing": 1,
+    "ai_model/gpu/hyper_backend.py:__init__": 33,
+    "ai_model/gpu/hyper_core.py:__init__": 3,
+    "ai_model/gpu/digital_gpu.py:__init__": 28,
+    "ai_model/gpu/native/kernels.py:get_native_kernels": 1,
+    "ai_model/gpu/hyper_backend.py:flash_attention": 8,
+    "ai_model/gpu/hyper_backend.py:linear": 8,
+    "ai_model/video/diffusion/awareness_conditioner.py:encode": 3,
+    "ai_model/video/diffusion/awareness_conditioner.py:forward": 3,
+    "ai_model/video/diffusion/awareness_conditioner.py:_presence_vector": 3,
+    "ai_model/gpu/torch_backend.py:__init__": 1,
+    "ai_model/gpu/digital_gpu.py:gemm": 9,
+    "ai_model/gpu/digital_gpu.py:alloc": 27,
+    "ai_model/gpu/digital_gpu.py:h_gemm": 9,
+    "ai_model/gpu/digital_gpu.py:get": 44,
+    "ai_model/gpu/digital_gpu.py:add": 9,
+    "ai_model/gpu/digital_gpu.py:run": 9,
+    "ai_model/gpu/digital_gpu.py:_validate_handles": 9,
+    "ai_model/gpu/digital_gpu.py:meta": 27,
+    "ai_model/gpu/digital_gpu.py:gemm_tiled": 9,
+    "ai_model/gpu/digital_gpu.py:_check_matmul_shapes": 9,
+    "ai_model/gpu/digital_gpu.py:_model": 8,
+    "ai_model/gpu/hyper_backend.py:forward": 1536,
+    "ai_model/gpu/hyper_core.py:mixed_gemm": 384,
+    "ai_model/gpu/hyper_core.py:_pocket": 576,
+    "ai_model/gpu/hyper_core.py:<lambda>": 8256,
+    "ai_model/gpu/hyper_core.py:mixed_precision_gemm": 384,
+    "ai_model/gpu/hyper_core.py:_select_tensor_core": 960,
+    "ai_model/gpu/hyper_core.py:mixed_precision_matmul": 384,
+    "ai_model/gpu/hyper_core.py:_model": 768,
+    "ai_model/gpu/hyper_core.py:flash_attention": 384,
+    "ai_model/gpu/hyper_core.py:batched_gemm": 384,
+    "ai_model/gpu/native/kernels.py:softmax_rows": 96,
+    "ai_model/gpu/native/kernels.py:_f32": 96,
+    "ai_model/gpu/native/kernels.py:_use_native": 96,
+    "ai_model/gpu/native/kernels.py:<genexpr>": 192,
+    "ai_model/gpu/native/kernels.py:_ptr": 192,
+    "ai_model/gpu/hyper_core.py:gemm": 192,
+    "ai_model/gpu/hyper_core.py:tensor_core_gemm": 192,
+    "ai_model/gpu/hyper_core.py:matmul": 192,
+    "ai_model/rta/__init__.py:<module>": 1,
+    "ai_model/rta/fabric/__init__.py:<module>": 1,
+    "ai_model/rta/fabric/media.py:<module>": 1,
+    "ai_model/rta/fabric/media.py:MediaType": 1,
+    "ai_model/rta/fabric/media.py:FrameState": 1,
+    "ai_model/rta/fabric/media.py:MediaState": 1,
+    "ai_model/rta/fabric/graph.py:<module>": 1,
+    "ai_model/rta/fabric/graph.py:GraphCycleError": 1,
+    "ai_model/rta/fabric/graph.py:Node": 1,
+    "ai_model/rta/fabric/graph.py:NodeGraph": 1,
+    "ai_model/rta/fabric/compute.py:<module>": 1,
+    "ai_model/rta/fabric/compute.py:RTACompute": 1,
+    "ai_model/rta/fabric/scheduler.py:<module>": 1,
+    "ai_model/rta/fabric/cache.py:<module>": 1,
+    "ai_model/rta/fabric/cache.py:NodeCache": 1,
+    "ai_model/rta/fabric/scheduler.py:UMRFScheduler": 1,
+    "ai_model/rta/api.py:<module>": 1,
+    "ai_model/rta/image/__init__.py:<module>": 1,
+    "ai_model/rta/image/nodes.py:<module>": 1,
+    "ai_model/rta/image/path_tracer.py:<module>": 1,
+    "ai_model/rta/image/path_tracer.py:Material": 1,
+    "ai_model/rta/image/path_tracer.py:Sphere": 1,
+    "ai_model/rta/image/path_tracer.py:Plane": 1,
+    "ai_model/rta/image/path_tracer.py:Camera": 1,
+    "ai_model/rta/image/path_tracer.py:Scene": 1,
+    "ai_model/rta/image/path_tracer.py:PathTracer": 1,
+    "ai_model/rta/image/scene_builder.py:<module>": 1,
+    "ai_model/rta/fabric/scheduler.py:register_node": 5,
+    "ai_model/rta/video/__init__.py:<module>": 1,
+    "ai_model/rta/video/nodes.py:<module>": 1,
+    "ai_model/rta/video/color_engine.py:<module>": 1,
+    "ai_model/rta/video/color_engine.py:Grade": 1,
+    "ai_model/rta/video/color_engine.py:ColorEngine": 1,
+    "ai_model/rta/audio/__init__.py:<module>": 1,
+    "ai_model/rta/audio/nodes.py:<module>": 1,
+    "ai_model/rta/audio/spectral.py:<module>": 1,
+    "ai_model/rta/audio/spectral.py:SpectralConfig": 1,
+    "ai_model/rta/audio/spectral.py:SpectralEngine": 1,
+    "ai_model/rta/api.py:grade_video_frame": 3,
+    "ai_model/rta/api.py:_get_compute": 3,
+    "ai_model/rta/fabric/compute.py:__init__": 1,
+    "ai_model/rta/fabric/scheduler.py:__init__": 3,
+    "ai_model/rta/fabric/scheduler.py:execute": 3,
+    "ai_model/rta/fabric/graph.py:topological_sort": 3,
+    "ai_model/rta/fabric/graph.py:node_map": 3,
+    "ai_model/rta/fabric/graph.py:_all_edges": 3,
+    "ai_model/rta/fabric/graph.py:<lambda>": 3,
+    "ai_model/rta/fabric/scheduler.py:_exec_node": 3,
+    "ai_model/rta/video/nodes.py:_color_grade": 3,
+    "ai_model/rta/video/color_engine.py:__init__": 3,
+    "ai_model/rta/video/color_engine.py:resolve_grade": 3,
+    "ai_model/rta/video/color_engine.py:grade_frame": 3,
+    "ai_model/rta/fabric/compute.py:gemm": 3,
+    "ai_model/rta/fabric/compute.py:_bump": 2,
+    "ai_model/rta/fabric/media.py:primary": 2,
+    "ai_model/gpu/digital_gpu.py:__repr__": 1,
+    "ai_model/gpu/hyper_backend.py:status": 1,
+    "ai_model/gpu/hyper_core.py:status": 12,
+    "ai_model/gpu/hyper_core.py:<genexpr>": 10,
+    "ai_model/gpu/hyper_core.py:used_bytes": 1,
+    "ai_model/gpu/hyper_core.py:silicon_report": 1
+  },
+  "exceptions": [
+    {
+      "file": "ai_model/gpu/digital_gpu.py",
+      "function": "run",
+      "error": "KeyError: 8"
+    },
+    {
+      "file": "ai_model/gpu/digital_gpu.py",
+      "function": "run",
+      "error": "GPUError: Error at instruction 0 (Instruction(OpCode.GEMM, {'a': 6, 'b': 7, 'out': 8})): 8"
+    },
+    {
+      "file": "ai_model/gpu/digital_gpu.py",
+      "function": "h_gemm",
+      "error": "GPUError: Error at instruction 0 (Instruction(OpCode.GEMM, {'a': 6, 'b': 7, 'out': 8})): 8"
+    },
+    {
+      "file": "ai_model/gpu/digital_gpu.py",
+      "function": "gemm",
+      "error": "GPUError: Error at instruction 0 (Instruction(OpCode.GEMM, {'a': 6, 'b': 7, 'out': 8})): 8"
+    },
+    {
+      "file": "ai_model/rta/fabric/compute.py",
+      "function": "gemm",
+      "error": "GPUError: Error at instruction 0 (Instruction(OpCode.GEMM, {'a': 6, 'b': 7, 'out': 8})): 8"
+    },
+    {
+      "file": "ai_model/rta/video/color_engine.py",
+      "function": "grade_frame",
+      "error": "GPUError: Error at instruction 0 (Instruction(OpCode.GEMM, {'a': 6, 'b': 7, 'out': 8})): 8"
+    },
+    {
+      "file": "ai_model/rta/video/nodes.py",
+      "function": "_color_grade",
+      "error": "GPUError: Error at instruction 0 (Instruction(OpCode.GEMM, {'a': 6, 'b': 7, 'out': 8})): 8"
+    },
+    {
+      "file": "ai_model/rta/fabric/scheduler.py",
+      "function": "_exec_node",
+      "error": "GPUError: Error at instruction 0 (Instruction(OpCode.GEMM, {'a': 6, 'b': 7, 'out': 8})): 8"
+    },
+    {
+      "file": "ai_model/rta/fabric/scheduler.py",
+      "function": "execute",
+      "error": "GPUError: Error at instruction 0 (Instruction(OpCode.GEMM, {'a': 6, 'b': 7, 'out': 8})): 8"
+    },
+    {
+      "file": "ai_model/rta/api.py",
+      "function": "grade_video_frame",
+      "error": "GPUError: Error at instruction 0 (Instruction(OpCode.GEMM, {'a': 6, 'b': 7, 'out': 8})): 8"
+    },
+    {
+      "file": "ai_model/video/scenes.py",
+      "function": "_pil_bg_frame",
+      "error": "GPUError: Error at instruction 0 (Instruction(OpCode.GEMM, {'a': 6, 'b': 7, 'out': 8})): 8"
+    }
+  ],
+  "agent_outputs": [],
+  "awareness": [
+    {
+      "function": "get_doc",
+      "nonempty": true
+    },
+    {
+      "function": "get_doc",
+      "nonempty": true
+    },
+    {
+      "function": "brief_enrichment",
+      "nonempty": true
+    },
+    {
+      "function": "get_doc",
+      "nonempty": true
+    },
+    {
+      "function": "get_doc",
+      "nonempty": true
+    },
+    {
+      "function": "get_doc",
+      "nonempty": true
+    },
+    {
+      "function": "get_doc",
+      "nonempty": true
+    }
+  ],
+  "files": [
+    {
+      "path": "reports/maxcore-quality/2026-09-24-post-fix/video-studio/media/videos/ai_ca4de6b6e51f.mp4",
+      "bytes": 3717875,
+      "sha256": "658e168fb4336434c5d71b7a49a71664dd5ed50c819fbce653ca039b503eaa9b"
+    }
+  ],
+  "runner_sha256": "323069a2a56a7bbb0f161fbbb294cd63a78d57ff9a4b634cc17ad357c872532f",
+  "server_sha256": "fb248859f23d75ab93c44764db3bc0dcfb7991046cd7419b24a7496dba8f82a8",
+  "job_storage": "evaluation-local job metadata; not PDIM/client durability",
+  "connection": {
+    "backend": "HyperGPUBackend",
+    "model": "HyperCreativeTransformerLM",
+    "before": {
+      "engine": "HyperGPU",
+      "lanes": 512,
+      "tensor_cores": 8,
+      "precision": "MIXED",
+      "tile_shape": "128x128x128",
+      "total_ops": 0,
+      "total_tensor_core_tflops": 0.0,
+      "total_compute_ms": 0.0,
+      "vram": {
+        "capacity_mb": "unlimited",
+        "used_mb": 0.0,
+        "peak_mb": 0.0,
+        "handles": 0
+      },
+      "memory_pool": {
+        "pool_size_mb": 512.0,
+        "current_mb": 0.0,
+        "peak_mb": 0.0,
+        "active_allocations": 0,
+        "total_allocs": 0,
+        "reuse_count": 0
+      },
+      "uptime_s": 1.9,
+      "silicon": null
+    },
+    "all_modules_attached": true,
+    "after": {
+      "engine": "HyperGPU",
+      "lanes": 512,
+      "tensor_cores": 8,
+      "precision": "MIXED",
+      "tile_shape": "128x128x128",
+      "total_ops": 0,
+      "total_tensor_core_tflops": 0.0,
+      "total_compute_ms": 0.0,
+      "vram": {
+        "capacity_mb": "unlimited",
+        "used_mb": 0.0,
+        "peak_mb": 0.0,
+        "handles": 0
+      },
+      "memory_pool": {
+        "pool_size_mb": 512.0,
+        "current_mb": 0.0,
+        "peak_mb": 0.0,
+        "active_allocations": 0,
+        "total_allocs": 0,
+        "reuse_count": 0
+      },
+      "uptime_s": 40.9,
+      "silicon": null
+    }
+  },
+  "request": {
+    "idea": "Paper lanterns reflected in a quiet harbor at dusk",
+    "platform": "tiktok",
+    "duration": 4,
+    "tone": "calm",
+    "awareness": "Fictional evaluation release: Paper Lantern Harbor is a mellow instrumental. No awards, chart rankings or stream totals are known. Invite listening without inventing claims."
+  },
+  "elapsed_seconds": 52.2129774820005,
+  "response": {
+    "job_id": "f1db7580-db8b-4efb-a5ed-fb8bc28a9b05",
+    "status": "pending",
+    "poll_url": "/api/video-job/f1db7580-db8b-4efb-a5ed-fb8bc28a9b05",
+    "scenes": [
+      {
+        "type": "hook",
+        "text": "While the world loops Ella Langley, the artist drops Paper"
+      },
+      {
+        "type": "body",
+        "text": "Every second of Paper lanterns reflected in a quiet harbor"
+      },
+      {
+        "type": "cta",
+        "text": "Follow for everything that comes after Paper lanterns reflected in"
+      }
+    ],
+    "genre_detected": "",
+    "tone_used": "calm",
+    "source": "datasets",
+    "duration": 4.0,
+    "aspect_ratio": "9:16",
+    "template": "ai_derived",
+    "intelligence": {
+      "modality": "video",
+      "platform": "tiktok",
+      "intent": "grow_followers",
+      "intent_label": "Grow followers",
+      "intent_confidence": 1.0,
+      "audience": "Gen-Z (16-24)",
+      "tone": "calm",
+      "keywords": [
+        "paper",
+        "lanterns",
+        "reflected",
+        "quiet",
+        "harbor",
+        "dusk"
+      ],
+      "strategy": {
+        "aspect_ratio": "9:16",
+        "layout": "portrait_9_16",
+        "hook_style": "pattern_interrupt",
+        "cta_style": "comment_engage",
+        "word_count_target": [
+          12,
+          40
+        ],
+        "hashtags_target": 4,
+        "tempo": "fast",
+        "candidate_count": 1,
+        "temperature": 0.95
+      },
+      "directives": [
+        "Optimise for: Grow followers",
+        "Open with a pattern interrupt hook within the first line",
+        "Keep copy fast and roughly 12-40 words",
+        "Close with a comment engage call-to-action",
+        "Work in keywords: paper, lanterns, reflected, quiet",
+        "Land the full hook inside the first 125 characters \u2014 that is all viewers see before the fold",
+        "Aim for high-arousal emotion (awe, excitement, joy) \u2014 arousal level drives shares more than emotion type",
+        "Structure as Hook \u2192 Value \u2192 CTA \u2014 this three-part shape earns 23% more engagement",
+        "Use identity language ('this is for the ones who...') to create belonging before the ask",
+        "Tease a continuing story so following feels like subscribing to the next chapter",
+        "Style-match current chart leaders: Hip-Hop/Rap, hip hop (live quality buffer, weight 1.0)",
+        "Target energy \u2248 0.47 (blend of user intent 0.22 and live trend 0.93)",
+        "User intent \u2014 low energy",
+        "Live chart signals: Fire hooks are the secret to viral FYP \u2014 pattern interrupt in the first 2 seconds finally wins. \u00b7 Watch-to-end rate is insane for reach \u2014 exclusive sounds and tight edits never disappoint."
+      ],
+      "suggested_cta": "Follow for the full journey \ud83d\udd14",
+      "notes": [
+        "quality buffer active \u2014 60 studied exemplars from 2026-09-23T20:06:34Z, self-sufficiency 0/500"
+      ],
+      "producer_metadata": {
+        "mood": "",
+        "bpm": null,
+        "key": "",
+        "energy": 0.5
+      },
+      "ai_disclosure": false
+    }
+  },
+  "polls": [
+    {
+      "status": "pending"
+    },
+    {
+      "status": "pending"
+    },
+    {
+      "status": "pending"
+    },
+    {
+      "status": "pending"
+    },
+    {
+      "status": "pending"
+    },
+    {
+      "status": "pending"
+    },
+    {
+      "status": "pending"
+    },
+    {
+      "status": "pending"
+    },
+    {
+      "status": "pending"
+    },
+    {
+      "status": "pending"
+    },
+    {
+      "status": "pending"
+    },
+    {
+      "status": "pending"
+    },
+    {
+      "status": "pending"
+    },
+    {
+      "status": "pending"
+    },
+    {
+      "status": "pending"
+    },
+    {
+      "status": "pending"
+    },
+    {
+      "status": "pending"
+    },
+    {
+      "status": "pending"
+    },
+    {
+      "status": "done",
+      "url": "/uploads/videos/ai_ca4de6b6e51f.mp4",
+      "filename": "ai_ca4de6b6e51f.mp4",
+      "width": 1080,
+      "height": 1920,
+      "duration": 4.0,
+      "template": "ai_derived",
+      "template_name": null,
+      "genre_detected": "",
+      "tone_used": "calm",
+      "source": "datasets",
+      "aspect_ratio": "9:16",
+      "scenes": [
+        {
+          "type": "hook",
+          "text": "While the world loops Ella Langley, the artist drops Paper"
+        },
+        {
+          "type": "body",
+          "text": "Every second of Paper lanterns reflected in a quiet harbor"
+        },
+        {
+          "type": "cta",
+          "text": "Follow for everything that comes after Paper lanterns reflected in"
+        }
+      ],
+      "scenes_rendered": 3,
+      "render_ms": 18216.434240341187,
+      "technique": null,
+      "voiceover": false,
+      "resolved_media_manifest": null
+    }
+  ],
+  "terminal": {
+    "status": "done",
+    "url": "/uploads/videos/ai_ca4de6b6e51f.mp4",
+    "filename": "ai_ca4de6b6e51f.mp4",
+    "width": 1080,
+    "height": 1920,
+    "duration": 4.0,
+    "template": "ai_derived",
+    "template_name": null,
+    "genre_detected": "",
+    "tone_used": "calm",
+    "source": "datasets",
+    "aspect_ratio": "9:16",
+    "scenes": [
+      {
+        "type": "hook",
+        "text": "While the world loops Ella Langley, the artist drops Paper"
+      },
+      {
+        "type": "body",
+        "text": "Every second of Paper lanterns reflected in a quiet harbor"
+      },
+      {
+        "type": "cta",
+        "text": "Follow for everything that comes after Paper lanterns reflected in"
+      }
+    ],
+    "scenes_rendered": 3,
+    "render_ms": 18216.434240341187,
+    "technique": null,
+    "voiceover": false,
+    "resolved_media_manifest": null
+  },
+  "after": {
+    "ai_model/weights/model.pt": "80c19ffc3ec155808f0a2a3ce5b75f09e203d336ebf3e076144dd6e970d3b419",
+    "ai_model/weights/model.release.json": "84b2d85f4ba64d97bd1e35bf939bd7faef533c5abaa1edd62d6aff6121dedef3"
+  },
+  "checkpoint_preserved": true,
+  "finished": true
+}

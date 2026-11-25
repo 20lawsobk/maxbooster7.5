@@ -1,0 +1,263 @@
+{
+  "schemaVersion": 1,
+  "recordedAt": "2026-11-07T00:34:07.259924+00:00",
+  "timeBasis": "UTC; directory dates are evidence identifiers",
+  "mission": "Complete private admin use of Max Booster across all twelve domains; public rollout deferred",
+  "source": {
+    "checkoutBase": "89e8b6c8e65d1fad757743a1027b0ea32708efac",
+    "priorProductCommit": "fe9159abdb61f4ae15c01c465f9edc45f4ceeb30",
+    "note": "Base checkout plus PR211 overlays. SHA256 values identify the exact files tested; the local HEAD alone does not identify the overlay.",
+    "sha256": {
+      "server/routes/developerApi.ts": "16e37c8d87339a1db999c527293129bc0171d9f2d31ce2272ed6cfa62644cb99",
+      "tests/admin-account-parity.test.ts": "6a276003e7388d3eca6c68783d817eeca30b2956de072d21cf1fa1d511bdbf73",
+      "tests/unit/developer-api-page-backend.test.ts": "528651ede8e13818a797ef36027a2f3a45ece4ebb3ec4a889e354fc65a94b304",
+      "tests/database-backup-restore-postgres.test.mjs": "6b3894b9dcc9063aa889280c9cb4b2449d97d4c535e9bdfb1d99ca52841795d6",
+      "server/middleware/auth.ts": "9e06792d026d428ab15b8c51db43be84a9a9d451160131901b4912f7d55b53c9",
+      "server/routes.ts": "598ec15749f049c6539d2f0277a6c89665a5a908919ce0dd4ab5e473bbe60fe7",
+      "server/routes/content-analysis.ts": "3ef8819a39a0e456d70b22a529d2647fe5b03e5aad6de8bd5c5b59cfa8f19509",
+      "server/services/apiKeyService.ts": "8fa997963489e4fd7f127ee06bce572f8f60343ec9d79a0baec286710a4275bc",
+      "tests/startup-health.test.mjs": "2570fcc09c0eb2d7cf5b427981ce6ff1bcebff8c8c19281ffb078406803c6ae9",
+      "tests/cold-runtime-readiness.test.mjs": "c4c673b2bdbebef148d88b6756435e8c6bb0608972614566de4f6490a1f94f32",
+      "tests/current-storage-joint-recovery.test.mjs": "a81efb35a6b1ba981d6223a5ba4988c6ae9da436e493d51a8adc26896571a85e",
+      "scripts/testing/integration-browser.mjs": "0e0160ba471686d3ef0a8fddf05db1087f5037b7a37718dbad7d92ca88ebd2dd",
+      "vitest.integration.config.ts": "6bb59f0d7a85c721c3ecc9cbf92aeefea1db7f8a0ba60ace26d0365a90b1fef1"
+    }
+  },
+  "findings": [
+    {
+      "id": "admin-developer-api-entitlement",
+      "status": "FIXED_AND_VERIFIED",
+      "before": "Administrator with role=admin, tier=free and status=none received403 for both Pro and Enterprise API key creation.",
+      "after": "Trusted session administrators can create every API key tier without a public plan. Ordinary tier rules, account suspension and shared MFA/session authority remain enforced.",
+      "baseline": {
+        "tests": 22,
+        "passed": 20,
+        "failed": 2,
+        "errors": 0,
+        "skipped": 0,
+        "sha256": "0901abb4866e8bb0d3f3074fa1100c09ec09f0e1e81f3424df680fc448acd59e",
+        "suites": [
+          {
+            "name": "tests/admin-account-parity.test.ts",
+            "tests": 22,
+            "failures": 2
+          }
+        ]
+      },
+      "realWorkflow": [
+        "Create Pro and Enterprise keys with server-derived owner despite submitted foreign userId",
+        "Verify stored SHA256 key hash, tier limit and active state in SQL",
+        "List owned keys without plaintext or hash disclosure",
+        "Foreign account cannot list or revoke the key",
+        "Owner revokes key and SQL records inactive state",
+        "Forged request role/tier/status and ordinary monthly subscription cannot grant premium API capacity",
+        "MFA-required, suspended and banned admins cannot issue keys"
+      ],
+      "limit": "No actual third-party integration or production key was used."
+    },
+    {
+      "id": "postgres18-recovery-test-compatibility",
+      "status": "FIXED_AND_VERIFIED",
+      "before": "The recovery test assumed pg_constraint contains only CHECK, foreign-key and primary-key entries; PostgreSQL18 also represents NOT NULL there.",
+      "after": "Compare restored constraint names, kinds and definitions with the actual source, retain explicit required kinds, and exercise real NOT NULL denial in addition to CHECK and foreign-key denial.",
+      "baseline": {
+        "tests": 13,
+        "pass": 11,
+        "fail": 2,
+        "skipped": 0,
+        "sha256": "d2575dfa2b3c74713213f86daa0fc2b2446773fd2b010f61cad7067b54952025"
+      },
+      "classification": "Test compatibility defect, not evidence of data loss in the restore implementation."
+    }
+  ],
+  "verification": {
+    "realSourceAppHttp": {
+      "result": {
+        "tests": 71,
+        "passed": 71,
+        "failed": 0,
+        "errors": 0,
+        "skipped": 0,
+        "sha256": "76584343f85db5d0280133377e08593dadee4e5a490ef991b74f6c0701dd7e9b",
+        "suites": [
+          {
+            "name": "tests/admin-account-parity.test.ts",
+            "tests": 22,
+            "failures": 0
+          },
+          {
+            "name": "tests/auth-2fa.test.ts",
+            "tests": 16,
+            "failures": 0
+          },
+          {
+            "name": "tests/auth-flows.test.ts",
+            "tests": 27,
+            "failures": 0
+          },
+          {
+            "name": "tests/content-analysis-entitlement.test.ts",
+            "tests": 6,
+            "failures": 0
+          }
+        ]
+      },
+      "scope": "Disposable PostgreSQL and real source application; all external TCP/TLS and UDP denied",
+      "requestedFiles": [
+        "tests/admin-account-parity.test.ts",
+        "tests/content-analysis-entitlement.test.ts",
+        "tests/auth-flows.test.ts",
+        "tests/auth-2fa.test.ts"
+      ],
+      "summarySha256": "ec0226aa890e7041783cbbbab7a501b2e5b21b1df57474d9f70e1ba02185928a",
+      "cleanup": {
+        "appProcessCleanup": {
+          "tracked": 8,
+          "remaining": []
+        },
+        "testProcessCleanup": {
+          "tracked": 6,
+          "remaining": []
+        },
+        "analyticsProcessCleanup": {
+          "tracked": 1,
+          "remaining": []
+        },
+        "postgresCleanup": "pass"
+      },
+      "command": "env -i PATH=<Node22, embedded PostgreSQL18, Python, system tools> MAXBOOSTER_PYTHON=<test Python> MAXBOOSTER_TEST_REPORT_DIR=<private report directory> node scripts/testing/integration-browser.mjs tests/admin-account-parity.test.ts tests/content-analysis-entitlement.test.ts tests/auth-flows.test.ts tests/auth-2fa.test.ts"
+    },
+    "developerRouteUnit": {
+      "result": {
+        "tests": 29,
+        "passed": 29,
+        "failed": 0,
+        "errors": 0,
+        "skipped": 0,
+        "sha256": "8ae2ae226fe86887bf2cf32e211af5d0ef13ca29d13f95c8d90551b691633799",
+        "suites": [
+          {
+            "name": "tests/unit/developer-api-page-backend.test.ts",
+            "tests": 29,
+            "failures": 0
+          }
+        ]
+      },
+      "scope": "Real loopback route with controlled service/session; ordinary tiers and all admin key tiers",
+      "command": "node node_modules/vitest/vitest.mjs run tests/unit/developer-api-page-backend.test.ts --maxWorkers=1 --reporter=junit --outputFile=<private receipt>"
+    },
+    "storageJointRecovery": {
+      "result": {
+        "tests": 6,
+        "pass": 6,
+        "fail": 0,
+        "skipped": 0,
+        "sha256": "bafc6fb486372fa784d00221cf0b4b9faba2350e0ca0a7ded1b20dbce0535ae4"
+      },
+      "receipt": "storage-recovery.json",
+      "receiptSha256": "3eda01164c192ffa7441844d31a882319768fbaeb3910a4b6cc808c21445c2e5",
+      "scope": "Controlled writer-drained current-format PostgreSQL + disk-backed canonical PDIM recovery in fresh processes; no offsite, private Neon, Replit, migration or global capacity claim",
+      "command": "node --import tsx --test tests/current-storage-joint-recovery.test.mjs"
+    },
+    "databaseRestoreAndStartupGates": {
+      "result": {
+        "tests": 13,
+        "pass": 13,
+        "fail": 0,
+        "skipped": 0,
+        "sha256": "5c8d4fbba93913db70f212fc4a67977a6ed99961140a8bb7ef64001fb43f0547"
+      },
+      "scope": "Actual disposable PostgreSQL dump/restore, pinned snapshot, constraint enforcement, transaction rollback on rejected invariant, private partial-file cleanup; startup HTTP gate contracts and cold-readiness policy with controlled evidence. Not a full application restart.",
+      "command": "node --import tsx --test tests/database-backup-restore-postgres.test.mjs tests/startup-health.test.mjs tests/cold-runtime-readiness.test.mjs"
+    },
+    "typecheck": {
+      "status": "PASS",
+      "command": "npm run check",
+      "logSha256": "eaa3c2f7e8dd8818ea6a01f255a27a62fbf8480a449f74685fd86974a944d9cb"
+    },
+    "lint": {
+      "status": "PASS",
+      "scope": "Three changed TypeScript implementation/test files; the MJS recovery test is excluded by repository ESLint policy and was executed by node:test.",
+      "logSha256": "50842735ee4eb67f10909fb77f88f4c6919d3ff6bb0396297599e6877d36a8de"
+    },
+    "build": {
+      "status": "PASS",
+      "command": "npm run build",
+      "logSha256": "9059f0af65270c08d66b26017b229f2dc90e132ef0d8d172528b5e8d3eecc7fe"
+    },
+    "artifactContract": {
+      "status": "PASS",
+      "command": "validateBuild(process.cwd())",
+      "logSha256": "8f0d1398ed468478648d5c878b2216fd7b46d11e3bc6b932da2500b7eb440425",
+      "manifestSha256": "6e9b2fb276ae779d08007200b09ac4a96874037cc22dc8bd913746d0e1bfa9f5"
+    }
+  },
+  "toolchain": {
+    "node": "22.23.4",
+    "postgres": "18.6",
+    "postgresClientPackages": {
+      "libpq5": {
+        "Version": "18.6-1.pgdg13+2",
+        "Filename": "pool/main/p/postgresql-18/libpq5_18.6-1.pgdg13+2_amd64.deb",
+        "SHA256": "c6cc459bb499db4697686533e50bf5943f7e7d6929c04ef55eec184d5436859b"
+      },
+      "postgresql-client-18": {
+        "Version": "18.6-1.pgdg13+2",
+        "Filename": "pool/main/p/postgresql-18/postgresql-client-18_18.6-1.pgdg13+2_amd64.deb",
+        "SHA256": "9af40c99f7074f8ff3798155af2f07f1a4e1e3bd4edce44ef928c1e03aea620e"
+      }
+    },
+    "postgresClientProvenance": "Official apt.postgresql.org trixie-pgdg package bytes verified against SHA256 from its Packages index; extracted privately, not installed system-wide."
+  },
+  "environmentAttempts": [
+    {
+      "scope": "Initial joint recovery",
+      "outcome": "Missing psql/pg_dump blocked the test. Installed matching real PostgreSQL18.6 clients and reran; six cases passed.",
+      "logSha256": "b494e3ca062b3856058489bc2b0b769444ffd36d46f6c22b39e23170e0be4be9"
+    },
+    {
+      "scope": "Initial developer HTTP fixture setup",
+      "outcome": "Explicit MAXBOOSTER_PYTHON was omitted, leaving the analytics child without an executable. Corrected the invocation and reran against the unchanged route to reproduce the two actual403 defects.",
+      "summarySha256": "7dd5629052f9d1134b336a63c60e9eedb53e851266395be42f35f5040f85de79"
+    }
+  ],
+  "restartPrerequisites": {
+    "recordedAt": "2026-11-07T00:32:53.050693+00:00",
+    "scope": "Local verification environment prerequisites, not the Replit deployment",
+    "portablePythonExecutable": false,
+    "nativeBoosterstateExecutable": true,
+    "namespaceProbe": {
+      "command": [
+        "unshare",
+        "-Urn",
+        "true"
+      ],
+      "exitCode": 1,
+      "stderr": "unshare: cannot open /proc/self/uid_map: Read-only file system"
+    },
+    "fullProductionRestart": "BLOCKED",
+    "reasons": [
+      "Packaged python_runtime/bin/python3 is absent",
+      "This sandbox cannot create the required nested user/network namespace"
+    ],
+    "testsNotExecuted": [
+      "tests/production-restart-smoke.py",
+      "tests/npm-start-isolated-smoke.py"
+    ]
+  },
+  "remainingAcceptance": [
+    "Actual deployed admin workflows across all twelve domains are not yet accepted.",
+    "Live AI generation, music distribution, marketing delivery, external payments and settlement remain unverified by this pass.",
+    "Production runtime restart and deployment rollback are blocked/unexecuted here; logout/login and fresh-process storage recovery do not replace them.",
+    "Storage recovery used controlled drained writers and disposable databases, not live Neon, offsite backups, every application table or an RPO/RTO measurement.",
+    "Deployed source revision, private-launch governance and monitoring remain unverified; source governance defaults permit ordinary registration.",
+    "Replit inspection returned busy/not-submitted; publication status returned found=false with no current status available.",
+    "Hosted CI was previously blocked by account billing; this pass claims local checks only.",
+    "AGROS task catalogs and release criteria exist in PR210, but default executors/reviewers/acceptance producer remain unconfigured."
+  ],
+  "countsNote": "Counts are separate scopes, not summed with previous runs. node:test totals include parent tests. Historical PR211 verification receipts remain unchanged.",
+  "adminProductionReady": false,
+  "publicProductionReady": false,
+  "merged": false,
+  "deployed": false
+}

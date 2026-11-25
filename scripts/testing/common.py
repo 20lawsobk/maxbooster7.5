@@ -52,7 +52,7 @@ def source_inputs():
     hashes = {}
     for name in sorted(paths):
         path = Path(name)
-        if path.parts[0] in {"reports", "docs", "dist"} or path.parts[0].startswith(".pdim-") or any(
+        if path.parts[0] in {"reports", "docs", "dist", ".task123-publishing-candidate", "maxbooster7.5"} or path.parts[0].startswith(".pdim-") or any(
                 part in {"node_modules", "__pycache__", ".snapshots", "dist"}
                 for part in path.parts):
             continue
@@ -68,7 +68,7 @@ def source_inputs():
         if full.is_file():
             hashes[name] = hashlib.sha256(full.read_bytes()).hexdigest()
     encoded = json.dumps(hashes, sort_keys=True, separators=(",", ":")).encode()
-    return {"scope": "Git-visible code/config inputs; generated dist, reports, documentation and ignored state excluded",
+    return {"scope": "Active Git-visible code/config inputs; isolated task candidates, nested duplicate projects, generated dist, reports, documentation and ignored state excluded",
             "sha256": hashlib.sha256(encoded).hexdigest(), "files": hashes}
 
 
@@ -97,8 +97,8 @@ def run_command(command, logfile, timeout=180, cwd=ROOT, extra_env=None):
                         os.killpg(process.pid, signal.SIGKILL)
                         process.wait()
                     code = 124
-            except OSError as error:
-                output.write(str(error).encode())
+            except (OSError, TypeError, ValueError) as error:
+                output.write(str(error).encode("utf-8", errors="replace"))
                 code = 127
             output.seek(0)
             raw = output.read().decode("utf-8", errors="replace")

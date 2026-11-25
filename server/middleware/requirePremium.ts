@@ -20,12 +20,6 @@ export const requirePremium = async (
   const userId = req.user.id;
 
   try {
-    const isBypassed = await paymentBypassService?.isPaymentBypassed();
-    if (isBypassed) {
-      res.setHeader("X-Payment-Bypass", "active");
-      return next();
-    }
-
     const user = await storage.getUser(userId);
 
     if (!user) {
@@ -35,11 +29,23 @@ export const requirePremium = async (
       });
     }
 
-    const now = new Date();
+    // Neither an administrator entitlement nor a payment override revives
+    // a suspended account. Shared authentication still enforces MFA.
+    if (["suspended", "banned"].includes(user.subscriptionStatus ?? "")) {
+      return res.status(403).json({ error: "Account access disabled" });
+    }
 
     if (user?.role === "admin") {
       return next();
     }
+
+    const isBypassed = await paymentBypassService?.isPaymentBypassed();
+    if (isBypassed) {
+      res.setHeader("X-Payment-Bypass", "active");
+      return next();
+    }
+
+    const now = new Date();
 
     const hasLifetimeAccess = user?.subscriptionTier === "lifetime";
     if (hasLifetimeAccess) {

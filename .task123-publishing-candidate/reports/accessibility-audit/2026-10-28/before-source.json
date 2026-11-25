@@ -1,0 +1,25 @@
+{
+  "head": "c06fbecdb32a5c3b76662f631604bfd9abac386b",
+  "files": {
+    "client/src/components/layout/TopBar.tsx": {
+      "sha256": "3d510fd250768abc7765de1fcedadb5debc5075cb2b90a010dd20d0421210303",
+      "bytes": 3304,
+      "matchesHead": true
+    },
+    "client/src/components/layout/AppLayout.tsx": {
+      "sha256": "783a4fd28f85506c1639adc157c65c53bf7e60f1826c431be3a1b39f332f9eb3",
+      "bytes": 3974,
+      "matchesHead": true
+    },
+    "client/src/components/layout/Sidebar.tsx": {
+      "sha256": "3b5ae788a3dae797d5968ba93a7553ce3b6cfc6f0c771fedca34319d71d3b7bb",
+      "bytes": 12890,
+      "matchesHead": true
+    },
+    "tests/layout-navigation-accessibility-browser.test.mjs": {
+      "sha256": "d513b2dfc7a159c7d5536be835c7b22fa19019633c88a820be199784992d7a97",
+      "bytes": 11394,
+      "matchesHead": false
+    }
+  }
+}

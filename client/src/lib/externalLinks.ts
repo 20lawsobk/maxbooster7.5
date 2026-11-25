@@ -25,12 +25,22 @@ export function sanitizeUrl(url: string): string | null {
     }
     return parsed?.href;
   } catch {
+    // Only infer HTTPS for a bare host/path. If the caller supplied a scheme
+    // or protocol-relative URL, a parse failure is a rejection, not a cue to
+    // reinterpret the malformed input as a hostname.
+    if (/^[a-z][a-z\d+.-]*:/i.test(url) || url.startsWith("//")) {
+      logger.warn("[ExternalLinks] Invalid URL rejected");
+      return null;
+    }
+
     // Try adding https:// if no protocol
     try {
       const withProtocol = new URL(`https://${url}`);
       return withProtocol?.href;
     } catch {
-      logger.warn(`[ExternalLinks] Invalid URL: ${url}`);
+      // URLs may contain mail addresses, query data, or other user-provided
+      // values. Log the rejection category, never the raw URL.
+      logger.warn("[ExternalLinks] Invalid URL rejected");
       return null;
     }
   }

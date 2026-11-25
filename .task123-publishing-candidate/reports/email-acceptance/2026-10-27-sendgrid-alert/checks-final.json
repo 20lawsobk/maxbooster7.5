@@ -1,0 +1,50 @@
+[
+  {
+    "command": [
+      "node",
+      "node_modules/eslint/bin/eslint.js",
+      "--quiet",
+      "server/lib/sendgridAlertTransport.ts",
+      "server/monitoring/alertingService.ts",
+      "server/monitoring/emailMonitor.ts",
+      "server/workers/index.ts",
+      "server/routes/monitoring.ts"
+    ],
+    "cwd": ".",
+    "startedAt": "2026-10-28T01:33:12.790871+00:00",
+    "durationSeconds": 1.223,
+    "exitCode": 0,
+    "timedOut": false,
+    "status": "passed",
+    "log": "reports/email-acceptance/2026-10-27-sendgrid-alert/lint-runtime-final.txt",
+    "logSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "id": "lint-runtime-final"
+  },
+  {
+    "command": [
+      "node",
+      "node_modules/eslint/bin/eslint.js",
+      "--no-ignore",
+      "--global",
+      "process",
+      "--global",
+      "Buffer",
+      "--global",
+      "URL",
+      "--global",
+      "fetch",
+      "--global",
+      "Response",
+      "tests/sendgrid-alert-transport.test.mjs"
+    ],
+    "cwd": ".",
+    "startedAt": "2026-10-28T01:33:14.014323+00:00",
+    "durationSeconds": 1.127,
+    "exitCode": 0,
+    "timedOut": false,
+    "status": "passed",
+    "log": "reports/email-acceptance/2026-10-27-sendgrid-alert/lint-test-final.txt",
+    "logSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "id": "lint-test-final"
+  }
+]

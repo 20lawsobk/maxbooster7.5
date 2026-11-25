@@ -1,0 +1,5 @@
+
+[globalSetup] Server ready at http://127.0.0.1:43851 ✅  (0s elapsed)
+JUNIT report written to /home/runner/workspace/reports/admin-gap-audit/private-http-final/integration.junit.xml
+[globalTeardown] Removing 2 test user(s)...
+[globalTeardown] Cleanup complete — removed 2 test user(s)

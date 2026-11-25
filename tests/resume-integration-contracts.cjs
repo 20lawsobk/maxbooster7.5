@@ -15,7 +15,15 @@ function load(path, mocks, env = {}) {
   });
   assert.equal(output.diagnostics.length, 0);
   vm.runInNewContext(output.outputText, { exports, Buffer, Date, process: { env },
-    require: id => id === "node:path" ? path : id in mocks ? mocks[id] : assert.fail(`Unexpected import ${id}`) });
+    require: id => {
+      if (id === "node:path") return path;
+      if (id === "node:crypto") return crypto;
+      if (id in mocks) return mocks[id];
+      if (id === "../services/regularE2eAccountPolicy.js") {
+        return load("server/services/regularE2eAccountPolicy.ts", {}, env);
+      }
+      return assert.fail(`Unexpected import ${id}`);
+    } });
   return exports;
 }
 const paths = ["/api/webhooks/stripe", "/webhooks/sendgrid", "/api/webhooks/resend",
@@ -66,9 +74,21 @@ test("governance requires verified Resend raw bytes and Twilio signatures before
     TWILIO_AUTH_TOKEN: "synthetic", APP_URL: "https://example.invalid" };
   const email = load("server/services/emailWebhookVerification.ts", { "node:crypto": crypto });
   const sms = load("server/services/smsWebhookVerification.ts", { twilio: { default: twilio } }, env);
+  const assuranceMustNotRunForVerifiedWebhooks = {
+    enforceAssurance() {
+      assert.fail("verified provider webhooks must bypass session assurance only after signature validation");
+    },
+  };
   const { governanceBoundary } = load("server/middleware/governanceBoundary.ts", {
     "../services/governancePolicyService.js": { enforceMaintenance: (_, res) => res.status(503).json({}) },
     "../services/emailWebhookVerification.js": email, "../services/smsWebhookVerification.js": sms,
+    "../lib/internalServiceAuth.js": { hasBearerSecret: () => false },
+    "../lib/dnsSyncAuth.js": {
+      ensureDnsSyncSecret: () => false,
+      hasValidDnsSyncSecret: () => false,
+      isDnsZoneSyncRequest: () => false,
+    },
+    "./authAssurance.js": assuranceMustNotRunForVerifiedWebhooks,
   }, env);
   const raw = Buffer.from('{ "type": "email.delivered" }');
   const timestamp = String(Math.floor(Date.now() / 1000));

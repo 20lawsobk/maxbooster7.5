@@ -6,6 +6,7 @@ import { db } from "../db.js";
 import { sql } from "drizzle-orm";
 import { AuthoritativeSessionStore } from "./authoritativeSessionStore.js";
 import { sessionAuthority } from "../services/sessionAuthority.js";
+import { withStartupDatabaseRetry } from "../lib/startupDatabaseRetry.js";
 
 // Preserve periodic expiration cleanup for the authoritative PG store.
 // Schema readiness is checked by createSessionStore; no runtime DDL or fallback.
@@ -35,7 +36,17 @@ export async function revokeUserSessions(userId: string): Promise<{ confirmed: t
 export async function createSessionStore(): Promise<session.Store> {
   // Schema is provisioned by reviewed migration 0090, never boot-time DDL.
   // Existing pg_sessions rows retain their serialization and TTL.
-  await db.execute(sql`SELECT sid FROM pg_sessions LIMIT 0`);
+  await withStartupDatabaseRetry(
+    () => db.execute(sql`SELECT sid FROM pg_sessions LIMIT 0`),
+    {
+      onRetry: ({ failedAttempt, nextAttempt, delayMs }) => {
+        logger.warn(
+          { failedAttempt, nextAttempt, delayMs },
+          "Transient database connection failure while initializing sessions; retrying",
+        );
+      },
+    },
+  );
   return new AuthoritativeSessionStore();
 }
 

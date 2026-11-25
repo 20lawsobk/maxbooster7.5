@@ -1,7 +1,19 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
+# Development PDIM is durable in the app's private Replit bucket. The offline
+# migration initializes this isolated namespace before this workflow is restarted.
+if [[ -z "${Replit_storage_bucket_id:-}" ]]; then
+  echo "[start-dev] FATAL: Replit_storage_bucket_id is required for bucket-backed PDIM" >&2
+  exit 1
+fi
 _SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+source "${_SCRIPT_DIR}/lib/dev-pdim-config.sh"
+configure_dev_pdim "$(cd "${_SCRIPT_DIR}/.." && pwd)"
+source "${_SCRIPT_DIR}/process-ownership.sh"
+dev_acquire_instance_lock "$(cd "${_SCRIPT_DIR}/.." && pwd)"
+export MAXBOOSTER_DEV_PORTS=1
+export PORT_CONTRACT_REQUIRE_ALL=1
 source "${_SCRIPT_DIR}/port-contract.sh"
 source "${_SCRIPT_DIR}/redis-supervisor.sh"
 
@@ -14,18 +26,79 @@ fi
 
 _BOOSTER_PID=""
 _APP_PID=""
+_DIFFUSION_PID=""
+_AI_SIDECAR_PID=""
+_VERIFICATION_PID=""
+_stop_owned() {
+  dev_stop_owned_tree "$1"
+}
 cleanup() {
-  if [ -n "$_APP_PID" ] && kill -0 "$_APP_PID" 2>/dev/null; then
-    kill -TERM "$_APP_PID" 2>/dev/null || true
-    wait "$_APP_PID" 2>/dev/null || true
-  fi
-  if [ -n "$_BOOSTER_PID" ] && kill -0 "$_BOOSTER_PID" 2>/dev/null; then
-    kill -TERM "$_BOOSTER_PID" 2>/dev/null || true
-    wait "$_BOOSTER_PID" 2>/dev/null || true
-  fi
+  _stop_owned "$_VERIFICATION_PID"
+  _stop_owned "$_APP_PID"
+  _stop_owned "$_AI_SIDECAR_PID"
+  _stop_owned "$_DIFFUSION_PID"
+  _stop_owned "$_BOOSTER_PID"
   redis_supervisor_cleanup
 }
 trap cleanup EXIT INT TERM
+
+_http_responds() {
+  # Sidecar liveness only: the MaxCore proxy can return 503 until the main app
+  # starts its upstream, so readiness is checked later by the model API probe.
+  node --input-type=module -e '
+    try {
+      await fetch(`http://127.0.0.1:${process.argv[1]}/health`, {
+        signal: AbortSignal.timeout(500),
+      });
+      process.exit(0);
+    } catch { process.exit(1); }
+  ' "$1" >/dev/null 2>&1
+}
+
+_wait_http() {
+  local name="$1" port="$2" process_pid="${3:-}" attempt child_status
+  for attempt in $(seq 1 80); do
+    _http_responds "$port" && return 0
+    if [[ -n "$process_pid" ]] && ! _owned_process_is_alive "$process_pid"; then
+      set +e
+      wait "$process_pid"
+      child_status=$?
+      set -e
+      echo "[start-dev] FATAL: ${name} process (PID ${process_pid}) exited before HTTP readiness on port ${port} (exit status ${child_status})" >&2
+      return 1
+    fi
+    sleep 0.25
+  done
+  echo "[start-dev] FATAL: ${name} did not open HTTP on port ${port}" >&2
+  return 1
+}
+
+_boosterstate_healthy() {
+  node --input-type=module -e '
+    try {
+      const headers = {};
+      if (process.env.BOOSTERSTATE_SECRET) {
+        headers.authorization = `Bearer ${process.env.BOOSTERSTATE_SECRET}`;
+      }
+      const response = await fetch(`http://127.0.0.1:${process.argv[1]}/health`, {
+        headers,
+        signal: AbortSignal.timeout(500),
+      });
+      process.exit(response.status === 200 ? 0 : 1);
+    } catch { process.exit(1); }
+  ' "$BOOSTERSTATE_SIDECAR_PORT" >/dev/null 2>&1
+}
+
+_tcp_port_open() {
+  node --input-type=module -e '
+    import net from "node:net";
+    const socket = net.createConnection({ host: "127.0.0.1", port: Number(process.argv[1]) });
+    socket.setTimeout(400);
+    socket.once("connect", () => { socket.destroy(); process.exit(0); });
+    socket.once("error", () => process.exit(1));
+    socket.once("timeout", () => { socket.destroy(); process.exit(1); });
+  ' "$BOOSTERSTATE_SIDECAR_PORT" >/dev/null 2>&1
+}
 
 if ! redis_supervisor_start "$(command -v node)" "$(cd "${_SCRIPT_DIR}/.." && pwd)"; then
   echo "[start-dev] FATAL: configured loopback Redis is unavailable" >&2
@@ -48,29 +121,163 @@ elif [ -x "./boosterstate/target/debug/boosterstate" ]; then
 fi
 
 if [ -n "$_BOOSTER_BIN" ]; then
-  if pgrep -x boosterstate >/dev/null 2>&1; then
-    echo "[start-dev] boosterstate already running — skipping"
+  if _boosterstate_healthy; then
+    echo "[start-dev] BoosterState authenticated health check passed — reusing existing instance"
+  elif _tcp_port_open; then
+    echo "[start-dev] FATAL: port ${BOOSTERSTATE_SIDECAR_PORT} is occupied by a listener that is not the configured BoosterState service" >&2
+    exit 1
   else
     BOOSTERSTATE_PORT="${BOOSTERSTATE_SIDECAR_PORT}" "$_BOOSTER_BIN" &
     _BOOSTER_PID=$!
-    # Surface a bind failure before starting the app. A short check is enough:
-    # BoosterState binds its socket before entering its serve loop.
-    sleep 0.25
-    if ! kill -0 "$_BOOSTER_PID" 2>/dev/null; then
-      wait "$_BOOSTER_PID"
-      echo "[Ports] FATAL: BoosterState did not remain running on ${BOOSTERSTATE_SIDECAR_PORT}" >&2
+    _BOOSTER_READY=0
+    for _attempt in $(seq 1 50); do
+      if _boosterstate_healthy; then
+        _BOOSTER_READY=1
+        break
+      fi
+      if ! kill -0 "$_BOOSTER_PID" 2>/dev/null; then
+        set +e
+        wait "$_BOOSTER_PID"
+        _BOOSTER_EXIT=$?
+        set -e
+        _BOOSTER_PID=""
+        if _boosterstate_healthy; then
+          echo "[start-dev] BoosterState became healthy through a concurrent startup; reusing it"
+          _BOOSTER_READY=1
+        else
+          echo "[start-dev] FATAL: BoosterState exited before authenticated health on port ${BOOSTERSTATE_SIDECAR_PORT} (exit ${_BOOSTER_EXIT})" >&2
+          exit 1
+        fi
+        break
+      fi
+      sleep 0.1
+    done
+    if [ "$_BOOSTER_READY" != "1" ]; then
+      _stop_owned "$_BOOSTER_PID"
+      _BOOSTER_PID=""
+      echo "[start-dev] FATAL: BoosterState did not pass authenticated health on port ${BOOSTERSTATE_SIDECAR_PORT} within 5 seconds" >&2
       exit 1
     fi
-    echo "[start-dev] boosterstate started (pid ${_BOOSTER_PID}) on internal port ${BOOSTERSTATE_SIDECAR_PORT} via ${_BOOSTER_BIN}"
+    if [ -n "$_BOOSTER_PID" ]; then
+      echo "[start-dev] BoosterState authenticated health passed (pid ${_BOOSTER_PID}) on internal port ${BOOSTERSTATE_SIDECAR_PORT} via ${_BOOSTER_BIN}"
+    fi
   fi
 else
   echo "[start-dev] boosterstate binary not found (bin/boosterstate or boosterstate/target/{release,debug}) — skipping sidecar"
 fi
 
+# Mirror production: these internal services are real MaxCore proxies, not
+# placeholder listeners. They bind loopback and are never the public web port.
+if ! _http_responds "$VIDEO_DIFFUSION_PORT"; then
+  VIDEO_DIFFUSION_PORT="$VIDEO_DIFFUSION_PORT" NODE_ENV=development \
+    node --import tsx server/diffusion-gateway/index.ts \
+    >> /tmp/diffusion_gateway_dev.log 2>&1 &
+  _DIFFUSION_PID=$!
+  echo "[start-dev] MaxCore diffusion gateway starting on ${VIDEO_DIFFUSION_PORT}"
+  _wait_http "MaxCore diffusion gateway" "$VIDEO_DIFFUSION_PORT" "$_DIFFUSION_PID"
+fi
+
+if ! _http_responds "$PYTHON_AI_PORT"; then
+  _PY_BIN=""
+  for _candidate in ./python_runtime/bin/python3 ./.venv/bin/python3; do
+    if [ -x "$_candidate" ] && "$_candidate" --version >/dev/null 2>&1; then
+      _PY_BIN="$_candidate"
+      break
+    fi
+  done
+  if [ -z "$_PY_BIN" ] && command -v python3 >/dev/null 2>&1; then
+    _PY_BIN="$(command -v python3)"
+  fi
+  if [ -z "$_PY_BIN" ]; then
+    echo "[start-dev] FATAL: Python runtime required for configured MaxCore proxy port ${PYTHON_AI_PORT} is unavailable" >&2
+    exit 1
+  fi
+  ENABLE_LEGACY_AI_SIDECAR=1 PYTHON_AI_PORT="$PYTHON_AI_PORT" \
+    "$_PY_BIN" server/services/ai_content_sidecar.py \
+    >> /tmp/ai_content_sidecar_dev.log 2>&1 &
+  _AI_SIDECAR_PID=$!
+  echo "[start-dev] MaxCore proxy sidecar starting on ${PYTHON_AI_PORT}"
+  _wait_http "MaxCore proxy sidecar" "$PYTHON_AI_PORT" "$_AI_SIDECAR_PID"
+fi
+
 set +e
-NODE_ENV=development npx tsx server/index.ts &
+NODE_ENV=development node --import tsx server/index.ts &
 _APP_PID=$!
-wait "$_APP_PID"
-_APP_STATUS=$?
 set -e
+
+set +e
+node scripts/wait-configured-ports.mjs --timeout-ms=300000 --watch-pid="$_APP_PID"
+_READINESS_STATUS=$?
+set -e
+
+if [[ "$_READINESS_STATUS" == "2" ]]; then
+  _FAILED_APP_PID="$_APP_PID"
+  set +e
+  wait "$_APP_PID"
+  _APP_STATUS=$?
+  set -e
+  _APP_PID=""
+  _APP_EXIT_DETAIL="exit status ${_APP_STATUS}"
+  if (( _APP_STATUS >= 128 )); then
+    _APP_SIGNAL="$(kill -l "$((_APP_STATUS - 128))" 2>/dev/null || true)"
+    if [[ -n "$_APP_SIGNAL" ]]; then
+      _APP_EXIT_DETAIL="signal ${_APP_SIGNAL} (status ${_APP_STATUS})"
+    fi
+  fi
+  echo "[start-dev] FATAL: main application process (PID ${_FAILED_APP_PID}) exited before configured listeners were ready (${_APP_EXIT_DETAIL})" >&2
+  [[ "$_APP_STATUS" != "0" ]] && exit "$_APP_STATUS"
+  exit 1
+fi
+
+if [[ "$_READINESS_STATUS" != "0" ]]; then
+  echo "[start-dev] FATAL: configured listeners did not become ready" >&2
+  exit 1
+fi
+
+echo "[start-dev] Configured listeners are responding; starting repository completion analysis"
+node scripts/testing/repository-verification.mjs dev &
+_VERIFICATION_PID=$!
+
+_APP_STATUS=0
+while [[ -n "$_APP_PID" || -n "$_VERIFICATION_PID" ]]; do
+  _WAIT_PIDS=()
+  [[ -n "$_APP_PID" ]] && _WAIT_PIDS+=("$_APP_PID")
+  [[ -n "$_VERIFICATION_PID" ]] && _WAIT_PIDS+=("$_VERIFICATION_PID")
+  _EXITED_PID=""
+  set +e
+  wait -n -p _EXITED_PID "${_WAIT_PIDS[@]}"
+  _WAIT_STATUS=$?
+  set -e
+
+  if [[ -n "$_VERIFICATION_PID" && "$_EXITED_PID" == "$_VERIFICATION_PID" ]]; then
+    _VERIFICATION_PID=""
+    if [[ "$_WAIT_STATUS" == "0" ]]; then
+      echo "[start-dev] Repository completion analysis finished successfully"
+    else
+      echo "[start-dev] WARNING: repository completion analysis exited ${_WAIT_STATUS}; application remains running" >&2
+    fi
+    continue
+  fi
+  if [[ -n "$_APP_PID" && "$_EXITED_PID" == "$_APP_PID" ]]; then
+    _APP_STATUS=$_WAIT_STATUS
+    _FAILED_APP_PID="$_APP_PID"
+    _APP_PID=""
+    _stop_owned "$_VERIFICATION_PID"
+    _VERIFICATION_PID=""
+    break
+  fi
+  echo "[start-dev] FATAL: could not identify a completed child process" >&2
+  exit 1
+done
+
+if [[ "$_APP_STATUS" != "0" ]]; then
+  _APP_EXIT_DETAIL="exit status ${_APP_STATUS}"
+  if (( _APP_STATUS >= 128 )); then
+    _APP_SIGNAL="$(kill -l "$((_APP_STATUS - 128))" 2>/dev/null || true)"
+    if [[ -n "$_APP_SIGNAL" ]]; then
+      _APP_EXIT_DETAIL="signal ${_APP_SIGNAL} (status ${_APP_STATUS})"
+    fi
+  fi
+  echo "[start-dev] FATAL: main application process (PID ${_FAILED_APP_PID}) exited after readiness (${_APP_EXIT_DETAIL})" >&2
+fi
 exit "$_APP_STATUS"

@@ -1,0 +1,62 @@
+{
+  "generatedAt": "2026-11-07T00:07:39.682Z",
+  "startedAt": "2026-11-07T00:07:19.056Z",
+  "decision": "FAIL",
+  "command": "env -i PATH=\"$PATH\" HOME=/tmp node scripts/testing/page80-acceptance.mjs",
+  "artifactLabel": "sealed non-ML source application acceptance; not full-stack or packed acceptance",
+  "extendedRunnerSha256": "8f41809a83a59242d2b16bba20a33366c82fbcd0f41e073ab18e4e4670fb9d69",
+  "sourceRevision": "253b69cca4c57068494de0d8a6d1b950feb19ec9",
+  "sourceFileDigestsSha256": {
+    "scripts/testing/page80-acceptance.mjs": "8f41809a83a59242d2b16bba20a33366c82fbcd0f41e073ab18e4e4670fb9d69",
+    "scripts/readiness-egress-guard.mjs": "69e4bd4cf4dcc884936c61d4e902a8f23dfb1a4a524a51268b0a487a7e673b03",
+    "scripts/lib/isolated-acceptance-readiness.mjs": "45ca9b377e3104635c665509c2f94e85f9792cc2db2ccdec0117cf1740f85f03",
+    "server/index.ts": "faab9efadb7b8b475aac684c752a4004299afd216eb12961df1e229a9b9ad3ef",
+    "server/routes.ts": "1408da9ad7ab5b823ff63bce20da3750e047fbb844cd4c7d74e84e82ca9a21c7",
+    "server/middleware/csrf.ts": "f54cd1337a21323635bbb65e26802e24046452efd9dc4505ec8c17bb3ae0b614",
+    "client/src/App.tsx": "689590c31251ce1d748b1c1960aed98d4709ca936dcb25b4998c1e9ddb9d2167",
+    "client/src/pages/Storefront.tsx": "5ee9e44d59a9fc54a71f80edf87c5b63111d12d0d97aa25e1daa7bbc950fc29c",
+    "client/src/pages/Royalties.tsx": "96cca1cb3babed5a868052143146045bb74494cee8d4f0fdf3a9f39e8874d63f",
+    "client/src/pages/Shows.tsx": "6c1a47cc691a46ff5d72414545033b63dfff2bfdd1d5830548390acafd88712e",
+    "client/src/pages/SyncLicensing.tsx": "5cc23b2ef1d4570cfa94a591b8672916a4a7b95a567df6cb138c82104af6cc7a",
+    "client/src/pages/MerchStore.tsx": "15f245bbca16fb89ba14ed00c43a1ef69fee2a4f785c308974133b85f6e6b402",
+    "shared/schema.ts": "ce79392f833de48cc9bf3fe1ab6f158558b64824ccdcecce03ba277713bb1411"
+  },
+  "safety": {
+    "inheritedSecretNamesRejected": true,
+    "database": "ephemeral local PostgreSQL containing generated synthetic empty schema only",
+    "network": "child preloader permits loopback TCP/Unix sockets only; rejects wrapper and direct-socket external TCP, UDP, and child processes",
+    "pdim": "local imported PDIM on an ephemeral loopback port with disposable state; no production Redis credential or non-loopback endpoint is available",
+    "maxCore": "not started; loopback port 9 is a closed sentinel and no model is loaded",
+    "providerCredentialsPresent": false,
+    "productionDataPresent": false,
+    "disposableWorkingDirectory": true
+  },
+  "evidence": {
+    "accessProfile": "public launch explicitly enabled for this disposable registration/browser fixture; admin-only policy is covered by separate contract tests",
+    "capacityAdmission": "not_run",
+    "schemaGeneration": "pass",
+    "postgres": "pass",
+    "appProcess": "started",
+    "cpuProfile": "not_requested",
+    "health": "not_run",
+    "readiness": "not_run",
+    "frontend": "not_run",
+    "authHttp": "not_run",
+    "httpLoad": "not_requested",
+    "browser": "not_run",
+    "egressGuard": "pass (external net.connect, direct Socket.connect, UDP, and child processes denied in preflight)",
+    "cleanup": "pass"
+  },
+  "failures": [
+    "application exited 1; sanitized tail:\ne-postgres/session.ts:149:14)\n      at async NodePgPreparedQuery.queryWithCache (/home/runner/workspace/node_modules/src/pg-core/session.ts:71:12)\n      at async createSessionStore (/home/runner/workspace/server/middleware/sessionConfig.ts:38:3)\n      at async <anonymous> (/home/runner/workspace/server/index.ts:757:24) {\n    [cause]: Error: Connection terminated unexpectedly\n        at Connection.<anonymous> (/home/runner/workspace/node_modules/pg/lib/client.js:204:73)\n        at Object.onceWrapper (node:events:633:28)\n        at Connection.emit (node:events:519:28)\n        at Socket.<anonymous> (/home/runner/workspace/node_modules/pg/lib/connection.js:64:12)\n        at Socket.emit (node:events:519:28)\n        at TCP.<anonymous> (node:net:347:12)\n  }\n}\n{\"level\":30,\"time\":1794010058708,\"pid\":171085,\"hostname\":\"repl\",\"msg\":\"✅ [PDIM] Connected via HTTP exec endpoint\"}\n{\"level\":30,\"time\":1794010058708,\"pid\":171085,\"hostname\":\"repl\",\"msg\":\"✅ [PDIM] Connected via HTTP exec endpoint\"}\n{\"level\":40,\"time\":1794010058714,\"pid\":171085,\"hostname\":\"repl\",\"err\":{\"type\":\"Error\",\"message\":\"Failed query: SELECT sid FROM pg_sessions LIMIT 0\\nparams: : Connection terminated due to connection timeout: Connection terminated unexpectedly\",\"stack\":\"[ACCESSOR]\\ncaused by: [ACCESSOR]\\ncaused by: [ACCESSOR]\",\"query\":\"SELECT sid FROM pg_sessions LIMIT 0\",\"params\":[]},\"msg\":\"FATAL: Server startup failed\"}\n"
+  ],
+  "observations": [],
+  "untested": [
+    "authenticated business journeys beyond login/session/logout, project CRUD, preferences persistence, workspace ownership/list rendering, and press-kit form/publish/cache/unpublish checks",
+    "provider sandbox delivery, OAuth, webhooks, messaging, push, email, social posting, and DSP contracts",
+    "real-money payment, payout, refund, royalty, and financial reconciliation",
+    "production-source restore/upgrade/rollback and durable backup recovery",
+    "local MaxCore inference/model behavior (the only MaxCore implementation; intentionally not started in this bounded non-ML drill)",
+    "Redis/PDIM loss recovery, load/soak, multi-worker clustering, DNS/TLS, and packed cold-image startup"
+  ]
+}

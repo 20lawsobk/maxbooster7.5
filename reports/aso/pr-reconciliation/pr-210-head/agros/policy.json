@@ -1,0 +1,153 @@
+{
+  "schema": 1,
+  "target": 98,
+  "gates": {
+    "build": {
+      "argv": [
+        "npm",
+        "run",
+        "build"
+      ],
+      "timeout": 1800
+    },
+    "types": {
+      "argv": [
+        "npm",
+        "run",
+        "check"
+      ],
+      "timeout": 1800
+    },
+    "lint": {
+      "argv": [
+        "npm",
+        "run",
+        "lint"
+      ],
+      "timeout": 1800
+    },
+    "unit": {
+      "argv": [
+        "npm",
+        "run",
+        "test:unit"
+      ],
+      "timeout": 1800
+    },
+    "integration": {
+      "argv": [
+        "npm",
+        "run",
+        "test:integration:isolated"
+      ],
+      "timeout": 1800
+    },
+    "e2e": {
+      "argv": [
+        "npm",
+        "run",
+        "test:pages:isolated"
+      ],
+      "timeout": 1800
+    },
+    "regression": {
+      "argv": [
+        "npm",
+        "run",
+        "test:runtime-contracts"
+      ],
+      "timeout": 1800
+    },
+    "security": {
+      "argv": [
+        "npm",
+        "run",
+        "security:audit"
+      ],
+      "timeout": 1800
+    },
+    "start": {
+      "argv": null,
+      "timeout": 1800
+    },
+    "coverage": {
+      "argv": null,
+      "timeout": 600,
+      "limits": {
+        "lines": {
+          "min": 100,
+          "max": 100
+        },
+        "branches": {
+          "min": 100,
+          "max": 100
+        },
+        "functions": {
+          "min": 100,
+          "max": 100
+        },
+        "statements": {
+          "min": 100,
+          "max": 100
+        }
+      }
+    },
+    "accessibility": {
+      "argv": null,
+      "timeout": 600,
+      "limits": {
+        "violations": {
+          "min": 0,
+          "max": 0
+        }
+      }
+    },
+    "performance": {
+      "argv": null,
+      "timeout": 600,
+      "limits": {
+        "api_p95_ms": {
+          "min": 0,
+          "max": 250
+        },
+        "page_load_seconds": {
+          "min": 0,
+          "max": 2
+        }
+      }
+    },
+    "features": {
+      "argv": null,
+      "timeout": 600
+    },
+    "operations": {
+      "argv": null,
+      "timeout": 600
+    },
+    "documentation": {
+      "argv": null,
+      "timeout": 600
+    }
+  },
+  "repair_argv": null,
+  "repair_timeout": 1800,
+  "artifact_contract_argv": [
+    "node",
+    "--input-type=module",
+    "-e",
+    "import { validateBuild } from './scripts/start-production.mjs'; validateBuild(process.cwd());"
+  ],
+  "team": {
+    "enabled": true,
+    "executors": {},
+    "reviewers": {},
+    "checks": {},
+    "task_timeout": 900,
+    "review_timeout": 300,
+    "max_tasks": 24,
+    "max_seconds": 3600
+  },
+  "active_release": "admin-private",
+  "admin_release_argv": null,
+  "admin_release_timeout": 1800
+}

@@ -1,0 +1,92 @@
+{
+  "schemaVersion": 1,
+  "startedAt": "2026-11-07T00:09:49.705689+00:00",
+  "sourceRevision": "253b69cca4c57068494de0d8a6d1b950feb19ec9",
+  "sourceSha256": {
+    "scripts/testing/run-engine-load.py": "08d1acba410c286e36cd3d96566720ea531a0abe9470ecb5c3fc1cfa1b1a0d12",
+    "external/maxcore/artifacts/ai-training-server/ai_model/maxcore/tests/load_test.py": "6e034b3786126a90bcd6b044febeda50b86a97d2ed57a58c40a953298cdc1c84",
+    "external/maxcore/artifacts/ai-training-server/ai_model/maxcore/api.py": "a1423a4d561d5bf27e00cf4a8f8e759e6bc2ee34940b962ab12466b7dcafb7d1",
+    "external/maxcore/artifacts/ai-training-server/ai_model/maxcore/backend/cpu_backend.py": "fc23e85fc9be7d243a21875531cd92b8dd7922200f8281a18d50be7c48a62e39",
+    "external/maxcore/artifacts/ai-training-server/ai_model/maxcore/runtime/engine.py": "06b482d833d18af79b4d62b63327db602f6c30f62e59fcd520beb3d2c53cadab",
+    "external/maxcore/artifacts/ai-training-server/ai_model/maxcore/pdim/orchestrator.py": "e77d42188757601944ce3fadc0f89899e6d08ae13b8030f02e57a3277e49c529",
+    "external/maxcore/artifacts/ai-training-server/ai_model/dedup_cache.py": "ad2d728842653fda30e513d25d823d15d9a381ad6153c0ca95fa57be1898a0e8",
+    "external/maxcore/artifacts/ai-training-server/storage_client.py": "0f7ce80659d75b055f4fde9faacc996d3a418b4c5f4ce22c81620b5860dd2bc5"
+  },
+  "file": "external/maxcore/artifacts/ai-training-server/ai_model/maxcore/tests/load_test.py",
+  "operationalProfile": "bounded-legacy-digital-gpu-numeric-dedup-v1",
+  "profileEnvironment": {
+    "LOAD_TARGET": "90000000",
+    "LOAD_UNIQUE": "40",
+    "LOAD_THREADS": "8",
+    "LOAD_CONC": "500",
+    "LOAD_SAMPLE": "400",
+    "LOAD_MT": "160",
+    "MAXCORE_BACKEND": "digital_gpu",
+    "MAXCORE_NUM_STREAMS": "1"
+  },
+  "scope": "Bounded execution of the existing numeric DigitalGPU/dedup scale benchmark.\n\nThe 90M value remains a projection. This profile executes 40 cold graph calls,\n500 contention calls, 400 serial and 160 threaded cache calls, plus one priming\ncall; it starts no app/server and blocks all socket connections.\n",
+  "network": "All Python socket connections and UDP sends denied; no application/private provider credentials inherited",
+  "storage": "Disposable local SQLite/cache fallback; no live canonical PDIM, external storage or application database",
+  "projection": {
+    "targetRequests": 90000000,
+    "executedAtTargetScale": false,
+    "simultaneousNetworkClients": 0,
+    "workerThreads": 8,
+    "maximumConcurrentOrchestratorCalls": 8
+  },
+  "configuredOperationsPerRun": {
+    "coldGraphCalls": 40,
+    "contentionCalls": 500,
+    "serialCacheCalls": 400,
+    "threadedCacheCalls": 160,
+    "cachePrimingCalls": 1,
+    "totalOrchestratorCalls": 1101
+  },
+  "limits": [
+    "Numeric toy embedding/MLP graphs, not text/image/audio/video model quality or the full app",
+    "The selected legacy digital_gpu backend does not verify the current silicon_simt default",
+    "Cache throughput and projections do not prove 90M simultaneous requests or multi-host scaling"
+  ],
+  "runs": [
+    {
+      "command": [
+        "/nix/store/h097imm3w6dpx10qynrd2sz9fks2wbq8-python3-3.12.11/bin/python3",
+        "ai_model/maxcore/tests/load_test.py"
+      ],
+      "cwd": "external/maxcore/artifacts/ai-training-server",
+      "startedAt": "2026-11-07T00:09:49.722385+00:00",
+      "durationSeconds": 0.82,
+      "exitCode": 1,
+      "timedOut": false,
+      "status": "failed",
+      "log": "reports/aso/isolated-full-20261106T233139Z/operations/engine-load/run-01.txt",
+      "logSha256": "cf67d1994e8ece6a82ce7a57b3975b09896c1caacd4157ce0091d36c7403d49e",
+      "observed": {
+        "coldGraphCalls": null,
+        "numericReferenceMatches": false,
+        "contentionSources": null,
+        "contentionCalls": null,
+        "serialCacheCalls": null,
+        "threadedCacheCalls": null,
+        "engineCounters": null,
+        "engineFallbackCounters": null,
+        "singleFlightNoDuplicateComputes": false,
+        "reportedPass": false,
+        "uncaughtThreadFailure": false
+      },
+      "evidenceFailures": [
+        "Cold real-graph/reference validation did not complete for all 40 inputs",
+        "Contention phase did not complete exactly 500 calls",
+        "Fast-path operation counts did not match the bounded profile",
+        "Single-flight correctness was not demonstrated",
+        "Required positive engine activity and zero fallback evidence was absent",
+        "Benchmark failed or an uncaught worker exception occurred"
+      ],
+      "ownedStateRemoved": true
+    }
+  ],
+  "productionReady": false,
+  "status": "failed",
+  "finishedAt": "2026-11-07T00:09:50.543896+00:00",
+  "unchangedSources": true
+}

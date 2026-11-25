@@ -1,0 +1,9 @@
+file:///tmp/maxbooster-linux-u3f69z18/project/scripts/start-production.mjs:92
+    throw new Error(`Production build is missing, incomplete, or changed. Run npm run build. ${error.message}`);
+          ^
+
+Error: Production build is missing, incomplete, or changed. Run npm run build. Changed since build: client/src/components/layout/AppLayout.tsx
+    at Module.validateBuild (file:///tmp/maxbooster-linux-u3f69z18/project/scripts/start-production.mjs:92:11)
+    at file:///tmp/maxbooster-linux-u3f69z18/project/[eval1]:1:52
+
+Node.js v22.23.3

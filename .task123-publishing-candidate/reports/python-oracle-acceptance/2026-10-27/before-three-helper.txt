@@ -1,0 +1,8 @@
+  [FAIL] INTENTIONAL FALSE CONDITION
+FALSE CONDITION DID NOT FAIL PYTEST: external/maxcore/artifacts/ai-training-server/ai_model/retrieval/test_rcgs.py
+.  FAILED: INTENTIONAL FALSE CONDITION
+FALSE CONDITION DID NOT FAIL PYTEST: external/maxcore/artifacts/ai-training-server/ai_model/retrieval/test_retrieval.py
+.  [FAIL] INTENTIONAL FALSE CONDITION
+FALSE CONDITION DID NOT FAIL PYTEST: external/maxcore/artifacts/ai-training-server/ai_model/rta/test_render_contracts.py
+.
+3 passed in 0.01s

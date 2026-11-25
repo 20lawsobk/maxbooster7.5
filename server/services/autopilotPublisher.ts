@@ -790,7 +790,8 @@ class AutopilotPublisher {
       if (resolvedMediaType !== "text") {
         const generatedAsset = await aiContentService.generateContent({
           prompt: finalText,
-          platform: targetPlatform as unknown as Record<string, unknown>,
+          platform: targetPlatform,
+          userId,
           format: resolvedMediaType,
           tone: "creative",
           length: "medium",
@@ -941,8 +942,9 @@ class AutopilotPublisher {
       if (bestCampaign?.mediaType !== "text") {
         const generatedAsset = await aiContentService?.generateContent({
           prompt: bestCampaign.content as string,
-          platform: (bestCampaign.platforms as string[])[0] as unknown as Record<string, unknown>,
-          format: bestCampaign.mediaType as string,
+          platform: (bestCampaign.platforms as string[])[0],
+          userId,
+          format: bestCampaign.mediaType as "text" | "image" | "video" | "audio",
           tone: "promotional",
           length: "medium",
         });

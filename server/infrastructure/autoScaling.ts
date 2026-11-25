@@ -3,12 +3,18 @@ import os from "os";
 import { logger } from "../logger.js";
 import { distributedCache } from "./distributedCache.js";
 import { circuitBreakerRegistry } from "./circuitBreaker.js";
+import {
+  DEDICATED_DEPLOYMENT_LIMITS,
+  liveCapacity,
+} from "../../script/deployment/capacity.mjs";
+import { CgroupCpuUsageSampler } from "./resourceUsage.js";
 
 interface ScalingMetrics {
   cpu: {
-    usage: number;
+    usage: number | null;
     count: number;
     loadAverage: number[];
+    loadAverageScope: "host";
   };
   memory: {
     used: number;
@@ -29,6 +35,14 @@ interface ScalingMetrics {
     mode: string;
   };
   circuitBreakers: Record<string, any>;
+  capacity: {
+    cpuCeiling: number;
+    memoryCeilingMB: number;
+    liveCPUs: number;
+    liveMemoryMB: number;
+    usedMemoryMB: number;
+    availableMemoryMB: number;
+  };
   scaling: {
     shouldScaleUp: boolean;
     shouldScaleDown: boolean;
@@ -61,6 +75,7 @@ class AutoScalingManager {
   };
   private lastScaleAction: number = 0;
   private currentReplicas: number = 1;
+  private cpuUsageSampler = new CgroupCpuUsageSampler();
 
   private constructor() {
     this.config = {
@@ -105,8 +120,9 @@ class AutoScalingManager {
   }
 
   getMetrics(): ScalingMetrics {
-    const cpuUsage = this.getCpuUsage();
-    const memoryInfo = this.getMemoryInfo();
+    const capacity = liveCapacity();
+    const cpuUsage = this.cpuUsageSampler.sample(capacity.cpus);
+    const memoryInfo = this.getMemoryInfo(capacity);
     const requestStats = this.getRequestStats();
     const cacheStats = distributedCache?.getStats();
     const circuitBreakers = circuitBreakerRegistry?.getAllStats();
@@ -119,43 +135,36 @@ class AutoScalingManager {
     return {
       cpu: {
         usage: cpuUsage,
-        count: os.cpus().length,
+        count: capacity.cpus,
         loadAverage: os.loadavg(),
+        loadAverageScope: "host",
       },
       memory: memoryInfo,
       requests: requestStats,
       cache: cacheStats,
       circuitBreakers,
+      capacity: {
+        cpuCeiling: DEDICATED_DEPLOYMENT_LIMITS.cpus,
+        memoryCeilingMB: DEDICATED_DEPLOYMENT_LIMITS.memoryGB * 1024,
+        liveCPUs: capacity.cpus,
+        liveMemoryMB: capacity.memoryMB,
+        usedMemoryMB: capacity.usedMB,
+        availableMemoryMB: capacity.availableMB,
+      },
       scaling: scalingDecision,
     };
   }
 
-  private getCpuUsage(): number {
-    const cpus = os?.cpus();
-    let totalIdle = 0;
-    let totalTick = 0;
-
-    for (const cpu of cpus) {
-      for (const type in cpu?.times) {
-        totalTick += cpu?.times[type as keyof typeof cpu.times];
-      }
-      totalIdle += cpu?.times.idle;
-    }
-
-    return (1 - totalIdle / (totalTick || 1)) * 100;
-  }
-
-  private getMemoryInfo(): ScalingMetrics["memory"] {
-    const totalMem = os?.totalmem();
-    const freeMem = os?.freemem();
-    const usedMem = totalMem - freeMem;
+  private getMemoryInfo(capacity = liveCapacity()): ScalingMetrics["memory"] {
+    const totalMem = capacity.memoryMB * 1024 ** 2;
+    const usedMem = capacity.usedMB * 1024 ** 2;
     const heapUsed = process.memoryUsage().heapUsed;
     const heapTotal = process.memoryUsage().heapTotal;
 
     return {
       used: usedMem,
       total: totalMem,
-      percentage: (usedMem / (totalMem || 1)) * 100,
+      percentage: Math.min(100, (usedMem / (totalMem || 1)) * 100),
       heapUsed,
       heapTotal,
     };
@@ -194,7 +203,7 @@ class AutoScalingManager {
   }
 
   private calculateScalingDecision(
-    cpuUsage: number,
+    cpuUsage: number | null,
     memoryInfo: ScalingMetrics["memory"],
     requestStats: ScalingMetrics["requests"],
   ): ScalingMetrics["scaling"] {
@@ -204,9 +213,11 @@ class AutoScalingManager {
 
     let shouldScaleUp = false;
     let shouldScaleDown = false;
-    let reason = "Stable";
+    let reason = cpuUsage === null
+      ? "Waiting for a valid cgroup CPU usage sample"
+      : "Stable";
 
-    if (cpuUsage > this.config.cpuThresholdUp) {
+    if (cpuUsage !== null && cpuUsage > this.config.cpuThresholdUp) {
       shouldScaleUp = true;
       reason = `CPU usage ${cpuUsage?.toFixed(1)}% exceeds threshold ${this.config.cpuThresholdUp}%`;
     } else if (memoryInfo?.percentage > this.config.memoryThresholdUp) {
@@ -219,6 +230,7 @@ class AutoScalingManager {
       shouldScaleUp = true;
       reason = `Error rate ${requestStats?.errorRate}% exceeds threshold ${this.config.errorRateThreshold}%`;
     } else if (
+      cpuUsage !== null &&
       cpuUsage < this.config.cpuThresholdDown &&
       memoryInfo?.percentage < this.config.memoryThresholdDown
     ) {
@@ -349,16 +361,21 @@ scalingMetricsRouter?.get(
   (_req: Request, res: Response) => {
     try {
       const metrics = autoScalingManager?.getMetrics();
+      const cpuUsage = metrics?.cpu.usage;
       const isHealthy =
-        metrics?.cpu.usage < 90 &&
-        metrics?.memory.percentage < 95 &&
-        metrics?.requests.errorRate < 10;
+        metrics !== undefined &&
+        (cpuUsage === null ||
+          (typeof cpuUsage === "number" && cpuUsage < 90)) &&
+        metrics.memory.percentage < 95 &&
+        metrics.requests.errorRate < 10;
 
       res.status(isHealthy ? 200 : 503).json({
         status: isHealthy ? "healthy" : "unhealthy",
         timestamp: new Date().toISOString(),
         checks: {
-          cpu: metrics.cpu.usage < 90 ? "pass" : "fail",
+          cpu: metrics.cpu.usage === null
+            ? "unknown"
+            : metrics.cpu.usage < 90 ? "pass" : "fail",
           memory: metrics.memory.percentage < 95 ? "pass" : "fail",
           errorRate: metrics.requests.errorRate < 10 ? "pass" : "fail",
         },

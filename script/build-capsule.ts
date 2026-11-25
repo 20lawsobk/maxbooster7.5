@@ -50,6 +50,7 @@ import {
   DEFAULT_EXCLUDE,
   PlatformCapsuleLoader,
 } from "../external/pdim/artifacts/api-server/src/pocket-dimension/platform-capsule.js";
+import { SOURCE_CAPSULE_ROOT_EXCLUDES } from "./lib/sourceCapsuleExclusions.js";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const projectRoot = path.resolve(__dirname, "..");
@@ -167,9 +168,6 @@ async function excludesFromGitignore(root: string): Promise<string[]> {
 }
 
 const OUTPUT_DIR = path.join(projectRoot, "deploy-capsule");
-const ROOT_EXCLUDES = ["data", "uploads", "deploy-capsule", "maxbooster7.5",
-  ".pythonlibs", "hardware", "reports", ".pdim-scratch-*"];
-
 async function main() {
   const version = process.argv[2] ?? new Date().toISOString().slice(0, 10);
 
@@ -185,7 +183,11 @@ async function main() {
   ];
 
   const builder = new PlatformCapsuleBuilder(projectRoot);
-  const inputIdentity = await sourceCapsuleIdentity(projectRoot, excludePatterns, ROOT_EXCLUDES);
+  const inputIdentity = await sourceCapsuleIdentity(
+    projectRoot,
+    excludePatterns,
+    [...SOURCE_CAPSULE_ROOT_EXCLUDES],
+  );
   const cachePath = path.join(OUTPUT_DIR, ".source-cache.json");
   let cached;
   try { cached = JSON.parse(await fs.readFile(cachePath, "utf8")); }
@@ -207,7 +209,7 @@ async function main() {
     },
     encrypt: false,
     excludePatterns,
-    rootExcludePatterns: ROOT_EXCLUDES,
+    rootExcludePatterns: [...SOURCE_CAPSULE_ROOT_EXCLUDES],
     storagePath: OUTPUT_DIR,
     // Use the same adaptive PDCF codec contract as live PocketDimension.
     compressionCodec: adaptiveCapsuleCodec,
@@ -255,7 +257,11 @@ async function main() {
     `[build-capsule] ✅ Secret scan clean: no credential-shaped files in the manifest`,
   );
 
-  if (inputIdentity !== await sourceCapsuleIdentity(projectRoot, excludePatterns, ROOT_EXCLUDES)) {
+  if (inputIdentity !== await sourceCapsuleIdentity(
+    projectRoot,
+    excludePatterns,
+    [...SOURCE_CAPSULE_ROOT_EXCLUDES],
+  )) {
     throw new Error("Source changed during capsule preparation; refusing cache publication");
   }
   await fs.writeFile(cachePath, JSON.stringify({ inputIdentity, metadata }));

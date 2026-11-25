@@ -1,0 +1,28 @@
+TAP version 13
+# Subtest: missing indexed files block their full task chains and count in progress
+ok 1 - missing indexed files block their full task chains and count in progress
+  ---
+  duration_ms: 5.131596
+  type: 'test'
+  ...
+# Subtest: planner rejects missing paths not present in the tracked inventory
+ok 2 - planner rejects missing paths not present in the tracked inventory
+  ---
+  duration_ms: 1.714934
+  type: 'test'
+  ...
+# Subtest: planner rejects malformed and duplicate missing-path evidence
+ok 3 - planner rejects malformed and duplicate missing-path evidence
+  ---
+  duration_ms: 0.314553
+  type: 'test'
+  ...
+1..3
+# tests 3
+# suites 0
+# pass 3
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 170.430199

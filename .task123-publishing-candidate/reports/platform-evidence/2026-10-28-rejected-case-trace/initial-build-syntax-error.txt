@@ -1,0 +1,4 @@
+  File "/workspace/onboarding-results/evidence-gap-trace/build-report.py", line 21
+    if el.get('name')==c['name']:raw.append({'className':el.get('classname'),'name':el.get('name'),'status':'failed'if any(el.find(t)is not None for t in ['failure','error'])else'skipped'if el.find('skipped')is not None else's'passed'})
+                                                                                                                                                                                                                                         ^
+SyntaxError: unterminated string literal (detected at line 21)

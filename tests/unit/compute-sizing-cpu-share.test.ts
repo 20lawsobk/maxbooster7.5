@@ -50,6 +50,18 @@ describe("app cluster CPU-share allocation", () => {
     });
   });
 
+  it("clamps larger host reports to the shared 16-vCPU/64-GiB ceiling", () => {
+    host(32, 128);
+    const sizing = computeWorkerSizing({ envOverrideVar: "CLUSTER_WORKERS" });
+    expect(sizing).toMatchObject({
+      numCPUs: 16,
+      cpuBudget: 4,
+      cpuLimit: 4,
+      workerCount: 4,
+    });
+    expect(sizing.freeMemGB).toBeLessThanOrEqual(64);
+  });
+
   it("admits two app processes sharing the measured 4-vCPU/8-GiB app budget", () => {
     host(4, 8);
     process.env.APP_WORKER_CPU_SHARE = "0.5";

@@ -1,4 +1,4 @@
-"""Actual bounded public-content training; fixtures never claim model quality."""
+"""Rights-gated public observations and bounded owned-fixture training checks."""
 import hashlib
 import json
 import os
@@ -8,16 +8,11 @@ import tempfile
 import unittest
 from unittest.mock import Mock, patch
 
-import torch
-
 from ai_model.awareness.engine import Engine, DOMAINS
 from ai_model.awareness.test_engine import MemoryStore
 from ai_model.generation.live_serving import LiveLearningLoop, LiveServingModel
-from ai_model.model.candidate_serving import create_candidate_adapter
-from ai_model.generation.capability import verify_text_capability
 from ai_model.training import candidate_registry as registry, candidate_lifecycle as lifecycle, live_learning
-from ai_model.training.public_curriculum import PEAK_METRIC, PEAK_POLICY, peak_stream, training_texts
-from ai_model.training.public_resume import load_public_parent
+from ai_model.training.public_curriculum import PEAK_METRIC, PEAK_POLICY, training_texts
 from test_generation_route_bindings import snapshot
 
 CONFIG = {"width": 128, "layers": 2, "heads": 4, "expansion": 2}
@@ -39,60 +34,35 @@ def peak_engine():
 
 
 class PublicPeakCurriculumTests(unittest.TestCase):
-    def test_real_isolated_v2_updates_resume_weights_optimizer_and_cursor(self):
+    def test_public_peak_observations_without_operator_rights_never_reach_worker(self):
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)
             candidates = root / "candidate_runs"
-            with patch.dict(os.environ, {"MAXCORE_MODEL_STATE_DIR": str(root),
-                                        "OPENBLAS_NUM_THREADS": "1", "OMP_NUM_THREADS": "1"}), \
+            engine = peak_engine()
+            snapshot_before = engine.require_snapshot().id
+            with patch.dict(os.environ, {
+                    "MAXCORE_MODEL_STATE_DIR": str(root),
+                    "MAXCORE_TEXT_TRAINING_RIGHTS_MANIFEST": str(root / "missing-rights.json"),
+                    "MAXCORE_TEXT_TRAINING_RIGHTS_SHA256": "0" * 64,
+                    "OPENBLAS_NUM_THREADS": "1", "OMP_NUM_THREADS": "1",
+                }), \
                  patch.object(lifecycle, "CANDIDATES", candidates), \
                  patch.object(registry, "REGISTRY", root / "candidate_registry"), \
-                 patch.object(live_learning, "JOBS", root / "live_learning_runs"):
-                engine = peak_engine()
-                self.assertEqual(engine.peak_training_observations()["policy"], PEAK_POLICY)
-                # These strings are authored by this test, not fetched posts.
-                # Exercise real admission, while asserting that only this
-                # test's authored strings can reach the isolated worker.
-                owned_hashes = {hashlib.sha256(row["text"].encode()).hexdigest()
-                                for row in engine.peak_training_observations()["records"]}
-                real_admission = live_learning.require_peak_training_rights
-                def owned_fixture_rights(records, *, allow_public_live=False):
-                    self.assertTrue(records)
-                    self.assertTrue(all(hashlib.sha256(row["text"].encode()).hexdigest()
-                                        in owned_hashes for row in records))
-                    return real_admission(records, allow_public_live=allow_public_live)
-                with patch.object(live_learning, "require_peak_training_rights",
-                                  side_effect=owned_fixture_rights):
-                    first = live_learning.execute(engine, 1, context_tokens=128, model_config=CONFIG)
-                    self.assertEqual(first["status"], "candidate_trained_unreviewed",
-                                     (root / "live_learning_runs" / first["run_id"] / "worker.log").read_text())
-                    second = live_learning.execute(engine, 1, context_tokens=128, model_config=CONFIG)
-                    self.assertEqual(second["status"], "candidate_trained_unreviewed")
-                one, two = (candidates / item["run_id"] for item in (first, second))
-                reports = [json.loads((run / "report.json").read_text()) for run in (one, two)]
-                self.assertEqual(reports[0]["learning_stream"], peak_stream(CONFIG))
-                self.assertGreater(reports[0]["curriculum"]["derived_stage_records"], 0)
-                self.assertEqual(reports[1]["initial_weights_sha256"], reports[0]["final_weights_sha256"])
-                self.assertEqual(reports[1]["initial_optimizer_sha256"], reports[0]["optimizer_sha256"])
-                self.assertEqual(reports[1]["coverage"]["start_step"], reports[0]["coverage"]["end_step"])
-                data = torch.load(two / "candidate.pt", weights_only=True, map_location="cpu")
-                self.assertEqual(data["optimizer_state"]["step"], 2)
-                decision = registry.public_live_eligibility(two)
-                self.assertTrue(decision["eligible"], decision["reasons"])
-                adapter = create_candidate_adapter(two, runtime_only=True,
-                    require_exclusive_backend=True, require_exclusive_training=True)
-                with self.assertRaises(ValueError):
-                    verify_text_capability(adapter, snapshot=snapshot("trained-v2-capability"))
-                self.assertFalse((root / "candidate_registry/selected.json").exists())
-                with self.assertRaisesRegex(ValueError, "migration"):
-                    load_public_parent(candidates, 128, learning_stream=peak_stream({**CONFIG, "layers": 3}))
-                # Public context/chart lineage must not become the v2 parent.
-                model, parent = load_public_parent(candidates, 128)
-                self.assertIsNone(model)
-                self.assertIsNone(parent)
-                (two / "candidate.pt").write_bytes((two / "candidate.pt").read_bytes() + b"tampered")
-                with self.assertRaisesRegex(ValueError, "no longer public/valid"):
-                    load_public_parent(candidates, 128, learning_stream=peak_stream(CONFIG))
+                 patch.object(live_learning, "JOBS", root / "live_learning_runs"), \
+                 patch.object(live_learning.subprocess, "run") as worker:
+                protected_before = lifecycle.protected_hashes()
+                observations = engine.peak_training_observations()
+                self.assertEqual(observations["policy"], PEAK_POLICY)
+                self.assertTrue(observations["records"])
+                with self.assertRaises(live_learning.Blocked) as raised:
+                    live_learning.execute(engine, 1, context_tokens=128, model_config=CONFIG)
+
+            self.assertEqual(raised.exception.code, "blocked_training_rights")
+            worker.assert_not_called()
+            self.assertFalse(candidates.exists())
+            self.assertFalse((root / "candidate_registry/selected.json").exists())
+            self.assertEqual(engine.require_snapshot().id, snapshot_before)
+            self.assertEqual(lifecycle.protected_hashes(), protected_before)
 
     def test_invalid_explicit_rights_block_before_worker_and_preserve_awareness(self):
         with tempfile.TemporaryDirectory() as directory:
@@ -141,13 +111,29 @@ class PublicPeakCurriculumTests(unittest.TestCase):
     def test_peak_training_rights_never_infer_license_from_public_metadata(self):
         owned = {"text": "Test-authored corpus material", "license": "CC0-1.0",
                  "author": "Test fixture author", "private": False,
-                 "source": "authored:test-fixture", "purpose": "training"}
-        live_learning.require_peak_training_rights([owned])
+                 "source": "authored:test-fixture", "purpose": "training",
+                 "live_provenance": {
+                     "access": "public", "source": "fixture_source", "domain": "music",
+                     "text_sha256": hashlib.sha256(
+                         b"Test-authored corpus material"
+                     ).hexdigest(),
+                 }}
         for change in ({"license": "NOASSERTION", "live_provenance": {"access": "public"}},
                        {"author": "unattributed live observation"}, {"private": True},
                        {"source": ""}):
+            record = {**owned, **change}
+            with patch.dict(os.environ, {
+                    "MAXCORE_TEXT_TRAINING_RIGHTS_MANIFEST": "",
+                    "MAXCORE_TEXT_TRAINING_RIGHTS_SHA256": "",
+                }):
+                with self.assertRaises(live_learning.Blocked):
+                    live_learning.require_peak_training_rights([record])
+        with patch.dict(os.environ, {
+                "MAXCORE_TEXT_TRAINING_RIGHTS_MANIFEST": "",
+                "MAXCORE_TEXT_TRAINING_RIGHTS_SHA256": "",
+            }):
             with self.assertRaises(live_learning.Blocked):
-                live_learning.require_peak_training_rights([{**owned, **change}])
+                live_learning.require_peak_training_rights([owned])
 
     def test_explicit_owned_licensed_manifest_still_trains_real_weights(self):
         from ai_model.training.candidate_manifest_train import train_from_manifest
@@ -295,6 +281,7 @@ class PublicPeakCurriculumTests(unittest.TestCase):
                           {"checkpoint_sha256": "same-verified-checkpoint"})
             loop = LiveLearningLoop(peak_engine, model, Path(directory), model_config=CONFIG)
             selected = {"state": "retained", "checkpoint_sha256": "same-verified-checkpoint",
+                        "policy": "certified-public-live-v1",
                         "learning_policy": PEAK_POLICY, "validated_selected": True}
             with patch("ai_model.training.auto_selection.auto_select", return_value=selected), \
                  patch("ai_model.generation.release.load_selected_release") as reload_release:

@@ -4,6 +4,16 @@ export function createRecoveryStorage(options?: {
   bucketId?: string;
   fetchImpl?: typeof fetch;
   StorageClass?: typeof Storage;
+  /** Per-request timeout in milliseconds; omitted to preserve Storage defaults. */
+  timeoutMs?: number;
+  /** Google Storage retry policy; omitted to preserve Storage defaults. */
+  retryOptions?: {
+    autoRetry?: boolean;
+    maxRetries?: number;
+    totalTimeout?: number;
+    maxRetryDelay?: number;
+    retryDelayMultiplier?: number;
+  };
 }): Promise<{ bucket: Bucket; bucketId: string }>;
 
 export const MANAGED_STORAGE_CONTRACT: Readonly<{

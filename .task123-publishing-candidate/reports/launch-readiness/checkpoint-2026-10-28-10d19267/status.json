@@ -1,0 +1,94 @@
+{
+  "recordedAt": "2026-10-28T18:12:00.259288+00:00",
+  "testedSourceRevision": "10d192675beefcf1b7beef3ce47c271db0cc17cf",
+  "commonSourceInputsSha256": "cbf794e080119fa4f64ec6ebce2b29b3d78641d606a3059c0c207b2420324418",
+  "branch": "sophia/platform-production-hardening-2026-10-27",
+  "productionReady": false,
+  "mainPromotion": "BLOCKED_BY_UNMET_READINESS",
+  "pages": 80,
+  "greenPages": 0,
+  "businessSections": 2162,
+  "dimensionSteps": 12972,
+  "workItems": 53020,
+  "requiredChecks": 33549,
+  "unverifiedChecks": 33543,
+  "unknownMappings": 170,
+  "invalidEvidenceLinks": 0,
+  "master": {
+    "status": "FAILED_COVERAGE_AND_STRICT_FEATURE_GATES",
+    "startedAt": "2026-10-28T13:30:12.580402+00:00",
+    "finishedAt": "2026-10-28T13:53:54.170206+00:00",
+    "sourceInputsUnchanged": true,
+    "allOtherSelectedCommandsPassed": true,
+    "unit": 2728,
+    "additional": 18,
+    "instrumentedAssertions": 2771,
+    "nodeFiles": 124,
+    "nodeFailedFiles": 0,
+    "nodeTapPassIncludingParents": 690,
+    "nodeTapSkips": 2,
+    "coveragePercent": {
+      "lines": 13.11,
+      "statements": 13.01,
+      "functions": 8.68,
+      "branches": 8.78
+    },
+    "archive": "reports/test-verification/history/2026-10-28-10d19267-master/master-evidence.tar.gz",
+    "archiveMembers": 566
+  },
+  "cold": {
+    "fourRealCommandsExitZero": true,
+    "independentAuditChecksPassed": 37,
+    "admittedEntriesUnchanged": 4527,
+    "payloadEntries": 37,
+    "payloadBytes": 719501006,
+    "ownedDescendants": 36,
+    "remainingOwnedDescendants": 0,
+    "scope": "cold-startup-with-ml-unavailable",
+    "productionReady": false,
+    "evidence": "reports/release-rehearsal/2026-10-28-10d19267-final/hygiene-audit.json"
+  },
+  "newHiddenWork": {
+    "rejectedPassingOccurrences": 104,
+    "vitestTitleCollisions": 64,
+    "pythonClassScopeCollisions": 26,
+    "commerceAdapterSubjectBindings": 14,
+    "historicalReportMisclassifiedAsCanonicalNodeTest": 1,
+    "evidence": "reports/platform-evidence/2026-10-28-rejected-case-trace/README.md",
+    "passStatusesTransferred": 0
+  },
+  "nextCriticalWork": [
+    {
+      "order": 1,
+      "task": "Implement versioned shared transform, actual UTF16 wrapper capture and strict typed-coordinate contract, then fresh owned actual P1 execution; combine only complete compatible profiles",
+      "evidence": "reports/coverage-producer/2026-10-28-next-contract-trace/next-patch-spec.json"
+    },
+    {
+      "order": 2,
+      "task": "Disambiguate actual scenario/class identities, record commerce-selected subject execution and classify historical report snapshots; preserve every existing assertion and source denominator",
+      "evidence": "docs/testing/evidence-binding-gaps.md"
+    },
+    {
+      "order": 3,
+      "task": "Review/test unlanded Python factory-mount proposal, then continue the existing mapping and every page/section/shared lane",
+      "evidence": "reports/mapping-audit/2026-10-28-python-factory-proposal/README.md"
+    }
+  ],
+  "externalGates": [
+    "Actual published Replit HTTPS origin and deployed journeys",
+    "Safe current Neon schema/migration and coordinated SQL/PDIM production backup/recovery",
+    "GitHub native jobs account billing lock and original JUCE/C++ VST source",
+    "Actual provider delivery, supported device/native/accessibility/localization acceptance",
+    "Measured realistic global topology/capacity; bounded150requests is not90Mconcurrentclients"
+  ],
+  "persistence": {
+    "manifestsVerified": 49,
+    "artifactFilesVerified": 1355,
+    "archiveMembersVerified": 1684,
+    "retainedEvidenceStillIgnored": 0,
+    "configuredValueScanMatches": 0,
+    "filesAtOrAbove100MiB": 0,
+    "relativeFileLinksVerified": 1136,
+    "documentsChecked": 50
+  }
+}

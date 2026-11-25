@@ -1,0 +1,14 @@
+{
+  "command": [
+    "node",
+    "scripts/check-js-security-versions.js"
+  ],
+  "cwd": "external/maxcore",
+  "startedAt": "2026-10-28T01:21:34.309382+00:00",
+  "durationSeconds": 0.115,
+  "exitCode": 0,
+  "timedOut": false,
+  "status": "passed",
+  "log": "reports/dependency-hardening/2026-10-27-maxcore-dev/maxcore-security-gate.txt",
+  "logSha256": "228ccfcf7db6b43a3d0f3aea9d25fb6e880161f17ee9af0797246dfb462bab9b"
+}

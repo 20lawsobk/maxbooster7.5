@@ -1,12 +1,25 @@
 import { describe, expect, it } from "vitest";
 import {
   getPlatformOptimization,
+  getProfileSourcingQualityPolicy,
   normalizeSocialAwarenessPlatform,
   platformAwarenessOptimization,
   SOCIAL_AWARENESS_PLATFORMS,
 } from "../platformAwarenessOptimization.js";
 
 describe("social awareness platform optimization", () => {
+  it("sets a provisional Veo match-potential band without requiring exact matches", () => {
+    const policy = getProfileSourcingQualityPolicy();
+    expect(policy.benchmark).toBe("google_veo_generated_content");
+    expect(policy.scoreScale).toEqual({ min: 0, max: 100 });
+    expect(policy.minimumEligibleScore).toBe(70);
+    expect(policy.preferredScoreRange).toEqual({ min: 80, max: 95 });
+    expect(policy.exactMatchRequired).toBe(false);
+    expect(policy.missingEvidencePolicy).toBe("do_not_impute");
+    expect(Object.values(policy.weights).reduce((sum, weight) => sum + weight, 0))
+      .toBeCloseTo(1);
+  });
+
   it("keeps the suite allowlist closed to exactly eight platforms", () => {
     expect([...SOCIAL_AWARENESS_PLATFORMS]).toEqual([
       "facebook",

@@ -1,0 +1,19 @@
+{
+  "command": [
+    "node",
+    "--import",
+    "tsx",
+    "--test",
+    "--test-concurrency=1",
+    "--test-reporter=junit",
+    "tests/sendgrid-alert-transport.test.mjs"
+  ],
+  "cwd": ".",
+  "startedAt": "2026-10-28T01:28:41.887822+00:00",
+  "durationSeconds": 0.577,
+  "exitCode": 0,
+  "timedOut": false,
+  "status": "passed",
+  "log": "reports/email-acceptance/2026-10-27-sendgrid-alert/after-final.junit.xml",
+  "logSha256": "5de7f5d38a0d46929d0aa839b2922f4aa65bd01d9c92baf56257fbe55e3b0382"
+}

@@ -13,6 +13,8 @@ const state = vi.hoisted(() => ({
   queues: [] as any[],
   workers: [] as any[],
   queueCloseCount: 0,
+  emitPdimDisconnectOnWorkerClose: false,
+  loggerWarn: vi.fn(),
   recoverStrandedSocialPosts: vi.fn(),
   getScheduledPosts: vi.fn(),
   getScheduledPostById: vi.fn(),
@@ -31,6 +33,7 @@ vi.mock("bullmq", () => {
     processor: (job: any) => Promise<void>;
     closed = false;
     processCalls = 0;
+    handlers = new Map<string, Array<(...args: any[]) => void>>();
 
     constructor(
       queueName: string,
@@ -41,8 +44,15 @@ vi.mock("bullmq", () => {
       state.workers.push(this);
     }
 
-    on() {
+    on(event: string, handler: (...args: any[]) => void) {
+      const listeners = this.handlers.get(event) || [];
+      listeners.push(handler);
+      this.handlers.set(event, listeners);
       return this;
+    }
+
+    emit(event: string, ...args: any[]) {
+      for (const handler of this.handlers.get(event) || []) handler(...args);
     }
 
     async pause() {}
@@ -51,6 +61,14 @@ vi.mock("bullmq", () => {
 
     async close() {
       this.closed = true;
+      if (state.emitPdimDisconnectOnWorkerClose) {
+        this.emit(
+          "error",
+          Object.assign(new Error("[PDIM] Redis client disconnected"), {
+            name: "ConnectionError",
+          }),
+        );
+      }
     }
   }
 
@@ -106,7 +124,7 @@ vi.mock("../../server/storage.js", () => ({
 vi.mock("../../server/logger.js", () => ({
   logger: {
     info: vi.fn(),
-    warn: vi.fn(),
+    warn: state.loggerWarn,
     error: vi.fn(),
   },
 }));
@@ -187,6 +205,8 @@ function resetFakes() {
   state.queues.length = 0;
   state.workers.length = 0;
   state.queueCloseCount = 0;
+  state.emitPdimDisconnectOnWorkerClose = false;
+  state.loggerWarn.mockReset();
   state.updateScheduledPost.mockReset().mockResolvedValue(undefined);
   state.updateQueuedSocialPost.mockReset().mockImplementation(async (_userId: string, id: string, _status: string, updates: unknown) => {
     await state.updateScheduledPost(id, { ...updates as object, status: "pending" });
@@ -221,6 +241,28 @@ describe("scheduled social post recovery", () => {
     resetFakes();
   });
 
+  it("suppresses only the intentional PDIM disconnect emitted while shutting down", async () => {
+    const service = await loadService();
+    await service.initialize();
+    const worker = state.workers[0];
+    const disconnect = Object.assign(
+      new Error("[PDIM] Redis client disconnected"),
+      { name: "ConnectionError" },
+    );
+
+    worker.emit("error", disconnect);
+    expect(state.loggerWarn).toHaveBeenCalledWith(
+      { err: disconnect },
+      "Auto-post BullMQ worker error:",
+    );
+
+    state.loggerWarn.mockClear();
+    state.emitPdimDisconnectOnWorkerClose = true;
+    await shutDownService(service);
+
+    expect(state.loggerWarn).not.toHaveBeenCalled();
+  });
+
   it("enqueues publish-now under a stable identity without resetting delivery or repeating a delayed job", async () => {
     state.pendingRows = [];
     const service = await loadService();
@@ -241,6 +283,45 @@ describe("scheduled social post recovery", () => {
     state.getSocialAccounts.mockResolvedValue([]);
     await expect(service.publishExistingPostNow("user-1", POST_ID)).rejects.toMatchObject({ status: 409, code: "PUBLISHING_CONNECTION_REQUIRED" });
     expect(state.requestImmediateSocialPost).not.toHaveBeenCalled();
+    expect(state.queuedJobs.size).toBe(0);
+  });
+
+  it.each([
+    { accounts: [] },
+    { accounts: [{ platform: "twitter", isActive: false, accessToken: "expired" }] },
+    { accounts: [{ platform: "twitter", isActive: true, accessToken: "" }] },
+  ])("refuses to create a scheduled job without a usable connected account", async ({ accounts }) => {
+    state.pendingRows = [];
+    state.getSocialAccounts.mockResolvedValue(accounts);
+    const service = await loadService();
+    await expect(service.schedulePost(
+      "user-1",
+      ["x"],
+      { text: "Scheduled copy" },
+      new Date(SCHEDULED_AT),
+      "manual",
+      undefined,
+      "connection-required",
+    )).rejects.toMatchObject({
+      status: 409,
+      code: "PUBLISHING_CONNECTION_REQUIRED",
+    });
+    expect(state.queuedJobs.size).toBe(0);
+    expect(state.addAttempts).toHaveLength(0);
+    expect(state.workers).toHaveLength(0);
+  });
+
+  it("does not edit or queue a durable calendar post when its account was revoked", async () => {
+    state.pendingRows = [];
+    state.getSocialAccounts.mockResolvedValue([]);
+    const service = await loadService();
+    await expect(service.scheduleExistingPost(POST_ID, {
+      scheduledAt: new Date(SCHEDULED_AT),
+    })).rejects.toMatchObject({
+      status: 409,
+      code: "PUBLISHING_CONNECTION_REQUIRED",
+    });
+    expect(state.updateQueuedSocialPost).not.toHaveBeenCalled();
     expect(state.queuedJobs.size).toBe(0);
   });
 

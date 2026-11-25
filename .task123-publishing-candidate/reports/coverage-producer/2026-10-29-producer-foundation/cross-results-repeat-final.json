@@ -1,0 +1,22 @@
+{
+  "status": "passed",
+  "cases": [
+    {
+      "mode": "repeat",
+      "status": "passed",
+      "actualCommandExit": 0,
+      "proofStatus": "bound",
+      "testOutcomeEligibleForCounterAdmission": true,
+      "actualCases": 2,
+      "unhandledErrorCount": 0,
+      "retainedActualChildExit": true,
+      "staleXmlReplacedByActualChild": true,
+      "laterXmlSubstitutionRejectedByHash": true,
+      "sourceImplementationUnchanged": true,
+      "consecutiveOutcomeBytesPreserved": true
+    }
+  ],
+  "productionReady": false,
+  "globalCoverageModified": false,
+  "scope": "Parent/current-machine test-outcome proof foundation only; not merged coverage or application launch acceptance."
+}

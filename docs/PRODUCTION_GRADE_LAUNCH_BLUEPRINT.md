@@ -113,7 +113,8 @@ Do not start a later phase while an earlier phase has a red gate.
 1. Create a clean branch/checkpoint.
 2. Record `git status`, current commit, Node version, package-manager version,
    workflow name, and the database target.
-3. Confirm that application schema and data work target `NEON_DATABASE_URL`,
+3. Confirm that application schema and data work target `NEON_PRIMARY_URL`
+   (falling back to `NEON_DATABASE_URL` only when the primary is not set),
    not the separate managed `DATABASE_URL`.
 4. Run `npm run check`, `npm test -- --run`, `npm run build`, and the existing
    pre-launch/smoke commands. Save every output under

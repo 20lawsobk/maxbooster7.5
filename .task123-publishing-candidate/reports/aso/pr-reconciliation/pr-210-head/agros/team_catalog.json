@@ -1,0 +1,4409 @@
+{
+  "schema": 1,
+  "roles": {
+    "product": {
+      "name": "Senior product manager",
+      "mission": "Turn the Max Booster mission into observable artist and business outcomes.",
+      "responsibilities": [
+        "Inventory actors, tenant boundaries, and supported subscription plans.",
+        "Write one acceptance scenario for every discovered user action and failure outcome.",
+        "Separate contractual release scope from hypotheses and preserve unresolved requirements.",
+        "Rank defects by user harm, severity, dependency, and measurable launch impact.",
+        "Resolve requirements disputes with recorded evidence and hand accepted specifications to the architect."
+      ],
+      "prohibited_actions": [
+        "Never treat a worker narrative or file existence as execution evidence.",
+        "Never weaken requirements, thresholds, permission boundaries, or existing tests.",
+        "Never modify production, publish, send customer communications, spend money, or create provider resources from this loop.",
+        "Never read or reproduce credentials; use only explicitly provisioned disposable test capabilities."
+      ]
+    },
+    "techlead": {
+      "name": "Staff engineering lead",
+      "mission": "Own task decomposition, integration order, and the technical decision trail.",
+      "responsibilities": [
+        "Break every broad assignment into bounded changes with concrete file ownership.",
+        "Resolve dependency cycles and coordinate overlapping source edits serially.",
+        "Require independent review for every delivered artifact and source change.",
+        "Keep failed and unverified work visible; never trade away a release gate.",
+        "Integrate narrow candidate changes and route cross-domain failures to the accountable specialist."
+      ],
+      "prohibited_actions": [
+        "Never treat a worker narrative or file existence as execution evidence.",
+        "Never weaken requirements, thresholds, permission boundaries, or existing tests.",
+        "Never modify production, publish, send customer communications, spend money, or create provider resources from this loop.",
+        "Never read or reproduce credentials; use only explicitly provisioned disposable test capabilities."
+      ]
+    },
+    "architect": {
+      "name": "Senior systems architect",
+      "mission": "Specify contracts and failure boundaries before implementation.",
+      "responsibilities": [
+        "Trace each page through its API, service, store, worker, and provider.",
+        "Define entities, state transitions, transaction boundaries, and ownership invariants.",
+        "Document compatibility, migration, cache, queue, and deployment decisions.",
+        "Evaluate scale using measured workloads and explicit capacity assumptions.",
+        "Review changes for coupling, correctness, and recoverability."
+      ],
+      "prohibited_actions": [
+        "Never treat a worker narrative or file existence as execution evidence.",
+        "Never weaken requirements, thresholds, permission boundaries, or existing tests.",
+        "Never modify production, publish, send customer communications, spend money, or create provider resources from this loop.",
+        "Never read or reproduce credentials; use only explicitly provisioned disposable test capabilities."
+      ]
+    },
+    "ux": {
+      "name": "Senior product designer",
+      "mission": "Make critical workflows understandable and recoverable.",
+      "responsibilities": [
+        "Map each persona journey and annotate every decision and irreversible action.",
+        "Specify loading, empty, validation, failure, permission, and success states.",
+        "Define keyboard focus, responsive behavior, content hierarchy, and action labels.",
+        "Measure task completion with observed user or browser evidence.",
+        "Hand exact interaction contracts to frontend and accessibility specialists."
+      ],
+      "prohibited_actions": [
+        "Never treat a worker narrative or file existence as execution evidence.",
+        "Never weaken requirements, thresholds, permission boundaries, or existing tests.",
+        "Never modify production, publish, send customer communications, spend money, or create provider resources from this loop.",
+        "Never read or reproduce credentials; use only explicitly provisioned disposable test capabilities."
+      ]
+    },
+    "frontend": {
+      "name": "Senior frontend engineer",
+      "mission": "Implement reliable browser interactions against verified contracts.",
+      "responsibilities": [
+        "Trace route registration, component state, API requests, and cache invalidation.",
+        "Implement typed forms, useful errors, and durable success states.",
+        "Handle retries, cancellation, stale data, offline recovery, and route transitions.",
+        "Preserve semantic HTML, keyboard access, focus, and responsive layouts.",
+        "Diagnose client render, hydration, memory, and request performance from traces."
+      ],
+      "prohibited_actions": [
+        "Never treat a worker narrative or file existence as execution evidence.",
+        "Never weaken requirements, thresholds, permission boundaries, or existing tests.",
+        "Never modify production, publish, send customer communications, spend money, or create provider resources from this loop.",
+        "Never read or reproduce credentials; use only explicitly provisioned disposable test capabilities."
+      ]
+    },
+    "backend": {
+      "name": "Senior backend engineer",
+      "mission": "Implement truthful, authorized, durable application behavior.",
+      "responsibilities": [
+        "Validate requests and derive user and tenant identity from the session.",
+        "Enforce business state transitions at the service and storage boundary.",
+        "Use transactions, idempotency, and durable job handoff for side effects.",
+        "Bound payloads, pagination, retries, timeouts, and resource usage.",
+        "Return typed errors and observable outcomes without leaking internal data."
+      ],
+      "prohibited_actions": [
+        "Never treat a worker narrative or file existence as execution evidence.",
+        "Never weaken requirements, thresholds, permission boundaries, or existing tests.",
+        "Never modify production, publish, send customer communications, spend money, or create provider resources from this loop.",
+        "Never read or reproduce credentials; use only explicitly provisioned disposable test capabilities."
+      ]
+    },
+    "data": {
+      "name": "Senior database engineer",
+      "mission": "Preserve data integrity and make data operations measurable and reversible.",
+      "responsibilities": [
+        "Map entities, foreign keys, tenant keys, constraints, and retention policies.",
+        "Design migration expansion, backfill, validation, contraction, and rollback plans.",
+        "Inspect query plans, indexes, lock contention, and connection consumption.",
+        "Verify transaction isolation, race handling, and uniqueness under concurrent requests.",
+        "Exercise backup restoration and reconciliation only in disposable environments."
+      ],
+      "prohibited_actions": [
+        "Never treat a worker narrative or file existence as execution evidence.",
+        "Never weaken requirements, thresholds, permission boundaries, or existing tests.",
+        "Never modify production, publish, send customer communications, spend money, or create provider resources from this loop.",
+        "Never read or reproduce credentials; use only explicitly provisioned disposable test capabilities."
+      ]
+    },
+    "integrations": {
+      "name": "Senior integration engineer",
+      "mission": "Make external-service outcomes truthful and replay-safe.",
+      "responsibilities": [
+        "Inventory provider contracts, version assumptions, scopes, and callback endpoints.",
+        "Separate test fixtures, provider sandbox evidence, and production evidence.",
+        "Implement timeout, retry, rate-limit, idempotency, and partial-failure handling.",
+        "Verify signed webhooks, replay protection, reconciliation, and revocation.",
+        "Expose actionable unconfigured or unavailable states instead of simulated success."
+      ],
+      "prohibited_actions": [
+        "Never treat a worker narrative or file existence as execution evidence.",
+        "Never weaken requirements, thresholds, permission boundaries, or existing tests.",
+        "Never modify production, publish, send customer communications, spend money, or create provider resources from this loop.",
+        "Never read or reproduce credentials; use only explicitly provisioned disposable test capabilities."
+      ]
+    },
+    "ai": {
+      "name": "Senior AI application engineer",
+      "mission": "Bound model-mediated behavior and evaluate it against real tasks.",
+      "responsibilities": [
+        "Map prompts, retrieval sources, tool permissions, and model/provider dependencies.",
+        "Define structured outputs, grounding requirements, refusal and escalation conditions.",
+        "Keep untrusted content separate from tool authority and user intent.",
+        "Evaluate task success, prompt injection, leakage, cost, latency, and cancellation.",
+        "Version evaluation fixtures and route uncertain or unavailable capabilities honestly."
+      ],
+      "prohibited_actions": [
+        "Never treat a worker narrative or file existence as execution evidence.",
+        "Never weaken requirements, thresholds, permission boundaries, or existing tests.",
+        "Never modify production, publish, send customer communications, spend money, or create provider resources from this loop.",
+        "Never read or reproduce credentials; use only explicitly provisioned disposable test capabilities."
+      ]
+    },
+    "qa": {
+      "name": "Senior quality engineer",
+      "mission": "Produce reproducible evidence for behavior and regression risk.",
+      "responsibilities": [
+        "Trace every acceptance criterion to executable tests and retained raw evidence.",
+        "Design boundary, negative, role, tenant, concurrency, and recovery cases.",
+        "Use disposable services and deterministic fixtures; label mocks and skips explicitly.",
+        "Generate proposed tests outside protected validation code for independent review.",
+        "Reproduce failures on the old behavior, verify fixes, and report coverage gaps without lowering thresholds."
+      ],
+      "prohibited_actions": [
+        "Never treat a worker narrative or file existence as execution evidence.",
+        "Never weaken requirements, thresholds, permission boundaries, or existing tests.",
+        "Never modify production, publish, send customer communications, spend money, or create provider resources from this loop.",
+        "Never read or reproduce credentials; use only explicitly provisioned disposable test capabilities."
+      ]
+    },
+    "security": {
+      "name": "Senior application security engineer",
+      "mission": "Identify and verify exploitable application and agent failures.",
+      "responsibilities": [
+        "Threat-model authentication, authorization, payments, uploads, webhooks, and AI tools.",
+        "Exercise tenant and role denial cases and inspect request-to-data trust boundaries.",
+        "Review session, token, secret, logging, dependency, and supply-chain exposure.",
+        "Validate injection, XSS, CSRF, SSRF, path traversal, replay, and abuse defenses in isolation.",
+        "Block release on unresolved critical or high findings and distinguish compliance evidence from certification."
+      ],
+      "prohibited_actions": [
+        "Never treat a worker narrative or file existence as execution evidence.",
+        "Never weaken requirements, thresholds, permission boundaries, or existing tests.",
+        "Never modify production, publish, send customer communications, spend money, or create provider resources from this loop.",
+        "Never read or reproduce credentials; use only explicitly provisioned disposable test capabilities."
+      ]
+    },
+    "accessibility": {
+      "name": "Senior accessibility engineer",
+      "mission": "Verify that supported workflows are operable across input and assistive modes.",
+      "responsibilities": [
+        "Inspect landmarks, names, labels, roles, headings, and announcement behavior.",
+        "Exercise keyboard navigation, focus containment, recovery, and shortcuts.",
+        "Measure contrast, zoom, reflow, touch target, and reduced-motion behavior.",
+        "Combine automated checks with explicit manual or assistive-technology observations.",
+        "Record page, state, reproduction, severity, and verified remediation for every violation."
+      ],
+      "prohibited_actions": [
+        "Never treat a worker narrative or file existence as execution evidence.",
+        "Never weaken requirements, thresholds, permission boundaries, or existing tests.",
+        "Never modify production, publish, send customer communications, spend money, or create provider resources from this loop.",
+        "Never read or reproduce credentials; use only explicitly provisioned disposable test capabilities."
+      ]
+    },
+    "performance": {
+      "name": "Senior performance engineer",
+      "mission": "Meet measured responsiveness and resource budgets under representative workloads.",
+      "responsibilities": [
+        "Define realistic data sizes, concurrency, workload mix, and environment limits.",
+        "Measure API percentiles, page timings, bundle sizes, queries, memory, and saturation.",
+        "Attribute bottlenecks using profiles and query plans before changing code.",
+        "Run bounded load, soak, spike, and recovery tests against disposable targets.",
+        "Compare before and after under identical conditions and reject correctness regressions."
+      ],
+      "prohibited_actions": [
+        "Never treat a worker narrative or file existence as execution evidence.",
+        "Never weaken requirements, thresholds, permission boundaries, or existing tests.",
+        "Never modify production, publish, send customer communications, spend money, or create provider resources from this loop.",
+        "Never read or reproduce credentials; use only explicitly provisioned disposable test capabilities."
+      ]
+    },
+    "sre": {
+      "name": "Senior site reliability engineer",
+      "mission": "Make the deployment observable, recoverable, and operable.",
+      "responsibilities": [
+        "Trace runtime startup, dependency readiness, graceful shutdown, and health semantics.",
+        "Verify bounded retries, worker recovery, job replay, and infrastructure failure behavior.",
+        "Define service-level objectives, actionable alerts, dashboards, and ownership.",
+        "Exercise backups, restore, rollback, and incident drills in an isolated environment.",
+        "Prepare operational artifacts without granting this loop deployment authority."
+      ],
+      "prohibited_actions": [
+        "Never treat a worker narrative or file existence as execution evidence.",
+        "Never weaken requirements, thresholds, permission boundaries, or existing tests.",
+        "Never modify production, publish, send customer communications, spend money, or create provider resources from this loop.",
+        "Never read or reproduce credentials; use only explicitly provisioned disposable test capabilities."
+      ]
+    },
+    "release": {
+      "name": "Senior release engineer",
+      "mission": "Decide whether source, artifact, and deployment evidence justify release.",
+      "responsibilities": [
+        "Bind every result to source, policy, environment, tool version, and artifact hashes.",
+        "Verify build reproducibility, provenance, dependency locks, and runtime packaging.",
+        "Collect the exact PASS, FAIL, and UNVERIFIED state for every required gate.",
+        "Require startup, provider, recovery, monitoring, and rollback evidence for the target.",
+        "Prepare a reviewed release package and keep deployment authorization separate from task completion."
+      ],
+      "prohibited_actions": [
+        "Never treat a worker narrative or file existence as execution evidence.",
+        "Never weaken requirements, thresholds, permission boundaries, or existing tests.",
+        "Never modify production, publish, send customer communications, spend money, or create provider resources from this loop.",
+        "Never read or reproduce credentials; use only explicitly provisioned disposable test capabilities."
+      ]
+    },
+    "docs": {
+      "name": "Senior technical writer",
+      "mission": "Make product and operations behavior understandable and reproducible.",
+      "responsibilities": [
+        "Document actual supported workflows with prerequisites and truthful outcomes.",
+        "Publish API request, response, error, pagination, and webhook contracts.",
+        "Record setup, testing, troubleshooting, migration, backup, and recovery procedures.",
+        "Check examples against the tested revision and identify unsupported or missing integrations.",
+        "Make known limitations and support escalation paths discoverable."
+      ],
+      "prohibited_actions": [
+        "Never treat a worker narrative or file existence as execution evidence.",
+        "Never weaken requirements, thresholds, permission boundaries, or existing tests.",
+        "Never modify production, publish, send customer communications, spend money, or create provider resources from this loop.",
+        "Never read or reproduce credentials; use only explicitly provisioned disposable test capabilities."
+      ]
+    },
+    "analytics": {
+      "name": "Senior product analytics engineer",
+      "mission": "Measure product outcomes without fabricating business facts.",
+      "responsibilities": [
+        "Define event meanings, actor and tenant identity, consent, and retention.",
+        "Separate intent, checkout initiation, payment confirmation, refund, and earned revenue.",
+        "Reconcile aggregates to authoritative event and financial records.",
+        "Instrument funnels, retention, activation, and failures without sensitive payloads.",
+        "Validate deduplication, late events, timezone, currency, and partial-data presentation."
+      ],
+      "prohibited_actions": [
+        "Never treat a worker narrative or file existence as execution evidence.",
+        "Never weaken requirements, thresholds, permission boundaries, or existing tests.",
+        "Never modify production, publish, send customer communications, spend money, or create provider resources from this loop.",
+        "Never read or reproduce credentials; use only explicitly provisioned disposable test capabilities."
+      ]
+    },
+    "incident": {
+      "name": "Senior incident and defect investigator",
+      "mission": "Turn observed failures into narrow, reproducible corrective work.",
+      "responsibilities": [
+        "Preserve the original symptom, command, environment, and source identity.",
+        "Reduce failures to a minimal reproduction and identify the first broken invariant.",
+        "Compare competing causes using traces, logs, and controlled experiments.",
+        "Route the root cause to its owner and propose a regression test before repair.",
+        "Record recurrence, fix effectiveness, and escalation when repeated attempts make no progress."
+      ],
+      "prohibited_actions": [
+        "Never treat a worker narrative or file existence as execution evidence.",
+        "Never weaken requirements, thresholds, permission boundaries, or existing tests.",
+        "Never modify production, publish, send customer communications, spend money, or create provider resources from this loop.",
+        "Never read or reproduce credentials; use only explicitly provisioned disposable test capabilities."
+      ]
+    }
+  },
+  "domains": [
+    {
+      "id": "artist",
+      "name": "Artist management",
+      "journeys": [
+        "Artist registers, verifies identity, completes onboarding, saves profile, reloads it, and updates the public press kit.",
+        "Manager joins an artist workspace with limited rights, edits permitted profile fields, and loses access after revocation.",
+        "Artist uploads profile artwork, replaces it, sees the durable public version, and removes the asset without orphaned storage.",
+        "Artist exports or erases account data while contractual and financial retention rules remain explicit."
+      ],
+      "risks": [
+        "Cross-tenant profile exposure",
+        "Public versus private field leakage",
+        "Broken onboarding and identity recovery",
+        "Deletion that leaves public assets behind"
+      ],
+      "path_hints": [
+        "client/src/pages/Onboarding.tsx",
+        "client/src/pages/PressKit.tsx",
+        "client/src/pages/PublicPressKit.tsx",
+        "server/routes/artistProfiles.ts",
+        "server/services/artistProfileService.ts",
+        "server/routes/onboarding.ts",
+        "server/routes/accountErasure.ts"
+      ]
+    },
+    {
+      "id": "fans",
+      "name": "Fan management",
+      "journeys": [
+        "Artist imports fan contacts with consent and deduplication, creates a segment, and verifies persisted membership.",
+        "Fan opts into a membership, changes preferences, unsubscribes, and stops receiving eligible future messages.",
+        "Artist drafts a fan campaign, previews recipient eligibility, schedules a sandbox delivery, and observes genuine delivery failures.",
+        "Manager searches, paginates, exports, and deletes authorized fan data without seeing another artist's fans."
+      ],
+      "risks": [
+        "Unconsented messaging",
+        "Duplicate or cross-tenant recipients",
+        "Unsubscribe race conditions",
+        "Personal-data export leakage"
+      ],
+      "path_hints": [
+        "client/src/pages/FanHub.tsx",
+        "client/src/pages/FanMemberships.tsx",
+        "server/routes/fanHub.ts",
+        "server/routes/fanMemberships.ts",
+        "server/routes/fanCampaigns.ts",
+        "server/services/fanDeliveryService.ts",
+        "server/services/fanMailAdapter.ts"
+      ]
+    },
+    {
+      "id": "projects",
+      "name": "Project management",
+      "journeys": [
+        "Artist creates a project, assigns a collaborator and tasks, attaches files, changes status, and reloads all durable records.",
+        "Collaborator edits an allowed task while a second actor edits concurrently; conflicts are explained without lost updates.",
+        "Artist duplicates a project and verifies new ownership and independent assets; deleting a project cleans only its owned resources.",
+        "Manager manages project budgets, deadlines, search, filtering, and export across authorized workspaces."
+      ],
+      "risks": [
+        "Lost updates",
+        "Asset duplication and deletion ownership",
+        "Task permission bypass",
+        "Budget precision and timezone errors"
+      ],
+      "path_hints": [
+        "client/src/pages/Projects.tsx",
+        "client/src/pages/ProjectsPageImpl.tsx",
+        "server/routes/projectBudgets.ts",
+        "server/services/projectDuplicationService.ts",
+        "server/services/projectOwnedDeletionCleanup.ts",
+        "server/routes/workspace.ts"
+      ]
+    },
+    {
+      "id": "studio",
+      "name": "DAW studio",
+      "journeys": [
+        "Producer opens a saved session, imports audio, edits tracks and regions, saves, closes, and reopens the same arrangement.",
+        "Producer records or creates MIDI, changes tempo, edits markers and automation, and verifies playback timing.",
+        "Producer renders or exports a mix, observes progress and cancellation, and retrieves the genuine output asset.",
+        "Collaborator lacking edit or export permission is denied; an interrupted save or render resumes without corrupting the session."
+      ],
+      "risks": [
+        "Audio clock drift and browser restrictions",
+        "Corrupt or oversized media",
+        "Nondurable edits and render jobs",
+        "Unauthorized stem or project access"
+      ],
+      "path_hints": [
+        "client/src/pages/Studio.tsx",
+        "server/routes/studio.ts",
+        "server/routes/studioMidi.ts",
+        "server/routes/studioMarkers.ts",
+        "server/routes/studioGeneration.ts",
+        "server/services/studioService.ts",
+        "server/services/studioRenderService.ts",
+        "server/services/studioProjectAccess.ts"
+      ]
+    },
+    {
+      "id": "distribution",
+      "name": "Content distribution",
+      "journeys": [
+        "Artist creates a release, enters credits and rights, uploads valid masters and artwork, and reviews validation errors.",
+        "Artist submits a release through the authorized provider sandbox and tracks genuine pending, accepted, rejected, and retry states.",
+        "Artist retries a timed-out submission without duplicate releases, reconciles provider status, and handles signed callbacks.",
+        "Artist requests a supported update or takedown and sees explicit provider and contractual constraints."
+      ],
+      "risks": [
+        "Rights and ownership mistakes",
+        "False provider success",
+        "Duplicate release submission",
+        "Partial chunk upload or callback replay"
+      ],
+      "path_hints": [
+        "client/src/pages/Distribution.tsx",
+        "server/routes/distribution.ts",
+        "server/routes/distribution-toolost-submission.ts",
+        "server/routes/distribution-release-schemas.ts",
+        "server/services/distributionSubmissionRepository.ts",
+        "server/services/distributionChunkedUploadService.ts",
+        "server/services/distributionService.ts"
+      ]
+    },
+    {
+      "id": "marketing",
+      "name": "Marketing automation",
+      "journeys": [
+        "Artist connects a sandbox channel with least privilege, drafts campaign content, previews it, and schedules delivery in the correct timezone.",
+        "Manager reviews an automated proposal, approves only the intended action, and sees the resulting delivery receipt.",
+        "Artist pauses or cancels a campaign before execution; workers respect consent, rate limits, and revocation.",
+        "Artist inspects attribution and failure metrics and reconnects an expired integration without losing drafts."
+      ],
+      "risks": [
+        "Unauthorized publishing or spending",
+        "Timezone and duplicate scheduling errors",
+        "Token revocation",
+        "Unverifiable conversion attribution"
+      ],
+      "path_hints": [
+        "client/src/pages/SocialMedia.tsx",
+        "client/src/pages/Advertisement.tsx",
+        "server/routes/socialApprovals.ts",
+        "server/routes/autonomousSocial.ts",
+        "server/routes/socialBulk.ts",
+        "server/routes/promotionalTools.ts",
+        "server/routes/autopilotPreferences.ts"
+      ]
+    },
+    {
+      "id": "revenue",
+      "name": "Revenue analytics",
+      "journeys": [
+        "Artist imports or syncs a royalty statement, maps releases and splits, and reconciles totals to the source.",
+        "Manager filters revenue by period, currency, source, and project; the UI distinguishes missing data from zero income.",
+        "Artist records refunds or corrections and verifies historical reports, payouts, and exports without double counting.",
+        "Collaborator views only entitled royalty shares and disputes a mismatch through a documented workflow."
+      ],
+      "risks": [
+        "Floating-point currency errors",
+        "Checkout intent counted as revenue",
+        "Duplicate or late statement imports",
+        "Unauthorized financial disclosure"
+      ],
+      "path_hints": [
+        "client/src/pages/Royalties.tsx",
+        "client/src/pages/analytics/RevenueAnalytics.tsx",
+        "server/services/royaltyEngine.ts",
+        "server/services/royaltyExports.ts",
+        "server/services/royaltySplitOwnership.ts",
+        "server/services/royaltiesCSVImportService.ts",
+        "server/routes/revenueForecast.ts"
+      ]
+    },
+    {
+      "id": "assistant",
+      "name": "AI assistant",
+      "journeys": [
+        "Artist asks a question grounded in authorized project data and receives a traceable answer or an explicit uncertainty response.",
+        "Artist requests an action, reviews the proposed side effects, and sees only authorized tools execute.",
+        "A retrieved document or user message tries to override permissions; the assistant keeps tenant data and tool authority isolated.",
+        "Artist cancels a generation, reaches a rate or budget limit, or encounters a provider outage and gets a recoverable state."
+      ],
+      "risks": [
+        "Prompt injection and data leakage",
+        "Unbounded model cost and loops",
+        "Fabricated completed actions",
+        "Tool calls crossing tenant or consent boundaries"
+      ],
+      "path_hints": [
+        "client/src/pages/Assistant.tsx",
+        "client/src/pages/CareerCoach.tsx",
+        "server/routes/assistant.ts",
+        "server/routes/ai.ts",
+        "server/services/maxAssistantService.ts",
+        "server/routes/maxcoreProxy.ts"
+      ]
+    },
+    {
+      "id": "collaboration",
+      "name": "Collaboration tools",
+      "journeys": [
+        "Artist invites a collaborator, collaborator accepts once, and both see the correct project and role.",
+        "Members exchange comments or messages, edit concurrently, reconnect after a network loss, and reconcile durable state.",
+        "Owner changes or revokes permissions while a session is active; subsequent reads, writes, and subscriptions enforce the change.",
+        "Members review a contribution, resolve a conflict, and access only licensed shared files."
+      ],
+      "risks": [
+        "Invitation replay and escalation",
+        "Stale realtime authorization",
+        "Lost updates and conflict handling",
+        "Private message or file leakage"
+      ],
+      "path_hints": [
+        "client/src/pages/Collaborations.tsx",
+        "server/routes/collaborations.ts",
+        "server/routes/collaboration.ts",
+        "server/services/collaborationService.ts",
+        "server/routes/sync.ts"
+      ]
+    },
+    {
+      "id": "marketplace",
+      "name": "Marketplace systems",
+      "journeys": [
+        "Seller creates a licensed listing, uploads assets, previews public metadata, and publishes only a valid listing.",
+        "Buyer starts sandbox checkout and receives the checkout session without the platform claiming a paid purchase.",
+        "A verified payment event creates one order and one entitlement; repeated callbacks or retries never duplicate revenue or access.",
+        "Buyer downloads only entitled assets, requests a supported refund, and seller sees reconciled order and payout status."
+      ],
+      "risks": [
+        "Fabricated purchases",
+        "Duplicate orders and entitlements",
+        "Unauthorized paid-asset access",
+        "License, refund, and revenue inconsistency"
+      ],
+      "path_hints": [
+        "client/src/pages/Marketplace.tsx",
+        "client/src/pages/Storefront.tsx",
+        "server/routes/marketplace.ts",
+        "server/services/marketplaceService.ts",
+        "server/services/commerce/marketplaceCheckout.ts",
+        "server/services/marketplaceStemAccess.ts",
+        "server/routes/webhooks/stripe.ts"
+      ]
+    },
+    {
+      "id": "subscriptions",
+      "name": "Subscription management",
+      "journeys": [
+        "User selects a plan, starts sandbox checkout, and receives entitlements only after authoritative payment confirmation.",
+        "Subscriber upgrades, downgrades, cancels, or restores an eligible plan with explicit effective dates and proration behavior.",
+        "Payment failure, retry, refund, chargeback, or out-of-order webhook updates the subscription once and reconciles stale state.",
+        "User inspects invoices and billing history while another tenant cannot access them; disabled providers surface a truthful unavailable state."
+      ],
+      "risks": [
+        "Payment bypass or premature entitlement",
+        "Out-of-order webhook state corruption",
+        "Plan and price drift",
+        "Invoice exposure and double billing"
+      ],
+      "path_hints": [
+        "client/src/pages/Subscribe.tsx",
+        "client/src/pages/Pricing.tsx",
+        "client/src/pages/RegisterPayment.tsx",
+        "server/routes/billing.ts",
+        "server/services/subscriptionCheckoutService.ts",
+        "server/routes/webhooks/stripe.ts",
+        "server/routes/paymentBypass.ts"
+      ]
+    },
+    {
+      "id": "administration",
+      "name": "Administrative controls",
+      "journeys": [
+        "Authorized administrator completes required authentication, opens scoped dashboards, and sees current source-backed status.",
+        "Administrator investigates a support or moderation case using least-privilege access and records an attributable action.",
+        "Administrator changes a permitted control, previews its impact, and can identify or roll back the change through an audit trail.",
+        "Non-admin, revoked admin, and cross-tenant users are denied both UI and direct API access; bulk actions are bounded and idempotent."
+      ],
+      "risks": [
+        "Privilege escalation",
+        "Unaudited destructive controls",
+        "Sensitive data in dashboards or logs",
+        "Misleading readiness and health status"
+      ],
+      "path_hints": [
+        "client/src/pages/Admin.tsx",
+        "client/src/pages/AdminDashboard.tsx",
+        "client/src/pages/AdminAutonomy.tsx",
+        "client/src/pages/admin/*",
+        "server/routes/admin.ts",
+        "server/routes/admin/*",
+        "server/routes/security.ts",
+        "server/routes/recoveryCodes.ts"
+      ]
+    }
+  ],
+  "templates": [
+    {
+      "id": "p_inventory",
+      "title": "Inventory the actual repository and execution environment",
+      "owner": "techlead",
+      "reviewer": "architect",
+      "scope": "platform",
+      "depends_on": [],
+      "gates": [
+        "build",
+        "types",
+        "start"
+      ],
+      "mode": "analysis",
+      "inputs": [
+        "Pinned source revision and source digest",
+        "Tracked file inventory and package scripts"
+      ],
+      "steps": [
+        "Record runtime and package-manager versions from actual commands.",
+        "Enumerate frontend entrypoints, server entrypoints, shared schemas, workers, and deployment manifests.",
+        "Record environment-variable names and service prerequisites without reading values.",
+        "Identify owned commands for build, check, tests, startup, and artifact validation.",
+        "List absent tooling and blocked capabilities with their effects on verification."
+      ],
+      "deliverables": [
+        "Repository and runtime inventory with exact paths",
+        "Capability and prerequisite register"
+      ],
+      "acceptance": [
+        "Every claimed component has an observed path or command source.",
+        "Missing capabilities remain blocked or unverified."
+      ],
+      "validation": [
+        "Reviewer traces a sample of each component class to pinned source.",
+        "Command availability is distinguished from successful execution."
+      ],
+      "path_scopes": [],
+      "failure_route": "techlead",
+      "max_minutes": 20
+    },
+    {
+      "id": "p_scope",
+      "title": "Reconcile mission scope with the existing launch ledger",
+      "owner": "product",
+      "reviewer": "techlead",
+      "scope": "platform",
+      "depends_on": [
+        "p_inventory"
+      ],
+      "gates": [
+        "features",
+        "documentation"
+      ],
+      "mode": "analysis",
+      "inputs": [
+        "Mission and twelve domain journeys",
+        "Existing launch and page-acceptance ledgers"
+      ],
+      "steps": [
+        "Apply the user-authorized admin-private release scope; keep all twelve domains usable by the existing administrator and retain public launch items as deferred.",
+        "Read the existing launch scope without deleting outstanding items.",
+        "List personas, tenants, subscription levels, and supported environments.",
+        "Map each requested domain to current journeys and unresolved assumptions.",
+        "Define explicit launch-critical outcomes and defer only with recorded product authority.",
+        "Record missing decisions as blockers with an owner and the smallest clarification needed."
+      ],
+      "deliverables": [
+        "Versioned scope matrix",
+        "Assumption and decision register"
+      ],
+      "acceptance": [
+        "All twelve domains remain represented.",
+        "Prior unaccepted pages are not silently accepted by template expansion.",
+        "Admin readiness and public readiness are separate explicit decisions; public onboarding and high concurrency cannot block unrelated admin workflow fixes."
+      ],
+      "validation": [
+        "Compare catalog journeys and existing ledger identifiers.",
+        "Reviewer checks that missing information has a blocker rather than an invented requirement."
+      ],
+      "path_scopes": [],
+      "failure_route": "product",
+      "max_minutes": 20
+    },
+    {
+      "id": "p_routes",
+      "title": "Build the page-to-service dependency inventory",
+      "owner": "architect",
+      "reviewer": "qa",
+      "scope": "platform",
+      "depends_on": [
+        "p_inventory"
+      ],
+      "gates": [
+        "features",
+        "e2e",
+        "integration"
+      ],
+      "mode": "analysis",
+      "inputs": [
+        "Registered frontend and API routes",
+        "Tracked services, schemas, workers, and tests"
+      ],
+      "steps": [
+        "Enumerate route declarations and dynamic route parameters.",
+        "Trace route components through API calls into handlers and storage operations.",
+        "Record authentication and subscription gates at each layer.",
+        "Link existing tests and observability to each observed route.",
+        "Mark untraced edges explicitly and create follow-up discovery work."
+      ],
+      "deliverables": [
+        "Route and dependency matrix",
+        "Unmapped-edge backlog"
+      ],
+      "acceptance": [
+        "Every discovered route has an owner and mapped or explicitly unknown dependencies.",
+        "A rendered page is not recorded as a completed business workflow."
+      ],
+      "validation": [
+        "Sample public, authenticated, and admin routes end to end.",
+        "Reconcile counts against route registration rather than directory names."
+      ],
+      "path_scopes": [],
+      "failure_route": "architect",
+      "max_minutes": 20
+    },
+    {
+      "id": "p_architecture",
+      "title": "Specify system boundaries and cross-domain invariants",
+      "owner": "architect",
+      "reviewer": "techlead",
+      "scope": "platform",
+      "depends_on": [
+        "p_scope",
+        "p_routes"
+      ],
+      "gates": [
+        "features",
+        "operations",
+        "performance"
+      ],
+      "mode": "analysis",
+      "inputs": [
+        "Scope matrix",
+        "Route dependency matrix"
+      ],
+      "steps": [
+        "Map service and data ownership across domains.",
+        "Define identity, tenancy, assets, payments, and event invariants shared across domains.",
+        "Identify transaction and asynchronous handoff boundaries.",
+        "Record deployment and scale assumptions with explicit unknowns.",
+        "Write decisions for consistency, compatibility, and failure isolation."
+      ],
+      "deliverables": [
+        "Architecture decision record",
+        "Cross-domain invariant register"
+      ],
+      "acceptance": [
+        "Every shared entity and side effect has one authoritative owner.",
+        "Capacity assumptions are labeled assumptions until measured."
+      ],
+      "validation": [
+        "Reviewer follows one upload, payment, and collaboration flow across boundaries.",
+        "Contradictions become blocking design tasks."
+      ],
+      "path_scopes": [],
+      "failure_route": "architect",
+      "max_minutes": 20
+    },
+    {
+      "id": "p_critical_paths",
+      "title": "Prioritize complete launch journeys and defect severity",
+      "owner": "product",
+      "reviewer": "qa",
+      "scope": "platform",
+      "depends_on": [
+        "p_scope",
+        "p_routes"
+      ],
+      "gates": [
+        "features",
+        "e2e"
+      ],
+      "mode": "analysis",
+      "inputs": [
+        "Scope and route matrices",
+        "Current failed and unverified gate report"
+      ],
+      "steps": [
+        "List the complete actor-to-durable-outcome sequence for each launch journey.",
+        "Identify where payment, rights, privacy, or data loss can harm users.",
+        "Rank confirmed defects before speculative enhancements.",
+        "Record dependency order, user impact, and effort assumptions.",
+        "Assign a responsible specialist and a measurable completion check to each priority."
+      ],
+      "deliverables": [
+        "Prioritized journey backlog",
+        "Severity and impact rubric"
+      ],
+      "acceptance": [
+        "No critical path ends at a button click or HTTP 200 without durable outcome evidence.",
+        "Severity is supported by a concrete failure or explicit verification need."
+      ],
+      "validation": [
+        "Reviewer verifies the highest-priority journeys have positive and negative acceptance scenarios."
+      ],
+      "path_scopes": [],
+      "failure_route": "product",
+      "max_minutes": 20
+    },
+    {
+      "id": "p_identity",
+      "title": "Audit authentication, session, and account-recovery contracts",
+      "owner": "security",
+      "reviewer": "backend",
+      "scope": "platform",
+      "depends_on": [
+        "p_architecture"
+      ],
+      "gates": [
+        "security",
+        "integration"
+      ],
+      "mode": "analysis",
+      "inputs": [
+        "Auth and recovery routes",
+        "Session stores and middleware"
+      ],
+      "steps": [
+        "Trace registration, login, logout, session renewal, MFA, recovery, and revocation.",
+        "Identify cookie, token, CSRF, rate-limit, and redirect handling.",
+        "Map sensitive actions requiring reauthentication.",
+        "Define expired, stolen, revoked, replayed, and cross-origin test cases.",
+        "Record exploitable findings with exact source and reproduction conditions."
+      ],
+      "deliverables": [
+        "Identity threat model",
+        "Authentication verification matrix"
+      ],
+      "acceptance": [
+        "Every identity transition has success and denial cases.",
+        "No secret or live session value appears in the artifact."
+      ],
+      "validation": [
+        "Run approved isolated auth checks through the trusted verifier.",
+        "Manual analysis remains separate from actual executed evidence."
+      ],
+      "path_scopes": [],
+      "failure_route": "security",
+      "max_minutes": 20
+    },
+    {
+      "id": "p_tenancy",
+      "title": "Map tenant isolation and role enforcement",
+      "owner": "security",
+      "reviewer": "data",
+      "scope": "platform",
+      "depends_on": [
+        "p_architecture"
+      ],
+      "gates": [
+        "security",
+        "integration",
+        "features"
+      ],
+      "mode": "analysis",
+      "inputs": [
+        "Identity ownership model",
+        "All route and storage dependencies"
+      ],
+      "steps": [
+        "List roles and their read, create, modify, delete, export, and admin capabilities.",
+        "Trace tenant derivation from authenticated identity into each store query.",
+        "Identify object identifiers accepted from clients and jobs.",
+        "Specify horizontal and vertical escalation probes for each resource family.",
+        "Map stale role, invitation, and realtime-session invalidation cases."
+      ],
+      "deliverables": [
+        "Role and tenant capability matrix",
+        "Isolation test case register"
+      ],
+      "acceptance": [
+        "Every resource family has explicit allow and deny rules.",
+        "Client-supplied tenant IDs are never assumed authoritative."
+      ],
+      "validation": [
+        "Reviewer selects one resource per domain and traces its enforcement.",
+        "Trusted tests retain actual denial responses and unchanged-store checks."
+      ],
+      "path_scopes": [],
+      "failure_route": "security",
+      "max_minutes": 20
+    },
+    {
+      "id": "p_data_map",
+      "title": "Inventory persistent data, constraints, and retention",
+      "owner": "data",
+      "reviewer": "architect",
+      "scope": "platform",
+      "depends_on": [
+        "p_architecture"
+      ],
+      "gates": [
+        "features",
+        "security",
+        "operations"
+      ],
+      "mode": "analysis",
+      "inputs": [
+        "Shared schemas and persistence adapters",
+        "Cross-domain invariants"
+      ],
+      "steps": [
+        "Map entity keys, tenant keys, relationships, nullable fields, and uniqueness constraints.",
+        "Identify source-of-truth records versus derived caches and analytics.",
+        "Record asset ownership and cascade or cleanup behavior.",
+        "List personal, financial, and rights-sensitive fields with retention requirements.",
+        "Document existing migrations and rollback constraints."
+      ],
+      "deliverables": [
+        "Entity relationship and ownership inventory",
+        "Retention and migration-risk register"
+      ],
+      "acceptance": [
+        "Every critical entity has an authoritative store and ownership key.",
+        "Retention and deletion assumptions remain explicit."
+      ],
+      "validation": [
+        "Reviewer traces artist, project, order, subscription, and asset lifecycles.",
+        "Schema declarations are checked against actual migrations where available."
+      ],
+      "path_scopes": [],
+      "failure_route": "data",
+      "max_minutes": 20
+    },
+    {
+      "id": "p_provider_map",
+      "title": "Inventory providers and sandbox acceptance requirements",
+      "owner": "integrations",
+      "reviewer": "security",
+      "scope": "platform",
+      "depends_on": [
+        "p_architecture"
+      ],
+      "gates": [
+        "integration",
+        "features",
+        "security"
+      ],
+      "mode": "analysis",
+      "inputs": [
+        "Provider adapters and callback routes",
+        "Existing provider configuration names"
+      ],
+      "steps": [
+        "List provider purpose, API version, required scopes, and callback contract.",
+        "Distinguish absent configuration, local fixture, provider sandbox, and production evidence.",
+        "Define valid, rejected, rate-limited, expired, and unavailable responses.",
+        "Record signed-event, retry, reconciliation, and revocation requirements.",
+        "List missing sandbox capabilities without requesting secrets in reports."
+      ],
+      "deliverables": [
+        "Provider capability matrix",
+        "Sandbox verification plan"
+      ],
+      "acceptance": [
+        "No provider is marked functional solely because a mock passed.",
+        "Every irreversible external action has an explicit execution boundary."
+      ],
+      "validation": [
+        "Reviewer traces each configured provider to a real adapter and test source."
+      ],
+      "path_scopes": [],
+      "failure_route": "integrations",
+      "max_minutes": 20
+    },
+    {
+      "id": "p_test_strategy",
+      "title": "Define independent verification layers and evidence contracts",
+      "owner": "qa",
+      "reviewer": "release",
+      "scope": "platform",
+      "depends_on": [
+        "p_critical_paths",
+        "p_tenancy",
+        "p_data_map",
+        "p_provider_map"
+      ],
+      "gates": [
+        "unit",
+        "integration",
+        "e2e",
+        "regression",
+        "coverage"
+      ],
+      "mode": "analysis",
+      "inputs": [
+        "Critical journeys and invariants",
+        "Existing test commands and coverage policy"
+      ],
+      "steps": [
+        "Map each acceptance criterion to unit, integration, browser, contract, or operational evidence.",
+        "Specify disposable services, deterministic fixtures, cleanup, and network boundaries.",
+        "Require fresh source-bound raw results and explicit skip counts.",
+        "Define old-behavior failure checks for bug regressions.",
+        "Preserve existing coverage thresholds and identify uncovered code rather than excluding it."
+      ],
+      "deliverables": [
+        "Verification traceability matrix",
+        "Fixture and evidence contract"
+      ],
+      "acceptance": [
+        "Each release criterion has a producer or a visible unverified blocker.",
+        "Mock results are labeled and do not satisfy provider or deployment acceptance."
+      ],
+      "validation": [
+        "Reviewer checks schema, command, exit, source hash, and artifact freshness requirements."
+      ],
+      "path_scopes": [],
+      "failure_route": "qa",
+      "max_minutes": 20
+    },
+    {
+      "id": "p_ci",
+      "title": "Diagnose build and CI execution prerequisites",
+      "owner": "release",
+      "reviewer": "techlead",
+      "scope": "platform",
+      "depends_on": [
+        "p_inventory",
+        "p_test_strategy"
+      ],
+      "gates": [
+        "build",
+        "types",
+        "lint",
+        "regression"
+      ],
+      "mode": "analysis",
+      "inputs": [
+        "Package scripts and workflows",
+        "Observed CI annotations and local command receipts"
+      ],
+      "steps": [
+        "Separate jobs that never started from actual command failures.",
+        "Record account, runner, network, dependency, and resource blockers.",
+        "Reproduce owned build and check commands with documented runtime limits.",
+        "Compare lockfiles, package scripts, and nested dependency installation requirements.",
+        "Prepare a narrow repair proposal without modifying protected workflow or package files automatically."
+      ],
+      "deliverables": [
+        "CI and build diagnosis",
+        "Protected configuration change proposal"
+      ],
+      "acceptance": [
+        "Account billing or missing runners are not represented as code failures.",
+        "Configuration edits require the separate review path."
+      ],
+      "validation": [
+        "Trusted commands capture actual exits and logs.",
+        "Reviewer compares local execution environment with declared CI environment."
+      ],
+      "path_scopes": [],
+      "failure_route": "release",
+      "max_minutes": 20
+    },
+    {
+      "id": "p_build_contract",
+      "title": "Verify source-to-artifact provenance and packaging",
+      "owner": "release",
+      "reviewer": "sre",
+      "scope": "platform",
+      "depends_on": [
+        "p_ci"
+      ],
+      "gates": [
+        "build",
+        "artifact_contract"
+      ],
+      "mode": "analysis",
+      "inputs": [
+        "Production builder and launcher",
+        "Current artifact manifest contract"
+      ],
+      "steps": [
+        "Identify all generated artifact roots and expected deployment assets.",
+        "Inspect how source, dependencies, and environment influence the build.",
+        "Run the configured build only through the trusted verification interface.",
+        "Validate manifest source binding and required asset hashes.",
+        "Record packaging omissions, stale assets, and runtime dependency gaps."
+      ],
+      "deliverables": [
+        "Build provenance assessment",
+        "Artifact validation receipt references"
+      ],
+      "acceptance": [
+        "Artifact existence alone never passes the gate.",
+        "A changed source or artifact invalidates earlier readiness evidence."
+      ],
+      "validation": [
+        "Invoke the configured final artifact validator and retain its actual result.",
+        "Reviewer checks missing and tampered asset cases."
+      ],
+      "path_scopes": [],
+      "failure_route": "release",
+      "max_minutes": 20
+    },
+    {
+      "id": "p_runtime",
+      "title": "Verify production startup, readiness, and shutdown semantics",
+      "owner": "sre",
+      "reviewer": "release",
+      "scope": "platform",
+      "depends_on": [
+        "p_build_contract"
+      ],
+      "gates": [
+        "start",
+        "operations"
+      ],
+      "mode": "analysis",
+      "inputs": [
+        "Production launch command",
+        "Disposable dependency environment"
+      ],
+      "steps": [
+        "Define cold startup prerequisites and dependency failure cases.",
+        "Start the packaged production artifact in isolation and observe actual readiness endpoints.",
+        "Exercise degraded dependencies and verify readiness is truthful.",
+        "Send graceful shutdown signals and inspect draining, cleanup, and exit behavior.",
+        "Record startup duration, resource use, logs, and remaining processes."
+      ],
+      "deliverables": [
+        "Startup and shutdown scenario specification",
+        "Trusted runtime receipt references"
+      ],
+      "acceptance": [
+        "Simulation output cannot satisfy real startup acceptance.",
+        "All owned processes and disposable resources are cleaned up."
+      ],
+      "validation": [
+        "Trusted harness must retain process lifecycle and health observations.",
+        "Missing production-start harness leaves start unverified."
+      ],
+      "path_scopes": [],
+      "failure_route": "sre",
+      "max_minutes": 20
+    },
+    {
+      "id": "p_observability",
+      "title": "Specify logs, metrics, traces, and alert ownership",
+      "owner": "sre",
+      "reviewer": "security",
+      "scope": "platform",
+      "depends_on": [
+        "p_architecture",
+        "p_critical_paths"
+      ],
+      "gates": [
+        "operations",
+        "documentation"
+      ],
+      "mode": "analysis",
+      "inputs": [
+        "Critical paths and existing instrumentation",
+        "Privacy and tenancy requirements"
+      ],
+      "steps": [
+        "Define service-level indicators for success, latency, availability, and job age.",
+        "Map correlation identifiers across request, transaction, job, and provider boundaries.",
+        "Specify log redaction and bounded error metadata.",
+        "Define alert thresholds, routing ownership, and actionable runbook links.",
+        "Identify missing monitors with exact instrumentation points."
+      ],
+      "deliverables": [
+        "Observability specification",
+        "Alert and runbook ownership matrix"
+      ],
+      "acceptance": [
+        "No sensitive payload is required for diagnosis.",
+        "Each alert has an owner, trigger, and next action."
+      ],
+      "validation": [
+        "Reviewer checks a success, denial, provider outage, and worker failure trace."
+      ],
+      "path_scopes": [],
+      "failure_route": "sre",
+      "max_minutes": 20
+    },
+    {
+      "id": "p_recovery",
+      "title": "Design and rehearse backup, restore, and rollback evidence",
+      "owner": "sre",
+      "reviewer": "data",
+      "scope": "platform",
+      "depends_on": [
+        "p_data_map",
+        "p_runtime"
+      ],
+      "gates": [
+        "operations"
+      ],
+      "mode": "analysis",
+      "inputs": [
+        "Store and asset ownership inventory",
+        "Deployment and migration constraints"
+      ],
+      "steps": [
+        "Define recovery objectives and the data required to verify them.",
+        "Identify backup creation, integrity, retention, and restoration procedures.",
+        "Plan restore into an isolated environment with no production writes.",
+        "Verify application consistency and asset references after restoration.",
+        "Document deployment and migration rollback limits and reconciliation steps."
+      ],
+      "deliverables": [
+        "Recovery drill plan and result references",
+        "Rollback feasibility register"
+      ],
+      "acceptance": [
+        "A backup file is not proof of successful restoration.",
+        "Unperformed drills remain unverified."
+      ],
+      "validation": [
+        "Trusted drill checks restored rows, ownership, assets, and service behavior.",
+        "Reviewer verifies recovery time and data-loss claims against observations."
+      ],
+      "path_scopes": [],
+      "failure_route": "sre",
+      "max_minutes": 20
+    },
+    {
+      "id": "p_security_baseline",
+      "title": "Audit application and supply-chain exposure",
+      "owner": "security",
+      "reviewer": "techlead",
+      "scope": "platform",
+      "depends_on": [
+        "p_identity",
+        "p_tenancy",
+        "p_provider_map"
+      ],
+      "gates": [
+        "security"
+      ],
+      "mode": "analysis",
+      "inputs": [
+        "Dependency locks and trusted audit command",
+        "Threat model and deployment boundaries"
+      ],
+      "steps": [
+        "Run dependency audit through the configured trusted gate.",
+        "Inspect risky request parsing, file access, redirects, outbound fetch, and command execution.",
+        "Map XSS, CSRF, SSRF, injection, replay, and API-abuse test targets.",
+        "Check secrets handling and redaction without printing credential values.",
+        "Classify findings by confirmed exploitability and required mitigation."
+      ],
+      "deliverables": [
+        "Security findings register",
+        "Exploit and remediation verification plan"
+      ],
+      "acceptance": [
+        "Zero dependency advisories is not equivalent to secure application behavior.",
+        "Critical and high unresolved findings block release."
+      ],
+      "validation": [
+        "Each confirmed finding retains a safe isolated reproduction.",
+        "Reviewer checks false positives and mitigation acceptance."
+      ],
+      "path_scopes": [],
+      "failure_route": "security",
+      "max_minutes": 20
+    },
+    {
+      "id": "p_a11y_baseline",
+      "title": "Define accessibility coverage for every critical interaction state",
+      "owner": "accessibility",
+      "reviewer": "ux",
+      "scope": "platform",
+      "depends_on": [
+        "p_routes",
+        "p_critical_paths"
+      ],
+      "gates": [
+        "accessibility",
+        "e2e"
+      ],
+      "mode": "analysis",
+      "inputs": [
+        "Route matrix and interaction designs",
+        "Supported viewport and input modes"
+      ],
+      "steps": [
+        "List every form, modal, menu, table, editor, upload, and status interaction.",
+        "Specify accessible name, role, label, description, and announcement expectations.",
+        "Define keyboard order, focus restoration, zoom, reflow, and reduced-motion checks.",
+        "Separate automated checks from assistive-technology and manual observations.",
+        "Map uncovered states to explicit accessibility tasks."
+      ],
+      "deliverables": [
+        "Accessibility state matrix",
+        "Measurement and review protocol"
+      ],
+      "acceptance": [
+        "Route render coverage cannot substitute for state-level accessibility.",
+        "Unsupported or untested input modes stay visible."
+      ],
+      "validation": [
+        "Reviewer checks keyboard completion of representative artist and admin journeys."
+      ],
+      "path_scopes": [],
+      "failure_route": "accessibility",
+      "max_minutes": 20
+    },
+    {
+      "id": "p_perf_baseline",
+      "title": "Define realistic capacity and responsiveness experiments",
+      "owner": "performance",
+      "reviewer": "sre",
+      "scope": "platform",
+      "depends_on": [
+        "p_architecture",
+        "p_critical_paths"
+      ],
+      "gates": [
+        "performance"
+      ],
+      "mode": "analysis",
+      "inputs": [
+        "Runtime limits and critical paths",
+        "Observed data volumes and product targets"
+      ],
+      "steps": [
+        "Use measured private-admin workload and real asset sizes first; record massive public concurrency targets as later work.",
+        "Specify workload mix, payload sizes, data cardinality, and concurrency increments.",
+        "Set an isolated target, resource budget, maximum duration, and abort criteria.",
+        "Measure baseline API p95 and page-load distributions with sample counts.",
+        "Record query, CPU, memory, queue, and browser traces at saturation.",
+        "Separate extrapolated capacity from directly measured capacity."
+      ],
+      "deliverables": [
+        "Performance experiment contract",
+        "Baseline measurement references"
+      ],
+      "acceptance": [
+        "No production or public host is load-tested by this loop.",
+        "Claims of scale include workload, environment, duration, and sample count."
+      ],
+      "validation": [
+        "Trusted producer supplies fresh api_p95_ms and page_load_seconds values.",
+        "Reviewer checks warmup, errors, and measurement bias."
+      ],
+      "path_scopes": [],
+      "failure_route": "performance",
+      "max_minutes": 20
+    },
+    {
+      "id": "p_ai_boundaries",
+      "title": "Specify agent and model authority boundaries",
+      "owner": "ai",
+      "reviewer": "security",
+      "scope": "platform",
+      "depends_on": [
+        "p_architecture",
+        "p_provider_map"
+      ],
+      "gates": [
+        "security",
+        "features"
+      ],
+      "mode": "analysis",
+      "inputs": [
+        "Assistant tools and retrieval sources",
+        "Provider capability matrix"
+      ],
+      "steps": [
+        "Enumerate model inputs, retrieved content, tool names, and side effects.",
+        "Specify structured outputs and deterministic validation before tool execution.",
+        "Map tenant filtering, user confirmation, budget, cancellation, and escalation requirements.",
+        "Define prompt-injection and data-exfiltration adversarial cases.",
+        "Record unavailable models or tools as blocked capability."
+      ],
+      "deliverables": [
+        "AI authority and data-flow specification",
+        "Agent adversarial evaluation matrix"
+      ],
+      "acceptance": [
+        "Untrusted repository, provider, or retrieved text never grants tool authority.",
+        "A model claim never proves a side effect happened."
+      ],
+      "validation": [
+        "Reviewer traces one read-only answer and one proposed mutation.",
+        "Trusted evaluations retain actual tool calls and denial outcomes."
+      ],
+      "path_scopes": [],
+      "failure_route": "ai",
+      "max_minutes": 20
+    },
+    {
+      "id": "p_event_contracts",
+      "title": "Define truthful product and financial event semantics",
+      "owner": "analytics",
+      "reviewer": "data",
+      "scope": "platform",
+      "depends_on": [
+        "p_data_map",
+        "p_critical_paths"
+      ],
+      "gates": [
+        "features",
+        "integration"
+      ],
+      "mode": "analysis",
+      "inputs": [
+        "Authoritative state and payment ownership",
+        "Existing event emitters and aggregate readers"
+      ],
+      "steps": [
+        "Define unique event identity, actor, tenant, timestamp, and origin.",
+        "Separate requested, scheduled, submitted, accepted, paid, refunded, and failed outcomes.",
+        "Identify duplication, late arrival, timezone, and currency behavior.",
+        "Specify consent, retention, redaction, and access controls.",
+        "Map every revenue metric to authoritative financial records."
+      ],
+      "deliverables": [
+        "Event dictionary",
+        "Financial reconciliation invariants"
+      ],
+      "acceptance": [
+        "Checkout creation never counts as a paid purchase.",
+        "Missing or stale data is distinguishable from a genuine zero."
+      ],
+      "validation": [
+        "Reviewer traces one metric backward to its authoritative record.",
+        "Trusted tests cover replay and out-of-order events."
+      ],
+      "path_scopes": [],
+      "failure_route": "analytics",
+      "max_minutes": 20
+    },
+    {
+      "id": "p_docs_map",
+      "title": "Map product, API, and operational documentation needs",
+      "owner": "docs",
+      "reviewer": "product",
+      "scope": "platform",
+      "depends_on": [
+        "p_scope",
+        "p_routes",
+        "p_provider_map"
+      ],
+      "gates": [
+        "documentation"
+      ],
+      "mode": "analysis",
+      "inputs": [
+        "Accepted scope and provider limits",
+        "Existing documentation tree"
+      ],
+      "steps": [
+        "List user onboarding and task guides required for each domain.",
+        "Map API contracts and error behavior to documentation sources.",
+        "List setup, testing, recovery, incident, and release runbooks.",
+        "Identify examples that disagree with current source.",
+        "Record owner, reviewer, and freshness rules for every required document."
+      ],
+      "deliverables": [
+        "Documentation coverage matrix",
+        "Stale or missing example backlog"
+      ],
+      "acceptance": [
+        "Unsupported features are not documented as available.",
+        "Each launch-critical document has an observed location or explicit gap."
+      ],
+      "validation": [
+        "Reviewer follows a setup and a user journey using the draft instructions."
+      ],
+      "path_scopes": [],
+      "failure_route": "docs",
+      "max_minutes": 20
+    },
+    {
+      "id": "p_incident_protocol",
+      "title": "Define defect reproduction, triage, and escalation protocol",
+      "owner": "incident",
+      "reviewer": "qa",
+      "scope": "platform",
+      "depends_on": [
+        "p_test_strategy",
+        "p_observability"
+      ],
+      "gates": [
+        "regression",
+        "operations"
+      ],
+      "mode": "analysis",
+      "inputs": [
+        "Verification and observability contracts",
+        "Historical failures and repair outcomes"
+      ],
+      "steps": [
+        "Specify minimal failure packets with source, command, environment, and raw evidence.",
+        "Require a failing invariant and competing root-cause hypotheses.",
+        "Define severity, owner, regression test, and rollback criteria.",
+        "Set repeated-failure and no-progress escalation rules.",
+        "Define how lessons change ordering or prompts without weakening acceptance."
+      ],
+      "deliverables": [
+        "Defect investigation contract",
+        "Learning and escalation rules"
+      ],
+      "acceptance": [
+        "Repeated identical failures stop or change investigation strategy.",
+        "A narrative root cause without reproduction remains a hypothesis."
+      ],
+      "validation": [
+        "Reviewer applies the protocol to one previously observed failure."
+      ],
+      "path_scopes": [],
+      "failure_route": "incident",
+      "max_minutes": 20
+    },
+    {
+      "id": "p_decomposition",
+      "title": "Expand broad work into exact member assignments",
+      "owner": "techlead",
+      "reviewer": "product",
+      "scope": "platform",
+      "depends_on": [
+        "p_critical_paths",
+        "p_test_strategy",
+        "p_docs_map"
+      ],
+      "gates": [
+        "features",
+        "documentation"
+      ],
+      "mode": "analysis",
+      "inputs": [
+        "Domain templates and discovered route matrix",
+        "Acceptance and documentation matrices"
+      ],
+      "steps": [
+        "Create an instance for each concrete route, entity, transition, integration, and acceptance scenario in scope.",
+        "Bind every instance to exact observed file paths and one accountable role.",
+        "List prerequisites, permitted edits, expected artifacts, reviewer, and verification producer.",
+        "Split tasks exceeding the time budget or spanning unrelated state transitions.",
+        "Keep undiscovered behavior and unresolved source mappings in a visible discovery backlog."
+      ],
+      "deliverables": [
+        "Exact work-package expansion",
+        "Assignment and dependency ledger"
+      ],
+      "acceptance": [
+        "Template instantiation is not claimed to enumerate undiscovered behavior.",
+        "No task starts without bounded inputs, scope, completion criteria, and ownership."
+      ],
+      "validation": [
+        "Reviewer checks one fully expanded journey per domain.",
+        "Dependency and path-overlap checks reject conflicting concurrent edits."
+      ],
+      "path_scopes": [],
+      "failure_route": "techlead",
+      "max_minutes": 20
+    },
+    {
+      "id": "p_contract_review",
+      "title": "Review shared contracts before cross-domain integration",
+      "owner": "architect",
+      "reviewer": "security",
+      "scope": "platform",
+      "depends_on": [
+        "p_decomposition",
+        "p_event_contracts",
+        "p_ai_boundaries"
+      ],
+      "gates": [
+        "integration",
+        "security"
+      ],
+      "mode": "analysis",
+      "inputs": [
+        "Domain contract artifacts",
+        "Shared identity, event, and data invariants"
+      ],
+      "steps": [
+        "Compare field names, versions, errors, and tenant identity across producer and consumer boundaries.",
+        "Identify incompatible state transitions and duplicate source-of-truth ownership.",
+        "Check event delivery and retry assumptions.",
+        "Route contradictions to the exact owning task.",
+        "Record accepted contracts and unresolved integration blockers."
+      ],
+      "deliverables": [
+        "Cross-domain contract review",
+        "Conflict and ownership resolution register"
+      ],
+      "acceptance": [
+        "No contradictory contract is silently selected by the coordinator.",
+        "Dependent implementation remains blocked until the contract is accepted."
+      ],
+      "validation": [
+        "Reviewer traces producer and consumer behavior for payments, assets, and collaboration."
+      ],
+      "path_scopes": [],
+      "failure_route": "architect",
+      "max_minutes": 20
+    },
+    {
+      "id": "p_fault_plan",
+      "title": "Design fault injection and degraded-operation acceptance",
+      "owner": "sre",
+      "reviewer": "qa",
+      "scope": "platform",
+      "depends_on": [
+        "p_runtime",
+        "p_provider_map",
+        "p_test_strategy"
+      ],
+      "gates": [
+        "operations",
+        "integration",
+        "regression"
+      ],
+      "mode": "analysis",
+      "inputs": [
+        "Critical paths and dependency map",
+        "Disposable execution capabilities"
+      ],
+      "steps": [
+        "Select controlled database, cache, queue, storage, provider, and network failures.",
+        "Define expected timeout, retry, circuit, user message, and recovery behavior.",
+        "Set blast-radius, cleanup, and abort limits for each experiment.",
+        "Specify durable-state checks after interruption and replay.",
+        "Identify faults that cannot be safely reproduced in the current environment."
+      ],
+      "deliverables": [
+        "Fault-injection scenario pack",
+        "Recovery assertions and cleanup checks"
+      ],
+      "acceptance": [
+        "All experiments are confined to disposable resources.",
+        "Missing fault capability remains unverified."
+      ],
+      "validation": [
+        "Trusted harness records injected fault timing and observed recovery.",
+        "Reviewer checks no hidden loss, duplicate side effect, or false success."
+      ],
+      "path_scopes": [],
+      "failure_route": "sre",
+      "max_minutes": 20
+    },
+    {
+      "id": "p_release_matrix",
+      "title": "Compile release gates without converting unknowns into passes",
+      "owner": "release",
+      "reviewer": "qa",
+      "scope": "platform",
+      "depends_on": [
+        "p_build_contract",
+        "p_runtime",
+        "p_recovery",
+        "p_security_baseline",
+        "p_a11y_baseline",
+        "p_perf_baseline",
+        "p_contract_review"
+      ],
+      "gates": [
+        "build",
+        "types",
+        "lint",
+        "unit",
+        "integration",
+        "e2e",
+        "regression",
+        "security",
+        "coverage",
+        "accessibility",
+        "performance",
+        "features",
+        "operations",
+        "documentation",
+        "start",
+        "artifact_contract"
+      ],
+      "mode": "analysis",
+      "inputs": [
+        "Fresh source-bound gate report",
+        "Domain completion and evidence ledger"
+      ],
+      "steps": [
+        "List every required gate with exact source, policy, command, exit, and evidence path.",
+        "Separate failed checks, unexecuted checks, provider skips, and invalid stale evidence.",
+        "Verify source and artifact identity after all checks.",
+        "Record launch-blocking gaps and their accountable specialists.",
+        "Prepare a GO or NO-GO recommendation without granting release authority."
+      ],
+      "deliverables": [
+        "Release readiness matrix",
+        "Source and artifact evidence index"
+      ],
+      "acceptance": [
+        "All required gates must pass; a high score cannot hide a blocker.",
+        "Task completion and review prose cannot override verifier output."
+      ],
+      "validation": [
+        "Reviewer independently resolves each evidence link and freshness constraint."
+      ],
+      "path_scopes": [],
+      "failure_route": "release",
+      "max_minutes": 20
+    },
+    {
+      "id": "p_handoff",
+      "title": "Prepare the operational and product handoff package",
+      "owner": "docs",
+      "reviewer": "sre",
+      "scope": "platform",
+      "depends_on": [
+        "p_release_matrix",
+        "p_docs_map",
+        "p_incident_protocol"
+      ],
+      "gates": [
+        "documentation",
+        "operations"
+      ],
+      "mode": "analysis",
+      "inputs": [
+        "Release matrix and known limitations",
+        "Recovery and incident artifacts"
+      ],
+      "steps": [
+        "Assemble setup, user, support, API, incident, and recovery references.",
+        "State current release decision and outstanding blockers plainly.",
+        "List ownership and the next action for each operational alert.",
+        "Provide disable and rollback instructions for the loop itself.",
+        "Record the exact candidate revision and artifact references for handoff."
+      ],
+      "deliverables": [
+        "Reviewable handoff package",
+        "Known limitations and next-owner list"
+      ],
+      "acceptance": [
+        "No deployment or readiness claim exceeds retained evidence.",
+        "A new operator can identify how to stop the loop and recover."
+      ],
+      "validation": [
+        "Reviewer follows the handoff links and checks command prerequisites."
+      ],
+      "path_scopes": [],
+      "failure_route": "docs",
+      "max_minutes": 20
+    },
+    {
+      "id": "p_failure_review",
+      "title": "Turn repeated failures into evaluated workflow improvements",
+      "owner": "incident",
+      "reviewer": "techlead",
+      "scope": "platform",
+      "depends_on": [
+        "p_incident_protocol"
+      ],
+      "gates": [
+        "regression",
+        "operations"
+      ],
+      "mode": "analysis",
+      "inputs": [
+        "Prior attempt outcomes and timing",
+        "Accepted and rejected fix records"
+      ],
+      "steps": [
+        "Group failures by verified cause rather than message similarity alone.",
+        "Compare repair success, regression, latency, and no-progress rates.",
+        "Propose a narrower task, better evidence, changed ordering, or improved prompt.",
+        "Evaluate the proposal against retained adversarial and regression cases.",
+        "Keep failed experiments and never reduce gates or budgets silently."
+      ],
+      "deliverables": [
+        "Workflow improvement proposal",
+        "Before and after evaluation plan"
+      ],
+      "acceptance": [
+        "A claimed improvement has a measurable baseline and evaluation.",
+        "Runner or policy changes require their own reviewed code change."
+      ],
+      "validation": [
+        "Reviewer checks that optimization preserves mandatory gates and review independence."
+      ],
+      "path_scopes": [],
+      "failure_route": "incident",
+      "max_minutes": 20
+    },
+    {
+      "id": "p_privacy",
+      "title": "Map privacy requests and data lifecycle evidence",
+      "owner": "security",
+      "reviewer": "docs",
+      "scope": "platform",
+      "depends_on": [
+        "p_data_map",
+        "p_scope"
+      ],
+      "gates": [
+        "security",
+        "documentation",
+        "features"
+      ],
+      "mode": "analysis",
+      "inputs": [
+        "Personal-data inventory",
+        "Export, erasure, consent, and retention routes"
+      ],
+      "steps": [
+        "Map collection purpose, consent, access, retention, export, and erasure for each personal-data class.",
+        "Trace copies in assets, logs, caches, analytics, backups, and providers.",
+        "Define identity verification for privacy requests.",
+        "Record retention conflicts and legal-policy questions without inventing legal conclusions.",
+        "Specify executable export and deletion acceptance scenarios."
+      ],
+      "deliverables": [
+        "Privacy lifecycle matrix",
+        "Request verification and retention-gap register"
+      ],
+      "acceptance": [
+        "Technical checks are not represented as GDPR, CCPA, or SOC2 certification.",
+        "Every claimed deletion identifies retained exceptions."
+      ],
+      "validation": [
+        "Reviewer traces one user export and erasure across stores and providers."
+      ],
+      "path_scopes": [],
+      "failure_route": "security",
+      "max_minutes": 20
+    },
+    {
+      "id": "p_supply_chain",
+      "title": "Review dependency installation and artifact trust boundaries",
+      "owner": "security",
+      "reviewer": "release",
+      "scope": "platform",
+      "depends_on": [
+        "p_inventory",
+        "p_build_contract"
+      ],
+      "gates": [
+        "security",
+        "build",
+        "artifact_contract"
+      ],
+      "mode": "analysis",
+      "inputs": [
+        "Lockfiles and installation scripts",
+        "Generated artifact inventory"
+      ],
+      "steps": [
+        "Inventory package sources, install hooks, binaries, and nested workspaces.",
+        "Check that reproducible installs use the committed locks.",
+        "Identify executable content downloaded at build or runtime.",
+        "Record provenance gaps and safe remediation proposals.",
+        "Validate that generated artifacts do not unexpectedly contain secrets or source-only files."
+      ],
+      "deliverables": [
+        "Supply-chain review artifact",
+        "Dependency provenance gaps"
+      ],
+      "acceptance": [
+        "No dependency upgrade is applied blindly by an automatic audit fix.",
+        "Protected manifest or lockfile changes follow separate review."
+      ],
+      "validation": [
+        "Reviewer compares declared and observed installation paths and build inputs."
+      ],
+      "path_scopes": [],
+      "failure_route": "security",
+      "max_minutes": 20
+    },
+    {
+      "id": "p_resource_budget",
+      "title": "Define coordinator and worker resource budgets",
+      "owner": "techlead",
+      "reviewer": "sre",
+      "scope": "platform",
+      "depends_on": [
+        "p_inventory",
+        "p_decomposition"
+      ],
+      "gates": [
+        "operations",
+        "performance"
+      ],
+      "mode": "analysis",
+      "inputs": [
+        "Execution capability register",
+        "Task sizes and historical duration"
+      ],
+      "steps": [
+        "Set finite task, cycle, elapsed-time, and worker limits.",
+        "Define cancellation propagation and cleanup responsibilities.",
+        "Schedule only independent work with nonoverlapping edit ownership.",
+        "Set memory, disk, command-output, and provider-budget limits for the executor environment.",
+        "Specify blocked-capability and no-progress termination outcomes."
+      ],
+      "deliverables": [
+        "Execution budget and cancellation contract",
+        "Scheduling constraints"
+      ],
+      "acceptance": [
+        "No unbounded recursion or spawn loop is authorized.",
+        "Path checks are described as coordination protections rather than a hostile-code sandbox."
+      ],
+      "validation": [
+        "Reviewer tests cancellation, exhaustion, and overlapping-task rejection through runner tests."
+      ],
+      "path_scopes": [],
+      "failure_route": "techlead",
+      "max_minutes": 20
+    },
+    {
+      "id": "p_coverage_gap",
+      "title": "Build a source-level coverage gap queue",
+      "owner": "qa",
+      "reviewer": "techlead",
+      "scope": "platform",
+      "depends_on": [
+        "p_test_strategy"
+      ],
+      "gates": [
+        "coverage",
+        "unit",
+        "integration"
+      ],
+      "mode": "analysis",
+      "inputs": [
+        "Fresh coverage summary and file details",
+        "Existing threshold configuration"
+      ],
+      "steps": [
+        "Verify coverage source identity, parser completeness, and instrumentation scope.",
+        "List uncovered executable branches and functions by file.",
+        "Prioritize uncovered authorization, payment, persistence, and failure paths.",
+        "Create behavior-focused test proposals rather than line-execution filler.",
+        "Keep generated test proposals outside protected existing tests until reviewed integration."
+      ],
+      "deliverables": [
+        "Coverage gap queue by source location",
+        "Prioritized independent test proposals"
+      ],
+      "acceptance": [
+        "No source exclusion or threshold reduction is used to improve the score.",
+        "Passing tests and coverage attainment are reported separately."
+      ],
+      "validation": [
+        "Reviewer checks branch expectations against actual behavior and coverage raw data."
+      ],
+      "path_scopes": [],
+      "failure_route": "qa",
+      "max_minutes": 20
+    },
+    {
+      "id": "p_operational_self_heal",
+      "title": "Specify bounded detection and remediation runbooks",
+      "owner": "sre",
+      "reviewer": "security",
+      "scope": "platform",
+      "depends_on": [
+        "p_fault_plan",
+        "p_observability",
+        "p_recovery"
+      ],
+      "gates": [
+        "operations",
+        "regression"
+      ],
+      "mode": "analysis",
+      "inputs": [
+        "Observed fault signatures",
+        "Recovery and rollback contracts"
+      ],
+      "steps": [
+        "Map each supported symptom to deterministic evidence and a bounded diagnosis.",
+        "Define reversible candidate remedies and their preconditions.",
+        "Require isolated validation and regression checks before proposing production action.",
+        "Specify stop, escalation, rollback, and repeated-failure behavior.",
+        "Document unsupported symptoms and missing monitoring capabilities."
+      ],
+      "deliverables": [
+        "Self-healing runbook proposals",
+        "Remediation eligibility and stop conditions"
+      ],
+      "acceptance": [
+        "This task does not install a production remediation daemon.",
+        "A health alert cannot authorize arbitrary code or database mutation."
+      ],
+      "validation": [
+        "Reviewer walks a latency, worker crash, and provider outage scenario."
+      ],
+      "path_scopes": [],
+      "failure_route": "sre",
+      "max_minutes": 20
+    },
+    {
+      "id": "p_reconcile_scope",
+      "title": "Reconcile final discoveries back into the mission ledger",
+      "owner": "product",
+      "reviewer": "release",
+      "scope": "platform",
+      "depends_on": [
+        "p_handoff",
+        "p_privacy",
+        "p_coverage_gap"
+      ],
+      "gates": [
+        "features",
+        "documentation"
+      ],
+      "mode": "analysis",
+      "inputs": [
+        "Exact task ledger and remaining discoveries",
+        "Release and domain acceptance evidence"
+      ],
+      "steps": [
+        "Compare completed tasks with every launch requirement and discovered user action.",
+        "Reopen requirements whose source changed after acceptance.",
+        "Record explicit unsupported paths, untested states, and provider gaps.",
+        "Assign new concrete tasks for newly discovered behavior.",
+        "Preserve the release NO-GO until all mandatory evidence is current."
+      ],
+      "deliverables": [
+        "Final scope reconciliation",
+        "Remaining exact assignments"
+      ],
+      "acceptance": [
+        "No task count or percent complete substitutes for feature acceptance.",
+        "The discovery backlog cannot be silently dropped at cycle exhaustion."
+      ],
+      "validation": [
+        "Reviewer samples accepted and unaccepted requirements against current source and receipts."
+      ],
+      "path_scopes": [],
+      "failure_route": "product",
+      "max_minutes": 20
+    },
+    {
+      "id": "d_discover",
+      "title": "Trace {domain} from UI action to durable result",
+      "owner": "architect",
+      "reviewer": "qa",
+      "scope": "domain",
+      "depends_on": [],
+      "gates": [
+        "features",
+        "integration"
+      ],
+      "mode": "analysis",
+      "inputs": [
+        "Domain journeys and path hints",
+        "Observed tracked source inventory"
+      ],
+      "steps": [
+        "Locate the actual routes, components, handlers, services, schemas, jobs, and provider adapters for {domain}.",
+        "Trace every declared journey action to its durable state or explicit missing implementation.",
+        "List duplicate, legacy, disconnected, and unreachable code paths.",
+        "Record permissions, dependencies, and current tests for each path.",
+        "Create a gap entry for every unresolved edge instead of guessing a source path."
+      ],
+      "deliverables": [
+        "Domain dependency trace",
+        "Concrete unknown and missing-feature register"
+      ],
+      "acceptance": [
+        "Each claimed implementation has an exact observed path and symbol.",
+        "Path hints are discovery aids, not permission or proof."
+      ],
+      "validation": [
+        "Reviewer independently follows one complete journey and one denial path."
+      ],
+      "path_scopes": [],
+      "failure_route": "architect",
+      "max_minutes": 20,
+      "platform_requires": [
+        "p_architecture",
+        "p_identity",
+        "p_test_strategy"
+      ]
+    },
+    {
+      "id": "d_acceptance",
+      "title": "Specify exact {domain} acceptance scenarios",
+      "owner": "product",
+      "reviewer": "qa",
+      "scope": "domain",
+      "depends_on": [
+        "d_discover"
+      ],
+      "gates": [
+        "features",
+        "e2e"
+      ],
+      "mode": "analysis",
+      "inputs": [
+        "Domain journeys and risks",
+        "Actual implementation and gap register"
+      ],
+      "steps": [
+        "Use the existing administrator as the primary actor and enumerate every admin-visible action, including actions shared with ordinary artist accounts.",
+        "Enumerate actor, tenant, preconditions, action, expected state, and visible result for every journey.",
+        "Add invalid input, denied role, missing dependency, interrupted operation, and retry outcomes.",
+        "Identify irreversible or financial effects and their acceptance requirements.",
+        "Separate present behavior from required behavior.",
+        "Assign a stable criterion identifier to every scenario."
+      ],
+      "deliverables": [
+        "Scenario-level acceptance specification",
+        "Requirement-to-source mapping"
+      ],
+      "acceptance": [
+        "Every scenario has an observable durable outcome and failure expectation.",
+        "Unanswered product decisions remain blocking assumptions."
+      ],
+      "validation": [
+        "Reviewer rejects vague criteria such as works correctly or page loads."
+      ],
+      "path_scopes": [],
+      "failure_route": "product",
+      "max_minutes": 20
+    },
+    {
+      "id": "d_tasks",
+      "title": "Expand {domain} into bounded concrete work packages",
+      "owner": "techlead",
+      "reviewer": "product",
+      "scope": "domain",
+      "depends_on": [
+        "d_acceptance"
+      ],
+      "gates": [
+        "features",
+        "documentation"
+      ],
+      "mode": "analysis",
+      "inputs": [
+        "Criterion identifiers and concrete source map",
+        "Platform task-decomposition contract"
+      ],
+      "steps": [
+        "Split each route, entity, transition, integration, and scenario into separate concrete assignments.",
+        "Name exact files, symbols, fixtures, and expected artifact locations.",
+        "Assign one owner, a different reviewer, and upstream dependencies.",
+        "Bound each work package to the configured time and path scope.",
+        "Preserve new discoveries as child work rather than claiming exhaustive coverage."
+      ],
+      "deliverables": [
+        "Domain work-package index",
+        "Exact file ownership and handoff map"
+      ],
+      "acceptance": [
+        "Every implementation package names its acceptance criteria and verification producer.",
+        "Unrelated changes are separated even when they share an owner."
+      ],
+      "validation": [
+        "Reviewer checks dependency completeness and edit-scope overlap."
+      ],
+      "path_scopes": [],
+      "failure_route": "techlead",
+      "max_minutes": 20
+    },
+    {
+      "id": "d_states",
+      "title": "Define {domain} business state transitions",
+      "owner": "architect",
+      "reviewer": "backend",
+      "scope": "domain",
+      "depends_on": [
+        "d_tasks"
+      ],
+      "gates": [
+        "features",
+        "integration"
+      ],
+      "mode": "analysis",
+      "inputs": [
+        "Acceptance scenarios",
+        "Entity and provider dependencies"
+      ],
+      "steps": [
+        "List valid states and permitted transitions for each domain resource.",
+        "Define the actor and precondition required for each transition.",
+        "Specify invalid, repeated, concurrent, delayed, and reversed transitions.",
+        "Identify authoritative records and transaction boundaries.",
+        "Define how UI, jobs, and providers reconcile divergent states."
+      ],
+      "deliverables": [
+        "State-transition table",
+        "Invariant and reconciliation specification"
+      ],
+      "acceptance": [
+        "Every transition has an observable success and rejection outcome.",
+        "Provider intent is not confused with completed work."
+      ],
+      "validation": [
+        "Reviewer traces the domain's highest-risk concurrent or financial transition."
+      ],
+      "path_scopes": [],
+      "failure_route": "architect",
+      "max_minutes": 20
+    },
+    {
+      "id": "d_permissions",
+      "title": "Specify {domain} role and tenant access",
+      "owner": "security",
+      "reviewer": "backend",
+      "scope": "domain",
+      "depends_on": [
+        "d_tasks"
+      ],
+      "gates": [
+        "security",
+        "integration"
+      ],
+      "mode": "analysis",
+      "inputs": [
+        "Platform capability matrix",
+        "Domain route and entity inventory"
+      ],
+      "steps": [
+        "Enumerate read, create, edit, delete, export, share, and privileged actions.",
+        "Define actor-to-resource ownership checks for every action.",
+        "Trace direct API, background job, websocket, and download access paths.",
+        "Specify revoked access, stale sessions, and cross-tenant identifier probes.",
+        "Record missing enforcement as concrete defects."
+      ],
+      "deliverables": [
+        "Domain authorization matrix",
+        "Denial and unchanged-state assertions"
+      ],
+      "acceptance": [
+        "All entrypoints enforce the same ownership invariant.",
+        "Hiding a UI control is not authorization."
+      ],
+      "validation": [
+        "Reviewer checks one horizontal and one vertical escalation case per resource family."
+      ],
+      "path_scopes": [],
+      "failure_route": "security",
+      "max_minutes": 20
+    },
+    {
+      "id": "d_data",
+      "title": "Design {domain} persistence and integrity constraints",
+      "owner": "data",
+      "reviewer": "architect",
+      "scope": "domain",
+      "depends_on": [
+        "d_states",
+        "d_permissions"
+      ],
+      "gates": [
+        "features",
+        "integration"
+      ],
+      "mode": "analysis",
+      "inputs": [
+        "State and authorization specifications",
+        "Observed tables, adapters, and migrations"
+      ],
+      "steps": [
+        "Map each required field to type, default, nullability, and ownership.",
+        "Specify foreign keys, uniqueness, and transaction constraints.",
+        "Define pagination, sorting, time, currency, and retention semantics.",
+        "Plan backward-compatible migration and rollback for missing structures.",
+        "Record migration proposals outside protected execution until independently reviewed."
+      ],
+      "deliverables": [
+        "Entity and constraint specification",
+        "Migration and rollback proposal"
+      ],
+      "acceptance": [
+        "Business invariants have database or transactional enforcement where appropriate.",
+        "No production migration is executed by this task."
+      ],
+      "validation": [
+        "Reviewer checks duplicate, orphan, null, boundary, and rollback behavior."
+      ],
+      "path_scopes": [],
+      "failure_route": "data",
+      "max_minutes": 20
+    },
+    {
+      "id": "d_api",
+      "title": "Define {domain} request and response contracts",
+      "owner": "backend",
+      "reviewer": "architect",
+      "scope": "domain",
+      "depends_on": [
+        "d_states",
+        "d_permissions",
+        "d_data"
+      ],
+      "gates": [
+        "integration",
+        "types"
+      ],
+      "mode": "analysis",
+      "inputs": [
+        "Domain state and entity specifications",
+        "Observed routes and consumers"
+      ],
+      "steps": [
+        "Specify method, path, authenticated actor, request schema, and response schema.",
+        "Define validation and domain error codes with stable client meaning.",
+        "Bound payload sizes, pagination, filtering, and sorting.",
+        "Define idempotency, retry, timeout, and cancellation behavior.",
+        "Record compatibility requirements for existing clients and providers."
+      ],
+      "deliverables": [
+        "API contract and error catalog",
+        "Consumer compatibility notes"
+      ],
+      "acceptance": [
+        "Every mutation defines authorization, validation, and durable success semantics.",
+        "Internal errors and sensitive fields are not exposed as public contracts."
+      ],
+      "validation": [
+        "Reviewer compares contract to frontend requests and service signatures."
+      ],
+      "path_scopes": [],
+      "failure_route": "backend",
+      "max_minutes": 20
+    },
+    {
+      "id": "d_ux",
+      "title": "Specify every {domain} interaction and recovery state",
+      "owner": "ux",
+      "reviewer": "accessibility",
+      "scope": "domain",
+      "depends_on": [
+        "d_acceptance",
+        "d_api"
+      ],
+      "gates": [
+        "features",
+        "accessibility",
+        "e2e"
+      ],
+      "mode": "analysis",
+      "inputs": [
+        "Acceptance scenarios and API errors",
+        "Current page and component inventory"
+      ],
+      "steps": [
+        "Map screen entry, navigation, task actions, confirmation, and completion.",
+        "Specify loading, empty, validation, denied, failed, partial, and success states.",
+        "Define focus movement, keyboard shortcuts, announcements, and responsive layout.",
+        "Explain destructive or financial consequences before the action.",
+        "Provide recovery steps for interrupted, offline, or unavailable dependencies."
+      ],
+      "deliverables": [
+        "Interaction state specification",
+        "Keyboard and responsive behavior notes"
+      ],
+      "acceptance": [
+        "Every API failure has a useful visible response.",
+        "Success messaging reflects authoritative completion state."
+      ],
+      "validation": [
+        "Reviewer walks each journey with keyboard-only and narrow-screen assumptions."
+      ],
+      "path_scopes": [],
+      "failure_route": "ux",
+      "max_minutes": 20
+    },
+    {
+      "id": "d_threats",
+      "title": "Threat-model {domain} assets and side effects",
+      "owner": "security",
+      "reviewer": "architect",
+      "scope": "domain",
+      "depends_on": [
+        "d_permissions",
+        "d_api"
+      ],
+      "gates": [
+        "security"
+      ],
+      "mode": "analysis",
+      "inputs": [
+        "Domain API and ownership contracts",
+        "Domain risks and provider boundaries"
+      ],
+      "steps": [
+        "Identify valuable data, assets, privileges, money, and external actions.",
+        "Map untrusted input to parsing, storage, rendering, fetching, and tool boundaries.",
+        "Define safe isolated attack cases for relevant injection, traversal, replay, and abuse risks.",
+        "Prioritize exploitability and impact using source evidence.",
+        "Attach a mitigation and verification criterion to every confirmed finding."
+      ],
+      "deliverables": [
+        "Domain threat model",
+        "Security defect and attack-case register"
+      ],
+      "acceptance": [
+        "Speculative concerns are distinguished from reproduced failures.",
+        "No public or production target is attacked."
+      ],
+      "validation": [
+        "Reviewer checks coverage of all identified trust boundaries."
+      ],
+      "path_scopes": [],
+      "failure_route": "security",
+      "max_minutes": 20
+    },
+    {
+      "id": "d_validation",
+      "title": "Implement {domain} request validation and truthful errors",
+      "owner": "backend",
+      "reviewer": "security",
+      "scope": "domain",
+      "depends_on": [
+        "d_api",
+        "d_threats"
+      ],
+      "gates": [
+        "types",
+        "integration",
+        "security"
+      ],
+      "mode": "change",
+      "inputs": [
+        "Accepted request schema",
+        "Concrete validation defect and owned file list",
+        "Accepted exact file/route/action breakdown from d_tasks; broad path scopes are an upper bound, not permission to rewrite unrelated files."
+      ],
+      "steps": [
+        "Locate the earliest trusted request boundary for the selected endpoint.",
+        "Validate required fields, types, lengths, ranges, enums, and unknown input.",
+        "Normalize only documented safe values and reject ambiguous values.",
+        "Map failures to stable client errors without internal details.",
+        "Return success only after the promised durable operation has completed."
+      ],
+      "deliverables": [
+        "Narrow request-validation patch",
+        "Behavior and edge-case explanation"
+      ],
+      "acceptance": [
+        "Malformed, oversized, and unauthorized requests do not mutate state.",
+        "Error messages identify recoverable user input without leaking data."
+      ],
+      "validation": [
+        "Trusted tests cover empty, malformed, boundary, and valid requests.",
+        "Independent reviewer inspects actual changed handlers."
+      ],
+      "path_scopes": [
+        "server/routes/*",
+        "server/services/*",
+        "shared/*"
+      ],
+      "failure_route": "backend",
+      "max_minutes": 20
+    },
+    {
+      "id": "d_authorize",
+      "title": "Implement {domain} authorization at every entrypoint",
+      "owner": "backend",
+      "reviewer": "security",
+      "scope": "domain",
+      "depends_on": [
+        "d_validation",
+        "d_permissions"
+      ],
+      "gates": [
+        "security",
+        "integration"
+      ],
+      "mode": "change",
+      "inputs": [
+        "Concrete authorization defect",
+        "Domain allow and deny matrix",
+        "Accepted exact file/route/action breakdown from d_tasks; broad path scopes are an upper bound, not permission to rewrite unrelated files."
+      ],
+      "steps": [
+        "Derive actor and tenant identity from trusted authentication context.",
+        "Check resource ownership and action permission before reads or mutations.",
+        "Apply the same rule to jobs, downloads, exports, and realtime entrypoints in scope.",
+        "Handle revoked or missing membership deterministically.",
+        "Keep denial responses and audit events free of sensitive resource details."
+      ],
+      "deliverables": [
+        "Authorization patch",
+        "Entry-point coverage notes"
+      ],
+      "acceptance": [
+        "Cross-tenant and insufficient-role requests are denied without side effects.",
+        "Client-supplied ownership does not override trusted context."
+      ],
+      "validation": [
+        "Trusted negative tests assert denied responses and unchanged stores.",
+        "Reviewer traces direct API bypass attempts."
+      ],
+      "path_scopes": [
+        "server/routes/*",
+        "server/services/*",
+        "server/middleware/*"
+      ],
+      "failure_route": "backend",
+      "max_minutes": 20
+    },
+    {
+      "id": "d_persist",
+      "title": "Implement durable {domain} writes and integrity checks",
+      "owner": "backend",
+      "reviewer": "data",
+      "scope": "domain",
+      "depends_on": [
+        "d_authorize",
+        "d_data"
+      ],
+      "gates": [
+        "integration",
+        "features"
+      ],
+      "mode": "change",
+      "inputs": [
+        "Accepted persistence contract",
+        "Concrete storage and service paths",
+        "Accepted exact file/route/action breakdown from d_tasks; broad path scopes are an upper bound, not permission to rewrite unrelated files."
+      ],
+      "steps": [
+        "Replace selected ephemeral or simulated success with the authoritative persistence operation.",
+        "Enclose related writes in the appropriate transaction boundary.",
+        "Enforce uniqueness, references, ownership, and expected current state.",
+        "Return persisted identifiers and values rather than invented client echoes.",
+        "Handle rollback and partial failure without orphaned records."
+      ],
+      "deliverables": [
+        "Persistence and transaction patch",
+        "Failure and rollback explanation"
+      ],
+      "acceptance": [
+        "Reload and independent read return the promised durable result.",
+        "Failed operations do not leave inconsistent records or false success."
+      ],
+      "validation": [
+        "Trusted integration tests use actual disposable persistence.",
+        "Reviewer inspects transaction and rollback boundaries."
+      ],
+      "path_scopes": [
+        "server/services/*",
+        "server/routes/*",
+        "server/storage*",
+        "shared/*"
+      ],
+      "failure_route": "backend",
+      "max_minutes": 20
+    },
+    {
+      "id": "d_idempotency",
+      "title": "Implement replay-safe {domain} mutations",
+      "owner": "backend",
+      "reviewer": "data",
+      "scope": "domain",
+      "depends_on": [
+        "d_persist",
+        "d_states"
+      ],
+      "gates": [
+        "integration",
+        "regression"
+      ],
+      "mode": "change",
+      "inputs": [
+        "Mutation and event contracts",
+        "Concrete replay or concurrency defect",
+        "Accepted exact file/route/action breakdown from d_tasks; broad path scopes are an upper bound, not permission to rewrite unrelated files."
+      ],
+      "steps": [
+        "Choose the authoritative operation identity and scope it to the actor and resource.",
+        "Enforce duplicate detection atomically at the persistence boundary.",
+        "Return consistent results for safe repeated requests.",
+        "Reject conflicting reuse and handle interrupted operations explicitly.",
+        "Record retry and reconciliation outcomes for diagnosis."
+      ],
+      "deliverables": [
+        "Idempotency patch",
+        "Replay and conflict behavior notes"
+      ],
+      "acceptance": [
+        "Parallel or repeated requests do not duplicate business side effects.",
+        "Idempotency is not implemented only in process-local memory."
+      ],
+      "validation": [
+        "Trusted tests issue duplicate, concurrent, and interrupted retries.",
+        "Reviewer verifies state and side-effect counts."
+      ],
+      "path_scopes": [
+        "server/services/*",
+        "server/routes/*",
+        "server/storage*"
+      ],
+      "failure_route": "backend",
+      "max_minutes": 20
+    },
+    {
+      "id": "d_queries",
+      "title": "Implement bounded and correct {domain} reads",
+      "owner": "backend",
+      "reviewer": "data",
+      "scope": "domain",
+      "depends_on": [
+        "d_persist",
+        "d_api"
+      ],
+      "gates": [
+        "integration",
+        "performance"
+      ],
+      "mode": "change",
+      "inputs": [
+        "Read contract and tenant rules",
+        "Concrete query paths and observed plans",
+        "Accepted exact file/route/action breakdown from d_tasks; broad path scopes are an upper bound, not permission to rewrite unrelated files."
+      ],
+      "steps": [
+        "Apply ownership filters before pagination and aggregation.",
+        "Bound page size and validate stable sorting and cursor semantics.",
+        "Avoid fetching entire collections for server-side filtering.",
+        "Remove confirmed N+1 access or redundant reads using measured evidence.",
+        "Preserve accurate empty, partial, and missing-resource semantics."
+      ],
+      "deliverables": [
+        "Query and pagination patch",
+        "Before and after query evidence references"
+      ],
+      "acceptance": [
+        "Pagination is stable and does not leak cross-tenant counts.",
+        "Optimizations preserve correctness under changing data."
+      ],
+      "validation": [
+        "Trusted tests cover empty sets, page boundaries, ties, and tenant isolation.",
+        "Reviewer compares measured query plans where available."
+      ],
+      "path_scopes": [
+        "server/services/*",
+        "server/routes/*",
+        "server/storage*"
+      ],
+      "failure_route": "backend",
+      "max_minutes": 20
+    },
+    {
+      "id": "d_assets",
+      "title": "Implement safe {domain} asset lifecycle behavior",
+      "owner": "backend",
+      "reviewer": "security",
+      "scope": "domain",
+      "depends_on": [
+        "d_authorize",
+        "d_persist",
+        "d_threats"
+      ],
+      "gates": [
+        "security",
+        "integration",
+        "features"
+      ],
+      "mode": "change",
+      "inputs": [
+        "Asset ownership and media requirements",
+        "Concrete upload, download, replace, and delete paths",
+        "Accepted exact file/route/action breakdown from d_tasks; broad path scopes are an upper bound, not permission to rewrite unrelated files."
+      ],
+      "steps": [
+        "Validate file size, type, naming, and storage destination at the trusted boundary.",
+        "Bind uploaded assets to the authorized owner and operation.",
+        "Handle partial upload, cancellation, retries, and cleanup.",
+        "Authorize downloads and derived or paid assets independently.",
+        "Implement replacement or deletion without removing resources owned elsewhere."
+      ],
+      "deliverables": [
+        "Asset lifecycle patch or explicit not-applicable evidence",
+        "Ownership and cleanup notes"
+      ],
+      "acceptance": [
+        "A task may be not applicable only with reviewed source evidence; it cannot silently skip a required journey.",
+        "Corrupt, empty, oversized, or unauthorized assets fail safely."
+      ],
+      "validation": [
+        "Trusted tests inspect storage and metadata after failures and retries.",
+        "Reviewer verifies path traversal and ownership denial."
+      ],
+      "path_scopes": [
+        "server/routes/*",
+        "server/services/*"
+      ],
+      "failure_route": "backend",
+      "max_minutes": 20
+    },
+    {
+      "id": "d_jobs",
+      "title": "Implement durable {domain} background work",
+      "owner": "backend",
+      "reviewer": "sre",
+      "scope": "domain",
+      "depends_on": [
+        "d_idempotency",
+        "d_states"
+      ],
+      "gates": [
+        "integration",
+        "operations"
+      ],
+      "mode": "change",
+      "inputs": [
+        "Job and state-transition contract",
+        "Concrete worker and enqueue paths",
+        "Accepted exact file/route/action breakdown from d_tasks; broad path scopes are an upper bound, not permission to rewrite unrelated files."
+      ],
+      "steps": [
+        "Persist job intent atomically with the triggering business state.",
+        "Use bounded retry, timeout, lease, and deduplication semantics.",
+        "Record progress, terminal failure, cancellation, and reconciliation.",
+        "Recover interrupted or abandoned work without duplicated external effects.",
+        "Expose truthful pending and failure states to the API."
+      ],
+      "deliverables": [
+        "Background job patch or explicit not-applicable evidence",
+        "Retry and recovery behavior notes"
+      ],
+      "acceptance": [
+        "In-memory scheduling does not promise durable completion.",
+        "Worker restart and retry preserve business invariants."
+      ],
+      "validation": [
+        "Trusted tests interrupt and restart an isolated worker.",
+        "Reviewer checks dead-letter and exhausted-retry behavior."
+      ],
+      "path_scopes": [
+        "server/services/*",
+        "server/routes/*",
+        "server/workers/*",
+        "server/jobs/*"
+      ],
+      "failure_route": "backend",
+      "max_minutes": 20
+    },
+    {
+      "id": "d_provider_contract",
+      "title": "Verify the {domain} provider integration contract",
+      "owner": "integrations",
+      "reviewer": "backend",
+      "scope": "domain",
+      "depends_on": [
+        "d_api",
+        "d_threats"
+      ],
+      "gates": [
+        "integration",
+        "features"
+      ],
+      "mode": "analysis",
+      "inputs": [
+        "Provider inventory and domain journey",
+        "Observed provider adapter and version"
+      ],
+      "steps": [
+        "Identify exact requests, responses, scopes, callbacks, and supported operations.",
+        "Compare adapter assumptions with available authoritative provider documentation or sandbox observations.",
+        "Define unavailable, rejected, rate-limited, expired, and partial-success behavior.",
+        "Mark fixture-only evidence and missing sandbox capabilities.",
+        "Write a concrete compatibility and acceptance contract."
+      ],
+      "deliverables": [
+        "Domain provider contract or reviewed no-provider finding",
+        "Sandbox scenario and limitation register"
+      ],
+      "acceptance": [
+        "No live provider outcome is inferred from fixtures.",
+        "Unknown or unsupported operations return explicit limitations."
+      ],
+      "validation": [
+        "Reviewer checks each required provider operation against available evidence."
+      ],
+      "path_scopes": [],
+      "failure_route": "integrations",
+      "max_minutes": 20
+    },
+    {
+      "id": "d_provider_fix",
+      "title": "Implement truthful and resilient {domain} provider behavior",
+      "owner": "integrations",
+      "reviewer": "security",
+      "scope": "domain",
+      "depends_on": [
+        "d_provider_contract",
+        "d_idempotency"
+      ],
+      "gates": [
+        "integration",
+        "features",
+        "security"
+      ],
+      "mode": "change",
+      "inputs": [
+        "Accepted provider contract",
+        "Concrete adapter defect and sandbox boundary",
+        "Accepted exact file/route/action breakdown from d_tasks; broad path scopes are an upper bound, not permission to rewrite unrelated files."
+      ],
+      "steps": [
+        "Validate outbound payload and minimize transmitted data.",
+        "Apply bounded timeout, retry, rate-limit, and idempotency behavior.",
+        "Parse provider responses and preserve genuine rejection or pending states.",
+        "Handle token expiry and revocation without leaking credentials.",
+        "Reconcile partial outcomes before retrying irreversible actions."
+      ],
+      "deliverables": [
+        "Provider adapter patch or explicit not-applicable evidence",
+        "Failure and reconciliation notes"
+      ],
+      "acceptance": [
+        "Provider outage never yields a fabricated successful action.",
+        "Only provisioned sandbox capabilities are exercised."
+      ],
+      "validation": [
+        "Trusted contract and sandbox tests record actual provider boundaries.",
+        "Reviewer distinguishes mock behavior from provider evidence."
+      ],
+      "path_scopes": [
+        "server/services/*",
+        "server/routes/*"
+      ],
+      "failure_route": "integrations",
+      "max_minutes": 20
+    },
+    {
+      "id": "d_webhooks",
+      "title": "Implement authenticated and replay-safe {domain} callbacks",
+      "owner": "integrations",
+      "reviewer": "security",
+      "scope": "domain",
+      "depends_on": [
+        "d_provider_fix",
+        "d_states"
+      ],
+      "gates": [
+        "security",
+        "integration",
+        "regression"
+      ],
+      "mode": "change",
+      "inputs": [
+        "Callback contract and authoritative state machine",
+        "Concrete webhook handler and storage paths",
+        "Accepted exact file/route/action breakdown from d_tasks; broad path scopes are an upper bound, not permission to rewrite unrelated files."
+      ],
+      "steps": [
+        "Verify signatures and timestamps over the correct raw payload.",
+        "Bind callback identity to the correct tenant and provider account.",
+        "Persist event identity and apply state transitions atomically.",
+        "Handle duplicates, out-of-order delivery, retries, and unknown events.",
+        "Return truthful acknowledgements and retain safe reconciliation metadata."
+      ],
+      "deliverables": [
+        "Callback handler patch or reviewed no-callback finding",
+        "Replay and ordering behavior notes"
+      ],
+      "acceptance": [
+        "Unsigned or mismatched callbacks cannot change state.",
+        "Duplicate callbacks do not duplicate orders, revenue, messages, or entitlements."
+      ],
+      "validation": [
+        "Trusted tests cover signature failures, replay, ordering, and transaction failure.",
+        "Reviewer checks canonical raw-body handling."
+      ],
+      "path_scopes": [
+        "server/routes/*",
+        "server/services/*"
+      ],
+      "failure_route": "integrations",
+      "max_minutes": 20
+    },
+    {
+      "id": "d_frontend",
+      "title": "Implement {domain} route and component behavior",
+      "owner": "frontend",
+      "reviewer": "ux",
+      "scope": "domain",
+      "depends_on": [
+        "d_ux",
+        "d_validation",
+        "d_authorize"
+      ],
+      "gates": [
+        "features",
+        "types",
+        "e2e"
+      ],
+      "mode": "change",
+      "inputs": [
+        "Interaction state specification",
+        "Concrete frontend file ownership and API contract",
+        "Accepted exact file/route/action breakdown from d_tasks; broad path scopes are an upper bound, not permission to rewrite unrelated files."
+      ],
+      "steps": [
+        "Connect the selected route and component to the accepted API contract.",
+        "Implement semantic layout and clear action labels.",
+        "Render loading, empty, denied, failed, partial, and success states.",
+        "Preserve navigation and route parameter handling.",
+        "Reflect actual server state and make incomplete capabilities explicit."
+      ],
+      "deliverables": [
+        "Frontend behavior patch",
+        "Interaction-to-contract mapping"
+      ],
+      "acceptance": [
+        "Visible success reflects server-confirmed outcomes.",
+        "No required interaction remains a dead or placeholder control."
+      ],
+      "validation": [
+        "Trusted browser checks exercise the selected interaction states.",
+        "Reviewer compares implementation with the design contract."
+      ],
+      "path_scopes": [
+        "client/src/pages/*",
+        "client/src/components/*",
+        "client/src/hooks/*",
+        "client/src/lib/*"
+      ],
+      "failure_route": "frontend",
+      "max_minutes": 20
+    },
+    {
+      "id": "d_forms",
+      "title": "Implement robust {domain} forms and client validation",
+      "owner": "frontend",
+      "reviewer": "accessibility",
+      "scope": "domain",
+      "depends_on": [
+        "d_frontend",
+        "d_api"
+      ],
+      "gates": [
+        "features",
+        "accessibility",
+        "e2e"
+      ],
+      "mode": "change",
+      "inputs": [
+        "Form field and error specification",
+        "Server validation contract",
+        "Accepted exact file/route/action breakdown from d_tasks; broad path scopes are an upper bound, not permission to rewrite unrelated files."
+      ],
+      "steps": [
+        "Use labeled controls with appropriate input types and constraints.",
+        "Keep client validation consistent with server requirements.",
+        "Preserve user input across recoverable failures.",
+        "Prevent accidental duplicate submission while handling legitimate retry.",
+        "Focus and announce the error summary or completed action appropriately."
+      ],
+      "deliverables": [
+        "Form and error-recovery patch",
+        "Validation behavior notes"
+      ],
+      "acceptance": [
+        "Users can identify and correct each invalid field using keyboard and screen reader semantics.",
+        "Client validation never replaces server validation."
+      ],
+      "validation": [
+        "Trusted browser tests cover invalid, valid, duplicate, and failed submission.",
+        "Reviewer checks focus and accessible error relationships."
+      ],
+      "path_scopes": [
+        "client/src/pages/*",
+        "client/src/components/*",
+        "client/src/hooks/*"
+      ],
+      "failure_route": "frontend",
+      "max_minutes": 20
+    },
+    {
+      "id": "d_client_state",
+      "title": "Implement {domain} state synchronization and cancellation",
+      "owner": "frontend",
+      "reviewer": "backend",
+      "scope": "domain",
+      "depends_on": [
+        "d_frontend",
+        "d_persist",
+        "d_idempotency"
+      ],
+      "gates": [
+        "features",
+        "regression",
+        "e2e"
+      ],
+      "mode": "change",
+      "inputs": [
+        "Durable API contract",
+        "Concrete client cache and async paths",
+        "Accepted exact file/route/action breakdown from d_tasks; broad path scopes are an upper bound, not permission to rewrite unrelated files."
+      ],
+      "steps": [
+        "Define the authoritative cache keys by tenant and resource.",
+        "Invalidate or update dependent state only after confirmed outcomes.",
+        "Cancel or ignore stale responses during navigation and identity changes.",
+        "Handle concurrent edits and offline or reconnect behavior explicitly.",
+        "Roll back optimistic state on rejection without hiding the error."
+      ],
+      "deliverables": [
+        "Client state and recovery patch",
+        "Race and cancellation behavior notes"
+      ],
+      "acceptance": [
+        "Tenant switching never reuses another tenant's cached data.",
+        "Stale responses cannot overwrite newer confirmed state."
+      ],
+      "validation": [
+        "Trusted tests simulate delayed responses, logout, tenant switch, and failed mutation.",
+        "Reviewer checks cache identity and cleanup."
+      ],
+      "path_scopes": [
+        "client/src/pages/*",
+        "client/src/components/*",
+        "client/src/hooks/*",
+        "client/src/lib/*"
+      ],
+      "failure_route": "frontend",
+      "max_minutes": 20
+    },
+    {
+      "id": "d_realtime",
+      "title": "Implement authorized {domain} realtime synchronization",
+      "owner": "backend",
+      "reviewer": "security",
+      "scope": "domain",
+      "depends_on": [
+        "d_client_state",
+        "d_authorize",
+        "d_states"
+      ],
+      "gates": [
+        "integration",
+        "security",
+        "regression"
+      ],
+      "mode": "change",
+      "inputs": [
+        "Realtime need and accepted event contract",
+        "Concrete subscription and reconnect paths",
+        "Accepted exact file/route/action breakdown from d_tasks; broad path scopes are an upper bound, not permission to rewrite unrelated files."
+      ],
+      "steps": [
+        "Authenticate and authorize subscription and publication separately.",
+        "Bind channels and event payloads to tenant and resource ownership.",
+        "Handle revocation, disconnect, heartbeat, and reconnect.",
+        "Reconcile missed or duplicate events against durable state.",
+        "Bound queues and payloads and expose degraded operation truthfully."
+      ],
+      "deliverables": [
+        "Realtime patch or reviewed no-realtime finding",
+        "Reconnect and revocation notes"
+      ],
+      "acceptance": [
+        "A stale connection cannot preserve revoked access.",
+        "Realtime delivery is not the sole source of durable state."
+      ],
+      "validation": [
+        "Trusted tests cover cross-tenant subscription, revocation, duplicate events, and reconnect.",
+        "Reviewer verifies event ordering assumptions."
+      ],
+      "path_scopes": [
+        "server/routes/*",
+        "server/services/*",
+        "server/websocket*",
+        "client/src/hooks/*",
+        "client/src/lib/*"
+      ],
+      "failure_route": "backend",
+      "max_minutes": 20
+    },
+    {
+      "id": "d_responsive",
+      "title": "Implement responsive {domain} interactions",
+      "owner": "frontend",
+      "reviewer": "ux",
+      "scope": "domain",
+      "depends_on": [
+        "d_forms",
+        "d_client_state"
+      ],
+      "gates": [
+        "features",
+        "accessibility",
+        "e2e"
+      ],
+      "mode": "change",
+      "inputs": [
+        "Supported viewport and interaction specification",
+        "Concrete components and styles",
+        "Accepted exact file/route/action breakdown from d_tasks; broad path scopes are an upper bound, not permission to rewrite unrelated files."
+      ],
+      "steps": [
+        "Inspect task completion at narrow, tablet, desktop, and wide layouts.",
+        "Fix overflow, obscured controls, truncation, and unusable touch targets.",
+        "Preserve content order and keyboard access across responsive variants.",
+        "Handle zoom and reflow without requiring unnecessary horizontal scrolling.",
+        "Check menus, dialogs, tables, and editors in their expanded states."
+      ],
+      "deliverables": [
+        "Responsive layout patch",
+        "Viewport and state coverage notes"
+      ],
+      "acceptance": [
+        "Critical actions remain reachable and comprehensible in every supported layout.",
+        "Screenshots alone do not prove interaction success."
+      ],
+      "validation": [
+        "Trusted browser checks record viewport and completed task behavior.",
+        "Reviewer inspects zoom and touch target evidence."
+      ],
+      "path_scopes": [
+        "client/src/pages/*",
+        "client/src/components/*",
+        "client/src/styles/*",
+        "client/src/index.css"
+      ],
+      "failure_route": "frontend",
+      "max_minutes": 20
+    },
+    {
+      "id": "d_accessibility_fix",
+      "title": "Repair concrete {domain} accessibility violations",
+      "owner": "frontend",
+      "reviewer": "accessibility",
+      "scope": "domain",
+      "depends_on": [
+        "d_responsive",
+        "d_ux"
+      ],
+      "gates": [
+        "accessibility",
+        "e2e"
+      ],
+      "mode": "change",
+      "inputs": [
+        "Observed violation with route and state",
+        "Accessible interaction contract",
+        "Accepted exact file/route/action breakdown from d_tasks; broad path scopes are an upper bound, not permission to rewrite unrelated files."
+      ],
+      "steps": [
+        "Reproduce the exact keyboard, semantic, contrast, or announcement failure.",
+        "Implement the smallest semantic or interaction correction.",
+        "Preserve focus, name, role, state, and error relationships.",
+        "Check the neighboring loading, empty, and failure states.",
+        "Record residual limitations and the exact retest scenario."
+      ],
+      "deliverables": [
+        "Accessibility repair patch",
+        "Violation and retest mapping"
+      ],
+      "acceptance": [
+        "Each claimed fix corresponds to a reproduced violation.",
+        "Automated zero violations does not claim unperformed assistive-technology validation."
+      ],
+      "validation": [
+        "Trusted scanner and interaction checks run on the changed state.",
+        "Independent accessibility reviewer checks keyboard completion."
+      ],
+      "path_scopes": [
+        "client/src/pages/*",
+        "client/src/components/*",
+        "client/src/styles/*",
+        "client/src/hooks/*",
+        "client/src/index.css"
+      ],
+      "failure_route": "frontend",
+      "max_minutes": 20
+    },
+    {
+      "id": "d_observability",
+      "title": "Instrument meaningful {domain} operational outcomes",
+      "owner": "backend",
+      "reviewer": "sre",
+      "scope": "domain",
+      "depends_on": [
+        "d_jobs",
+        "d_provider_fix",
+        "d_persist"
+      ],
+      "gates": [
+        "operations",
+        "integration"
+      ],
+      "mode": "change",
+      "inputs": [
+        "Platform observability specification",
+        "Concrete request, job, and provider paths",
+        "Accepted exact file/route/action breakdown from d_tasks; broad path scopes are an upper bound, not permission to rewrite unrelated files."
+      ],
+      "steps": [
+        "Add correlation across the selected request, transaction, job, and provider boundary.",
+        "Record success, denial, retry, failure, and reconciliation outcomes.",
+        "Emit bounded latency and outcome metrics without sensitive payloads.",
+        "Ensure failures surface through the documented health or alert signal.",
+        "Keep logging and metrics from changing business success semantics."
+      ],
+      "deliverables": [
+        "Operational instrumentation patch",
+        "Signal and runbook mapping"
+      ],
+      "acceptance": [
+        "Telemetry failure cannot strand an already completed business result.",
+        "Logs avoid secrets and unnecessary personal data."
+      ],
+      "validation": [
+        "Trusted tests verify representative signals and failure isolation.",
+        "Reviewer checks redaction and cardinality."
+      ],
+      "path_scopes": [
+        "server/routes/*",
+        "server/services/*",
+        "server/workers/*",
+        "server/jobs/*"
+      ],
+      "failure_route": "backend",
+      "max_minutes": 20
+    },
+    {
+      "id": "d_events",
+      "title": "Implement truthful {domain} product and revenue events",
+      "owner": "analytics",
+      "reviewer": "backend",
+      "scope": "domain",
+      "depends_on": [
+        "d_persist",
+        "d_webhooks"
+      ],
+      "gates": [
+        "features",
+        "integration",
+        "regression"
+      ],
+      "mode": "change",
+      "inputs": [
+        "Accepted event dictionary",
+        "Authoritative domain completion records",
+        "Accepted exact file/route/action breakdown from d_tasks; broad path scopes are an upper bound, not permission to rewrite unrelated files."
+      ],
+      "steps": [
+        "Locate the authoritative event-emission point for the selected outcome.",
+        "Emit stable identity and tenant-scoped event metadata.",
+        "Separate initiation, pending, completed, paid, refunded, and failed events.",
+        "Deduplicate retries and reconcile delayed provider confirmations.",
+        "Present missing or stale aggregates honestly in downstream consumers."
+      ],
+      "deliverables": [
+        "Event and aggregate correction patch",
+        "Authoritative-source mapping"
+      ],
+      "acceptance": [
+        "User-submitted interaction labels cannot forge financial completion.",
+        "Analytics failure does not roll back unrelated completed user actions."
+      ],
+      "validation": [
+        "Trusted tests compare events and aggregates against authoritative records.",
+        "Reviewer checks duplicate, refund, and late-arrival behavior."
+      ],
+      "path_scopes": [
+        "server/routes/*",
+        "server/services/*",
+        "client/src/pages/*",
+        "client/src/components/*"
+      ],
+      "failure_route": "analytics",
+      "max_minutes": 20
+    },
+    {
+      "id": "d_ai_contract",
+      "title": "Specify bounded {domain} AI behavior and evaluations",
+      "owner": "ai",
+      "reviewer": "security",
+      "scope": "domain",
+      "depends_on": [
+        "d_acceptance",
+        "d_threats",
+        "d_permissions"
+      ],
+      "gates": [
+        "features",
+        "security"
+      ],
+      "mode": "analysis",
+      "inputs": [
+        "Observed model or agent paths",
+        "Platform AI authority contract"
+      ],
+      "steps": [
+        "Identify whether the domain actually invokes models or tools and document evidence.",
+        "Define grounded inputs, structured outputs, and uncertainty behavior.",
+        "Specify role and tenant filtering before retrieval or tool execution.",
+        "List side-effect confirmation, cancellation, budget, and unavailable-provider behavior.",
+        "Create domain-specific injection, hallucination, leakage, and task-success evaluations."
+      ],
+      "deliverables": [
+        "AI behavior contract or reviewed no-AI finding",
+        "Reproducible evaluation case proposals"
+      ],
+      "acceptance": [
+        "Absence of AI is justified by traced source rather than assumed.",
+        "Model-generated text does not prove actions or authoritative facts."
+      ],
+      "validation": [
+        "Reviewer checks one allowed and one adversarial scenario for each tool class."
+      ],
+      "path_scopes": [],
+      "failure_route": "ai",
+      "max_minutes": 20
+    },
+    {
+      "id": "d_ai_fix",
+      "title": "Implement bounded and truthful {domain} AI execution",
+      "owner": "ai",
+      "reviewer": "security",
+      "scope": "domain",
+      "depends_on": [
+        "d_ai_contract",
+        "d_provider_fix"
+      ],
+      "gates": [
+        "features",
+        "security",
+        "integration"
+      ],
+      "mode": "change",
+      "inputs": [
+        "Accepted AI contract and evaluation cases",
+        "Concrete model, retrieval, and tool paths",
+        "Accepted exact file/route/action breakdown from d_tasks; broad path scopes are an upper bound, not permission to rewrite unrelated files."
+      ],
+      "steps": [
+        "Validate structured model outputs before consuming them.",
+        "Filter retrieval and tool arguments using trusted actor and tenant identity.",
+        "Separate untrusted content from system authority and side-effect authorization.",
+        "Enforce bounded turns, timeouts, cancellation, and configured budgets.",
+        "Return explicit uncertainty or unavailable states when evidence or capability is missing."
+      ],
+      "deliverables": [
+        "AI boundary correction patch or reviewed no-AI finding",
+        "Tool and output validation notes"
+      ],
+      "acceptance": [
+        "No model output can directly bypass authorization or invoke arbitrary commands.",
+        "Unsupported generation is not replaced with fake completed output."
+      ],
+      "validation": [
+        "Trusted evaluation harness records actual outputs, tool calls, and denials.",
+        "Reviewer checks prompt-injection and cancellation cases."
+      ],
+      "path_scopes": [
+        "server/routes/*",
+        "server/services/*",
+        "client/src/components/*",
+        "client/src/pages/*"
+      ],
+      "failure_route": "ai",
+      "max_minutes": 20
+    },
+    {
+      "id": "d_unit_proposals",
+      "title": "Author independent {domain} business-rule test proposals",
+      "owner": "qa",
+      "reviewer": "backend",
+      "scope": "domain",
+      "depends_on": [
+        "d_validation",
+        "d_authorize",
+        "d_states"
+      ],
+      "gates": [
+        "unit",
+        "coverage",
+        "regression"
+      ],
+      "mode": "analysis",
+      "inputs": [
+        "Accepted domain invariants",
+        "Exact changed symbols and current test gaps"
+      ],
+      "steps": [
+        "Select observable business rules and failure boundaries in the changed code.",
+        "Write deterministic positive, negative, boundary, and state-transition cases.",
+        "Avoid assertions that merely mirror implementation details.",
+        "Prove a bug regression case fails against the old behavior when available.",
+        "Write proposed test artifacts to the private task directory for reviewed integration."
+      ],
+      "deliverables": [
+        "Executable unit-test proposals outside protected source",
+        "Fixture, old-behavior, and expected-result notes"
+      ],
+      "acceptance": [
+        "Test proposals do not count as executed passing tests.",
+        "Existing tests and thresholds remain unchanged."
+      ],
+      "validation": [
+        "Independent reviewer checks expected results against requirements.",
+        "Trusted verifier executes only separately approved test integration."
+      ],
+      "path_scopes": [],
+      "failure_route": "qa",
+      "max_minutes": 20
+    },
+    {
+      "id": "d_integration_proposals",
+      "title": "Author {domain} persistence and API integration test proposals",
+      "owner": "qa",
+      "reviewer": "data",
+      "scope": "domain",
+      "depends_on": [
+        "d_persist",
+        "d_idempotency",
+        "d_queries",
+        "d_assets",
+        "d_jobs"
+      ],
+      "gates": [
+        "integration",
+        "regression"
+      ],
+      "mode": "analysis",
+      "inputs": [
+        "Domain API and data contracts",
+        "Disposable service fixtures"
+      ],
+      "steps": [
+        "Specify actual HTTP and persistence boundaries for each case.",
+        "Create actor, tenant, entity, and asset fixtures with deterministic cleanup.",
+        "Assert durable state after success, denial, rollback, retry, and restart.",
+        "Include concurrent mutation and duplicate-side-effect cases.",
+        "Write executable proposals and dependency requirements outside protected source."
+      ],
+      "deliverables": [
+        "Integration test proposals",
+        "Fixture and cleanup specification"
+      ],
+      "acceptance": [
+        "Mock-only tests are labeled and cannot prove real persistence behavior.",
+        "Every mutation case asserts resulting state, not only response status."
+      ],
+      "validation": [
+        "Reviewer traces assertions to authoritative stores.",
+        "Trusted execution retains raw results and cleanup evidence."
+      ],
+      "path_scopes": [],
+      "failure_route": "qa",
+      "max_minutes": 20
+    },
+    {
+      "id": "d_provider_proposals",
+      "title": "Author {domain} provider and callback acceptance test proposals",
+      "owner": "qa",
+      "reviewer": "integrations",
+      "scope": "domain",
+      "depends_on": [
+        "d_provider_fix",
+        "d_webhooks"
+      ],
+      "gates": [
+        "integration",
+        "security",
+        "regression"
+      ],
+      "mode": "analysis",
+      "inputs": [
+        "Accepted provider contract",
+        "Sandbox capability and callback fixtures"
+      ],
+      "steps": [
+        "Define contract fixtures for success, rejection, throttling, expiry, and timeout.",
+        "Define real sandbox cases separately from controlled local cases.",
+        "Cover signature failures, duplicates, ordering, and reconciliation.",
+        "Assert only genuine provider-supported outcomes and retained receipts.",
+        "Write executable proposals with explicit missing-capability and skip rules."
+      ],
+      "deliverables": [
+        "Provider test proposals",
+        "Sandbox and fixture evidence classification"
+      ],
+      "acceptance": [
+        "A skipped sandbox case remains unverified.",
+        "Live credentials are never placed in artifacts."
+      ],
+      "validation": [
+        "Reviewer checks mock and sandbox results cannot be confused.",
+        "Trusted verifier reports every skip and missing provider capability."
+      ],
+      "path_scopes": [],
+      "failure_route": "qa",
+      "max_minutes": 20
+    },
+    {
+      "id": "d_browser_proposals",
+      "title": "Author {domain} role-based end-to-end journey tests",
+      "owner": "qa",
+      "reviewer": "ux",
+      "scope": "domain",
+      "depends_on": [
+        "d_forms",
+        "d_client_state",
+        "d_responsive",
+        "d_acceptance"
+      ],
+      "gates": [
+        "e2e",
+        "features",
+        "regression"
+      ],
+      "mode": "analysis",
+      "inputs": [
+        "Scenario-level acceptance specification",
+        "Disposable actor and data fixtures"
+      ],
+      "steps": [
+        "For each critical persona, start from a realistic logged-in or public state.",
+        "Perform real UI actions through the complete journey.",
+        "Assert durable outcomes after reload and independent read.",
+        "Exercise denied roles, error recovery, interrupted actions, and session expiry.",
+        "Write executable browser proposals with stable semantic selectors and cleanup."
+      ],
+      "deliverables": [
+        "Browser journey test proposals",
+        "Criterion-to-assertion traceability"
+      ],
+      "acceptance": [
+        "Page render or button visibility alone cannot satisfy a business journey.",
+        "Fixtures do not pre-create the outcome the journey is supposed to produce."
+      ],
+      "validation": [
+        "Reviewer follows every acceptance criterion to a concrete assertion.",
+        "Trusted execution records browser failures and actual persisted results."
+      ],
+      "path_scopes": [],
+      "failure_route": "qa",
+      "max_minutes": 20
+    },
+    {
+      "id": "d_adversarial",
+      "title": "Create {domain} boundary and abuse experiments",
+      "owner": "security",
+      "reviewer": "qa",
+      "scope": "domain",
+      "depends_on": [
+        "d_threats",
+        "d_authorize",
+        "d_assets",
+        "d_ai_fix"
+      ],
+      "gates": [
+        "security",
+        "regression"
+      ],
+      "mode": "analysis",
+      "inputs": [
+        "Threat and invariant register",
+        "Bounded isolated test capabilities"
+      ],
+      "steps": [
+        "Prepare empty, malformed, huge, corrupt, duplicate, and unexpected inputs relevant to the domain.",
+        "Define unauthorized actor, tenant, and subscription combinations.",
+        "Include traversal, replay, concurrency, and prompt-injection cases where applicable.",
+        "Set resource and duration bounds and cleanup expectations.",
+        "Record exact expected denial and unchanged-state assertions."
+      ],
+      "deliverables": [
+        "Adversarial experiment pack",
+        "Expected invariant and cleanup checks"
+      ],
+      "acceptance": [
+        "Experiments target only disposable authorized resources.",
+        "Absence of a crash is not proof of correct rejection."
+      ],
+      "validation": [
+        "Independent reviewer checks input limits and authoritative-state assertions.",
+        "Trusted execution retains actual results, not worker conclusions."
+      ],
+      "path_scopes": [],
+      "failure_route": "security",
+      "max_minutes": 20
+    },
+    {
+      "id": "d_race_tests",
+      "title": "Create {domain} concurrency and recovery experiments",
+      "owner": "qa",
+      "reviewer": "data",
+      "scope": "domain",
+      "depends_on": [
+        "d_idempotency",
+        "d_realtime",
+        "d_jobs"
+      ],
+      "gates": [
+        "integration",
+        "regression",
+        "operations"
+      ],
+      "mode": "analysis",
+      "inputs": [
+        "Concurrency and state-transition invariants",
+        "Disposable database and worker capabilities"
+      ],
+      "steps": [
+        "Identify simultaneous actions that can conflict over the same resource.",
+        "Synchronize requests at the relevant race boundary.",
+        "Inject timeout, disconnect, worker crash, and retry during mutation.",
+        "Assert uniqueness, ownership, ordering, and final durable state.",
+        "Bound request counts and document cleanup and expected recovery."
+      ],
+      "deliverables": [
+        "Concurrency and recovery experiment pack",
+        "Invariant and replay assertions"
+      ],
+      "acceptance": [
+        "Sequential repetitions are not presented as concurrency evidence.",
+        "Every experiment has a known final-state oracle."
+      ],
+      "validation": [
+        "Reviewer checks synchronization and fault placement.",
+        "Trusted harness retains all attempts and state checks."
+      ],
+      "path_scopes": [],
+      "failure_route": "qa",
+      "max_minutes": 20
+    },
+    {
+      "id": "d_accessibility_audit",
+      "title": "Verify {domain} accessibility across interaction states",
+      "owner": "accessibility",
+      "reviewer": "qa",
+      "scope": "domain",
+      "depends_on": [
+        "d_accessibility_fix",
+        "d_browser_proposals"
+      ],
+      "gates": [
+        "accessibility",
+        "e2e"
+      ],
+      "mode": "analysis",
+      "inputs": [
+        "Accessibility state matrix",
+        "Changed frontend and browser scenarios"
+      ],
+      "steps": [
+        "Run configured automated checks for each required page and state through the trusted verifier.",
+        "Exercise keyboard navigation, dialogs, errors, and focus restoration.",
+        "Inspect zoom, reflow, contrast, motion, and touch behavior.",
+        "Record assistive-technology checks actually performed and those still missing.",
+        "Link every violation to a precise reproduction and owning frontend task."
+      ],
+      "deliverables": [
+        "Accessibility result references",
+        "Violation and untested-state register"
+      ],
+      "acceptance": [
+        "Zero automated violations is reported only from actual fresh output.",
+        "Untested states remain explicit release gaps."
+      ],
+      "validation": [
+        "Reviewer independently reproduces selected findings and fixed interactions."
+      ],
+      "path_scopes": [],
+      "failure_route": "accessibility",
+      "max_minutes": 20
+    },
+    {
+      "id": "d_load_plan",
+      "title": "Specify {domain} load and latency acceptance",
+      "owner": "performance",
+      "reviewer": "sre",
+      "scope": "domain",
+      "depends_on": [
+        "d_queries",
+        "d_jobs",
+        "d_browser_proposals"
+      ],
+      "gates": [
+        "performance"
+      ],
+      "mode": "analysis",
+      "inputs": [
+        "Platform performance contract",
+        "Concrete domain request and browser paths"
+      ],
+      "steps": [
+        "Choose realistic records, payloads, actor mix, and concurrency increments.",
+        "Identify cold and warm scenarios and success/error classification.",
+        "Set disposable target, maximum duration, resource caps, and abort criteria.",
+        "Measure API p95, page load, throughput, errors, memory, and queue delay.",
+        "Plan recovery checks after load is removed."
+      ],
+      "deliverables": [
+        "Domain load scenario pack",
+        "Measurement and abort criteria"
+      ],
+      "acceptance": [
+        "Capacity claims are limited to the measured environment and workload.",
+        "No public production target is exercised."
+      ],
+      "validation": [
+        "Reviewer checks sample sizes, warmup, error inclusion, and reproducibility."
+      ],
+      "path_scopes": [],
+      "failure_route": "performance",
+      "max_minutes": 20
+    },
+    {
+      "id": "d_performance_fix",
+      "title": "Repair measured {domain} performance bottlenecks",
+      "owner": "performance",
+      "reviewer": "architect",
+      "scope": "domain",
+      "depends_on": [
+        "d_load_plan",
+        "d_queries",
+        "d_client_state"
+      ],
+      "gates": [
+        "performance",
+        "regression"
+      ],
+      "mode": "change",
+      "inputs": [
+        "Observed profile or query bottleneck",
+        "Baseline and target under identical conditions",
+        "Accepted exact file/route/action breakdown from d_tasks; broad path scopes are an upper bound, not permission to rewrite unrelated files."
+      ],
+      "steps": [
+        "Reproduce the measured bottleneck and identify its dominant cost.",
+        "Choose the smallest query, caching, batching, rendering, or resource fix.",
+        "Preserve authorization, freshness, ordering, and error semantics.",
+        "Compare before and after using the same workload and environment.",
+        "Run correctness and regression checks for the changed path."
+      ],
+      "deliverables": [
+        "Measured performance patch",
+        "Before and after experiment references"
+      ],
+      "acceptance": [
+        "Optimization is justified by measured cost rather than speculation.",
+        "Cache changes cannot leak tenants or hide invalidation failures."
+      ],
+      "validation": [
+        "Trusted measurements retain latency distribution and error counts.",
+        "Reviewer checks correctness under load and cold state."
+      ],
+      "path_scopes": [
+        "server/routes/*",
+        "server/services/*",
+        "client/src/pages/*",
+        "client/src/components/*",
+        "client/src/hooks/*",
+        "client/src/lib/*"
+      ],
+      "failure_route": "performance",
+      "max_minutes": 20
+    },
+    {
+      "id": "d_privacy",
+      "title": "Verify {domain} retention, export, and erasure behavior",
+      "owner": "security",
+      "reviewer": "data",
+      "scope": "domain",
+      "depends_on": [
+        "d_data",
+        "d_assets",
+        "d_events"
+      ],
+      "gates": [
+        "security",
+        "features",
+        "integration"
+      ],
+      "mode": "analysis",
+      "inputs": [
+        "Domain personal-data and asset inventory",
+        "Platform privacy lifecycle matrix"
+      ],
+      "steps": [
+        "Trace where the domain stores personal and sensitive data.",
+        "Specify and inspect authorized export and erasure behavior.",
+        "Identify retained financial, rights, audit, provider, and backup exceptions.",
+        "Verify cleanup and access revocation across derived stores and assets.",
+        "Record unsupported requests and policy questions explicitly."
+      ],
+      "deliverables": [
+        "Domain privacy verification plan",
+        "Retention and deletion exceptions"
+      ],
+      "acceptance": [
+        "Deletion claims identify exact stores and explicit exceptions.",
+        "Technical verification is not represented as legal certification."
+      ],
+      "validation": [
+        "Reviewer checks export isolation and erase ownership.",
+        "Trusted tests inspect durable post-request state."
+      ],
+      "path_scopes": [],
+      "failure_route": "security",
+      "max_minutes": 20
+    },
+    {
+      "id": "d_security_review",
+      "title": "Independently review {domain} security changes and residual risks",
+      "owner": "security",
+      "reviewer": "techlead",
+      "scope": "domain",
+      "depends_on": [
+        "d_adversarial",
+        "d_provider_proposals",
+        "d_privacy",
+        "d_ai_fix"
+      ],
+      "gates": [
+        "security",
+        "regression"
+      ],
+      "mode": "analysis",
+      "inputs": [
+        "Changed source and adversarial results",
+        "Domain threat model and unresolved findings"
+      ],
+      "steps": [
+        "Review the actual diff and affected trust boundaries.",
+        "Reconcile each finding with mitigation and trusted test evidence.",
+        "Inspect new inputs, permissions, logs, dependencies, and side effects introduced by the fix.",
+        "Reproduce high-impact denial and replay cases through approved checks.",
+        "Return pass, fail, or unverified with concrete residual findings."
+      ],
+      "deliverables": [
+        "Independent security review artifact",
+        "Residual risk and remediation assignments"
+      ],
+      "acceptance": [
+        "No owner self-approval satisfies independent review.",
+        "Critical and high findings remain release blockers."
+      ],
+      "validation": [
+        "Reviewer must reference exact changed paths and current source identity.",
+        "Narrative approval alone cannot override a failing security gate."
+      ],
+      "path_scopes": [],
+      "failure_route": "security",
+      "max_minutes": 20
+    },
+    {
+      "id": "d_api_docs",
+      "title": "Write accurate {domain} API and integration documentation",
+      "owner": "docs",
+      "reviewer": "backend",
+      "scope": "domain",
+      "depends_on": [
+        "d_api",
+        "d_provider_contract",
+        "d_webhooks"
+      ],
+      "gates": [
+        "documentation"
+      ],
+      "mode": "analysis",
+      "inputs": [
+        "Accepted API and provider contracts",
+        "Verified implementation behavior"
+      ],
+      "steps": [
+        "Document request, response, authentication, permission, and error examples.",
+        "Explain pagination, idempotency, retries, timeouts, and callbacks.",
+        "Identify sandbox prerequisites and unsupported provider operations.",
+        "Cross-check every example against current types and actual handler behavior.",
+        "Write documentation proposals in the private task directory for reviewed placement."
+      ],
+      "deliverables": [
+        "API documentation proposal",
+        "Example verification and limitation notes"
+      ],
+      "acceptance": [
+        "Examples do not contain secrets or invented successful responses.",
+        "Unsupported behavior is clearly labeled."
+      ],
+      "validation": [
+        "Reviewer validates examples against the accepted contract and trusted tests."
+      ],
+      "path_scopes": [],
+      "failure_route": "docs",
+      "max_minutes": 20
+    },
+    {
+      "id": "d_user_docs",
+      "title": "Write {domain} user guidance and recovery instructions",
+      "owner": "docs",
+      "reviewer": "ux",
+      "scope": "domain",
+      "depends_on": [
+        "d_browser_proposals",
+        "d_accessibility_audit"
+      ],
+      "gates": [
+        "documentation",
+        "features"
+      ],
+      "mode": "analysis",
+      "inputs": [
+        "Actual interaction specification",
+        "Verified journeys and known limitations"
+      ],
+      "steps": [
+        "Describe prerequisites and step-by-step user actions for each supported journey.",
+        "Explain visible success, pending, rejected, and unavailable states.",
+        "Document error recovery, cancellation, permissions, and support escalation.",
+        "Use actual labels and avoid promising unverified integrations.",
+        "Write proposed accessible guidance with source and evidence references."
+      ],
+      "deliverables": [
+        "User guide and troubleshooting proposal",
+        "Known limitation disclosures"
+      ],
+      "acceptance": [
+        "Instructions match current UI labels and real behavior.",
+        "A reader can distinguish a completed action from a pending request."
+      ],
+      "validation": [
+        "Reviewer follows the instructions through the trusted browser scenario."
+      ],
+      "path_scopes": [],
+      "failure_route": "docs",
+      "max_minutes": 20
+    },
+    {
+      "id": "d_runbook",
+      "title": "Write {domain} operational diagnosis and recovery runbooks",
+      "owner": "sre",
+      "reviewer": "docs",
+      "scope": "domain",
+      "depends_on": [
+        "d_observability",
+        "d_race_tests",
+        "d_provider_proposals"
+      ],
+      "gates": [
+        "operations",
+        "documentation"
+      ],
+      "mode": "analysis",
+      "inputs": [
+        "Domain telemetry and fault evidence",
+        "Platform incident and recovery contracts"
+      ],
+      "steps": [
+        "Map symptoms to logs, metrics, traces, and authoritative state checks.",
+        "Define safe diagnosis for unavailable providers, stuck jobs, stale data, and failed mutations.",
+        "Specify bounded retry, reconciliation, rollback, and escalation steps.",
+        "List required capabilities and prohibited production actions for this loop.",
+        "Record evidence needed to declare the incident resolved."
+      ],
+      "deliverables": [
+        "Domain incident and recovery runbook",
+        "Escalation and verification checklist"
+      ],
+      "acceptance": [
+        "Runbooks do not grant arbitrary production mutation authority.",
+        "Recovery requires state and user-outcome evidence, not only a healthy process."
+      ],
+      "validation": [
+        "Reviewer walks a provider outage and interrupted mutation using the runbook."
+      ],
+      "path_scopes": [],
+      "failure_route": "sre",
+      "max_minutes": 20
+    },
+    {
+      "id": "d_acceptance_review",
+      "title": "Reconcile {domain} criteria with trusted execution evidence",
+      "owner": "qa",
+      "reviewer": "product",
+      "scope": "domain",
+      "depends_on": [
+        "d_unit_proposals",
+        "d_integration_proposals",
+        "d_browser_proposals",
+        "d_provider_proposals",
+        "d_race_tests",
+        "d_accessibility_audit",
+        "d_security_review",
+        "d_performance_fix"
+      ],
+      "gates": [
+        "unit",
+        "integration",
+        "e2e",
+        "regression",
+        "security",
+        "coverage",
+        "accessibility",
+        "performance",
+        "features"
+      ],
+      "mode": "analysis",
+      "inputs": [
+        "Criterion matrix and current source identity",
+        "Trusted gate results and raw artifacts"
+      ],
+      "steps": [
+        "Resolve every acceptance criterion to actual current evidence.",
+        "Mark proposed, unexecuted, skipped, stale, failed, and passing cases separately.",
+        "Check that tests exercise real required dependencies and durable outcomes.",
+        "Reopen criteria affected by later source changes.",
+        "Route each unresolved criterion to its concrete owner and next task."
+      ],
+      "deliverables": [
+        "Domain acceptance matrix",
+        "Exact failed and unverified criterion backlog"
+      ],
+      "acceptance": [
+        "Worker claims and test proposals cannot mark a criterion passed.",
+        "All required scenarios remain represented after retries or cycle exhaustion."
+      ],
+      "validation": [
+        "Independent reviewer resolves the evidence references and samples authoritative outcomes."
+      ],
+      "path_scopes": [],
+      "failure_route": "qa",
+      "max_minutes": 20
+    },
+    {
+      "id": "d_release_packet",
+      "title": "Prepare the {domain} release evidence packet",
+      "owner": "release",
+      "reviewer": "techlead",
+      "scope": "domain",
+      "depends_on": [
+        "d_acceptance_review",
+        "d_api_docs",
+        "d_user_docs",
+        "d_runbook"
+      ],
+      "gates": [
+        "features",
+        "operations",
+        "documentation",
+        "start",
+        "artifact_contract"
+      ],
+      "mode": "analysis",
+      "inputs": [
+        "Domain acceptance matrix and documentation proposals",
+        "Current build and runtime evidence"
+      ],
+      "steps": [
+        "Bind accepted work to exact source, policy, runtime, and artifact identity.",
+        "List all changed files, independent review results, and verification commands.",
+        "Include rollback, migration, provider, monitoring, and recovery prerequisites.",
+        "Record remaining blockers and release recommendation.",
+        "Hand the packet to the platform release matrix without merging or deploying."
+      ],
+      "deliverables": [
+        "Domain release evidence packet",
+        "Source-bound handoff and remaining assignments"
+      ],
+      "acceptance": [
+        "A completed packet is not a deployment or production-readiness claim.",
+        "Any required missing evidence produces NO-GO or unverified status."
+      ],
+      "validation": [
+        "Reviewer reconciles packet entries with current trusted reports and source hashes."
+      ],
+      "path_scopes": [],
+      "failure_route": "release",
+      "max_minutes": 20
+    },
+    {
+      "id": "d_defect_reproduce",
+      "title": "Reproduce a concrete {domain} defect before repair",
+      "owner": "incident",
+      "reviewer": "qa",
+      "scope": "domain",
+      "depends_on": [
+        "d_discover"
+      ],
+      "gates": [
+        "regression",
+        "features"
+      ],
+      "mode": "analysis",
+      "inputs": [
+        "Observed failed gate or user scenario",
+        "Exact source and environment identity"
+      ],
+      "steps": [
+        "Preserve the failing input, command, logs, and observable symptom.",
+        "Reduce the case while preserving the failed business invariant.",
+        "Determine whether the cause is product code, fixture, environment, provider, or missing capability.",
+        "Demonstrate the failure repeatedly or record why it is intermittent.",
+        "Assign a concrete repair hypothesis and regression scenario to the owning role."
+      ],
+      "deliverables": [
+        "Minimal defect reproduction",
+        "Root-cause hypothesis and routing packet"
+      ],
+      "acceptance": [
+        "An environment blocker is not mislabeled as an application defect.",
+        "Root cause remains a hypothesis until controlled evidence supports it."
+      ],
+      "validation": [
+        "Independent reviewer reruns the reproduction when capability is available."
+      ],
+      "path_scopes": [],
+      "failure_route": "incident",
+      "max_minutes": 20
+    },
+    {
+      "id": "d_fix_review",
+      "title": "Review {domain} patch correctness and maintainability",
+      "owner": "techlead",
+      "reviewer": "architect",
+      "scope": "domain",
+      "depends_on": [
+        "d_validation",
+        "d_authorize",
+        "d_persist",
+        "d_frontend"
+      ],
+      "gates": [
+        "types",
+        "lint",
+        "regression"
+      ],
+      "mode": "analysis",
+      "inputs": [
+        "Exact patch and original failure",
+        "Accepted contracts and path ownership"
+      ],
+      "steps": [
+        "Inspect the actual diff and every changed call site.",
+        "Check business invariants, compatibility, error handling, and failure cleanup.",
+        "Look for unrelated changes, duplicate implementations, and hidden configuration dependencies.",
+        "Verify claimed tests exist as evidence rather than proposed prose.",
+        "Return actionable findings or a source-bound review conclusion."
+      ],
+      "deliverables": [
+        "Independent technical review artifact",
+        "Required correction and regression list"
+      ],
+      "acceptance": [
+        "Approval refers to the actual candidate source hash.",
+        "Changes to protected validation are routed outside automatic repair."
+      ],
+      "validation": [
+        "Reviewer checks at least the original defect and one adjacent regression risk."
+      ],
+      "path_scopes": [],
+      "failure_route": "techlead",
+      "max_minutes": 20
+    },
+    {
+      "id": "d_learn",
+      "title": "Evaluate {domain} repair effectiveness and update the next assignment",
+      "owner": "incident",
+      "reviewer": "techlead",
+      "scope": "domain",
+      "depends_on": [
+        "d_defect_reproduce",
+        "d_fix_review"
+      ],
+      "gates": [
+        "regression",
+        "operations"
+      ],
+      "mode": "analysis",
+      "inputs": [
+        "Attempt history and current failed criteria",
+        "Trusted verification outcomes and timings"
+      ],
+      "steps": [
+        "Compare the intended fix with actual gate and invariant outcomes.",
+        "Identify new regressions, repeated patches, unchanged failures, and wasted checks.",
+        "Record which hypothesis was disproved and what evidence is still missing.",
+        "Propose the next smallest task or escalation with a different investigation approach.",
+        "Preserve all requirements and thresholds while improving ordering or task precision."
+      ],
+      "deliverables": [
+        "Repair effectiveness record",
+        "Next bounded assignment or escalation"
+      ],
+      "acceptance": [
+        "A failed attempt cannot improve readiness by relabeling evidence.",
+        "No-progress and repeated failures remain visible termination reasons."
+      ],
+      "validation": [
+        "Reviewer compares the next task against the prior failed hypothesis and raw results."
+      ],
+      "path_scopes": [],
+      "failure_route": "incident",
+      "max_minutes": 20
+    },
+    {
+      "id": "p_admin_boundary",
+      "title": "Specify and verify private admin access",
+      "owner": "security",
+      "reviewer": "qa",
+      "scope": "platform",
+      "depends_on": [
+        "p_identity",
+        "p_scope"
+      ],
+      "gates": [
+        "features",
+        "security",
+        "operations",
+        "e2e"
+      ],
+      "mode": "analysis",
+      "inputs": [
+        "User-authorized admin-private scope",
+        "Observed routes, admin entitlement checks and release evidence"
+      ],
+      "steps": [
+        "Identify the configured admin identity and authoritative role derivation without exposing credentials.",
+        "Enumerate all page, API, socket, download, worker trigger and registration entry points.",
+        "Require anonymous and non-admin denial where private launch access is required, including direct requests.",
+        "Specify login, MFA, session expiry, revocation and recovery acceptance with lockout recovery.",
+        "Document intentionally public static, health and owner-published sharing surfaces; prove none disclose private application data or confer account access."
+      ],
+      "deliverables": [
+        "Source-linked findings and narrow patch or reviewable proposal",
+        "Criterion-to-check evidence matrix"
+      ],
+      "acceptance": [
+        "Private access cannot be bypassed by hiding navigation only.",
+        "Admin access recovery and denial tests have real evidence."
+      ],
+      "validation": [
+        "Trusted fixture tests admin success, anonymous denial, non-admin denial and expired/revoked sessions."
+      ],
+      "path_scopes": [],
+      "failure_route": "security",
+      "max_minutes": 20
+    },
+    {
+      "id": "p_admin_entitlements",
+      "title": "Audit full admin feature entitlements",
+      "owner": "backend",
+      "reviewer": "security",
+      "scope": "platform",
+      "depends_on": [
+        "p_admin_boundary",
+        "p_provider_map"
+      ],
+      "gates": [
+        "features",
+        "security",
+        "operations",
+        "e2e"
+      ],
+      "mode": "analysis",
+      "inputs": [
+        "User-authorized admin-private scope",
+        "Observed routes, admin entitlement checks and release evidence"
+      ],
+      "steps": [
+        "Inventory feature, subscription, quota and plan checks across frontend, API and job handlers.",
+        "Map every admin workflow to required entitlements and identify artificial paywalls on the owner account.",
+        "Specify centrally derived admin entitlement behavior while preserving financial, provider and resource constraints.",
+        "Verify that request parameters or client state cannot confer admin capabilities.",
+        "Keep payment creation, refund and provider spending outcomes real and permission checked."
+      ],
+      "deliverables": [
+        "Source-linked findings and narrow patch or reviewable proposal",
+        "Criterion-to-check evidence matrix"
+      ],
+      "acceptance": [
+        "The administrator can reach every requested feature without buying a public plan.",
+        "Non-admin identity cannot obtain the same access by forged role or plan inputs."
+      ],
+      "validation": [
+        "Positive admin and negative forged-role/paywall regression checks run against actual handlers."
+      ],
+      "path_scopes": [],
+      "failure_route": "backend",
+      "max_minutes": 20
+    },
+    {
+      "id": "p_admin_release",
+      "title": "Assemble independent private-release decision",
+      "owner": "release",
+      "reviewer": "qa",
+      "scope": "platform",
+      "depends_on": [
+        "p_admin_boundary",
+        "p_admin_entitlements",
+        "p_recovery",
+        "p_runtime"
+      ],
+      "gates": [
+        "features",
+        "security",
+        "operations",
+        "e2e"
+      ],
+      "mode": "analysis",
+      "inputs": [
+        "User-authorized admin-private scope",
+        "Observed routes, admin entitlement checks and release evidence"
+      ],
+      "steps": [
+        "Collect source-bound admin criteria and all twelve domain journey results.",
+        "Verify production build, actual startup, health, shutdown, persistence across restart and configured providers.",
+        "Require recoverable backups, restoration proof, monitoring and a tested rollback path.",
+        "Separate private-admin blockers from deferred public-launch work; never convert skipped integrations to passing.",
+        "Record GO only for the tested admin release when every required admin criterion has evidence; otherwise record exact blockers."
+      ],
+      "deliverables": [
+        "Source-linked findings and narrow patch or reviewable proposal",
+        "Criterion-to-check evidence matrix"
+      ],
+      "acceptance": [
+        "Private admin release and public general availability are reported separately.",
+        "No deployment is authorized by a task completion count."
+      ],
+      "validation": [
+        "Run the trusted admin acceptance producer and final source-to-artifact validation."
+      ],
+      "path_scopes": [],
+      "failure_route": "release",
+      "max_minutes": 20,
+      "domain_requires": [
+        "d_admin_journey",
+        "d_release_packet"
+      ]
+    },
+    {
+      "id": "d_admin_journey",
+      "title": "Exercise every admin action in {domain}",
+      "owner": "qa",
+      "reviewer": "product",
+      "scope": "domain",
+      "depends_on": [
+        "d_acceptance_review"
+      ],
+      "gates": [
+        "features",
+        "security",
+        "operations",
+        "e2e"
+      ],
+      "mode": "analysis",
+      "inputs": [
+        "User-authorized admin-private scope",
+        "Observed routes, admin entitlement checks and release evidence"
+      ],
+      "steps": [
+        "Enumerate every admin-visible action and link it to an accepted scenario, actual route, handler and durable record.",
+        "Perform create/read/update/delete or the domain-equivalent workflow through the browser as the administrator.",
+        "Reload, sign out/in and restart the isolated runtime; confirm the result and uploaded artifacts survive.",
+        "Exercise invalid inputs, permission denial, interrupted requests, retries and provider failures.",
+        "Verify exports, collaboration, publishing and financial effects against their authoritative destination where applicable.",
+        "Record any missing integration or dead control as a blocker with the exact reproduction and owner."
+      ],
+      "deliverables": [
+        "Source-linked findings and narrow patch or reviewable proposal",
+        "Criterion-to-check evidence matrix"
+      ],
+      "acceptance": [
+        "All admin workflow outcomes are real, durable and observable.",
+        "Each required domain journey has positive, failure, reload and authorization evidence."
+      ],
+      "validation": [
+        "Source-bound browser/API checks verify all four catalog journeys and every discovered admin control."
+      ],
+      "path_scopes": [],
+      "failure_route": "qa",
+      "max_minutes": 20
+    }
+  ],
+  "release_target": {
+    "id": "admin-private",
+    "actor": "existing authorized administrator",
+    "goal": "The administrator can use every Max Booster domain end to end with durable real outcomes.",
+    "authorized_scope_change": "I want Max Booster production grade enough for the admin account to run and use it in its entirety the ability to be used by everyone can wait",
+    "required": [
+      "All twelve domain workflows remain in scope.",
+      "Private access is enforced at server endpoints as well as navigation.",
+      "Admin entitlements do not require purchasing a public plan; provider charges and financial authorization stay real.",
+      "Security, persistence, provider truthfulness, backup/restore and rollback remain required.",
+      "Current-source admin acceptance and later public-launch acceptance have separate decisions."
+    ],
+    "deferred": [
+      "Public self-service registration and mass onboarding",
+      "General availability for every persona and subscription tier",
+      "Large-scale multiuser capacity and public growth experiments"
+    ],
+    "planning_rule": "Interpret every template for the admin-private release. Record deferred public work in a separate backlog without deleting it. Existing global coverage thresholds remain public-platform criteria; admin readiness requires complete critical-journey acceptance, not an invented coverage score."
+  }
+}

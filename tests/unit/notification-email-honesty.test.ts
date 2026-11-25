@@ -30,6 +30,13 @@ vi.mock("../../server/config/env.js", () => ({
 vi.mock("../../server/db", () => ({
   db: {
     query: { users: { findFirst: vi.fn() } },
+    select: vi.fn(() => ({
+      from: vi.fn(() => ({
+        where: vi.fn(() => ({
+          limit: vi.fn().mockResolvedValue([]),
+        })),
+      })),
+    })),
     insert: vi.fn(() => ({
       values: vi.fn(() => ({
         returning: vi.fn().mockResolvedValue([{ id: "notif-1" }]),

@@ -27,7 +27,7 @@ wait_for_cycle_complete() {
   while (( waited < max_wait )); do
     STATUS=$(node -e "
 const { neon } = require('@neondatabase/serverless');
-const sql = neon(process.env.NEON_DATABASE_URL);
+const sql = neon(process.env.NEON_PRIMARY_URL || process.env.NEON_DATABASE_URL || process.env.DATABASE_URL);
 sql\`SELECT status FROM beat_money_loop_cycles ORDER BY started_at DESC LIMIT 1\`
   .then(r => process.stdout.write(r[0]?.status || 'unknown'))
   .catch(() => process.stdout.write('error'));

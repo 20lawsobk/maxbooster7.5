@@ -1,0 +1,277 @@
+{
+  "startedAt": "2026-10-27T22:05:04.629591+00:00",
+  "status": "failed",
+  "productionReady": false,
+  "scope": "Four actual public adapters -> actual canonical disposable PDIM publication -> fresh follower/context; no generation/provider/deployment proof",
+  "checkpointRequired": false,
+  "sourceNames": [
+    "apple_charts",
+    "mastodon_trending",
+    "marketing_dive",
+    "guardian_culture"
+  ],
+  "refreshConcurrency": 1,
+  "sourceBodiesRetainedInReports": false,
+  "phase": "actual_public_scan_and_canonical_publication",
+  "externalContentMethods": [
+    "GET"
+  ],
+  "maximumValidatedRedirectsPerFeed": 3,
+  "transportPublicDnsValidation": true,
+  "ownerCommand": [
+    "/workspace/.cloud-tools/node_modules/node/bin/node",
+    "--import",
+    "/workspace/maxbooster7.5/node_modules/tsx/dist/loader.mjs",
+    "/workspace/maxbooster7.5/reports/live-awareness-acceptance/2026-10-27/canonical-pdim-owner.mjs",
+    "/workspace/maxbooster7.5"
+  ],
+  "ownerEnvironmentNames": [
+    "HOME",
+    "LANG",
+    "LD_LIBRARY_PATH",
+    "LOCAL_PDIM_PORT",
+    "LOCAL_PDIM_STORE_FILE",
+    "LOG_LEVEL",
+    "NODE_ENV",
+    "PATH",
+    "PDIM_LOCAL_CHANNEL_TOKEN",
+    "PDIM_PERSISTENCE",
+    "TMPDIR",
+    "TSX_DISABLE_CACHE"
+  ],
+  "ownerPid": 33840,
+  "pythonEnvironmentNames": [
+    "HOME",
+    "HTTPS_PROXY",
+    "HTTP_PROXY",
+    "LANG",
+    "LD_LIBRARY_PATH",
+    "MAXCORE_AWARENESS_USE_PROXY",
+    "MKL_NUM_THREADS",
+    "NO_PROXY",
+    "OMP_NUM_THREADS",
+    "OPENBLAS_NUM_THREADS",
+    "PATH",
+    "PDIM_FORCE_REMOTE",
+    "PDIM_LOCAL_CHANNEL_TOKEN",
+    "PYTHONDONTWRITEBYTECODE",
+    "SSL_CERT_FILE",
+    "STORAGE_HTTP_URL",
+    "TMPDIR"
+  ],
+  "publicFetches": [
+    {
+      "source": "apple_charts",
+      "urlSha256": "65860c2f43b6922dc795b172e1c33f2700d7ecfd1248499d02b00ecb02152e53"
+    },
+    {
+      "source": "guardian_culture",
+      "urlSha256": "9107de080f6e22b1f31e7affa4cb6da22c7891d28d6c8720c279d85f2e2fe8a4"
+    },
+    {
+      "source": "marketing_dive",
+      "urlSha256": "8d96a2c456b6de0a5e4ad36f0654130d7eb102092cd0bc63f18a4f6491404fe5"
+    },
+    {
+      "source": "mastodon_trending",
+      "urlSha256": "9bdf2576db5307338538ea1d8709f1ae20c86754456b9f2f123e9657fead757b"
+    }
+  ],
+  "publicHttpHops": [
+    {
+      "host": "rss.applemarketingtools.com",
+      "method": "GET",
+      "status": 301,
+      "urlSha256": "025341358d672c441f39994ab84e16378d7cd688cb42349307fcfec21efe1a2a",
+      "redirectDestinationHost": "rss.marketingtools.apple.com",
+      "redirectDestinationUrlSha256": "09419144b187a5418094f7437c60a134e1e5e68c59842c746b54014001b504d7"
+    },
+    {
+      "host": "rss.marketingtools.apple.com",
+      "method": "GET",
+      "status": 200,
+      "urlSha256": "f0da9c40f61d7f348e87aa72a76380ff7452457a7d35d40db80fe88980baf757",
+      "redirectDestinationHost": null,
+      "redirectDestinationUrlSha256": null
+    },
+    {
+      "host": "www.theguardian.com",
+      "method": "GET",
+      "status": 302,
+      "urlSha256": "b024781a3bafb4e1905a71c708de1f87b2d1f7ed9c72476269e371b1dcbae70d",
+      "redirectDestinationHost": "www.theguardian.com",
+      "redirectDestinationUrlSha256": "a236429eb65b6d755b3ac51387a012711fd22122dd9ac9bd37dd467a0bd3a9e6"
+    },
+    {
+      "host": "www.theguardian.com",
+      "method": "GET",
+      "status": 200,
+      "urlSha256": "2d7a4d3dc6e181b5888eb52ab146b6580d66132925b95f540075618dbd4f226f",
+      "redirectDestinationHost": null,
+      "redirectDestinationUrlSha256": null
+    },
+    {
+      "host": "www.marketingdive.com",
+      "method": "GET",
+      "status": 200,
+      "urlSha256": "b2d30da58e5ca2ae1ef1731b2de9106d4aea6867d03d5f6ea87207fc9e33bcab",
+      "redirectDestinationHost": null,
+      "redirectDestinationUrlSha256": null
+    },
+    {
+      "host": "mastodon.social",
+      "method": "GET",
+      "status": 200,
+      "urlSha256": "fbd23ca82fc375e25fcd4cf2e430f359f676456264ffbf43a9042e44e6511fc0",
+      "redirectDestinationHost": null,
+      "redirectDestinationUrlSha256": null
+    }
+  ],
+  "errorType": "AwarenessUnavailable",
+  "errorCode": "awareness_unavailable",
+  "engineStatus": {
+    "ready": false,
+    "snapshot_id": null,
+    "expires_at": null,
+    "running": false,
+    "configured_sources": [
+      "apple_charts",
+      "guardian_culture",
+      "marketing_dive",
+      "mastodon_trending"
+    ],
+    "ingest_owner": false,
+    "gpu": {
+      "backend": "digital_gpu_awareness_software",
+      "completed": 0,
+      "operations": {}
+    },
+    "snapshot_gpu": null,
+    "source_health": {
+      "apple_charts": {
+        "domain": "music",
+        "error": "source_failed",
+        "observed_at": 1793138707.6329923,
+        "ok": false,
+        "url": "https://rss.applemarketingtools.com/api/v2/us/music/most-played/50/songs.json"
+      },
+      "guardian_culture": {
+        "domain": "culture",
+        "error": "source_failed",
+        "observed_at": 1793138708.2249331,
+        "ok": false,
+        "url": "https://www.theguardian.com/culture/rss"
+      },
+      "marketing_dive": {
+        "domain": "advertising",
+        "error": "source_failed",
+        "observed_at": 1793138708.408966,
+        "ok": false,
+        "url": "https://www.marketingdive.com/feeds/news/"
+      },
+      "mastodon_trending": {
+        "domain": "social",
+        "error": "source_failed",
+        "observed_at": 1793138709.4026868,
+        "ok": false,
+        "url": "https://mastodon.social/api/v1/trends/statuses"
+      }
+    },
+    "latest_scan_health": {
+      "apple_charts": {
+        "domain": "music",
+        "error": "source_failed",
+        "observed_at": 1793138707.6329923,
+        "ok": false,
+        "url": "https://rss.applemarketingtools.com/api/v2/us/music/most-played/50/songs.json"
+      },
+      "guardian_culture": {
+        "domain": "culture",
+        "error": "source_failed",
+        "observed_at": 1793138708.2249331,
+        "ok": false,
+        "url": "https://www.theguardian.com/culture/rss"
+      },
+      "marketing_dive": {
+        "domain": "advertising",
+        "error": "source_failed",
+        "observed_at": 1793138708.408966,
+        "ok": false,
+        "url": "https://www.marketingdive.com/feeds/news/"
+      },
+      "mastodon_trending": {
+        "domain": "social",
+        "error": "source_failed",
+        "observed_at": 1793138709.4026868,
+        "ok": false,
+        "url": "https://mastodon.social/api/v1/trends/statuses"
+      }
+    },
+    "observation_cache_error": null,
+    "last_scan_observation_write_count": 0,
+    "validation_diagnostic": null,
+    "phase": "failed:validating_domain_coverage",
+    "error": "awareness_unavailable"
+  },
+  "engineStopped": true,
+  "ownedGroupBeforeStop": [
+    {
+      "pid": 33840,
+      "state": "S",
+      "startTicks": "853749"
+    },
+    {
+      "pid": 33900,
+      "state": "S",
+      "startTicks": "853764"
+    }
+  ],
+  "ownerExitCode": 0,
+  "ownerStopped": true,
+  "ownedGroupAfterStop": [
+    {
+      "pid": 33900,
+      "state": "Z",
+      "startTicks": "853764"
+    }
+  ],
+  "activeOwnedProcessesRemaining": [],
+  "defunctOwnedProcesses": [
+    {
+      "pid": 33900,
+      "state": "Z",
+      "startTicks": "853764"
+    }
+  ],
+  "durableScratchFiles": [
+    {
+      "name": "pdim.json",
+      "bytes": 141,
+      "sha256": "e2849bd58e8c0a923dcc74ec2c2a50ba42cd1b654991c4d056f992648e7f22e2"
+    },
+    {
+      "name": "pdim.json.aof.jsonl",
+      "bytes": 517,
+      "sha256": "a351d1050c7a40a3e65410a2159a40a732ee69674ed846e0ae88ae3a7025bcfc"
+    }
+  ],
+  "scratchRemoved": true,
+  "sourceInputsUnchanged": true,
+  "sourceInputs": {
+    "reports/live-awareness-acceptance/2026-10-27/canonical-public-pipeline.py": "72db09e2fe887a525a3c3c58e55900c381388754be39cd7ca52147b380346fc8",
+    "reports/live-awareness-acceptance/2026-10-27/canonical-pdim-owner.mjs": "f0ba3a4fe2675cb2828b80f05af521d8d11cad7cdc302de35c8116ccdee95ca1",
+    "server/lib/localPdimServer.ts": "9fa5bbb63afe569ea0dca115b0e1960c7732595f812f76dc4ccea89a82784c42",
+    "external/pdim/artifacts/api-server/src/redis/store.ts": "0107348e75c23d667c6cf0382896ead3e1a990ff686806478fbf5bb94f870770",
+    "external/maxcore/artifacts/ai-training-server/ai_model/awareness/engine.py": "ebdb3164c24b07aa823b48c4c99a356fde9ce2f8007e56b8a50bbe785b855d49",
+    "external/maxcore/artifacts/ai-training-server/ai_model/awareness/sources.py": "50ef05704a303fe4e844986ddd0d37d6ad10b90f1984a2194745b5f849dcdba7",
+    "external/maxcore/artifacts/ai-training-server/ai_model/awareness/lease.py": "7686781c67fdd8687bb259cbffa058555fce452e755700aac5423690a36b9ebd",
+    "external/maxcore/artifacts/ai-training-server/storage_client.py": "0f7ce80659d75b055f4fde9faacc996d3a418b4c5f4ce22c81620b5860dd2bc5",
+    "external/maxcore/artifacts/ai-training-server/ai_model/native_analysis/safe_http.py": "8fed9f38535b45614031491ecbb4b3c16668b2dece991f972558e399b3e9488d"
+  },
+  "durationSeconds": 4.846,
+  "finishedAt": "2026-10-27T22:05:09.475694+00:00",
+  "exitCode": 1,
+  "canonicalPdimLogSha256": "cc9cde43a67a47aca65004d7297913e87c1411264b03863733897d54cd4008da",
+  "nodeVersion": "v22.23.3",
+  "pythonVersion": "3.12.14"
+}

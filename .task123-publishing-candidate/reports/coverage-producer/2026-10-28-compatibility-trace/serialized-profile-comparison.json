@@ -1,0 +1,128 @@
+{
+  "scope": "Reapply the actual strict comparator to both retained serialized profiles; no merge",
+  "files": [
+    {
+      "file": "/workspace/maxbooster7.5/server/pocket-dimension/fabric/storage/PocketDimensionChunkStore.ts",
+      "compatible": false,
+      "mismatches": [
+        "statementMap",
+        "fnMap",
+        "branchMap"
+      ],
+      "mapEquality": {
+        "statementMap": false,
+        "fnMap": false,
+        "branchMap": false
+      }
+    },
+    {
+      "file": "/workspace/maxbooster7.5/external/pdim/artifacts/api-server/src/redis/store.ts",
+      "compatible": false,
+      "mismatches": [
+        "statementMap",
+        "fnMap",
+        "branchMap"
+      ],
+      "mapEquality": {
+        "statementMap": false,
+        "fnMap": false,
+        "branchMap": false
+      }
+    },
+    {
+      "file": "/workspace/maxbooster7.5/server/lib/pdimClient.ts",
+      "compatible": false,
+      "mismatches": [
+        "statementMap",
+        "fnMap",
+        "branchMap"
+      ],
+      "mapEquality": {
+        "statementMap": false,
+        "fnMap": false,
+        "branchMap": false
+      }
+    },
+    {
+      "file": "/workspace/maxbooster7.5/server/logger.ts",
+      "compatible": false,
+      "mismatches": [
+        "statementMap",
+        "fnMap",
+        "branchMap"
+      ],
+      "mapEquality": {
+        "statementMap": false,
+        "fnMap": false,
+        "branchMap": false
+      }
+    },
+    {
+      "file": "/workspace/maxbooster7.5/external/pdim/artifacts/api-server/src/workers/lua-pool.ts",
+      "compatible": false,
+      "mismatches": [
+        "statementMap",
+        "fnMap"
+      ],
+      "mapEquality": {
+        "statementMap": false,
+        "fnMap": false,
+        "branchMap": true
+      }
+    },
+    {
+      "file": "/workspace/maxbooster7.5/server/config/ports.ts",
+      "compatible": false,
+      "mismatches": [
+        "statementMap",
+        "fnMap"
+      ],
+      "mapEquality": {
+        "statementMap": false,
+        "fnMap": false,
+        "branchMap": true
+      }
+    },
+    {
+      "file": "/workspace/maxbooster7.5/server/lib/luaExecutor.ts",
+      "compatible": false,
+      "mismatches": [
+        "statementMap",
+        "fnMap",
+        "branchMap"
+      ],
+      "mapEquality": {
+        "statementMap": false,
+        "fnMap": false,
+        "branchMap": false
+      }
+    },
+    {
+      "file": "/workspace/maxbooster7.5/server/lib/pdimCircuitBreaker.ts",
+      "compatible": false,
+      "mismatches": [
+        "statementMap",
+        "fnMap"
+      ],
+      "mapEquality": {
+        "statementMap": false,
+        "fnMap": false,
+        "branchMap": true
+      }
+    },
+    {
+      "file": "/workspace/maxbooster7.5/server/logSanitizer.ts",
+      "compatible": false,
+      "mismatches": [
+        "statementMap",
+        "fnMap",
+        "branchMap"
+      ],
+      "mapEquality": {
+        "statementMap": false,
+        "fnMap": false,
+        "branchMap": false
+      }
+    }
+  ]
+}

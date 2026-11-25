@@ -1,0 +1,26 @@
+{
+  "command": [
+    "/workspace/.cloud-python/bin/python",
+    "scripts/testing/run-python-suites.py",
+    "--python",
+    "/workspace/.cloud-python/bin/python",
+    "--workers",
+    "1",
+    "--file",
+    "external/maxcore/artifacts/ai-training-server/ai_model/retrieval/test_retrieval.py",
+    "--file",
+    "external/maxcore/artifacts/ai-training-server/ai_model/rta/test_render_contracts.py",
+    "--file",
+    "tests/testing/test_assertion_oracles.py",
+    "--output",
+    "/workspace/maxbooster7.5/reports/python-oracle-acceptance/2026-10-27/canonical-python"
+  ],
+  "cwd": ".",
+  "startedAt": "2026-10-28T02:31:36.609930+00:00",
+  "durationSeconds": 9.16,
+  "exitCode": 0,
+  "timedOut": false,
+  "status": "passed",
+  "log": "reports/python-oracle-acceptance/2026-10-27/canonical-python-runner.txt",
+  "logSha256": "6e1acac6b7325b65109e85289c301f65ae581851eb4b6d3c317d74b30783a71d"
+}

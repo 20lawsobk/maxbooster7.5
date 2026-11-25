@@ -11,6 +11,9 @@ GENERATION_PLAN_VERSION = "generation-plan-v5"
 
 Modality = Literal["text", "content", "image", "audio", "video", "campaign"]
 active_plan: ContextVar["GenerationPlan | None"] = ContextVar("generation_plan", default=None)
+live_awareness_generation: ContextVar[bool] = ContextVar(
+    "live_awareness_generation", default=False,
+)
 
 
 def canonical(value: Any) -> str:

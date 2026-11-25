@@ -6,6 +6,7 @@ import fs from "fs";
 import path from "path";
 import { logger } from "../logger.js";
 import { db } from "../db.js";
+import { getStripeSecretKey } from "../lib/stripeClient.js";
 import { sql, eq } from "drizzle-orm";
 import { users } from "../../shared/schema.js";
 
@@ -183,7 +184,7 @@ export class SecurityService {
 
         case "stripe":
           try {
-            const stripeKey = process.env.STRIPE_SECRET_KEY;
+            const stripeKey = getStripeSecretKey();
             if (!stripeKey) {
               status = "degraded";
               message = "Stripe secret key not configured";

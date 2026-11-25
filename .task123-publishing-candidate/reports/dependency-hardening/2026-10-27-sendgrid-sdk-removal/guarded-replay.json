@@ -1,0 +1,14 @@
+{
+  "command": [
+    "node",
+    "reports/dependency-hardening/2026-10-27-sendgrid-sdk-removal/verify-replay.mjs"
+  ],
+  "cwd": ".",
+  "startedAt": "2026-10-28T01:35:26.551701+00:00",
+  "durationSeconds": 0.216,
+  "exitCode": 0,
+  "timedOut": false,
+  "status": "passed",
+  "log": "reports/dependency-hardening/2026-10-27-sendgrid-sdk-removal/guarded-replay.txt",
+  "logSha256": "1c856a8feabe2a7bf527fb03f9c8cf31961fa41b7ab06ce8bd1ed6043d2ca3de"
+}

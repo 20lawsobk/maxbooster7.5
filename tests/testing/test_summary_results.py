@@ -75,6 +75,10 @@ def test_source_identity_detects_new_code_changes_and_excludes_generated_private
         (root / 'tests/coverage').mkdir(parents=True)
         contract = root / 'tests/coverage/storage.test.ts'
         contract.write_text('export const databaseContract = 1;\n')
+        for candidate in ('.task123-publishing-candidate', 'maxbooster7.5'):
+            isolated = root / candidate / 'server/isolated.ts'
+            isolated.parent.mkdir(parents=True)
+            isolated.write_text('export const notActiveSource = 1;\n')
         (root / 'secret.json').write_text('{"private":"fixture-only"}')
         monkeypatch.setattr(common, 'ROOT', root)
         first = common.source_inputs()

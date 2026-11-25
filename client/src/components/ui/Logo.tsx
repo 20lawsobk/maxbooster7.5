@@ -25,13 +25,20 @@ export function Logo({
 
   return (
     <div className={`flex items-center gap-2 ${className}`}>
-      <img
-        src="/logo.png"
-        alt="B-Lawz Music"
-        className={`${sizeMap[size]} rounded-lg object-cover flex-shrink-0`}
-        loading="eager"
-        decoding="async"
-      />
+      <picture
+        className={`${sizeMap[size]} block flex-shrink-0 overflow-hidden rounded-lg`}
+      >
+        <source srcSet="/logo.webp" type="image/webp" />
+        <img
+          src="/logo.png"
+          alt="B-Lawz Music"
+          width={512}
+          height={512}
+          className="h-full w-full object-cover"
+          loading="eager"
+          decoding="async"
+        />
+      </picture>
       {showText && (
         <div className="flex flex-col">
           <span

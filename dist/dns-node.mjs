@@ -401,6 +401,20 @@ var ZONE_SYNC_INTERVAL = parseInt(process.env.ZONE_SYNC_INTERVAL_S || "120") * 1
 var zone = { domain: "", serial: 0, records: [] };
 var compiled = /* @__PURE__ */ new Map();
 var zoneLoaded = false;
+function writeZoneCacheAtomically(filePath, contents) {
+  fs.mkdirSync(path.dirname(filePath), { recursive: true });
+  const temporaryPath = `${filePath}.${process.pid}.${Date.now()}.tmp`;
+  try {
+    fs.writeFileSync(temporaryPath, contents, { encoding: "utf8", flag: "wx", mode: 384 });
+    fs.renameSync(temporaryPath, filePath);
+  } catch (error) {
+    try {
+      fs.unlinkSync(temporaryPath);
+    } catch {
+    }
+    throw error;
+  }
+}
 function typeCode(typeName) {
   return TYPE[typeName.toUpperCase()] ?? 0;
 }
@@ -446,6 +460,10 @@ function compile(data) {
   return map;
 }
 function loadZoneFromFile() {
+  if (!fs.existsSync(ZONE_FILE)) {
+    console.info("[zone] No cached zone file; waiting for the configured primary sync");
+    return;
+  }
   try {
     const raw = fs.readFileSync(ZONE_FILE, "utf8");
     const data = JSON.parse(raw);
@@ -485,7 +503,13 @@ async function fetchZoneFromPrimary() {
             compiled = compile(data);
             zoneLoaded = true;
             console.log(`[zone] Synced from primary: serial=${data.serial}`);
-            fs.writeFileSync(ZONE_FILE, raw, "utf8");
+            try {
+              writeZoneCacheAtomically(ZONE_FILE, raw);
+            } catch (error) {
+              console.warn(
+                `[zone] Primary data is active in memory, but local cache persistence failed: ${error instanceof Error ? error.message : "unknown filesystem error"}`
+              );
+            }
           }
         } catch (err) {
           console.error(`[zone] Sync parse error: ${err.message}`);
@@ -1193,7 +1217,8 @@ function startTCP() {
     const clientIp = socket.remoteAddress?.replace("::ffff:", "") ?? "0.0.0.0";
     let rxBuf = Buffer.alloc(0);
     socket.on("data", (chunk) => {
-      rxBuf = Buffer.concat([rxBuf, chunk]);
+      const bytes = Buffer.isBuffer(chunk) ? chunk : Buffer.from(chunk);
+      rxBuf = Buffer.concat([rxBuf, bytes]);
       while (rxBuf.length >= 2) {
         const msgLen = rxBuf.readUInt16BE(0);
         if (rxBuf.length < 2 + msgLen) break;

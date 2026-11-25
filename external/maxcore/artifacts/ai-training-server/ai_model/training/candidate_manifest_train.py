@@ -72,6 +72,15 @@ def train_from_manifest(corpus, corpus_sha256, holdout=None, holdout_sha256=None
     if any(r.get("purpose") not in ("training", "smoke-only", "runtime-validation")
            for r in records):
         raise ValueError("Explicit corpus purpose required")
+    live_records = [r for r in records
+                    if isinstance(r, dict) and "live_provenance" in r]
+    if live_records:
+        if len(live_records) != len(records):
+            raise ValueError("Mixed live and offline text corpora are not eligible")
+        from ai_model.training.live_learning import require_peak_training_rights
+        require_peak_training_rights(records)
+        if holdout is None:
+            raise ValueError("Live text training requires a separately frozen, rights-cleared holdout")
     known_smoke = {digest(r["text"]) for r in smoke_records()}
     smoke = any(r["purpose"] != "training" or digest(r["text"]) in known_smoke
                 for r in records)
@@ -88,7 +97,7 @@ def train_from_manifest(corpus, corpus_sha256, holdout=None, holdout_sha256=None
     result = train_validated(run_id, steps, seed, "public-content" if stream else "transformer", manifest,
                              holdout_sha256=holdout_sha256, input_sha256=corpus_sha256, lr=lr,
                              manual_backward=manual_backward, context_tokens=context_tokens,
-                             learning_stream=stream)
+                             learning_stream=stream, holdout_texts=holdouts if holdout is not None else None)
     from ai_model.training.candidate_lifecycle import CANDIDATES
     # Preserve exact approved input bytes so the data fingerprint is verifiable.
     raw = Path(corpus).read_bytes()

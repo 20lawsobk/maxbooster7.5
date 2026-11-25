@@ -321,7 +321,10 @@ async function proxyRequest(
   // return a prior authorized response to an unvalidated credential.
   const isGet = req.method === "GET" || req.method === "HEAD";
   const awarenessOnly = path === "/api/awareness/unified/status" ||
-    path === "/api/awareness/unified/context";
+    path === "/api/awareness/unified/ready" ||
+    path === "/api/awareness/unified/admin/source-status" ||
+    path === "/api/awareness/unified/context" ||
+    path === "/api/awareness/unified/profile-discover";
   const accountAnalytics = ["/api/analytics/capability", "/api/analytics/predict", "/api/analytics/insights"].includes(path);
   const generationDeadline = plannedGenerationDeadlineMs(path, req.body);
   const diagnosticOnly = ["/health", "/api/health", "/ready", "/api/ready"].includes(path);
@@ -678,11 +681,8 @@ for (const endpoint of ["image", "video", "text", "website"] as const) {
 }
 
 router.get("/health", async (req, res) => {
-  await proxyRequest(req, res, "/health");
-});
-
-// Detailed model + Digital GPU health (Python /api/health)
-router.get("/api/health", async (req, res) => {
+  // This router is mounted at "/api", so this is the public /api/health
+  // contract. Forward the detailed Python endpoint, not the liveness alias.
   await proxyRequest(req, res, "/api/health");
 });
 
@@ -724,6 +724,27 @@ router.get("/gpu/capabilities", async (req, res) => {
 
 router.get("/training/status", async (req, res) => {
   await proxyRequest(req, res, "/training/status");
+});
+
+// Internal learning-candidate metadata is served by the Python model API.
+// Keep the exact `/api/training/...` upstream path: these routes are mounted
+// below `/api` in this gateway, while the Python router declares that prefix
+// itself. Max Booster's outer proxy already enforces administrator access.
+router.get("/training/candidates/internal", async (req, res) => {
+  await proxyRequest(req, res, "/api/training/candidates/internal");
+});
+
+router.get("/training/candidates/internal/:runId", async (req, res) => {
+  const { runId } = req.params;
+  if (!/^internal-[0-9a-f]{32}$/.test(runId)) {
+    res.status(404).json({ status: "not_found" });
+    return;
+  }
+  await proxyRequest(
+    req,
+    res,
+    `/api/training/candidates/internal/${encodeURIComponent(runId)}`,
+  );
 });
 
 // Management must remain reachable while waiting for the first reviewed model.
@@ -1145,8 +1166,20 @@ router.get("/awareness/status", async (req, res) => {
 router.get("/awareness/unified/status", async (req, res) => {
   await proxyRequest(req, res, "/api/awareness/unified/status");
 });
+router.get("/awareness/unified/ready", async (req, res) => {
+  await proxyRequest(req, res, "/api/awareness/unified/ready");
+});
 router.post("/awareness/unified/context", async (req, res) => {
   await proxyRequest(req, res, "/api/awareness/unified/context");
+});
+router.post("/awareness/unified/profile-discover", async (req, res) => {
+  await proxyRequest(req, res, "/api/awareness/unified/profile-discover");
+});
+router.get("/awareness/unified/admin/source-status", async (req, res) => {
+  await proxyRequest(req, res, "/api/awareness/unified/admin/source-status");
+});
+router.post("/awareness/unified/admin/source-review", async (req, res) => {
+  await proxyRequest(req, res, "/api/awareness/unified/admin/source-review");
 });
 
 // Bounded, model-free statistics contract; never held behind weight recovery.
@@ -1271,6 +1304,10 @@ router.get("/system/readiness", async (_req, res) => {
   }
 
   const modelLoaded       = pythonHealth["model_loaded"] === true;
+  const generationMode    = typeof pythonHealth["generation_mode"] === "string"
+    ? pythonHealth["generation_mode"] : "unavailable";
+  const liveAwareness     = pythonHealth["live_awareness"] ?? null;
+  const awareness         = pythonHealth["awareness"] ?? { ready: false };
   const warmStartState    = (pythonHealth["warm_start"] as Record<string, unknown> | undefined)?.["state"] ?? "unknown";
   // Keepalive and warm-up state are diagnostics; /ready is the authoritative
   // serving requirement. Optional/disabled warm passes must not mark it down.
@@ -1291,11 +1328,19 @@ router.get("/system/readiness", async (_req, res) => {
 
   res.status(ready ? 200 : 503).json({
     ready,
+    generation_ready: pythonReady,
+    generation_mode: generationMode,
+    model_loaded: modelLoaded,
+    awareness,
+    live_awareness: liveAwareness,
     node: { workers: "up", python_restarting: isPythonRestarting(), circuit_breaker: _cbState(), keepalive_enabled: keepaliveEnabled, keepalive_running: keepalive["running"] ?? false },
     python: {
       reachable: pythonReachable,
       generation_ready: pythonReady,
+      generation_mode: generationMode,
       model_loaded: modelLoaded,
+      awareness,
+      live_awareness: liveAwareness,
       model_blocked: pythonHealth["model_blocked"] ?? null,
       serving_release: pythonHealth["serving_release"] ?? null,
       uptime_seconds: pythonHealth["uptime_seconds"] ?? null,

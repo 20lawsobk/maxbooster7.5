@@ -9,7 +9,7 @@ let running = false;
 export async function getCatalogDiscoveryJob(profileId: string, userId: string) {
   const result = await pool.query(
     `SELECT id, profile_id, state, attempts, created_at, updated_at, result, error
-     FROM integration_catalog_jobs WHERE profile_id=$1 AND user_id=$2`, [profileId, userId],
+     FROM public.integration_catalog_jobs WHERE profile_id=$1 AND user_id=$2`, [profileId, userId],
   );
   return result.rows[0] ?? null;
 }
@@ -21,9 +21,9 @@ export async function runCatalogDiscoveryJobs(): Promise<void> {
   let heartbeat: ReturnType<typeof setInterval> | undefined;
   try {
     const claimed = await pool.query(
-      `UPDATE integration_catalog_jobs SET state='running', attempts=attempts+1,
+      `UPDATE public.integration_catalog_jobs SET state='running', attempts=attempts+1,
          lease_owner=$1, lease_until=now()+interval '5 minutes', updated_at=now()
-       WHERE id=(SELECT id FROM integration_catalog_jobs
+       WHERE id=(SELECT id FROM public.integration_catalog_jobs
          WHERE (state='pending' AND available_at<=now())
             OR (state='running' AND lease_until<now())
          ORDER BY created_at FOR UPDATE SKIP LOCKED LIMIT 1)
@@ -34,7 +34,7 @@ export async function runCatalogDiscoveryJobs(): Promise<void> {
     // Existing catalog importer advisory locks/savepoints still protect duplicate writes.
     heartbeat = setInterval(() => {
       void pool.query(
-        `UPDATE integration_catalog_jobs SET lease_until=now()+interval '5 minutes'
+        `UPDATE public.integration_catalog_jobs SET lease_until=now()+interval '5 minutes'
          WHERE id=$1 AND lease_owner=$2 AND state='running'`, [job.id, owner],
       ).catch(error => logger.error({ err: error }, "Catalog discovery lease renewal failed"));
     }, 60_000);
@@ -43,13 +43,13 @@ export async function runCatalogDiscoveryJobs(): Promise<void> {
       const { artistProfileService } = await import("./artistProfileService.js");
       const result = await artistProfileService.autoDiscover(job.profile_id, job.user_id);
       await pool.query(
-        `UPDATE integration_catalog_jobs SET state='completed', result=$3::jsonb,
+        `UPDATE public.integration_catalog_jobs SET state='completed', result=$3::jsonb,
          lease_owner=NULL, lease_until=NULL, error=NULL, updated_at=now()
          WHERE id=$1 AND lease_owner=$2`, [job.id, owner, JSON.stringify(result)],
       );
     } catch (error) {
       await pool.query(
-        `UPDATE integration_catalog_jobs SET state=CASE WHEN attempts>=5 THEN 'failed' ELSE 'pending' END,
+        `UPDATE public.integration_catalog_jobs SET state=CASE WHEN attempts>=5 THEN 'failed' ELSE 'pending' END,
          available_at=now()+interval '5 minutes', lease_owner=NULL, lease_until=NULL,
          error=$3, updated_at=now() WHERE id=$1 AND lease_owner=$2`,
         [job.id, owner, error instanceof Error ? error.message : "Catalog discovery failed"],

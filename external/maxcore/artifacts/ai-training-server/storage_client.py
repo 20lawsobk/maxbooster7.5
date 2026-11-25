@@ -596,6 +596,34 @@ class StorageClient:
             end = stop + 1 if stop != -1 else None
             return lst[start:end]
 
+    def lrange_strict(self, key: str, start: int, stop: int) -> list:
+        """Read an authoritative list or raise instead of using a local fallback.
+
+        Curriculum-guided generation must distinguish an empty account history
+        from a failed PDIM read. The general-purpose ``lrange`` intentionally
+        supports legacy fallback behavior; this method is for decisions that
+        must not silently proceed without the account's canonical data.
+        """
+        ns_key = self._ns(key)
+        if not self.is_available:
+            raise StorageUnavailable(
+                "Curriculum storage is unavailable; refusing an unconditioned read"
+            )
+
+        result = self._exec("LRANGE", ns_key, start, stop)
+        if not isinstance(result, list):
+            raise StorageUnavailable(
+                "Curriculum storage did not return an authoritative list"
+            )
+
+        parsed = []
+        for item in result:
+            try:
+                parsed.append(json.loads(item) if isinstance(item, str) else item)
+            except (json.JSONDecodeError, TypeError):
+                parsed.append(item)
+        return parsed
+
     def llen(self, key: str) -> int:
         ns_key = self._ns(key)
         if self.is_available:
@@ -952,7 +980,11 @@ class CurriculumStateClient:
         self.storage.incr(f"mb:curriculum:{user_id}:signal_count")
 
     def get_user_curriculum(self, user_id: str, limit: int = 50) -> list[dict]:
-        return self.storage.lrange(f"mb:curriculum:{user_id}:feedback", 0, limit - 1)
+        return self.storage.lrange_strict(
+            f"mb:curriculum:{user_id}:feedback",
+            0,
+            limit - 1,
+        )
 
     def get_top_performers(self, user_id: str, platform: Optional[str] = None,
                            top_n: int = 10) -> list[dict]:

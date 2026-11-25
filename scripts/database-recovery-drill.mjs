@@ -1,5 +1,6 @@
 // Exact invocation:
-// env -i PATH="$PATH" HOME=/tmp NEON_DATABASE_URL="$NEON_DATABASE_URL" \
+// env -i PATH="$PATH" HOME=/tmp NEON_PRIMARY_URL="$NEON_PRIMARY_URL" \
+//   NEON_DATABASE_URL="$NEON_DATABASE_URL" \
 //   node --import tsx scripts/database-recovery-drill.mjs
 //
 // This script imports only the backup dump helper. It never imports application
@@ -22,18 +23,18 @@ import { safePostgresDiagnostic } from "../server/services/backup/postgresTools.
 
 const RUN_COMMAND =
   process.argv.includes("--retained-app-storage")
-    ? 'env -i PATH="$PATH" HOME=/tmp NEON_DATABASE_URL="$NEON_DATABASE_URL" DATABASE_RECOVERY_BUCKET_ID="$DATABASE_RECOVERY_BUCKET_ID" node --import tsx scripts/database-recovery-drill.mjs --retained-app-storage'
-    : 'env -i PATH="$PATH" HOME=/tmp NEON_DATABASE_URL="$NEON_DATABASE_URL" node --import tsx scripts/database-recovery-drill.mjs';
+    ? 'env -i PATH="$PATH" HOME=/tmp NEON_PRIMARY_URL="$NEON_PRIMARY_URL" NEON_DATABASE_URL="$NEON_DATABASE_URL" DATABASE_RECOVERY_BUCKET_ID="$DATABASE_RECOVERY_BUCKET_ID" node --import tsx scripts/database-recovery-drill.mjs --retained-app-storage'
+    : 'env -i PATH="$PATH" HOME=/tmp NEON_PRIMARY_URL="$NEON_PRIMARY_URL" NEON_DATABASE_URL="$NEON_DATABASE_URL" node --import tsx scripts/database-recovery-drill.mjs';
 const markdownPath = "reports/readiness-implementation/database-recovery-drill.md";
 const jsonPath = "reports/readiness-implementation/database-recovery-drill.json";
 const startedAt = new Date().toISOString();
 const root = resolve(".");
-const sourceUrl = process.env.NEON_DATABASE_URL;
+const sourceUrl = process.env.NEON_PRIMARY_URL || process.env.NEON_DATABASE_URL;
 const retainedMode = process.argv.includes("--retained-app-storage");
 const retainedConfiguration = {
   bucketId: process.env.DATABASE_RECOVERY_BUCKET_ID || undefined,
 };
-if (!sourceUrl) throw new Error("NEON_DATABASE_URL is required; synthetic proof is forbidden");
+if (!sourceUrl) throw new Error("NEON_PRIMARY_URL or NEON_DATABASE_URL is required; synthetic proof is forbidden");
 const sourceIdentityParts = (() => {
   const parsed = new URL(sourceUrl);
   return [
@@ -480,7 +481,7 @@ try {
     "",
     "## Scope and safety",
     "",
-    "- The configured NEON_DATABASE_URL was accessed only by a read-only, repeatable-read transaction and pg_dump using its exported snapshot.",
+    "- The configured primary Neon URL was accessed only by a read-only, repeatable-read transaction and pg_dump using its exported snapshot.",
     retainedMode
       ? "- No application startup, migration, or source DDL/catalog write was performed. Provider calls were limited to the verified private retained bucket."
       : "- No application startup, migration, source DDL/catalog write, storage-provider call, or other network call was performed.",

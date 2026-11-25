@@ -1,11 +1,16 @@
 import { spawnSync } from "node:child_process";
-import { mkdtempSync, rmSync, writeFileSync } from "node:fs";
+import {
+  mkdirSync,
+  mkdtempSync,
+  readFileSync,
+  rmSync,
+  writeFileSync,
+} from "node:fs";
 import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
 import { afterEach, describe, expect, it } from "vitest";
 
 const checker = resolve("scripts/check-port-contract.ts");
-const tsx = resolve("node_modules/.bin/tsx");
 const temporaryDirectories: string[] = [];
 const portEnvironment: Record<string, string> = {
   PATH: process.env.PATH ?? "",
@@ -18,23 +23,48 @@ const portEnvironment: Record<string, string> = {
   MODEL_API_PORT: "9878",
   MODEL_API_HEALTH_PORT: "9879",
   PYTHON_AI_PORT: "9880",
+  MAXBOOSTER_DEV_PORTS: "1",
 };
 
-function checkPortConfig(replitConfig: string) {
+function checkPortConfig(
+  replitConfig: string,
+  extraEnvironment: Record<string, string> = {},
+) {
   const directory = mkdtempSync(join(tmpdir(), "port-contract-"));
   temporaryDirectories.push(directory);
-  writeFileSync(join(directory, ".replit"), replitConfig);
+  const configPath = extraEnvironment.MAXBOOSTER_DEV_PORTS === "0"
+    ? join(directory, "dist", "deployment", "ports.replit")
+    : join(directory, ".replit");
+  if (extraEnvironment.MAXBOOSTER_DEV_PORTS === "0") {
+    mkdirSync(join(directory, "dist", "deployment"), { recursive: true });
+  }
+  writeFileSync(configPath, replitConfig);
 
   return spawnSync(
-    tsx,
-    [checker],
+    process.execPath,
+    ["--import", resolve("node_modules/tsx/dist/loader.mjs"), checker],
     {
       cwd: directory,
       encoding: "utf8",
-      env: portEnvironment,
+      env: { ...portEnvironment, ...extraEnvironment },
       timeout: 10_000,
     },
   );
+}
+
+function expectPublicMappingRejected(
+  result: ReturnType<typeof checkPortConfig>,
+  localPort: number,
+  externalPort: number,
+) {
+  expect(result.status).toBe(1);
+  expect(result.stderr).toContain(
+    `exposes localPort ${localPort} on externalPort ${externalPort}`,
+  );
+  expect(result.stderr).toContain(
+    "only localPort 5000 on externalPort 80 is allowed",
+  );
+  expect(result.stderr).toContain("All other ports must omit externalPort");
 }
 
 afterEach(() => {
@@ -55,8 +85,7 @@ localPort = 8090
 # Blank lines do not terminate a TOML table.
 externalPort = 3002
 `);
-    expect(result.status).toBe(1);
-    expect(result.stderr).toContain("exposes internal-only localPort 8090");
+    expectPublicMappingRejected(result, 8090, 3002);
   });
 
   it("rejects explicitly enabling localhost exposure for private services", () => {
@@ -97,6 +126,114 @@ externalPort = 80
     );
   });
 
+  it("requires service mappings and accepts a private DNS health mapping", () => {
+    const result = checkPortConfig(`
+[[ports]]
+localPort = 53
+[[ports]]
+localPort = 5000
+externalPort = 80
+[[ports]]
+localPort = 5353
+[[ports]]
+localPort = 8080
+[[ports]]
+localPort = 5380
+[[ports]]
+localPort = 5556
+[[ports]]
+localPort = 8008
+[[ports]]
+localPort = 8090
+[[ports]]
+localPort = 9877
+[[ports]]
+localPort = 9878
+[[ports]]
+localPort = 9879
+[[ports]]
+localPort = 9880
+`, { PORT_CONTRACT_REQUIRE_ALL: "1" });
+    expect(result.status).toBe(0);
+    expect(result.stdout).toContain("12 entries");
+  });
+
+  it("keeps workspace DNS mappings private and matches the unprivileged dev port", () => {
+    const workspaceConfig = readFileSync(resolve(".replit"), "utf8");
+    const result = checkPortConfig(workspaceConfig, {
+      PORT_CONTRACT_REQUIRE_ALL: "1",
+      DNS_AUTHORITY_PORT: "1053",
+      DNS_NODE_LOCAL_PORT: "5353",
+      DNS_NODE_LOCAL_HEALTH_PORT: "5380",
+      DNS_API_PORT: "8080",
+    });
+    expect(result.status).toBe(0);
+    expect(result.stdout).toContain("12 entries");
+    expect(result.stderr).not.toContain("3001");
+  });
+
+  it("keeps the production listener map private except for the web app", () => {
+    const productionConfig = readFileSync(
+      resolve("scripts/deployment/ports.replit"),
+      "utf8",
+    );
+    const result = checkPortConfig(productionConfig, {
+      PORT_CONTRACT_REQUIRE_ALL: "1",
+      MAXBOOSTER_DEV_PORTS: "0",
+      DNS_AUTHORITY_PORT: "53",
+      DNS_NODE_LOCAL_PORT: "5353",
+      DNS_NODE_LOCAL_HEALTH_PORT: "5380",
+      DNS_API_PORT: "8080",
+    });
+    expect(result.status).toBe(0);
+    expect(result.stdout).toContain("12 entries");
+  });
+
+  it("does not require a separate Replit map for the supervised DNS health listener", () => {
+    const result = checkPortConfig(`
+[[ports]]
+localPort = 53
+[[ports]]
+localPort = 5000
+externalPort = 80
+[[ports]]
+localPort = 5353
+[[ports]]
+localPort = 8080
+[[ports]]
+localPort = 5556
+[[ports]]
+localPort = 8008
+[[ports]]
+localPort = 8090
+[[ports]]
+localPort = 9877
+[[ports]]
+localPort = 9878
+[[ports]]
+localPort = 9879
+[[ports]]
+localPort = 9880
+`, { PORT_CONTRACT_REQUIRE_ALL: "1" });
+    expect(result.status).toBe(0);
+    expect(result.stdout).toContain("11 entries");
+  });
+
+  it("rejects a strict runtime mapping with any configured service port missing", () => {
+    const result = checkPortConfig(`
+[[ports]]
+localPort = 5000
+externalPort = 80
+[[ports]]
+localPort = 5353
+`, { PORT_CONTRACT_REQUIRE_ALL: "1" });
+    expect(result.status).toBe(1);
+    expect(result.stderr).toContain("missing mappings:");
+    expect(result.stderr).toContain("53");
+    expect(result.stderr).toContain("8080");
+    expect(result.stderr).not.toContain("5380");
+  });
+
   it("accepts local-only Redis 6379 as a private entry", () => {
     const result = checkPortConfig(`
 [[ports]]
@@ -119,7 +256,7 @@ externalPort = 3000
 
     expect(result.status).toBe(1);
     expect(result.stderr).toContain(
-      "[[ports]] block starting at line 2 is missing localPort",
+      "Port table block starting at line 2 is missing localPort",
     );
   });
 
@@ -130,11 +267,7 @@ localPort = 6379
 externalPort = 80
 `);
 
-    expect(result.status).toBe(1);
-    expect(result.stderr).toContain(
-      "exposes localPort 6379 on the public default port 80",
-    );
-    expect(result.stderr).toContain("the app listens on 5000");
+    expectPublicMappingRejected(result, 6379, 80);
   });
 
   it("rejects adding Redis beside the application on public 80", () => {
@@ -165,10 +298,7 @@ localPort = 6379
 externalPort = 3001
 `);
 
-    expect(result.status).toBe(1);
-    expect(result.stderr).toContain(
-      "exposes internal-only localPort 6379 on externalPort 3001",
-    );
+    expectPublicMappingRejected(result, 6379, 3001);
   });
 
   it("rejects publishing the configured non-default loopback Redis port", () => {
@@ -185,10 +315,7 @@ localPort = 6380
 externalPort = 3001
 `);
 
-      expect(result.status).toBe(1);
-      expect(result.stderr).toContain(
-        "exposes internal-only localPort 6380 on externalPort 3001",
-      );
+      expectPublicMappingRejected(result, 6380, 3001);
     } finally {
       if (previous === undefined) delete portEnvironment.REDIS_URL;
       else portEnvironment.REDIS_URL = previous;
@@ -206,10 +333,6 @@ localPort = 5556
 externalPort = 3000
 `);
 
-    expect(result.status).toBe(1);
-    expect(result.stderr).toContain(
-      "exposes internal-only localPort 5556 on externalPort 3000",
-    );
-    expect(result.stderr).toContain("remain private and omit externalPort");
+    expectPublicMappingRejected(result, 5556, 3000);
   });
 });

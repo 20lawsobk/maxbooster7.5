@@ -8,7 +8,7 @@ from unittest.mock import patch
 
 from ai_model.awareness.engine import (
     AwarenessUnavailable, BLOB, DOMAINS, Engine, OBSERVATIONS_PREFIX, PDIM, POINTER, Snapshot,
-    bind, bound_snapshot, canonical, clean, conditioning,
+    _source_failure, bind, bound_snapshot, canonical, clean, conditioning,
 )
 from ai_model import quality_awareness as facade
 
@@ -98,20 +98,134 @@ class AwarenessTests(unittest.TestCase):
                     pdim.write_source_observations("mastodon_trending", document, "stale-owner")
         self.assertEqual(error.exception.code, "observation_write_fenced")
 
-    def test_partial_source_observations_survive_incomplete_snapshot(self):
+    def test_source_records_do_not_require_every_topic_bucket(self):
         store = MemoryStore()
         engine = Engine(
             sources={"social": sources()["social"]},
             store=store,
             timeout=1,
         )
-        with self.assertRaises(AwarenessUnavailable):
-            engine.refresh()
-        self.assertIsNone(engine.current_snapshot())
+        snapshot = engine.refresh()
+        self.assertIsNotNone(snapshot)
+        self.assertEqual(snapshot.to_dict()["domains"]["music"], [])
+        self.assertEqual(snapshot.to_dict()["domains"]["advertising"], [])
+        self.assertEqual(snapshot.to_dict()["domains"]["culture"], [])
         observations = engine.training_observations()
         self.assertEqual(observations["domains"], ["social"])
         self.assertEqual([row["source"] for row in observations["records"]], ["social"])
         self.assertEqual(len(observations["records"]), 1)
+
+    def test_ready_snapshot_does_not_claim_latest_scan_completed(self):
+        self.engine._phase = "collecting_sources"
+        self.engine._health = {
+            "new_scan_source": {
+                "ok": False, "domain": "social", "error": "access_denied",
+                "failure_class": "access_denied", "http_status": 403,
+            },
+        }
+        status = self.engine.status()
+        self.assertTrue(status["ready"])
+        self.assertTrue(status["snapshot_ready"])
+        self.assertEqual(status["source_scan_state"], "running")
+        self.assertTrue(status["source_scan_in_progress"])
+        self.assertEqual(status["snapshot_source_health"], status["source_health"])
+        self.assertEqual(set(status["latest_scan_health"]), {"new_scan_source"})
+        self.assertEqual(status["latest_scan_health"]["new_scan_source"]["http_status"], 403)
+
+    def test_readiness_status_uses_only_bounded_in_memory_state(self):
+        with patch.object(self.engine, "status", side_effect=AssertionError("full diagnostics called")):
+            result = self.engine.readiness_status()
+
+        self.assertTrue(result["ready"])
+        self.assertTrue(result["snapshot_ready"])
+        self.assertIn(result["source_scan_state"], {"complete", "not_started"})
+        self.assertNotIn("gpu", result)
+        self.assertNotIn("profile_sourcing", result)
+        self.assertEqual(result["snapshot_id"], self.snapshot.id)
+
+    def test_worker_reports_and_retries_transient_lease_failures_with_bounded_backoff(self):
+        class FlakyStore(MemoryStore):
+            def __init__(self):
+                super().__init__()
+                self.acquire_attempts = 0
+
+            def acquire(self, _owner):
+                self.acquire_attempts += 1
+                if self.acquire_attempts < 4:
+                    raise RuntimeError("storage transport unavailable")
+                return True
+
+        store = FlakyStore()
+        engine = Engine(sources={}, store=store)
+        engine.refresh = lambda: setattr(engine, "_phase", "idle")
+        waits = []
+
+        def controlled_wait(seconds):
+            waits.append(seconds)
+            if len(waits) == 4:
+                engine._stop.set()
+                return True
+            return False
+
+        engine._stop.wait = controlled_wait
+        engine._loop()
+
+        self.assertEqual(store.acquire_attempts, 4)
+        self.assertEqual(waits, [5, 10, 20, 5])
+        self.assertEqual(engine._phase, "idle")
+        self.assertIsNone(engine._last_error)
+
+    def test_public_source_failure_classification_is_actionable_and_redacted(self):
+        from ai_model.native_analysis.safe_http import (
+            ResponseTooLarge, SafeHTTPError, UnsupportedContentType,
+        )
+        from xml.parsers.expat import ExpatError
+
+        cases = (
+            (SafeHTTPError("Remote server returned HTTP 403 for secret URL"),
+             ("access_denied", 403)),
+            (SafeHTTPError("Remote server returned HTTP 404"),
+             ("not_found", 404)),
+            (SafeHTTPError("Remote server returned HTTP 429"),
+             ("rate_limited", 429)),
+            (SafeHTTPError("Remote server returned HTTP 503"),
+             ("upstream_error", 503)),
+            (UnsupportedContentType("private response body"),
+             ("unsupported_content_type", None)),
+            (ResponseTooLarge("private response body"),
+             ("response_too_large", None)),
+            (ExpatError("malformed feed contents"),
+             ("invalid_feed", None)),
+            (ValueError("Feed DTDs and entities are forbidden"),
+             ("unsafe_feed_markup", None)),
+            (ValueError("Feed exceeds the XML structural limit"),
+             ("feed_structure_limit", None)),
+            (ValueError("token=must-not-be-retained"),
+             ("invalid_response", None)),
+        )
+        for error, expected in cases:
+            with self.subTest(error=type(error).__name__, expected=expected):
+                self.assertEqual(_source_failure(error), expected)
+                self.assertNotIn("must-not-be-retained", str(_source_failure(error)))
+
+    def test_scan_retains_source_failure_class_without_exception_details(self):
+        from ai_model.native_analysis.safe_http import SafeHTTPError
+
+        configured = sources()
+        configured["denied_fixture"] = (
+            "social", "https://example.org/private", lambda: (_ for _ in ()).throw(
+                SafeHTTPError("Remote server returned HTTP 403 Bearer token=private")
+            ),
+        )
+        engine = Engine(sources=configured, store=MemoryStore(), timeout=1)
+        engine.refresh()
+        status = engine.status()
+        failure = status["latest_scan_health"]["denied_fixture"]
+        self.assertEqual(failure["failure_class"], "access_denied")
+        self.assertEqual(failure["http_status"], 403)
+        self.assertFalse(failure["ok"])
+        self.assertEqual(status["source_scan_state"], "complete")
+        self.assertNotIn("Bearer token=private", canonical(status))
 
     def test_invalid_snapshot_reports_safe_failure_category(self):
         with self.assertRaises(AwarenessUnavailable) as raised:
@@ -164,7 +278,10 @@ class AwarenessTests(unittest.TestCase):
             another._load()
 
     def test_incomplete_keeps_previous_only_until_ttl(self):
-        self.engine.sources["music"] = ("music", "https://example.org/music", lambda: [])
+        self.engine.sources = {
+            name: (domain, url, lambda: [])
+            for name, (domain, url, _fetch) in self.engine.sources.items()
+        }
         with self.assertRaises(AwarenessUnavailable):
             self.engine.refresh()
         self.assertEqual(self.engine.require_snapshot().id, self.snapshot.id)
@@ -190,7 +307,7 @@ class AwarenessTests(unittest.TestCase):
 
     def test_no_empty_or_all_failed_rehashed_snapshot(self):
         for mutate in (
-            lambda d: d["domains"]["culture"].clear(),
+            lambda d: [rows.clear() for rows in d["domains"].values()],
             lambda d: d["source_health"]["social"].update(ok=False),
             lambda d: d.update(schema=2),
         ):
@@ -222,14 +339,15 @@ class AwarenessTests(unittest.TestCase):
             self.assertTrue(self.engine.stop())
             self.assertTrue(self.engine.stop())
 
-    def test_missing_domain_never_published(self):
+    def test_refresh_publishes_with_partial_topic_coverage(self):
         store = MemoryStore()
         partial = sources()
         partial.pop("culture")
         e = Engine(sources=partial, store=store, timeout=1)
-        with self.assertRaises(AwarenessUnavailable):
-            e.refresh()
-        self.assertIsNone(store.get(POINTER))
+        snapshot = e.refresh()
+        self.assertIsNotNone(snapshot)
+        self.assertEqual(snapshot.to_dict()["domains"]["culture"], [])
+        self.assertEqual(store.get(POINTER), {"id": snapshot.id})
 
     def test_publication_failure_keeps_last_acknowledged_snapshot(self):
         with patch.object(self.store, "publish", side_effect=RuntimeError("token=private")):
@@ -306,8 +424,9 @@ class AwarenessTests(unittest.TestCase):
             threading.Event().wait(1.2)
             return [{"text": "late", "citation": "https://example.org/late",
                      "value": 1, "metric": "fixture"}]
-        configured = sources()
-        configured["culture"] = ("culture", "https://example.org/culture", slow)
+        configured = {
+            "culture": ("culture", "https://example.org/culture", slow),
+        }
         engine = Engine(sources=configured, store=MemoryStore(), timeout=1, concurrency=1)
         with self.assertRaises(AwarenessUnavailable):
             engine.refresh()

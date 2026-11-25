@@ -39,6 +39,7 @@ import {
   canRetryToolostRelease,
   deriveToolostSubmissionPersistence,
   mapToolostDispatchStatus,
+  persistToolostSubmission,
   submitToolostRelease,
 } from "./distribution-toolost-submission";
 import {
@@ -62,6 +63,8 @@ import {
 } from "../services/releaseWorkflow";
 import { audioFingerprintService, type AudioFingerprint } from "../services/audioFingerprint";
 import { audioMetadataService } from "../services/audioMetadataService.js";
+import { resolveAudioUrlToLocalFile } from "../services/audioSourceResolver.js";
+import { sha256DistributionFile } from "../services/distributionFileDigest.js";
 import { logger } from "../logger";
 import { notificationService } from "../services/notificationService.js";
 import { createHardenedUpload } from "../middleware/uploadHandler.js";
@@ -136,6 +139,318 @@ interface HyperFollowPage {
   presaves?: number;
 }
 
+function getOwnedDistributionAudioSource(
+  audioUrl: unknown,
+  userId: string,
+): string {
+  if (typeof audioUrl !== "string" || !audioUrl.trim()) {
+    throw new Error("Track has no stored audio asset");
+  }
+
+  let source = audioUrl.trim();
+  if (/^https?:\/\//i.test(source)) {
+    let parsed: URL;
+    try {
+      parsed = new URL(source);
+    } catch {
+      throw new Error("Track audio URL is invalid");
+    }
+    source = parsed.pathname;
+  }
+
+  if (source.startsWith("/api/storage/file/")) {
+    let key: string;
+    try {
+      key = decodeURIComponent(source.slice("/api/storage/file/".length));
+    } catch {
+      throw new Error("Track storage key is invalid");
+    }
+    if (!key.startsWith(`users/${userId}/audio/`) || key.includes("..")) {
+      throw new Error("Track audio is not stored in this account's audio library");
+    }
+    return source;
+  }
+
+  if (source.startsWith(`users/${userId}/audio/`) && !source.includes("..")) {
+    return source;
+  }
+
+  if (
+    source.startsWith(`/uploads/users/${userId}/`) &&
+    !source.split("/").includes("..")
+  ) {
+    return source;
+  }
+
+  throw new Error("Only this account's stored audio files can be fingerprinted");
+}
+
+function getDistributionAudioErrorCode(error: unknown): string {
+  const message = error instanceof Error ? error.message.toLowerCase() : "";
+  if (message.includes("account") || message.includes("access denied")) {
+    return "owner_audio_access_denied";
+  }
+  if (message.includes("exceeds")) return "audio_size_limit";
+  if (message.includes("empty") || message.includes("regular file")) {
+    return "audio_asset_invalid";
+  }
+  if (message.includes("codec") || message.includes("format")) {
+    return "audio_format_unrecognized";
+  }
+  return "stored_audio_unavailable";
+}
+
+function getOwnedDistributionArtworkKey(
+  artworkUrl: unknown,
+  userId: string,
+): string {
+  if (typeof artworkUrl !== "string" || !artworkUrl.trim()) {
+    throw new Error("Release artwork is required for a DDEX package");
+  }
+  let reference = artworkUrl.trim();
+  if (/^https?:\/\//i.test(reference)) {
+    try {
+      reference = new URL(reference).pathname;
+    } catch {
+      throw new Error("Release artwork reference is invalid");
+    }
+  }
+  if (reference.startsWith("/api/storage/file/")) {
+    try {
+      reference = decodeURIComponent(
+        reference.slice("/api/storage/file/".length),
+      );
+    } catch {
+      throw new Error("Release artwork storage key is invalid");
+    }
+  }
+  const ownedArtworkPrefixes = [
+    `users/${userId}/artwork/`,
+    `distribution/artwork/${userId}/`,
+  ];
+  if (
+    !ownedArtworkPrefixes.some((prefix) => reference.startsWith(prefix)) ||
+    reference.split("/").includes("..") ||
+    /[\\\0%?#]/.test(reference)
+  ) {
+    throw new Error("Release artwork is not stored in this account");
+  }
+  return reference;
+}
+
+async function resolveOwnedDistributionArtwork(
+  artworkUrl: unknown,
+  userId: string,
+): Promise<{
+  localPath: string;
+  codec: string;
+  width: number;
+  height: number;
+  cleanup: () => Promise<void>;
+}> {
+  const key = getOwnedDistributionArtworkKey(artworkUrl, userId);
+  const bytes = await storageService.downloadFile(key);
+  if (!bytes.length || bytes.length > 25 * 1024 * 1024) {
+    throw new Error("Release artwork is empty or exceeds the 25 MiB package limit");
+  }
+  const extension = path.extname(key).slice(1).toLowerCase();
+  if (!/^(?:jpg|jpeg|png|webp|tif|tiff)$/.test(extension)) {
+    throw new Error("Release artwork format is not supported for DDEX");
+  }
+  const localPath = path.join(
+    os.tmpdir(),
+    `ddex_art_${randomBytes(12).toString("hex")}.${extension}`,
+  );
+  await fsPromises.writeFile(localPath, bytes, { flag: "wx", mode: 0o600 });
+  try {
+    const { default: sharp } = await import("sharp");
+    const metadata = await sharp(localPath, { failOn: "error" }).metadata();
+    if (!metadata.format || !metadata.width || !metadata.height) {
+      throw new Error("Release artwork metadata could not be verified");
+    }
+    return {
+      localPath,
+      codec: metadata.format.toUpperCase(),
+      width: metadata.width,
+      height: metadata.height,
+      cleanup: () => fsPromises.unlink(localPath).catch(() => {}),
+    };
+  } catch (error) {
+    await fsPromises.unlink(localPath).catch(() => {});
+    throw error;
+  }
+}
+
+async function buildOwnedDDEXInputs(
+  release: NonNullable<Awaited<ReturnType<typeof storage.getDistroRelease>>>,
+  tracks: Array<Record<string, unknown>>,
+  userId: string,
+): Promise<{
+  releaseInput: import("../services/ddexPackageService").DDEXReleaseMetadata;
+  trackInputs: import("../services/ddexPackageService").DDEXTrackMetadata[];
+  cleanup: () => Promise<void>;
+}> {
+  const metadata = (release.metadata as Record<string, unknown>) || {};
+  const artistName =
+    typeof metadata.artistName === "string" ? metadata.artistName.trim() : "";
+  const releaseTypeRaw =
+    typeof metadata.releaseType === "string"
+      ? metadata.releaseType.trim().toLowerCase()
+      : "";
+  const releaseType: import("../services/ddexPackageService").DDEXReleaseMetadata["releaseType"] | null =
+    releaseTypeRaw === "ep"
+      ? "EP"
+      : releaseTypeRaw === "single" || releaseTypeRaw === "album"
+        ? releaseTypeRaw
+        : null;
+  const releaseDate = release.releaseDate?.toISOString().slice(0, 10) || "";
+  const upc = typeof metadata.upc === "string" ? metadata.upc : "";
+  const labelName =
+    typeof metadata.labelName === "string" ? metadata.labelName.trim() : "";
+  const copyrightYear = Number(metadata.copyrightYear);
+  const copyrightOwner =
+    typeof metadata.copyrightOwner === "string"
+      ? metadata.copyrightOwner.trim()
+      : "";
+  const primaryGenre =
+    typeof metadata.primaryGenre === "string" ? metadata.primaryGenre.trim() : "";
+  if (
+    !release.title?.trim() ||
+    !artistName ||
+    !releaseType ||
+    !releaseDate ||
+    !labelName ||
+    !Number.isInteger(copyrightYear) ||
+    !copyrightOwner ||
+    !primaryGenre ||
+    typeof metadata.isExplicit !== "boolean"
+  ) {
+    throw new Error("Release metadata is incomplete for DDEX export");
+  }
+  if (!upc) {
+    throw new Error("An assigned release UPC/EAN is required for DDEX export");
+  }
+  const [registeredUpc] = await db
+    .select({ upc: upcRegistry.upc })
+    .from(upcRegistry)
+    .where(
+      and(
+        eq(upcRegistry.upc, upc),
+        eq(upcRegistry.releaseId, release.id),
+        eq(upcRegistry.artistId, userId),
+      ),
+    )
+    .limit(1);
+  if (!registeredUpc) {
+    throw new Error("Release UPC/EAN is not registered to this account and release");
+  }
+  if (!tracks.length || tracks.length > 100) {
+    throw new Error("DDEX export requires between 1 and 100 release tracks");
+  }
+
+  const cleanups: Array<() => Promise<void>> = [];
+  try {
+    const artwork = await resolveOwnedDistributionArtwork(
+      release.artworkUrl,
+      userId,
+    );
+    cleanups.push(artwork.cleanup);
+    const trackInputs: import("../services/ddexPackageService").DDEXTrackMetadata[] = [];
+    for (let index = 0; index < tracks.length; index++) {
+      const track = tracks[index];
+      const isrc = typeof track.isrc === "string" ? track.isrc : "";
+      const [registeredIsrc] = await db
+        .select({ isrc: isrcRegistry.isrc })
+        .from(isrcRegistry)
+        .where(
+          and(
+            eq(isrcRegistry.isrc, isrc),
+            eq(isrcRegistry.trackId, String(track.id)),
+            eq(isrcRegistry.releaseId, release.id),
+            eq(isrcRegistry.artistId, userId),
+          ),
+        )
+        .limit(1);
+      if (!registeredIsrc) {
+        throw new Error(`Track ${index + 1} requires an assigned ISRC`);
+      }
+      const source = getOwnedDistributionAudioSource(track.audioUrl, userId);
+      const resolved = await resolveAudioUrlToLocalFile(source, userId);
+      cleanups.push(resolved.cleanup);
+      const audio = await audioMetadataService.extractFromStream(
+        fs.createReadStream(resolved.localPath),
+      );
+      if (!audio.codec || audio.codec === "unknown" || audio.duration <= 0) {
+        throw new Error(`Track ${index + 1} audio metadata could not be verified`);
+      }
+      const trackMetadata = (track.metadata as Record<string, unknown>) || {};
+      trackInputs.push({
+        id: String(track.id),
+        title: typeof track.title === "string" ? track.title.trim() : "",
+        isrc,
+        trackNumber:
+          Number.isInteger(track.trackNumber) && Number(track.trackNumber) > 0
+            ? Number(track.trackNumber)
+            : index + 1,
+        duration: audio.duration,
+        audioFilePath: resolved.localPath,
+        explicit:
+          typeof trackMetadata.explicit === "boolean"
+            ? trackMetadata.explicit
+            : metadata.isExplicit,
+        primaryArtist: artistName,
+        audioCodec: audio.codec,
+        sampleRate: audio.sampleRate,
+        channels: audio.channels,
+        bitDepth: audio.bitDepth,
+        bitrate: audio.bitrate,
+        featuredArtists: Array.isArray(trackMetadata.featuredArtists)
+          ? trackMetadata.featuredArtists.filter(
+              (artist): artist is string => typeof artist === "string",
+            )
+          : undefined,
+      });
+    }
+    const releaseInput: import("../services/ddexPackageService").DDEXReleaseMetadata = {
+      id: release.id,
+      title: release.title.trim(),
+      artistName,
+      releaseType,
+      upc,
+      releaseDate,
+      labelName,
+      copyrightYear,
+      copyrightOwner,
+      publishingRights:
+        typeof metadata.publishingRights === "string"
+          ? metadata.publishingRights
+          : "",
+      primaryGenre,
+      secondaryGenre:
+        typeof metadata.secondaryGenre === "string"
+          ? metadata.secondaryGenre
+          : undefined,
+      isExplicit: metadata.isExplicit,
+      coverArtPath: artwork.localPath,
+      coverArtCodec: artwork.codec,
+      coverArtWidth: artwork.width,
+      coverArtHeight: artwork.height,
+      territories: Array.isArray(metadata.territories)
+        ? metadata.territories
+        : ["Worldwide"],
+    };
+    return {
+      releaseInput,
+      trackInputs,
+      cleanup: async () => {
+        await Promise.all(cleanups.map((cleanup) => cleanup()));
+      },
+    };
+  } catch (error) {
+    await Promise.all(cleanups.map((cleanup) => cleanup()));
+    throw error;
+  }
+}
 
 const router = Router();
 
@@ -1221,12 +1536,14 @@ router.post(
   "/releases/:id/schedule",
   requireAuth,
   async (req: Request, res: Response) => {
+    let providerRequestStarted = false;
     try {
       const userId = (req.user as AuthenticatedUser).id;
       const { id } = req.params as Record<string, string>;
-      const { releaseDate } = z
+      const { releaseDate, submitToTooLost } = z
         .object({
           releaseDate: z.string(),
+          submitToTooLost: z.boolean().optional().default(false),
         })
         .parse(req.body);
 
@@ -1234,13 +1551,171 @@ router.post(
       if (!release || release.artistId !== userId) {
         return res.status(404).json({ error: "Release not found" });
       }
+      const existingMetadata = (release.metadata || {}) as Record<
+        string,
+        unknown
+      >;
+      const currentStatus = String(
+        existingMetadata.status || release.status || "draft",
+      );
+      if (
+        submitToTooLost &&
+        !["draft", "pending", "rejected"].includes(currentStatus)
+      ) {
+        return res.status(409).json({
+          error:
+            "This release has already been submitted and must be reconciled with Too Lost.",
+        });
+      }
 
       const scheduledDate = new Date(releaseDate);
+      if (Number.isNaN(scheduledDate.getTime())) {
+        return res.status(400).json({ error: "Invalid release date" });
+      }
+      if (submitToTooLost && scheduledDate.getTime() <= Date.now()) {
+        return res.status(422).json({
+          error: "Too Lost scheduled submissions require a future release date.",
+        });
+      }
       const updatedRelease = await storage.updateDistroRelease(id, {
         releaseDate: scheduledDate,
       });
 
-      res.json(updatedRelease);
+      let toolostSubmission:
+        | Awaited<ReturnType<typeof persistToolostSubmission>>
+        | undefined;
+      let toolostReleaseId: string | undefined;
+      let finalRelease = updatedRelease;
+      if (submitToTooLost) {
+        const metadata = (updatedRelease?.metadata || {}) as Record<
+          string,
+          unknown
+        >;
+        const requiredMetadata = [
+          ["artistName", "Artist name"],
+          ["releaseType", "Release type"],
+          ["primaryGenre", "Primary genre"],
+          ["language", "Language"],
+          ["copyrightOwner", "Copyright owner"],
+        ] as const;
+        const missingMetadata = requiredMetadata
+          .filter(
+            ([key]) =>
+              typeof metadata[key] !== "string" ||
+              !(metadata[key] as string).trim(),
+          )
+          .map(([, label]) => label);
+        const copyrightYear = Number(metadata.copyrightYear);
+        const upc = typeof metadata.upc === "string" ? metadata.upc.trim() : "";
+        const tracks = await storage.getDistroTracks(id);
+        const selectedPlatforms = Array.isArray(metadata.selectedPlatforms)
+          ? Array.from(
+              new Set(
+                metadata.selectedPlatforms.filter(
+                  (platform): platform is string =>
+                    typeof platform === "string" && Boolean(platform.trim()),
+                ),
+              ),
+            )
+          : [];
+        const missingTracks = tracks.filter(
+          (track) =>
+            typeof track.audioUrl !== "string" ||
+            !track.audioUrl.trim() ||
+            typeof track.isrc !== "string" ||
+            !track.isrc.trim(),
+        );
+        const invalidIsrc = tracks.filter((track) => {
+          const normalized = String(track.isrc || "")
+            .replace(/[-\s]/g, "")
+            .toUpperCase();
+          return !/^[A-Z]{2}[A-Z0-9]{3}\d{7}$/.test(normalized);
+        });
+        const missingRights =
+          metadata.acceptTerms !== true ||
+          metadata.confirmRights !== true ||
+          (selectedPlatforms.some((platform) =>
+            /youtube/i.test(platform),
+          ) &&
+            metadata.confirmYoutubeRights !== true);
+        if (
+          missingMetadata.length > 0 ||
+          !Number.isInteger(copyrightYear) ||
+          copyrightYear < 1900 ||
+          copyrightYear > new Date().getFullYear() + 1 ||
+          !updatedRelease?.artworkUrl ||
+          !/^\d{12,13}$/.test(upc) ||
+          tracks.length === 0 ||
+          missingTracks.length > 0 ||
+          invalidIsrc.length > 0 ||
+          selectedPlatforms.length === 0 ||
+          missingRights
+        ) {
+          return res.status(422).json({
+            error: "Release is not ready for automatic Too Lost submission.",
+            scheduledLocally: true,
+            requirements: {
+              missingMetadata,
+              validCopyrightYear:
+                Number.isInteger(copyrightYear) &&
+                copyrightYear >= 1900 &&
+                copyrightYear <= new Date().getFullYear() + 1,
+              artworkPresent: Boolean(updatedRelease?.artworkUrl),
+              upcValid: /^\d{12,13}$/.test(upc),
+              trackCount: tracks.length,
+              tracksMissingAudioOrISRC: missingTracks.length,
+              tracksWithInvalidISRC: invalidIsrc.length,
+              selectedPlatformCount: selectedPlatforms.length,
+              rightsConfirmed: !missingRights,
+            },
+          });
+        }
+        const toolost = await getDistributionToolostService(userId);
+        providerRequestStarted = true;
+        const { providerPlatforms, result } = await submitToolostRelease({
+          client: toolost,
+          userId,
+          releaseId: id,
+          release: updatedRelease as unknown as Record<string, unknown>,
+          tracks: tracks as unknown[],
+          requestedPlatforms: selectedPlatforms,
+        });
+        toolostReleaseId = result.releaseId;
+        toolostSubmission = await persistToolostSubmission({
+          storage,
+          releaseId: id,
+          metadata,
+          selectedPlatforms,
+          selectedStores: providerPlatforms,
+          result,
+        });
+        finalRelease = (await storage.getDistroRelease(id)) || updatedRelease;
+      }
+
+      const responseBody = {
+        ...finalRelease,
+        success: toolostSubmission
+          ? toolostSubmission.accepted && !toolostSubmission.indeterminate
+          : true,
+        submissionStatus: toolostSubmission?.status || "scheduled_locally",
+        submissionError: toolostSubmission?.indeterminate
+          ? "Too Lost's outcome is not fully reconciled. Check the distributor status before retrying."
+          : undefined,
+        toolostSubmission: toolostSubmission
+          ? {
+              requested: true,
+              status: toolostSubmission.status,
+              accepted: toolostSubmission.accepted,
+              indeterminate: toolostSubmission.indeterminate,
+              toolostReleaseId,
+              acceptedPlatformCount: toolostSubmission.acceptedPlatformCount,
+              platforms: toolostSubmission.platforms,
+            }
+          : { requested: false, status: "not_requested" },
+      };
+      res
+        .status(toolostSubmission?.indeterminate ? 202 : 200)
+        .json(responseBody);
 
       setImmediate(async () => {
         try {
@@ -1262,8 +1737,49 @@ router.post(
           .status(400)
           .json({ error: "Validation error", details: error.issues });
       }
-      logger.warn({ err: error }, "Error scheduling release:");
-      res.status(500).json({ error: "Failed to schedule release" });
+      const message = error instanceof Error ? error.message : "";
+      if (message.startsWith("Too Lost is not connected")) {
+        return res.status(409).json({
+          error: message,
+          scheduledLocally: true,
+          providerSubmission: "not_submitted",
+        });
+      }
+      if (
+        message.startsWith("Too Lost release blocked:") ||
+        message.startsWith("Too Lost requires valid explicit AI-involvement")
+      ) {
+        return res.status(422).json({
+          error: message,
+          scheduledLocally: true,
+          providerSubmission: "not_submitted",
+        });
+      }
+      // Provider errors are intentionally not logged raw because they can
+      // include unlabelled credentials or response fragments.
+      logger.warn(
+        {
+          errorType: error instanceof Error ? error.name : "unknown",
+          providerRequestStarted,
+        },
+        "Too Lost scheduled submission did not return a confirmed outcome",
+      );
+      if (providerRequestStarted) {
+        return res.status(202).json({
+          success: false,
+          submissionStatus: "pending",
+          submissionError:
+            "The release date was saved, but Too Lost did not return a confirmed submission outcome. Check the distributor status before retrying.",
+          scheduledLocally: true,
+          providerSubmission: "unknown",
+        });
+      }
+      return res.status(500).json({
+        error:
+          "The release date was saved, but the submission could not be prepared. No Too Lost submission was confirmed.",
+        scheduledLocally: true,
+        providerSubmission: "not_confirmed",
+      });
     }
   },
 );
@@ -1966,71 +2482,56 @@ router.post(
     try {
       const userId = (req.user as AuthenticatedUser).id;
       const { id } = req.params as Record<string, string>;
-
       const release = await storage.getDistroRelease(id);
       if (!release || release.artistId !== userId) {
         return res.status(404).json({ error: "Release not found" });
       }
-
-      const tracks = await storage.getDistroTracks(id);
-
-      const metadata = (release.metadata as Record<string, unknown>) || {};
-      type DdexReleaseArg = Parameters<
-        typeof ddexPackageService.generateDDEXXML
-      >[0];
-      type DdexTrackArg = Parameters<
-        typeof ddexPackageService.generateDDEXXML
-      >[1][number];
-      const xml = await ddexPackageService.generateDDEXXML(
-        {
-          id: release.id,
-          title: release.title || "",
-          artistName: metadata.artistName || "Unknown Artist",
-          releaseType: metadata.releaseType || "Single",
-          upc: metadata.upc || "",
-          releaseDate:
-            release.releaseDate?.toISOString().split("T")[0] ||
-            new Date().toISOString().split("T")[0],
-          labelName: metadata.labelName || "",
-          copyrightYear:
-            metadata.copyrightYear || new Date().getFullYear().toString(),
-          copyrightOwner: metadata.copyrightOwner || metadata.artistName || "",
-          publishingRights: metadata.publishingRights || "",
-          primaryGenre: metadata.primaryGenre || "Other",
-          secondaryGenre: metadata.secondaryGenre,
-          isExplicit: metadata.isExplicit || false,
-          coverArtPath: release.artworkUrl || metadata.coverArtUrl || null,
-          territories: metadata.territories || ["worldwide"],
-        } as unknown as DdexReleaseArg,
-        tracks.map((track: Record<string, unknown>, index: number) => {
-          const trackMeta = (track.metadata as Record<string, unknown>) || {};
-          return {
-            id: track.id,
-            title: track.title || `Track ${index + 1}`,
-            isrc: track.isrc || trackMeta.isrc || "",
-            trackNumber: index + 1,
-            duration: track.duration || 0,
-            audioFilePath: track.audioUrl || "",
-            explicit: trackMeta.explicit || false,
-            lyrics: trackMeta.lyrics,
-            primaryArtist: metadata.artistName || "Unknown Artist",
-            featuredArtists: trackMeta.featuredArtists,
-            songwriters: trackMeta.songwriters,
-            producers: trackMeta.producers,
-          } as unknown as DdexTrackArg;
-        }),
-      );
-
-      // Validate XML
-      const validation = await ddexPackageService.validateDDEXXML(xml);
-
-      res.json({
-        xml,
-        validation,
-      });
+      const tracks = await db
+        .select()
+        .from(distroTracks)
+        .where(eq(distroTracks.releaseId, id))
+        .orderBy(distroTracks.trackNumber)
+        .limit(101);
+      if (tracks.length > 100) {
+        return res.status(413).json({
+          error: "ddex_track_limit_exceeded",
+          message: "DDEX export is limited to 100 tracks per release.",
+        });
+      }
+      const inputs = await buildOwnedDDEXInputs(release, tracks, userId);
+      try {
+        const xml = await ddexPackageService.generateDDEXXML(
+          inputs.releaseInput,
+          inputs.trackInputs,
+        );
+        const validation = await ddexPackageService.validateDDEXXML(xml);
+        return res.json({
+          xml,
+          validation: {
+            ...validation,
+            validationLevel: "well-formed-xml-and-basic-identifiers",
+            ddexSchemaValidated: false,
+            distributorAccepted: false,
+          },
+        });
+      } finally {
+        await inputs.cleanup();
+      }
     } catch (error: unknown) {
-      logger.warn({ err: error }, "Error generating DDEX preview:");
-      res.status(500).json({ error: "Failed to generate DDEX preview" });
+      if (error instanceof Error && error.message === "Release not found") {
+        return res.status(404).json({ error: "Release not found" });
+      }
+      logger.warn(
+        {
+          errorType: error instanceof Error ? error.name : "UnknownError",
+        },
+        "DDEX preview could not be generated",
+      );
+      return res.status(422).json({
+        error: "ddex_preview_unavailable",
+        message:
+          "The release is missing required verified metadata, assigned identifiers, or accessible owner-stored media.",
+      });
     }
   },
 );
@@ -2040,113 +2541,70 @@ router.get(
   "/releases/:id/ddex/download",
   requireAuth,
   async (req: Request, res: Response) => {
+    let outputPath = "";
+    let inputs:
+      | Awaited<ReturnType<typeof buildOwnedDDEXInputs>>
+      | undefined;
     try {
       const userId = (req.user as AuthenticatedUser).id;
       const { id } = req.params as Record<string, string>;
-
       const release = await storage.getDistroRelease(id);
       if (!release || release.artistId !== userId) {
         return res.status(404).json({ error: "Release not found" });
       }
-
-      const tracks = await storage.getDistroTracks(id);
-      if (!tracks || tracks.length === 0) {
-        return res
-          .status(400)
-          .json({
-            error:
-              "Release has no tracks. Add tracks before downloading a DDEX package.",
-          });
+      const tracks = await db
+        .select()
+        .from(distroTracks)
+        .where(eq(distroTracks.releaseId, id))
+        .orderBy(distroTracks.trackNumber)
+        .limit(101);
+      if (tracks.length > 100) {
+        return res.status(413).json({
+          error: "ddex_track_limit_exceeded",
+          message: "DDEX export is limited to 100 tracks per release.",
+        });
       }
-
-      const metadata = (release.metadata as Record<string, unknown>) || {};
-      const upc = metadata.upc || "";
-      const coverArtPath = release.artworkUrl || metadata.coverArtUrl || null;
-
-      const outputPath = path.join(uploadDir, `ddex_${id}_${Date.now()}.zip`);
-
-      try {
-        type DdexPkgReleaseArg = Parameters<
-          typeof ddexPackageService.createDDEXPackage
-        >[0];
-        type DdexPkgTrackArg = Parameters<
-          typeof ddexPackageService.createDDEXPackage
-        >[1][number];
-        await ddexPackageService.createDDEXPackage(
-          {
-            id: release.id,
-            title: release.title || "",
-            artistName: metadata.artistName || "Unknown Artist",
-            releaseType: metadata.releaseType || "Single",
-            upc: upc,
-            releaseDate:
-              release.releaseDate?.toISOString().split("T")[0] ||
-              new Date().toISOString().split("T")[0],
-            labelName: metadata.labelName || "",
-            copyrightYear:
-              metadata.copyrightYear || new Date().getFullYear().toString(),
-            copyrightOwner:
-              metadata.copyrightOwner || metadata.artistName || "",
-            publishingRights: metadata.publishingRights || "",
-            primaryGenre: metadata.primaryGenre || "Other",
-            secondaryGenre: metadata.secondaryGenre,
-            isExplicit: metadata.isExplicit || false,
-            coverArtPath: coverArtPath,
-            territories: metadata.territories || ["worldwide"],
-          } as unknown as DdexPkgReleaseArg,
-          tracks.map((track: Record<string, unknown>, index: number) => {
-            const trackMeta = (track.metadata as Record<string, unknown>) || {};
-            return {
-              id: track.id,
-              title: track.title || `Track ${index + 1}`,
-              isrc: track.isrc || trackMeta.isrc || "",
-              trackNumber: index + 1,
-              duration: track.duration || 0,
-              // Pass the URL as-is — ddexPackageService.createDDEXPackage detects HTTPS URLs
-              // and downloads them to temp files before archiving, so no path transform needed.
-              audioFilePath: track.audioUrl || "",
-              explicit: trackMeta.explicit || false,
-              lyrics: trackMeta.lyrics,
-              primaryArtist: metadata.artistName || "Unknown Artist",
-              featuredArtists: trackMeta.featuredArtists,
-              songwriters: trackMeta.songwriters,
-              producers: trackMeta.producers,
-            } as unknown as DdexPkgTrackArg;
-          }),
-          outputPath,
-        );
-      } catch (packageError) {
-        logger.warn({ err: packageError }, "Error generating DDEX package content:");
-        // createDDEXPackage may have partially written outputPath (e.g. the
-        // zip write stream started before archiving failed) — the success
-        // path's cleanup below never runs when we bail out here, so this is
-        // the only chance to keep ./uploads from accumulating orphaned zips.
-        fsPromises.unlink(outputPath).catch(() => {});
-        return res
-          .status(500)
-          .json({
-            error:
-              "Failed to generate DDEX package. Some required track files may be missing.",
-          });
-      }
-
-      res.download(
-        outputPath,
-        `${release.title || "release"}_DDEX.zip`,
-        (err) => {
-          if (err && !res.headersSent) {
-            logger.warn({ err: err }, "Error downloading DDEX package:");
-          }
-          fsPromises.unlink(outputPath).catch((cleanupErr) => {
-            logger.warn({ err: cleanupErr }, "Failed to clean up DDEX temp file:");
-          });
-        },
+      inputs = await buildOwnedDDEXInputs(release, tracks, userId);
+      outputPath = path.join(
+        uploadDir,
+        `ddex_${randomBytes(12).toString("hex")}.zip`,
       );
+      await ddexPackageService.createDDEXPackage(
+        inputs.releaseInput,
+        inputs.trackInputs,
+        outputPath,
+      );
+      await inputs.cleanup();
+      inputs = undefined;
+      const downloadName = `${(release.title || "release")
+        .replace(/[^a-zA-Z0-9 _-]/g, "")
+        .slice(0, 80)}_DDEX.zip`;
+      return res.download(outputPath, downloadName, (error) => {
+        if (error && !res.headersSent) {
+          logger.warn(
+            { errorType: error.name },
+            "DDEX archive response failed",
+          );
+        }
+        fsPromises.unlink(outputPath).catch(() => {});
+      });
     } catch (error: unknown) {
-      logger.warn({ err: error }, "Error creating DDEX package:");
-      if (!res.headersSent) {
-        res.status(500).json({ error: "Failed to create DDEX package" });
+      await inputs?.cleanup();
+      if (outputPath) await fsPromises.unlink(outputPath).catch(() => {});
+      if (error instanceof Error && error.message === "Release not found") {
+        return res.status(404).json({ error: "Release not found" });
       }
+      logger.warn(
+        {
+          errorType: error instanceof Error ? error.name : "UnknownError",
+        },
+        "DDEX archive could not be generated",
+      );
+      return res.status(422).json({
+        error: "ddex_package_unavailable",
+        message:
+          "The release is missing required verified metadata, assigned identifiers, or accessible owner-stored media.",
+      });
     }
   },
 );
@@ -6743,19 +7201,38 @@ router.get(
       const tracks = await storage.getDistroTracks(id);
       const registrations = tracks?.map((track: Record<string, unknown>) => {
         const metadata = (track?.metadata || {}) as Record<string, unknown>;
+        const hasVerifiedFileDigest =
+          metadata.fingerprintAlgorithm === "sha256-file-exact" &&
+          typeof metadata.fingerprint === "string" &&
+          /^[a-f0-9]{64}$/.test(metadata.fingerprint);
+        const legacyStatus = metadata.contentIdStatus;
         return {
           id: `cid_${track?.id}`,
           trackId: track.id,
           trackTitle: track.title,
-          fingerprint: metadata.fingerprint || null,
-          status: metadata.contentIdStatus || "pending",
-          registeredAt: metadata.contentIdRegisteredAt,
-          platforms: metadata.contentIdPlatforms || [
-            "YouTube",
-            "Facebook",
-            "Instagram",
-          ],
-          conflictDetails: metadata.conflictDetails,
+          fingerprint: hasVerifiedFileDigest ? metadata.fingerprint : null,
+          fingerprintAlgorithm: hasVerifiedFileDigest
+            ? metadata.fingerprintAlgorithm
+            : null,
+          fingerprintByteLength: hasVerifiedFileDigest
+            ? metadata.fingerprintByteLength
+            : null,
+          fingerprintGeneratedAt: hasVerifiedFileDigest
+            ? metadata.fingerprintGeneratedAt
+            : null,
+          platforms: [],
+          status: hasVerifiedFileDigest
+            ? "fingerprint_generated"
+            : legacyStatus === "registered" ||
+                legacyStatus === "generating" ||
+                legacyStatus === "fingerprint_generated"
+              ? "unverified_legacy"
+              : "pending",
+          externalRegistration: {
+            status: "unavailable",
+            message:
+              "No Content ID provider is connected. A file digest does not register or protect content on any platform.",
+          },
         };
       });
 
@@ -6775,31 +7252,100 @@ router.post(
   requireAuth,
   async (req: Request, res: Response) => {
     try {
-      const {  trackId } = req.body;
-
-      const track = await (storage as any)?.getDistroTrack(trackId);
+      const userId = (req.user as AuthenticatedUser).id;
+      const { releaseId, trackId } = z
+        .object({ releaseId: z.string().min(1), trackId: z.string().min(1) })
+        .parse(req.body);
+      const release = await storage.getDistroRelease(releaseId);
+      if (!release || release.artistId !== userId) {
+        return res.status(404).json({ error: "Release not found" });
+      }
+      const [track] = await db
+        .select()
+        .from(distroTracks)
+        .where(and(eq(distroTracks.id, trackId), eq(distroTracks.releaseId, releaseId)))
+        .limit(1);
       if (!track) {
         return res.status(404).json({ error: "Track not found" });
       }
-
-      const fingerprint = `fp_${Date.now()}_${randomBytes(4).toString("hex")}`;
-
-      await storage.updateDistroTrack(trackId, track?.releaseId || "", {
-        metadata: {
-          ...(track?.metadata as Record<string, unknown> || {}),
-          fingerprint,
-          contentIdStatus: "generating",
-        },
-      });
-
-      res.json({
+      const localAudioUrl = getOwnedDistributionAudioSource(track.audioUrl, userId);
+      const resolved = await resolveAudioUrlToLocalFile(localAudioUrl, userId);
+      let digest: Awaited<ReturnType<typeof sha256DistributionFile>>;
+      let audioMetadata: Awaited<
+        ReturnType<typeof audioMetadataService.extractFromStream>
+      >;
+      try {
+        digest = await sha256DistributionFile(resolved.localPath);
+        audioMetadata = await audioMetadataService.extractFromStream(
+          fs.createReadStream(resolved.localPath),
+        );
+      } finally {
+        await resolved.cleanup();
+      }
+      if (!audioMetadata.codec || audioMetadata.codec === "unknown") {
+        return res.status(422).json({
+          success: false,
+          error: "audio_format_unrecognized",
+          message: "The stored file could not be verified as audio.",
+        });
+      }
+      const generatedAt = new Date().toISOString();
+      const metadataPatch = {
+        fingerprint: digest.sha256,
+        fingerprintAlgorithm: "sha256-file-exact",
+        fingerprintByteLength: digest.byteLength,
+        fingerprintGeneratedAt: generatedAt,
+        fingerprintAudioCodec: audioMetadata.codec,
+        fingerprintAudioDuration: audioMetadata.duration,
+        contentIdStatus: "fingerprint_generated",
+        contentIdRegisteredAt: null,
+        contentIdPlatforms: [],
+      };
+      const [updated] = await db
+        .update(distroTracks)
+        .set({
+          metadata: sql`COALESCE(${distroTracks.metadata}, '{}'::jsonb) || ${JSON.stringify(metadataPatch)}::jsonb`,
+        })
+        .where(
+          and(
+            eq(distroTracks.id, trackId),
+            eq(distroTracks.releaseId, releaseId),
+          ),
+        )
+        .returning({ id: distroTracks.id });
+      if (!updated) {
+        return res.status(409).json({
+          success: false,
+          error: "track_changed",
+          message: "The track changed before its digest could be saved.",
+        });
+      }
+      return res.json({
         success: true,
-        message: "Fingerprint generation initiated",
-        fingerprint,
+        status: "fingerprint_generated",
+        message:
+          "Exact-file SHA-256 digest computed and saved. This is not an acoustic fingerprint or platform registration.",
+        fingerprint: digest.sha256,
+        algorithm: "sha256-file-exact",
+        byteLength: digest.byteLength,
+        generatedAt,
       });
     } catch (error: unknown) {
-      logger.warn({ err: error }, "Error generating fingerprint:");
-      res.status(500).json({ error: "Failed to generate fingerprint" });
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ error: "Invalid fingerprint request" });
+      }
+      logger.warn(
+        {
+          category: getDistributionAudioErrorCode(error),
+          errorType: error instanceof Error ? error.name : "UnknownError",
+        },
+        "Error generating track file digest",
+      );
+      res.status(422).json({
+        success: false,
+        error: getDistributionAudioErrorCode(error),
+        message: "The track's stored audio could not be securely fingerprinted.",
+      });
     }
   },
 );
@@ -6810,33 +7356,114 @@ router.post(
   requireAuth,
   async (req: Request, res: Response) => {
     try {
-      const { releaseId } = req.body;
+      const userId = (req.user as AuthenticatedUser).id;
+      const { releaseId } = z
+        .object({ releaseId: z.string().min(1) })
+        .parse(req.body);
+      const release = await storage.getDistroRelease(releaseId);
+      if (!release || release.artistId !== userId) {
+        return res.status(404).json({ error: "Release not found" });
+      }
+      const tracks = await db
+        .select()
+        .from(distroTracks)
+        .where(eq(distroTracks.releaseId, releaseId))
+        .orderBy(distroTracks.trackNumber)
+        .limit(101);
+      if (tracks.length === 0) {
+        return res.status(400).json({ error: "Release has no tracks" });
+      }
+      if (tracks.length > 100) {
+        return res.status(413).json({
+          error: "Release exceeds the 100-track batch limit",
+        });
+      }
 
-      const tracks = await storage.getDistroTracks(releaseId);
-
-      const results = await Promise.allSettled(
-        tracks?.map((track) => {
-          const fingerprint = `fp_${Date.now()}_${randomBytes(4).toString("hex")}`;
-          return storage.updateDistroTrack(track?.id, track?.releaseId, {
-            metadata: {
-              ...(track?.metadata as Record<string, unknown> || {}),
-              fingerprint,
-              contentIdStatus: "generating",
-            },
+      const digestResults: Array<{
+        trackId: string;
+        digest: Awaited<ReturnType<typeof sha256DistributionFile>>;
+        audioCodec: string;
+        audioDuration: number;
+        generatedAt: string;
+      }> = [];
+      for (const track of tracks) {
+        const localAudioUrl = getOwnedDistributionAudioSource(track.audioUrl, userId);
+        const resolved = await resolveAudioUrlToLocalFile(localAudioUrl, userId);
+        try {
+          const digest = await sha256DistributionFile(resolved.localPath);
+          const audioMetadata = await audioMetadataService.extractFromStream(
+            fs.createReadStream(resolved.localPath),
+          );
+          if (!audioMetadata.codec || audioMetadata.codec === "unknown") {
+            throw new Error("The stored file could not be verified as audio");
+          }
+          digestResults.push({
+            trackId: track.id,
+            digest,
+            audioCodec: audioMetadata.codec,
+            audioDuration: audioMetadata.duration,
+            generatedAt: new Date().toISOString(),
           });
-        }),
-      );
+        } finally {
+          await resolved.cleanup();
+        }
+      }
 
-      const count = results?.filter((r) => r?.status === "fulfilled").length;
+      await db.transaction(async (transaction) => {
+        for (const result of digestResults) {
+          const metadataPatch = {
+            fingerprint: result.digest.sha256,
+            fingerprintAlgorithm: "sha256-file-exact",
+            fingerprintByteLength: result.digest.byteLength,
+            fingerprintGeneratedAt: result.generatedAt,
+            fingerprintAudioCodec: result.audioCodec,
+            fingerprintAudioDuration: result.audioDuration,
+            contentIdStatus: "fingerprint_generated",
+            contentIdRegisteredAt: null,
+            contentIdPlatforms: [],
+          };
+          const [updated] = await transaction
+            .update(distroTracks)
+            .set({
+              metadata: sql`COALESCE(${distroTracks.metadata}, '{}'::jsonb) || ${JSON.stringify(metadataPatch)}::jsonb`,
+            })
+            .where(
+              and(
+                eq(distroTracks.id, result.trackId),
+                eq(distroTracks.releaseId, releaseId),
+              ),
+            )
+            .returning({ id: distroTracks.id });
+          if (!updated) {
+            throw new Error("A track changed before its digest could be saved");
+          }
+        }
+      });
 
-      res.json({
+      return res.json({
         success: true,
-        message: `Generated fingerprints for ${count} tracks`,
-        count,
+        status: "fingerprint_generated",
+        message: `Exact-file SHA-256 digests computed and saved for ${digestResults.length} tracks. No platform registrations were submitted.`,
+        count: digestResults.length,
+        algorithm: "sha256-file-exact",
       });
     } catch (error: unknown) {
-      logger.warn({ err: error }, "Error generating all fingerprints:");
-      res.status(500).json({ error: "Failed to generate fingerprints" });
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ error: "Invalid fingerprint batch request" });
+      }
+      logger.warn(
+        {
+          category: getDistributionAudioErrorCode(error),
+          errorType: error instanceof Error ? error.name : "UnknownError",
+        },
+        "Error generating release file digests",
+      );
+      res.status(422).json({
+        success: false,
+        error: getDistributionAudioErrorCode(error),
+        message:
+          "At least one track's stored audio could not be securely fingerprinted. No batch digests were saved.",
+      });
     }
   },
 );
@@ -6845,73 +7472,26 @@ router.post(
 router.post(
   "/content-id/register",
   requireAuth,
-  async (req: Request, res: Response) => {
-    try {
-      const {  trackId } = req.body;
-
-      const track = await (storage as any)?.getDistroTrack?.(trackId);
-      if (!track) {
-        return res.status(404).json({ error: "Track not found" });
-      }
-
-      const updateDistroTrackLoose: (id: string, data: Record<string, unknown>) => Promise<void> =
-        (storage as any)?.updateDistroTrack?.bind(storage) ?? (() => Promise.resolve());
-      await updateDistroTrackLoose(trackId, {
-        metadata: {
-          ...(track?.metadata as Record<string, unknown> | undefined),
-          contentIdStatus: "registered",
-          contentIdRegisteredAt: new Date().toISOString(),
-          contentIdPlatforms: ["YouTube", "Facebook", "Instagram", "TikTok"],
-        },
-      });
-
-      res.json({
-        success: true,
-        message: "Track registered for Content ID protection",
-      });
-    } catch (error: unknown) {
-      logger.warn({ err: error }, "Error registering for content ID:");
-      res.status(500).json({ error: "Failed to register for content ID" });
-    }
-  },
+  (_req: Request, res: Response) =>
+    res.status(501).json({
+      success: false,
+      error: "content_id_provider_unavailable",
+      message:
+        "No Content ID provider is connected. No registration was created or submitted.",
+    }),
 );
 
 // POST /api/distribution/content-id/resolve - Resolve Content ID conflict
 router.post(
   "/content-id/resolve",
   requireAuth,
-  async (req: Request, res: Response) => {
-    try {
-      const { registrationId, resolution, notes } = req.body;
-
-      const trackId = registrationId?.replace("cid_", "");
-      const track = await (storage as any)?.getDistroTrack(trackId);
-      if (!track) {
-        return res.status(404).json({ error: "Track not found" });
-      }
-
-      await storage.updateDistroTrack(trackId, track?.releaseId || "", {
-        metadata: {
-          ...(track?.metadata as Record<string, unknown> || {}),
-          contentIdStatus:
-            resolution === "claim_ownership" ? "registered" : "pending",
-          conflictResolution: {
-            type: resolution,
-            notes,
-            resolvedAt: new Date().toISOString(),
-          },
-        },
-      });
-
-      res.json({
-        success: true,
-        message: "Conflict resolution submitted",
-      });
-    } catch (error: unknown) {
-      logger.warn({ err: error }, "Error resolving content ID conflict:");
-      res.status(500).json({ error: "Failed to resolve conflict" });
-    }
-  },
+  (_req: Request, res: Response) =>
+    res.status(501).json({
+      success: false,
+      error: "content_id_provider_unavailable",
+      message:
+        "Conflict resolution requires a connected Content ID provider. No provider action or local status change occurred.",
+    }),
 );
 
 // ===========================

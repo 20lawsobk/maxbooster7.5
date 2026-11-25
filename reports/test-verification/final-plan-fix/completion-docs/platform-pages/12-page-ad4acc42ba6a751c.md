@@ -1,0 +1,314 @@
+# 12. /analytics/ai — AIDashboard
+
+Generated; edit the generator or source business-section supplements and regenerate. Inventory inclusion is not test passage.
+
+Declaration `page-ad4acc42ba6a751c`; source `client/src/pages/analytics/AIDashboard.tsx:1`; registration `{"file":"client/src/App.tsx","line":216}`; status **UNVERIFIED**.
+
+## Page acceptance
+
+| Check | Status | Exact acceptance |
+| --- | --- | --- |
+| page-ad4acc42ba6a751c/page-states | UNVERIFIED | Exercise this page's actual loading, empty, error/retry and successful states, including navigation and reload. |
+| page-ad4acc42ba6a751c/page-access | UNVERIFIED | Verify the page's declared public/authenticated/admin access policy and cross-user resource boundary. |
+| page-ad4acc42ba6a751c/page-persistence | UNVERIFIED | Submit applicable page actions, verify the corresponding backend result, and reload to confirm durable state; verify failed writes do not show success. |
+
+Implement each exact check, then map current passing case identities and source hashes. Keep missing prerequisites and external delivery explicitly unverified.
+
+## All business sections
+
+| Page work/provenance field | Required detail |
+| --- | --- |
+| ordinal | 12 |
+| id | page-ad4acc42ba6a751c |
+| path | /analytics/ai |
+| component | AIDashboard |
+| source | {"file":"client/src/pages/analytics/AIDashboard.tsx","line":1} |
+| registration | {"file":"client/src/App.tsx","line":216} |
+| status | UNVERIFIED |
+| businessJourneyWork | Exercise recorded-summary loading/refresh, account/subscription access and account-keyed cache transitions; verify real owner-scoped MaxCore statistics, complete UTC windows, insufficient-history/public-context states, malformed-response rejection and retry. Public awareness must remain read-only and separate from private account aggregates. |
+| routeSpecificWork | Verify this exact registered path, direct navigation, reload, auth transition and unknown/malformed parameters; do not reuse another path’s result as automatic alias acceptance. |
+| coverageOfSource | {"additionalReachableAuditWork":["built-in plugins dsp/BasePlugin.ts","built-in plugins dsp/EQPlugin.ts","client/src/components/LanguageSwitcher.tsx","client/src/components/auth/AuthProvider.tsx","client/src/components/layout/Breadcrumb.tsx","client/src/components/layout/MobileBottomNav.tsx","client/src/components/layout/Sidebar.tsx","client/src/components/layout/TopBar.tsx","client/src/components/notifications/NotificationBadge.tsx","client/src/components/notifications/NotificationCenter.tsx","client/src/components/notifications/NotificationItem.tsx","client/src/components/notifications/NotificationToast.tsx","client/src/components/notifications/types.ts","client/src/components/offline/PendingChangesIndicator.tsx","client/src/components/ui/alert.tsx","client/src/components/ui/badge.tsx","client/src/components/ui/breadcrumb.tsx","client/src/components/ui/button.tsx","client/src/components/ui/card.tsx","client/src/components/ui/dropdown-menu.tsx","client/src/components/ui/popover.tsx","client/src/components/ui/scroll-area.tsx","client/src/components/ui/select.tsx","client/src/components/ui/separator.tsx","client/src/components/ui/tabs.tsx","client/src/components/ui/theme-toggle.tsx","client/src/components/ui/toast.tsx","client/src/components/ui/tooltip.tsx","client/src/contexts/ThemeContext.tsx","client/src/hooks/use-toast.ts","client/src/hooks/useAuth.ts","client/src/hooks/useFluidLayout.ts","client/src/hooks/useOfflineStatus.ts","client/src/hooks/useRequireAuth.ts","client/src/hooks/useWebSocket.ts","client/src/lib/audio/PluginHost.ts","client/src/lib/authenticationBoundary.ts","client/src/lib/daw/AudioWorkletEngine.ts","client/src/lib/daw/TrackPluginChain.ts","client/src/lib/errorService.ts","client/src/lib/idbPersister.ts","client/src/lib/logger.ts","client/src/lib/notificationAction.ts","client/src/lib/offline/DraftStorage.ts","client/src/lib/offline/OfflineCache.ts","client/src/lib/offline/OfflineQueue.ts","client/src/lib/offline/SyncManager.ts","client/src/lib/offline/accountCoordinator.ts","client/src/lib/offline/accountLocalStorage.ts","client/src/lib/offline/identity.ts","client/src/lib/offline/index.ts","client/src/lib/offline/operationFingerprint.ts","client/src/lib/offline/studioOfflineLifecycle.ts","client/src/lib/preferenceWrites.ts","client/src/lib/queryClient.ts","client/src/lib/sessionProbe.ts","client/src/lib/studioLayoutStore.ts","client/src/lib/utils.ts","client/src/stores/studioStore.ts","shared/schema.ts"],"inspectedJsxSourceFiles":[{"file":"client/src/pages/analytics/AIDashboard.tsx","lineCount":169,"sha256":"c3dcd8a430b88caefcb9c9c4a7cef318cea375a6630e85ae3525b81cb3f80228"},{"file":"client/src/components/layout/AppLayout.tsx","lineCount":147,"sha256":"7d00e32dfbbfae02ac50d98b9814dc12a6f9e29ede90cc8e84b3c2b987734563"}],"registeredReachableSourceFiles":["built-in plugins dsp/BasePlugin.ts","built-in plugins dsp/EQPlugin.ts","client/src/components/LanguageSwitcher.tsx","client/src/components/auth/AuthProvider.tsx","client/src/components/layout/AppLayout.tsx","client/src/components/layout/Breadcrumb.tsx","client/src/components/layout/MobileBottomNav.tsx","client/src/components/layout/Sidebar.tsx","client/src/components/layout/TopBar.tsx","client/src/components/notifications/NotificationBadge.tsx","client/src/components/notifications/NotificationCenter.tsx","client/src/components/notifications/NotificationItem.tsx","client/src/components/notifications/NotificationToast.tsx","client/src/components/notifications/types.ts","client/src/components/offline/PendingChangesIndicator.tsx","client/src/components/ui/alert.tsx","client/src/components/ui/badge.tsx","client/src/components/ui/breadcrumb.tsx","client/src/components/ui/button.tsx","client/src/components/ui/card.tsx","client/src/components/ui/dropdown-menu.tsx","client/src/components/ui/popover.tsx","client/src/components/ui/scroll-area.tsx","client/src/components/ui/select.tsx","client/src/components/ui/separator.tsx","client/src/components/ui/tabs.tsx","client/src/components/ui/theme-toggle.tsx","client/src/components/ui/toast.tsx","client/src/components/ui/tooltip.tsx","client/src/contexts/ThemeContext.tsx","client/src/hooks/use-toast.ts","client/src/hooks/useAuth.ts","client/src/hooks/useFluidLayout.ts","client/src/hooks/useOfflineStatus.ts","client/src/hooks/useRequireAuth.ts","client/src/hooks/useWebSocket.ts","client/src/lib/audio/PluginHost.ts","client/src/lib/authenticationBoundary.ts","client/src/lib/daw/AudioWorkletEngine.ts","client/src/lib/daw/TrackPluginChain.ts","client/src/lib/errorService.ts","client/src/lib/idbPersister.ts","client/src/lib/logger.ts","client/src/lib/notificationAction.ts","client/src/lib/offline/DraftStorage.ts","client/src/lib/offline/OfflineCache.ts","client/src/lib/offline/OfflineQueue.ts","client/src/lib/offline/SyncManager.ts","client/src/lib/offline/accountCoordinator.ts","client/src/lib/offline/accountLocalStorage.ts","client/src/lib/offline/identity.ts","client/src/lib/offline/index.ts","client/src/lib/offline/operationFingerprint.ts","client/src/lib/offline/studioOfflineLifecycle.ts","client/src/lib/preferenceWrites.ts","client/src/lib/queryClient.ts","client/src/lib/sessionProbe.ts","client/src/lib/studioLayoutStore.ts","client/src/lib/utils.ts","client/src/pages/analytics/AIDashboard.tsx","client/src/stores/studioStore.ts","shared/schema.ts"],"scope":"Actual AST source sections and complete-control modules, transparent reexports and recursively rendered domain components. Shared UI/layout internals, hooks/services/libs, runtime conditional branches and unresolved dynamic bindings remain explicit register-wide audit work; this is a plan, not completed execution.","sourceControlsEnumerated":5,"sourceSectionsEnumerated":3} |
+| evidenceReferences | [{"path":"reports/test-verification/history/2026-10-26-integrated-before-rechecks/README.md","scope":"Historical integrated scopes and failures; does not close this section."},{"path":"reports/release-rehearsal/2026-10-27-final/summary.json","scope":"Prepared portable cold startup only; productionReady remains false."},{"path":"reports/analytics-acceptance/2026-10-27/README.md","scope":"Focused real HTTP/SQL/MaxCore and controlled browser assertions; inspect exact source hashes and remaining limits. Does not close all page work."}] |
+| analysisSourceFreshness | {"checkedFiles":2,"meaning":"Source-analysis freshness only; not behavioral execution evidence. Stale or unavailable files require review and remain unverified.","staleSourceFiles":[],"status":"SOURCE_HASHES_MATCH","unavailableSourceFiles":[]} |
+| sourceFreshnessWorkItems | [] |
+
+### AIDashboard complete controls, state, rendered children and API bindings — AIDashboard:1
+
+| Work field | Required detail |
+| --- | --- |
+| id | section-071d61383cf8bfd6 |
+| kind | complete-module |
+| status | UNVERIFIED |
+| sourceFiles | [{"endLine":169,"file":"client/src/pages/analytics/AIDashboard.tsx","line":1}] |
+| frontendWork | ["Exercise every rendered control and conditional state in AIDashboard complete controls, state, rendered children and API bindings — AIDashboard:1; resolve dynamic list items, nested rendered children and event-handler effects from actual source.","Check controlled inputs, displayed labels/values, tab/dialog/form transitions, reset/cancel/submit and fresh-session rehydration; retain all 1 source controls enumerated for this section.","Assert auth-pending disables fetch, user-ID cache changes cannot display another account summary, malformed/non-JSON responses show an error, and UTC window dates remain literal with an exclusive end in Detroit and other time zones."] |
+| backendWork | ["Trace this section’s callbacks to every candidate frontend contract below and confirm the exact mounted process, HTTP method/path, request/response schema, storage/service and worker. Candidate file calls are not yet proven section bindings.","Implement and verify missing production behavior only after reproducing the exact contract gap; preserve precise statuses and real errors rather than broad accepted status sets.","Trace existing POST /api/ai/analytics/insights through authenticated ownership, actual SQL and canonical MaxCore observed_summary; validate method/counts/totals and keep private aggregates out of public-awareness ingestion and training. Separately verify capability and streams/revenue baseline forecasts; lifetime post counters are not daily engagement reports."] |
+| validationPermissionsSecurity | ["Prove anonymous, authenticated owner, foreign owner and applicable subscription/admin/role scopes; identify the actual intended access policy even for public informational controls.","Test all actual field limits, required/optional boundaries, malformed values, CSRF/session handling, safe rendering/URLs/files, no cross-account cache leakage and secrets/PII redaction."] |
+| durableProviderGenerationJourneys | ["For every mutation, verify persisted state and bytes from a fresh request/process, duplicate/replay/concurrency handling, transaction/lease authority, interruption and recovery; for display-only sections prove source-of-truth correspondence.","For provider, payment, download, notification or generation controls, verify the actual output/receipt/entitlement and failure lifecycle with an owned fixture; separately require controlled deployed delivery and truthful unavailable states. Explicitly resolve applicability from source; never auto-pass absent fixtures."] |
+| failureAccessibilityMobileI18nPerformance | ["Exercise loading, empty, success, validation error, unauthorized/forbidden, missing record, timeout, dependency outage, retry and cancellation/unmount states supported by this section.","Verify accessible names, semantic roles, keyboard order/focus/escape, screen-reader errors/status, contrast and reduced motion.","Verify narrow/touch/mobile layouts, zoom, RTL and translated/missing/long text, locale dates/numbers/currency/time zones and supported language switching.","Measure relevant render/request/media work with representative records, pagination/large lists and bounded retries; inspect subscriptions/listeners/timers cleanup and record workload/latency rather than projected capacity."] |
+| evidenceNeeded | ["Current-source instrumented line/statement/function/branch counters at 100% for the relevant source, with raw maps and no silently excluded files.","Named component/browser cases for every listed interaction and state; real HTTP/database/service/worker cases for each bound backend contract, with exact statuses, durable assertions and negative owner/security cases.","Record command/tool versions, source hashes, fixture isolation, timestamps, actual exits and cleanup; map exact passing case identities to platform-register required checks. Static inspection and source/test associations do not close acceptance."] |
+| controls | [{"attributes":{"disabled":"{isFetching}","onClick":"{() => refetch()}"},"source":{"file":"client/src/pages/analytics/AIDashboard.tsx","line":100},"tag":"Button","text":"{isFetching ? ( <Loader2 className=\"mr-2 h-4 w-4 animate-spin\" /> ) : ( <RefreshCw className=\"mr-2 h-4 w-4\" /> )} Generate analysis"}] |
+| interactionIds | ["ui-f5a9e17174a248c2"] |
+| frontendContractIds | ["call-49affbf6894e346a"] |
+| backendRouteIds | ["api-c78a8e66ec4e4573"] |
+| apiBindingStatus | CANDIDATE_FILE_CALLS_REQUIRE_SECTION_TRACE |
+
+### AI Analytics Dashboard — AIDashboard:92
+
+| Work field | Required detail |
+| --- | --- |
+| id | section-43c25a441b47e18b |
+| kind | h1 |
+| status | UNVERIFIED |
+| sourceFiles | [{"endLine":95,"file":"client/src/pages/analytics/AIDashboard.tsx","line":92}] |
+| frontendWork | ["Exercise every rendered control and conditional state in AI Analytics Dashboard — AIDashboard:75; resolve dynamic list items, nested rendered children and event-handler effects from actual source.","Check controlled inputs, displayed labels/values, tab/dialog/form transitions, reset/cancel/submit and fresh-session rehydration; retain all 0 source controls enumerated for this section."] |
+| backendWork | ["Trace this section’s callbacks to every candidate frontend contract below and confirm the exact mounted process, HTTP method/path, request/response schema, storage/service and worker. Candidate file calls are not yet proven section bindings.","Implement and verify missing production behavior only after reproducing the exact contract gap; preserve precise statuses and real errors rather than broad accepted status sets."] |
+| validationPermissionsSecurity | ["Prove anonymous, authenticated owner, foreign owner and applicable subscription/admin/role scopes; identify the actual intended access policy even for public informational controls.","Test all actual field limits, required/optional boundaries, malformed values, CSRF/session handling, safe rendering/URLs/files, no cross-account cache leakage and secrets/PII redaction."] |
+| durableProviderGenerationJourneys | ["For every mutation, verify persisted state and bytes from a fresh request/process, duplicate/replay/concurrency handling, transaction/lease authority, interruption and recovery; for display-only sections prove source-of-truth correspondence.","For provider, payment, download, notification or generation controls, verify the actual output/receipt/entitlement and failure lifecycle with an owned fixture; separately require controlled deployed delivery and truthful unavailable states. Explicitly resolve applicability from source; never auto-pass absent fixtures."] |
+| failureAccessibilityMobileI18nPerformance | ["Exercise loading, empty, success, validation error, unauthorized/forbidden, missing record, timeout, dependency outage, retry and cancellation/unmount states supported by this section.","Verify accessible names, semantic roles, keyboard order/focus/escape, screen-reader errors/status, contrast and reduced motion.","Verify narrow/touch/mobile layouts, zoom, RTL and translated/missing/long text, locale dates/numbers/currency/time zones and supported language switching.","Measure relevant render/request/media work with representative records, pagination/large lists and bounded retries; inspect subscriptions/listeners/timers cleanup and record workload/latency rather than projected capacity."] |
+| evidenceNeeded | ["Current-source instrumented line/statement/function/branch counters at 100% for the relevant source, with raw maps and no silently excluded files.","Named component/browser cases for every listed interaction and state; real HTTP/database/service/worker cases for each bound backend contract, with exact statuses, durable assertions and negative owner/security cases.","Record command/tool versions, source hashes, fixture isolation, timestamps, actual exits and cleanup; map exact passing case identities to platform-register required checks. Static inspection and source/test associations do not close acceptance."] |
+| controls | [] |
+| interactionIds | [] |
+| frontendContractIds | ["call-49affbf6894e346a"] |
+| backendRouteIds | ["api-c78a8e66ec4e4573"] |
+| apiBindingStatus | CANDIDATE_FILE_CALLS_REQUIRE_SECTION_TRACE |
+
+### Your performance summary — AIDashboard:112
+
+| Work field | Required detail |
+| --- | --- |
+| id | section-78d269a86508313a |
+| kind | CardTitle |
+| status | UNVERIFIED |
+| sourceFiles | [{"endLine":115,"file":"client/src/pages/analytics/AIDashboard.tsx","line":112}] |
+| frontendWork | ["Exercise every rendered control and conditional state in Your AI insight — AIDashboard:95; resolve dynamic list items, nested rendered children and event-handler effects from actual source.","Check controlled inputs, displayed labels/values, tab/dialog/form transitions, reset/cancel/submit and fresh-session rehydration; retain all 0 source controls enumerated for this section."] |
+| backendWork | ["Trace this section’s callbacks to every candidate frontend contract below and confirm the exact mounted process, HTTP method/path, request/response schema, storage/service and worker. Candidate file calls are not yet proven section bindings.","Implement and verify missing production behavior only after reproducing the exact contract gap; preserve precise statuses and real errors rather than broad accepted status sets."] |
+| validationPermissionsSecurity | ["Prove anonymous, authenticated owner, foreign owner and applicable subscription/admin/role scopes; identify the actual intended access policy even for public informational controls.","Test all actual field limits, required/optional boundaries, malformed values, CSRF/session handling, safe rendering/URLs/files, no cross-account cache leakage and secrets/PII redaction."] |
+| durableProviderGenerationJourneys | ["For every mutation, verify persisted state and bytes from a fresh request/process, duplicate/replay/concurrency handling, transaction/lease authority, interruption and recovery; for display-only sections prove source-of-truth correspondence.","For provider, payment, download, notification or generation controls, verify the actual output/receipt/entitlement and failure lifecycle with an owned fixture; separately require controlled deployed delivery and truthful unavailable states. Explicitly resolve applicability from source; never auto-pass absent fixtures."] |
+| failureAccessibilityMobileI18nPerformance | ["Exercise loading, empty, success, validation error, unauthorized/forbidden, missing record, timeout, dependency outage, retry and cancellation/unmount states supported by this section.","Verify accessible names, semantic roles, keyboard order/focus/escape, screen-reader errors/status, contrast and reduced motion.","Verify narrow/touch/mobile layouts, zoom, RTL and translated/missing/long text, locale dates/numbers/currency/time zones and supported language switching.","Measure relevant render/request/media work with representative records, pagination/large lists and bounded retries; inspect subscriptions/listeners/timers cleanup and record workload/latency rather than projected capacity."] |
+| evidenceNeeded | ["Current-source instrumented line/statement/function/branch counters at 100% for the relevant source, with raw maps and no silently excluded files.","Named component/browser cases for every listed interaction and state; real HTTP/database/service/worker cases for each bound backend contract, with exact statuses, durable assertions and negative owner/security cases.","Record command/tool versions, source hashes, fixture isolation, timestamps, actual exits and cleanup; map exact passing case identities to platform-register required checks. Static inspection and source/test associations do not close acceptance."] |
+| controls | [] |
+| interactionIds | [] |
+| frontendContractIds | ["call-49affbf6894e346a"] |
+| backendRouteIds | ["api-c78a8e66ec4e4573"] |
+| apiBindingStatus | CANDIDATE_FILE_CALLS_REQUIRE_SECTION_TRACE |
+
+### Insufficient reporting history, public-context status and statistical limits — AIDashboard:139
+
+| Work field | Required detail |
+| --- | --- |
+| id | section-1329be7864863173 |
+| kind | conditional-state |
+| status | UNVERIFIED |
+| sourceFiles | [{"endLine":161,"file":"client/src/pages/analytics/AIDashboard.tsx","line":139}] |
+| frontendWork | ["Exercise empty recorded history, optional unavailable public context, observed-summary success and the non-causal performance disclaimer. Verify actual visible text without zero-performance or guaranteed-quality claims."] |
+| backendWork | ["Assert canonical insufficient_history with null unknown totals and actual observed-day counts, owner-scoped recorded summaries, missing-day semantics and separate read-only public provenance. No private account input may enter public learning."] |
+| validationPermissionsSecurity | ["Prove anonymous, authenticated owner, foreign owner and applicable subscription/admin/role scopes; identify the actual intended access policy even for public informational controls.","Test all actual field limits, required/optional boundaries, malformed values, CSRF/session handling, safe rendering/URLs/files, no cross-account cache leakage and secrets/PII redaction."] |
+| durableProviderGenerationJourneys | ["For every mutation, verify persisted state and bytes from a fresh request/process, duplicate/replay/concurrency handling, transaction/lease authority, interruption and recovery; for display-only sections prove source-of-truth correspondence.","For provider, payment, download, notification or generation controls, verify the actual output/receipt/entitlement and failure lifecycle with an owned fixture; separately require controlled deployed delivery and truthful unavailable states. Explicitly resolve applicability from source; never auto-pass absent fixtures."] |
+| failureAccessibilityMobileI18nPerformance | ["Exercise loading, empty, success, validation error, unauthorized/forbidden, missing record, timeout, dependency outage, retry and cancellation/unmount states supported by this section.","Verify accessible names, semantic roles, keyboard order/focus/escape, screen-reader errors/status, contrast and reduced motion.","Verify narrow/touch/mobile layouts, zoom, RTL and translated/missing/long text, locale dates/numbers/currency/time zones and supported language switching.","Measure relevant render/request/media work with representative records, pagination/large lists and bounded retries; inspect subscriptions/listeners/timers cleanup and record workload/latency rather than projected capacity."] |
+| evidenceNeeded | ["Current-source instrumented line/statement/function/branch counters at 100% for the relevant source, with raw maps and no silently excluded files.","Named component/browser cases for every listed interaction and state; real HTTP/database/service/worker cases for each bound backend contract, with exact statuses, durable assertions and negative owner/security cases.","Record command/tool versions, source hashes, fixture isolation, timestamps, actual exits and cleanup; map exact passing case identities to platform-register required checks. Static inspection and source/test associations do not close acceptance."] |
+| controls | [] |
+| interactionIds | [] |
+| frontendContractIds | ["call-49affbf6894e346a"] |
+| backendRouteIds | ["api-c78a8e66ec4e4573"] |
+| apiBindingStatus | CANDIDATE_FILE_CALLS_REQUIRE_SECTION_TRACE |
+
+### AppLayout complete controls, state, rendered children and API bindings — AppLayout:1
+
+| Work field | Required detail |
+| --- | --- |
+| id | section-662a0644b9ec07a1 |
+| kind | complete-module |
+| status | UNVERIFIED |
+| sourceFiles | [{"endLine":147,"file":"client/src/components/layout/AppLayout.tsx","line":1}] |
+| frontendWork | ["Exercise every rendered control and conditional state in AppLayout complete controls, state, rendered children and API bindings — AppLayout:1; resolve dynamic list items, nested rendered children and event-handler effects from actual source.","Check controlled inputs, displayed labels/values, tab/dialog/form transitions, reset/cancel/submit and fresh-session rehydration; retain all 4 source controls enumerated for this section."] |
+| backendWork | ["No frontend contract is currently statically linked from this module. Trace props, hooks, callbacks, template URLs, inherited clients and dynamic imports; explicitly establish any backend contract before closing this section.","Implement and verify missing production behavior only after reproducing the exact contract gap; preserve precise statuses and real errors rather than broad accepted status sets."] |
+| validationPermissionsSecurity | ["Prove anonymous, authenticated owner, foreign owner and applicable subscription/admin/role scopes; identify the actual intended access policy even for public informational controls.","Test all actual field limits, required/optional boundaries, malformed values, CSRF/session handling, safe rendering/URLs/files, no cross-account cache leakage and secrets/PII redaction."] |
+| durableProviderGenerationJourneys | ["For every mutation, verify persisted state and bytes from a fresh request/process, duplicate/replay/concurrency handling, transaction/lease authority, interruption and recovery; for display-only sections prove source-of-truth correspondence.","For provider, payment, download, notification or generation controls, verify the actual output/receipt/entitlement and failure lifecycle with an owned fixture; separately require controlled deployed delivery and truthful unavailable states. Explicitly resolve applicability from source; never auto-pass absent fixtures."] |
+| failureAccessibilityMobileI18nPerformance | ["Exercise loading, empty, success, validation error, unauthorized/forbidden, missing record, timeout, dependency outage, retry and cancellation/unmount states supported by this section.","Verify accessible names, semantic roles, keyboard order/focus/escape, screen-reader errors/status, contrast and reduced motion.","Verify narrow/touch/mobile layouts, zoom, RTL and translated/missing/long text, locale dates/numbers/currency/time zones and supported language switching.","Measure relevant render/request/media work with representative records, pagination/large lists and bounded retries; inspect subscriptions/listeners/timers cleanup and record workload/latency rather than projected capacity."] |
+| evidenceNeeded | ["Current-source instrumented line/statement/function/branch counters at 100% for the relevant source, with raw maps and no silently excluded files.","Named component/browser cases for every listed interaction and state; real HTTP/database/service/worker cases for each bound backend contract, with exact statuses, durable assertions and negative owner/security cases.","Record command/tool versions, source hashes, fixture isolation, timestamps, actual exits and cleanup; map exact passing case identities to platform-register required checks. Static inspection and source/test associations do not close acceptance."] |
+| controls | [{"attributes":{"className":"\"underline font-semibold hover:text-amber-100\"","href":"\"/pricing\""},"source":{"file":"client/src/components/layout/AppLayout.tsx","line":55},"tag":"a","text":"Subscribe to unlock full access"},{"attributes":{},"source":{"file":"client/src/components/layout/AppLayout.tsx","line":101},"tag":"Sidebar","text":""},{"attributes":{},"source":{"file":"client/src/components/layout/AppLayout.tsx","line":108},"tag":"TopBar","text":""},{"attributes":{},"source":{"file":"client/src/components/layout/AppLayout.tsx","line":142},"tag":"MobileBottomNav","text":""}] |
+| interactionIds | ["ui-84245433268496bc","ui-975edfade3e58d49","ui-d0d9ca11329dc60e","ui-3828cf72f867bcb1"] |
+| frontendContractIds | [] |
+| backendRouteIds | [] |
+| apiBindingStatus | UNRESOLVED_OR_LOCAL_ONLY_REQUIRES_REVIEW |
+
+## Every control
+
+| ID | Source | Tag/labels | Handlers | Status | Required checks |
+| --- | --- | --- | --- | --- | --- |
+| ui-05c73bbe7051147e | client/src/components/layout/Breadcrumb.tsx:169 | {"labels":{"data-testid":null,"href":null},"tag":"Link"} | [] | UNVERIFIED | ui-05c73bbe7051147e/control-behavior=UNVERIFIED; ui-05c73bbe7051147e/control-failure=UNVERIFIED |
+| ui-09288376a7ab1304 | client/src/components/layout/Sidebar.tsx:338 | {"labels":{"data-testid":null,"href":null},"tag":"Link"} | [{"event":"onClick","expressionKind":"ArrowFunction","handler":null}] | UNVERIFIED | ui-09288376a7ab1304/control-behavior=UNVERIFIED; ui-09288376a7ab1304/control-failure=UNVERIFIED |
+| ui-09b540e6b78df08d | client/src/components/layout/TopBar.tsx:40 | {"labels":{"aria-label":"Open navigation menu","data-testid":"mobile-menu-button"},"tag":"Button"} | [{"event":"onClick","expressionKind":"Identifier","handler":"onMenuClick"}] | UNVERIFIED | ui-09b540e6b78df08d/control-behavior=UNVERIFIED; ui-09b540e6b78df08d/control-failure=UNVERIFIED |
+| ui-0b10e417bbea8507 | client/src/components/layout/Breadcrumb.tsx:149 | {"labels":{"data-testid":null,"href":null},"tag":"Link"} | [] | UNVERIFIED | ui-0b10e417bbea8507/control-behavior=UNVERIFIED; ui-0b10e417bbea8507/control-failure=UNVERIFIED |
+| ui-0f63676b1efba992 | client/src/components/layout/TopBar.tsx:71 | {"labels":{},"tag":"Button"} | [] | UNVERIFIED | ui-0f63676b1efba992/control-behavior=UNVERIFIED; ui-0f63676b1efba992/control-failure=UNVERIFIED |
+| ui-104e034ee72f22eb | client/src/components/notifications/NotificationCenter.tsx:329 | {"labels":{},"tag":"Popover"} | [{"event":"onOpenChange","expressionKind":"Identifier","handler":"setIsOpen"}] | UNVERIFIED | ui-104e034ee72f22eb/control-behavior=UNVERIFIED; ui-104e034ee72f22eb/control-failure=UNVERIFIED |
+| ui-10a17ec9718ae282 | client/src/components/LanguageSwitcher.tsx:32 | {"labels":{},"tag":"Select"} | [{"event":"onValueChange","expressionKind":"Identifier","handler":"handleLanguageChange"}] | UNVERIFIED | ui-10a17ec9718ae282/control-behavior=UNVERIFIED; ui-10a17ec9718ae282/control-failure=UNVERIFIED |
+| ui-147a7510c4c070cd | client/src/components/ui/theme-toggle.tsx:67 | {"labels":{},"tag":"DropdownMenuItem"} | [{"event":"onClick","expressionKind":"ArrowFunction","handler":null}] | UNVERIFIED | ui-147a7510c4c070cd/control-behavior=UNVERIFIED; ui-147a7510c4c070cd/control-failure=UNVERIFIED |
+| ui-19f7a4f5fd8b93b5 | client/src/components/offline/PendingChangesIndicator.tsx:302 | {"labels":{},"tag":"Button"} | [{"event":"onClick","expressionKind":"Identifier","handler":"handleRetryFailed"}] | UNVERIFIED | ui-19f7a4f5fd8b93b5/control-behavior=UNVERIFIED; ui-19f7a4f5fd8b93b5/control-failure=UNVERIFIED |
+| ui-27a8441a308cf701 | client/src/components/layout/Sidebar.tsx:382 | {"labels":{},"tag":"Link"} | [] | UNVERIFIED | ui-27a8441a308cf701/control-behavior=UNVERIFIED; ui-27a8441a308cf701/control-failure=UNVERIFIED |
+| ui-2b75ce276d7518e4 | client/src/components/notifications/NotificationToast.tsx:84 | {"labels":{"data-testid":null,"role":"alert"},"tag":"div"} | [{"event":"onMouseEnter","expressionKind":"ArrowFunction","handler":null},{"event":"onMouseLeave","expressionKind":"ArrowFunction","handler":null}] | UNVERIFIED | ui-2b75ce276d7518e4/control-behavior=UNVERIFIED; ui-2b75ce276d7518e4/control-failure=UNVERIFIED |
+| ui-3828cf72f867bcb1 | client/src/components/layout/AppLayout.tsx:142 | {"labels":{},"tag":"MobileBottomNav"} | [{"event":"onMoreClick","expressionKind":"ArrowFunction","handler":null}] | UNVERIFIED | ui-3828cf72f867bcb1/control-behavior=UNVERIFIED; ui-3828cf72f867bcb1/control-failure=UNVERIFIED |
+| ui-5711186338219816 | client/src/components/notifications/NotificationCenter.tsx:522 | {"labels":{},"tag":"NotificationToastContainer"} | [{"event":"onDismiss","expressionKind":"Identifier","handler":"handleDismissToast"},{"event":"onMarkRead","expressionKind":"Identifier","handler":"handleToastRead"}] | UNVERIFIED | ui-5711186338219816/control-behavior=UNVERIFIED; ui-5711186338219816/control-failure=UNVERIFIED |
+| ui-5dc5f6dc725b0714 | client/src/components/notifications/NotificationItem.tsx:341 | {"labels":{"aria-label":"Mark as read","data-testid":null},"tag":"Button"} | [{"event":"onClick","expressionKind":"Identifier","handler":"handleMarkAsRead"}] | UNVERIFIED | ui-5dc5f6dc725b0714/control-behavior=UNVERIFIED; ui-5dc5f6dc725b0714/control-failure=UNVERIFIED |
+| ui-63e2d179d155f16b | client/src/components/ui/theme-toggle.tsx:53 | {"labels":{},"tag":"DropdownMenuItem"} | [{"event":"onClick","expressionKind":"ArrowFunction","handler":null}] | UNVERIFIED | ui-63e2d179d155f16b/control-behavior=UNVERIFIED; ui-63e2d179d155f16b/control-failure=UNVERIFIED |
+| ui-64dc2e94efa1aa73 | client/src/components/notifications/NotificationCenter.tsx:492 | {"labels":{},"tag":"Button"} | [{"event":"onClick","expressionKind":"ArrowFunction","handler":null}] | UNVERIFIED | ui-64dc2e94efa1aa73/control-behavior=UNVERIFIED; ui-64dc2e94efa1aa73/control-failure=UNVERIFIED |
+| ui-64ecc8d7be5363ce | client/src/components/notifications/NotificationCenter.tsx:371 | {"labels":{"data-testid":"mark-all-read-btn"},"tag":"Button"} | [{"event":"onClick","expressionKind":"ArrowFunction","handler":null}] | UNVERIFIED | ui-64ecc8d7be5363ce/control-behavior=UNVERIFIED; ui-64ecc8d7be5363ce/control-failure=UNVERIFIED |
+| ui-660d292c53a1a27b | client/src/components/layout/MobileBottomNav.tsx:31 | {"labels":{"href":null},"tag":"Link"} | [] | UNVERIFIED | ui-660d292c53a1a27b/control-behavior=UNVERIFIED; ui-660d292c53a1a27b/control-failure=UNVERIFIED |
+| ui-67c713adf99573ce | client/src/components/notifications/NotificationItem.tsx:352 | {"labels":{"aria-label":"Delete notification","data-testid":null},"tag":"Button"} | [{"event":"onClick","expressionKind":"Identifier","handler":"handleDelete"}] | UNVERIFIED | ui-67c713adf99573ce/control-behavior=UNVERIFIED; ui-67c713adf99573ce/control-failure=UNVERIFIED |
+| ui-6868a26f3f09e2a9 | client/src/components/layout/TopBar.tsx:82 | {"labels":{"aria-label":null,"data-testid":"sign-out-button"},"tag":"Button"} | [{"event":"onClick","expressionKind":"Identifier","handler":"handleSignOut"}] | UNVERIFIED | ui-6868a26f3f09e2a9/control-behavior=UNVERIFIED; ui-6868a26f3f09e2a9/control-failure=UNVERIFIED |
+| ui-6f05ab0e825accb5 | client/src/components/auth/AuthProvider.tsx:185 | {"labels":{"type":"button"},"tag":"button"} | [{"event":"onClick","expressionKind":"ArrowFunction","handler":null}] | UNVERIFIED | ui-6f05ab0e825accb5/control-behavior=UNVERIFIED; ui-6f05ab0e825accb5/control-failure=UNVERIFIED |
+| ui-84245433268496bc | client/src/components/layout/AppLayout.tsx:55 | {"labels":{"href":"/pricing"},"tag":"a"} | [] | UNVERIFIED | ui-84245433268496bc/control-behavior=UNVERIFIED; ui-84245433268496bc/control-failure=UNVERIFIED |
+| ui-84c75f90406ba54e | client/src/components/notifications/NotificationCenter.tsx:331 | {"labels":{"aria-label":null,"data-testid":"notification-center-trigger"},"tag":"Button"} | [] | UNVERIFIED | ui-84c75f90406ba54e/control-behavior=UNVERIFIED; ui-84c75f90406ba54e/control-failure=UNVERIFIED |
+| ui-87a4ca027697e750 | client/src/components/ui/theme-toggle.tsx:40 | {"labels":{"aria-label":null},"tag":"Button"} | [] | UNVERIFIED | ui-87a4ca027697e750/control-behavior=UNVERIFIED; ui-87a4ca027697e750/control-failure=UNVERIFIED |
+| ui-975edfade3e58d49 | client/src/components/layout/AppLayout.tsx:101 | {"labels":{},"tag":"Sidebar"} | [{"event":"onMobileClose","expressionKind":"Identifier","handler":"closeMobileMenu"}] | UNVERIFIED | ui-975edfade3e58d49/control-behavior=UNVERIFIED; ui-975edfade3e58d49/control-failure=UNVERIFIED |
+| ui-977af8b52f7977f2 | client/src/components/offline/PendingChangesIndicator.tsx:192 | {"labels":{},"tag":"DropdownMenu"} | [{"event":"onOpenChange","expressionKind":"Identifier","handler":"setIsOpen"}] | UNVERIFIED | ui-977af8b52f7977f2/control-behavior=UNVERIFIED; ui-977af8b52f7977f2/control-failure=UNVERIFIED |
+| ui-97f927a9cc40024e | client/src/components/layout/Breadcrumb.tsx:184 | {"labels":{"data-testid":null,"href":null},"tag":"Link"} | [] | UNVERIFIED | ui-97f927a9cc40024e/control-behavior=UNVERIFIED; ui-97f927a9cc40024e/control-failure=UNVERIFIED |
+| ui-9ba6573d8f3d79ac | client/src/components/ui/theme-toggle.tsx:60 | {"labels":{},"tag":"DropdownMenuItem"} | [{"event":"onClick","expressionKind":"ArrowFunction","handler":null}] | UNVERIFIED | ui-9ba6573d8f3d79ac/control-behavior=UNVERIFIED; ui-9ba6573d8f3d79ac/control-failure=UNVERIFIED |
+| ui-9ca2eb446c30ce51 | client/src/components/layout/TopBar.tsx:77 | {"labels":{"aria-label":"Settings","data-testid":"settings-button"},"tag":"Link"} | [] | UNVERIFIED | ui-9ca2eb446c30ce51/control-behavior=UNVERIFIED; ui-9ca2eb446c30ce51/control-failure=UNVERIFIED |
+| ui-a22f3b2c4f3f89d9 | client/src/components/offline/PendingChangesIndicator.tsx:313 | {"labels":{},"tag":"Button"} | [{"event":"onClick","expressionKind":"ArrowFunction","handler":null}] | UNVERIFIED | ui-a22f3b2c4f3f89d9/control-behavior=UNVERIFIED; ui-a22f3b2c4f3f89d9/control-failure=UNVERIFIED |
+| ui-aa788eb9d2142629 | client/src/components/notifications/NotificationToast.tsx:147 | {"labels":{"data-testid":"toast-action"},"tag":"Button"} | [{"event":"onClick","expressionKind":"Identifier","handler":"handleAction"}] | UNVERIFIED | ui-aa788eb9d2142629/control-behavior=UNVERIFIED; ui-aa788eb9d2142629/control-failure=UNVERIFIED |
+| ui-af1cc60f7134da7f | client/src/components/notifications/NotificationCenter.tsx:475 | {"labels":{},"tag":"NotificationItem"} | [{"event":"onMarkAsRead","expressionKind":"ArrowFunction","handler":null},{"event":"onDelete","expressionKind":"ArrowFunction","handler":null},{"event":"onNavigate","expressionKind":"Identifier","handler":"handleNavigate"}] | UNVERIFIED | ui-af1cc60f7134da7f/control-behavior=UNVERIFIED; ui-af1cc60f7134da7f/control-failure=UNVERIFIED |
+| ui-b067e9a48325de98 | client/src/components/layout/MobileBottomNav.tsx:47 | {"labels":{},"tag":"button"} | [{"event":"onClick","expressionKind":"Identifier","handler":"onMoreClick"}] | UNVERIFIED | ui-b067e9a48325de98/control-behavior=UNVERIFIED; ui-b067e9a48325de98/control-failure=UNVERIFIED |
+| ui-b371ddfc98bfbb10 | client/src/components/layout/Sidebar.tsx:250 | {"labels":{"aria-label":"Close sidebar","data-testid":"sidebar-overlay","role":"button"},"tag":"div"} | [{"event":"onClick","expressionKind":"Identifier","handler":"onMobileClose"},{"event":"onKeyDown","expressionKind":"ArrowFunction","handler":null},{"event":"onTouchEnd","expressionKind":"ArrowFunction","handler":null}] | UNVERIFIED | ui-b371ddfc98bfbb10/control-behavior=UNVERIFIED; ui-b371ddfc98bfbb10/control-failure=UNVERIFIED |
+| ui-b43cc7e819219b5c | client/src/components/notifications/NotificationItem.tsx:323 | {"labels":{},"tag":"Button"} | [{"event":"onClick","expressionKind":"ArrowFunction","handler":null}] | UNVERIFIED | ui-b43cc7e819219b5c/control-behavior=UNVERIFIED; ui-b43cc7e819219b5c/control-failure=UNVERIFIED |
+| ui-b72cc52a3e04a587 | client/src/components/layout/Sidebar.tsx:300 | {"labels":{"aria-label":"Close navigation menu","data-testid":"sidebar-close"},"tag":"Button"} | [{"event":"onClick","expressionKind":"Identifier","handler":"onMobileClose"}] | UNVERIFIED | ui-b72cc52a3e04a587/control-behavior=UNVERIFIED; ui-b72cc52a3e04a587/control-failure=UNVERIFIED |
+| ui-ba9ed361875ff544 | client/src/components/offline/PendingChangesIndicator.tsx:288 | {"labels":{},"tag":"Button"} | [{"event":"onClick","expressionKind":"Identifier","handler":"handleSync"}] | UNVERIFIED | ui-ba9ed361875ff544/control-behavior=UNVERIFIED; ui-ba9ed361875ff544/control-failure=UNVERIFIED |
+| ui-c1fbc1cb5e4bde02 | client/src/components/notifications/NotificationCenter.tsx:404 | {"labels":{},"tag":"Tabs"} | [{"event":"onValueChange","expressionKind":"ArrowFunction","handler":null}] | UNVERIFIED | ui-c1fbc1cb5e4bde02/control-behavior=UNVERIFIED; ui-c1fbc1cb5e4bde02/control-failure=UNVERIFIED |
+| ui-c650988c8661dc69 | client/src/components/notifications/NotificationItem.tsx:260 | {"labels":{"data-testid":null,"role":"button"},"tag":"div"} | [{"event":"onClick","expressionKind":"Identifier","handler":"handleClick"},{"event":"onKeyDown","expressionKind":"ArrowFunction","handler":null}] | UNVERIFIED | ui-c650988c8661dc69/control-behavior=UNVERIFIED; ui-c650988c8661dc69/control-failure=UNVERIFIED |
+| ui-cba895665a9c6e60 | client/src/components/LanguageSwitcher.tsx:42 | {"labels":{},"tag":"SelectItem"} | [] | UNVERIFIED | ui-cba895665a9c6e60/control-behavior=UNVERIFIED; ui-cba895665a9c6e60/control-failure=UNVERIFIED |
+| ui-d0d9ca11329dc60e | client/src/components/layout/AppLayout.tsx:108 | {"labels":{},"tag":"TopBar"} | [{"event":"onMenuClick","expressionKind":"ArrowFunction","handler":null}] | UNVERIFIED | ui-d0d9ca11329dc60e/control-behavior=UNVERIFIED; ui-d0d9ca11329dc60e/control-failure=UNVERIFIED |
+| ui-d4716548e545323f | client/src/components/offline/PendingChangesIndicator.tsx:265 | {"labels":{},"tag":"DropdownMenuItem"} | [] | UNVERIFIED | ui-d4716548e545323f/control-behavior=UNVERIFIED; ui-d4716548e545323f/control-failure=UNVERIFIED |
+| ui-db9b55c49d655545 | client/src/components/notifications/NotificationCenter.tsx:500 | {"labels":{"data-testid":"clear-all-btn"},"tag":"Button"} | [{"event":"onClick","expressionKind":"ArrowFunction","handler":null}] | UNVERIFIED | ui-db9b55c49d655545/control-behavior=UNVERIFIED; ui-db9b55c49d655545/control-failure=UNVERIFIED |
+| ui-e149798fdf5cac49 | client/src/components/layout/Breadcrumb.tsx:217 | {"labels":{"data-testid":null,"href":null},"tag":"Link"} | [] | UNVERIFIED | ui-e149798fdf5cac49/control-behavior=UNVERIFIED; ui-e149798fdf5cac49/control-failure=UNVERIFIED |
+| ui-f16d0602d8ae12c6 | client/src/components/offline/PendingChangesIndicator.tsx:194 | {"labels":{},"tag":"Button"} | [] | UNVERIFIED | ui-f16d0602d8ae12c6/control-behavior=UNVERIFIED; ui-f16d0602d8ae12c6/control-failure=UNVERIFIED |
+| ui-f202dbb108e7e48f | client/src/components/notifications/NotificationToast.tsx:212 | {"labels":{},"tag":"NotificationToast"} | [{"event":"onDismiss","expressionKind":"Identifier","handler":"onDismiss"},{"event":"onMarkRead","expressionKind":"Identifier","handler":"onMarkRead"}] | UNVERIFIED | ui-f202dbb108e7e48f/control-behavior=UNVERIFIED; ui-f202dbb108e7e48f/control-failure=UNVERIFIED |
+| ui-f5a9e17174a248c2 | client/src/pages/analytics/AIDashboard.tsx:100 | {"labels":{},"tag":"Button"} | [{"event":"onClick","expressionKind":"ArrowFunction","handler":null}] | UNVERIFIED | ui-f5a9e17174a248c2/control-behavior=UNVERIFIED; ui-f5a9e17174a248c2/control-failure=UNVERIFIED |
+| ui-fd0e52cf6f968013 | client/src/components/notifications/NotificationCenter.tsx:388 | {"labels":{"data-testid":"notification-settings-btn"},"tag":"Button"} | [{"event":"onClick","expressionKind":"ArrowFunction","handler":null}] | UNVERIFIED | ui-fd0e52cf6f968013/control-behavior=UNVERIFIED; ui-fd0e52cf6f968013/control-failure=UNVERIFIED |
+| ui-fd41b29f3d2b1fab | client/src/components/notifications/NotificationToast.tsx:128 | {"labels":{"aria-label":"Dismiss notification","data-testid":"dismiss-toast"},"tag":"Button"} | [{"event":"onClick","expressionKind":"Identifier","handler":"handleDismiss"}] | UNVERIFIED | ui-fd41b29f3d2b1fab/control-behavior=UNVERIFIED; ui-fd41b29f3d2b1fab/control-failure=UNVERIFIED |
+
+For every control execute its control-behavior and control-failure acceptance from the global required-check ledger; cover keyboard/mobile, input validation, loading/error/retry, authorization and the real side effect.
+
+## Every frontend API contract
+
+| ID | Method/path | Source | Topology | Backend IDs | Behavior acceptance |
+| --- | --- | --- | --- | --- | --- |
+| call-06b1731bc40f73ad | GET /api/notifications/preferences | client/src/components/notifications/NotificationCenter.tsx:158 | matched | ["api-a98bdf4156c16cc6"] | UNVERIFIED |
+| call-0f045f80943d4c48 | POST /api/auth/register | client/src/components/auth/AuthProvider.tsx:148 | matched | ["api-1a2231268bd1fc57"] | UNVERIFIED |
+| call-14e7a921cb488164 | PUT /api/auth/preferences | client/src/lib/preferenceWrites.ts:14 | matched | ["api-86e7b60426904482"] | UNVERIFIED |
+| call-1a25405e3a71d413 | POST /api/auth/login | client/src/components/auth/AuthProvider.tsx:132 | matched | ["api-9901ca9416b5f43b"] | UNVERIFIED |
+| call-29aea1f08af7e088 | GET /api/auth/preferences | client/src/components/auth/AuthProvider.tsx:68 | matched | ["api-d29e42a77351fe87"] | UNVERIFIED |
+| call-384512a38c12b595 | GET /api/notifications | client/src/components/notifications/NotificationCenter.tsx:151 | matched | ["api-1c1e6f62b55d1d41"] | UNVERIFIED |
+| call-49affbf6894e346a | POST /api/ai/analytics/insights | client/src/pages/analytics/AIDashboard.tsx:38 | matched | ["api-c78a8e66ec4e4573"] | UNVERIFIED |
+| call-6373da7c378c184d | DELETE /api/notifications/:param | client/src/components/notifications/NotificationCenter.tsx:267 | matched | ["api-2fcdf83c64884073","api-79806241e7837847","api-7f36d87c329f443f","api-b5765bd71835678e"] | UNVERIFIED |
+| call-66469ffc0f0d7d7e | PUT /api/notifications/:param/read | client/src/components/notifications/NotificationCenter.tsx:225 | matched | ["api-748719b2ffc698f2"] | UNVERIFIED |
+| call-7a17964e3d61e1fd | DELETE /api/notifications/clear-all | client/src/components/notifications/NotificationCenter.tsx:294 | matched | ["api-79806241e7837847","api-b5765bd71835678e"] | UNVERIFIED |
+| call-880565d1bbba3a1f | PUT /api/notifications/mark-all-read | client/src/components/notifications/NotificationCenter.tsx:252 | matched | ["api-90e8fe0c684b7fc3"] | UNVERIFIED |
+| call-cb860b04fe41fe4d | POST /api/auth/logout | client/src/components/auth/AuthProvider.tsx:159 | matched | ["api-ada499737fe455a9"] | UNVERIFIED |
+| call-e8522d80c7b64747 | POST /api/sync/batch | client/src/lib/offline/SyncManager.ts:298 | matched | ["api-2bc47d91358c2c72"] | UNVERIFIED |
+| call-f4d5de16a940565d | POST /api/sync/receipts | client/src/lib/offline/SyncManager.ts:386 | matched | ["api-7c8878c0bdcf5f2f"] | UNVERIFIED |
+
+Trace each request to its actual process/mount, assert exact response/error/permission behavior and prove persistence after reload or another worker.
+
+## Every mapped backend registration
+
+| ID | Method/path | Source | Process/mount | Status | Required checks |
+| --- | --- | --- | --- | --- | --- |
+| api-1a2231268bd1fc57 | POST /api/auth/register | server/routes.ts:318 | {"resolved":true,"scope":"main-app"} | UNVERIFIED | api-1a2231268bd1fc57/response-contract=UNVERIFIED; api-1a2231268bd1fc57/access-policy=UNVERIFIED; api-1a2231268bd1fc57/input-boundaries=UNVERIFIED; api-1a2231268bd1fc57/tenant-boundary=UNVERIFIED; api-1a2231268bd1fc57/dependency-failure=UNVERIFIED; api-1a2231268bd1fc57/mutation-durability=UNVERIFIED |
+| api-1c1e6f62b55d1d41 | GET /api/notifications | server/routes.ts:3099 | {"resolved":true,"scope":"main-app"} | UNVERIFIED | api-1c1e6f62b55d1d41/response-contract=UNVERIFIED; api-1c1e6f62b55d1d41/access-policy=UNVERIFIED; api-1c1e6f62b55d1d41/input-boundaries=UNVERIFIED; api-1c1e6f62b55d1d41/tenant-boundary=UNVERIFIED; api-1c1e6f62b55d1d41/dependency-failure=UNVERIFIED |
+| api-2bc47d91358c2c72 | POST /api/sync/batch | server/routes/sync.ts:357 | {"resolved":true,"scope":"main-app"} | UNVERIFIED | api-2bc47d91358c2c72/response-contract=UNVERIFIED; api-2bc47d91358c2c72/access-policy=UNVERIFIED; api-2bc47d91358c2c72/input-boundaries=UNVERIFIED; api-2bc47d91358c2c72/tenant-boundary=UNVERIFIED; api-2bc47d91358c2c72/dependency-failure=UNVERIFIED; api-2bc47d91358c2c72/mutation-durability=UNVERIFIED |
+| api-2fcdf83c64884073 | DELETE /api/notifications/push-subscriptions | server/routes.ts:3651 | {"resolved":true,"scope":"main-app"} | UNVERIFIED | api-2fcdf83c64884073/response-contract=UNVERIFIED; api-2fcdf83c64884073/access-policy=UNVERIFIED; api-2fcdf83c64884073/input-boundaries=UNVERIFIED; api-2fcdf83c64884073/tenant-boundary=UNVERIFIED; api-2fcdf83c64884073/dependency-failure=UNVERIFIED; api-2fcdf83c64884073/mutation-durability=UNVERIFIED; api-2fcdf83c64884073/deletion-durability=UNVERIFIED |
+| api-748719b2ffc698f2 | PUT /api/notifications/:id/read | server/routes.ts:3119 | {"resolved":true,"scope":"main-app"} | UNVERIFIED | api-748719b2ffc698f2/response-contract=UNVERIFIED; api-748719b2ffc698f2/access-policy=UNVERIFIED; api-748719b2ffc698f2/input-boundaries=UNVERIFIED; api-748719b2ffc698f2/tenant-boundary=UNVERIFIED; api-748719b2ffc698f2/dependency-failure=UNVERIFIED; api-748719b2ffc698f2/mutation-durability=UNVERIFIED |
+| api-79806241e7837847 | DELETE /api/notifications/clear-all | server/routes.ts:3163 | {"resolved":true,"scope":"main-app"} | UNVERIFIED | api-79806241e7837847/response-contract=UNVERIFIED; api-79806241e7837847/access-policy=UNVERIFIED; api-79806241e7837847/input-boundaries=UNVERIFIED; api-79806241e7837847/tenant-boundary=UNVERIFIED; api-79806241e7837847/dependency-failure=UNVERIFIED; api-79806241e7837847/mutation-durability=UNVERIFIED; api-79806241e7837847/deletion-durability=UNVERIFIED |
+| api-7c8878c0bdcf5f2f | POST /api/sync/receipts | server/routes/sync.ts:446 | {"resolved":true,"scope":"main-app"} | UNVERIFIED | api-7c8878c0bdcf5f2f/response-contract=UNVERIFIED; api-7c8878c0bdcf5f2f/access-policy=UNVERIFIED; api-7c8878c0bdcf5f2f/input-boundaries=UNVERIFIED; api-7c8878c0bdcf5f2f/tenant-boundary=UNVERIFIED; api-7c8878c0bdcf5f2f/dependency-failure=UNVERIFIED; api-7c8878c0bdcf5f2f/mutation-durability=UNVERIFIED |
+| api-7f36d87c329f443f | DELETE /api/notifications/mobile-tokens | server/routes.ts:3182 | {"resolved":true,"scope":"main-app"} | UNVERIFIED | api-7f36d87c329f443f/response-contract=UNVERIFIED; api-7f36d87c329f443f/access-policy=UNVERIFIED; api-7f36d87c329f443f/input-boundaries=UNVERIFIED; api-7f36d87c329f443f/tenant-boundary=UNVERIFIED; api-7f36d87c329f443f/dependency-failure=UNVERIFIED; api-7f36d87c329f443f/mutation-durability=UNVERIFIED; api-7f36d87c329f443f/deletion-durability=UNVERIFIED |
+| api-86e7b60426904482 | PUT /api/auth/preferences | server/routes.ts:909 | {"resolved":true,"scope":"main-app"} | UNVERIFIED | api-86e7b60426904482/response-contract=UNVERIFIED; api-86e7b60426904482/access-policy=UNVERIFIED; api-86e7b60426904482/input-boundaries=UNVERIFIED; api-86e7b60426904482/tenant-boundary=UNVERIFIED; api-86e7b60426904482/dependency-failure=UNVERIFIED; api-86e7b60426904482/mutation-durability=UNVERIFIED |
+| api-90e8fe0c684b7fc3 | PUT /api/notifications/mark-all-read | server/routes.ts:3146 | {"resolved":true,"scope":"main-app"} | UNVERIFIED | api-90e8fe0c684b7fc3/response-contract=UNVERIFIED; api-90e8fe0c684b7fc3/access-policy=UNVERIFIED; api-90e8fe0c684b7fc3/input-boundaries=UNVERIFIED; api-90e8fe0c684b7fc3/tenant-boundary=UNVERIFIED; api-90e8fe0c684b7fc3/dependency-failure=UNVERIFIED; api-90e8fe0c684b7fc3/mutation-durability=UNVERIFIED |
+| api-9901ca9416b5f43b | POST /api/auth/login | server/routes.ts:485 | {"resolved":true,"scope":"main-app"} | UNVERIFIED | api-9901ca9416b5f43b/response-contract=UNVERIFIED; api-9901ca9416b5f43b/access-policy=UNVERIFIED; api-9901ca9416b5f43b/input-boundaries=UNVERIFIED; api-9901ca9416b5f43b/tenant-boundary=UNVERIFIED; api-9901ca9416b5f43b/dependency-failure=UNVERIFIED; api-9901ca9416b5f43b/mutation-durability=UNVERIFIED |
+| api-a98bdf4156c16cc6 | GET /api/notifications/preferences | server/routes.ts:3374 | {"resolved":true,"scope":"main-app"} | UNVERIFIED | api-a98bdf4156c16cc6/response-contract=UNVERIFIED; api-a98bdf4156c16cc6/access-policy=UNVERIFIED; api-a98bdf4156c16cc6/input-boundaries=UNVERIFIED; api-a98bdf4156c16cc6/tenant-boundary=UNVERIFIED; api-a98bdf4156c16cc6/dependency-failure=UNVERIFIED |
+| api-ada499737fe455a9 | POST /api/auth/logout | server/routes.ts:633 | {"resolved":true,"scope":"main-app"} | UNVERIFIED | api-ada499737fe455a9/response-contract=UNVERIFIED; api-ada499737fe455a9/access-policy=UNVERIFIED; api-ada499737fe455a9/input-boundaries=UNVERIFIED; api-ada499737fe455a9/tenant-boundary=UNVERIFIED; api-ada499737fe455a9/dependency-failure=UNVERIFIED; api-ada499737fe455a9/mutation-durability=UNVERIFIED |
+| api-b5765bd71835678e | DELETE /api/notifications/:id | server/routes.ts:3217 | {"resolved":true,"scope":"main-app"} | UNVERIFIED | api-b5765bd71835678e/response-contract=UNVERIFIED; api-b5765bd71835678e/access-policy=UNVERIFIED; api-b5765bd71835678e/input-boundaries=UNVERIFIED; api-b5765bd71835678e/tenant-boundary=UNVERIFIED; api-b5765bd71835678e/dependency-failure=UNVERIFIED; api-b5765bd71835678e/mutation-durability=UNVERIFIED; api-b5765bd71835678e/deletion-durability=UNVERIFIED |
+| api-c78a8e66ec4e4573 | POST /api/ai/analytics/insights | server/routes/ai.ts:821 | {"resolved":true,"scope":"main-app"} | UNVERIFIED | api-c78a8e66ec4e4573/response-contract=UNVERIFIED; api-c78a8e66ec4e4573/access-policy=UNVERIFIED; api-c78a8e66ec4e4573/input-boundaries=UNVERIFIED; api-c78a8e66ec4e4573/tenant-boundary=UNVERIFIED; api-c78a8e66ec4e4573/dependency-failure=UNVERIFIED; api-c78a8e66ec4e4573/mutation-durability=UNVERIFIED |
+| api-d29e42a77351fe87 | GET /api/auth/preferences | server/routes.ts:889 | {"resolved":true,"scope":"main-app"} | UNVERIFIED | api-d29e42a77351fe87/response-contract=UNVERIFIED; api-d29e42a77351fe87/access-policy=UNVERIFIED; api-d29e42a77351fe87/input-boundaries=UNVERIFIED; api-d29e42a77351fe87/tenant-boundary=UNVERIFIED; api-d29e42a77351fe87/dependency-failure=UNVERIFIED |
+
+Exercise successful/adverse HTTP contracts, cross-owner denial, input boundaries, dependency failure, durable mutation/deletion and callback/artifact/readiness checks exactly as assigned. Standalone or unresolved processes need their own harness.
+
+## Exact source reachability and test instructions
+
+```json
+{
+  "reachableSourceFiles": [
+    "built-in plugins dsp/BasePlugin.ts",
+    "built-in plugins dsp/EQPlugin.ts",
+    "client/src/components/LanguageSwitcher.tsx",
+    "client/src/components/auth/AuthProvider.tsx",
+    "client/src/components/layout/AppLayout.tsx",
+    "client/src/components/layout/Breadcrumb.tsx",
+    "client/src/components/layout/MobileBottomNav.tsx",
+    "client/src/components/layout/Sidebar.tsx",
+    "client/src/components/layout/TopBar.tsx",
+    "client/src/components/notifications/NotificationBadge.tsx",
+    "client/src/components/notifications/NotificationCenter.tsx",
+    "client/src/components/notifications/NotificationItem.tsx",
+    "client/src/components/notifications/NotificationToast.tsx",
+    "client/src/components/notifications/types.ts",
+    "client/src/components/offline/PendingChangesIndicator.tsx",
+    "client/src/components/ui/alert.tsx",
+    "client/src/components/ui/badge.tsx",
+    "client/src/components/ui/breadcrumb.tsx",
+    "client/src/components/ui/button.tsx",
+    "client/src/components/ui/card.tsx",
+    "client/src/components/ui/dropdown-menu.tsx",
+    "client/src/components/ui/popover.tsx",
+    "client/src/components/ui/scroll-area.tsx",
+    "client/src/components/ui/select.tsx",
+    "client/src/components/ui/separator.tsx",
+    "client/src/components/ui/tabs.tsx",
+    "client/src/components/ui/theme-toggle.tsx",
+    "client/src/components/ui/toast.tsx",
+    "client/src/components/ui/tooltip.tsx",
+    "client/src/contexts/ThemeContext.tsx",
+    "client/src/hooks/use-toast.ts",
+    "client/src/hooks/useAuth.ts",
+    "client/src/hooks/useFluidLayout.ts",
+    "client/src/hooks/useOfflineStatus.ts",
+    "client/src/hooks/useRequireAuth.ts",
+    "client/src/hooks/useWebSocket.ts",
+    "client/src/lib/audio/PluginHost.ts",
+    "client/src/lib/authenticationBoundary.ts",
+    "client/src/lib/daw/AudioWorkletEngine.ts",
+    "client/src/lib/daw/TrackPluginChain.ts",
+    "client/src/lib/errorService.ts",
+    "client/src/lib/idbPersister.ts",
+    "client/src/lib/logger.ts",
+    "client/src/lib/notificationAction.ts",
+    "client/src/lib/offline/DraftStorage.ts",
+    "client/src/lib/offline/OfflineCache.ts",
+    "client/src/lib/offline/OfflineQueue.ts",
+    "client/src/lib/offline/SyncManager.ts",
+    "client/src/lib/offline/accountCoordinator.ts",
+    "client/src/lib/offline/accountLocalStorage.ts",
+    "client/src/lib/offline/identity.ts",
+    "client/src/lib/offline/index.ts",
+    "client/src/lib/offline/operationFingerprint.ts",
+    "client/src/lib/offline/studioOfflineLifecycle.ts",
+    "client/src/lib/preferenceWrites.ts",
+    "client/src/lib/queryClient.ts",
+    "client/src/lib/sessionProbe.ts",
+    "client/src/lib/studioLayoutStore.ts",
+    "client/src/lib/utils.ts",
+    "client/src/pages/analytics/AIDashboard.tsx",
+    "client/src/stores/studioStore.ts",
+    "shared/schema.ts"
+  ],
+  "addTest": {
+    "suggestedPath": "tests/browser/analytics-ai-acceptance.test.mjs",
+    "command": "node --import tsx --test tests/browser/analytics-ai-acceptance.test.mjs",
+    "cwd": ".",
+    "instructions": "Implement the named behavioral assertions using disposable fixtures, then map exact passing case identities in the acceptance map; source associations alone never close a check.",
+    "fixtureTemplate": "browser-page"
+  },
+  "testCandidates": []
+}
+```
+
+The complete machine ledger retains original evidence/details and global controls, unmapped routes, source coverage and non-JS/desktop/native lanes. See [platform index](../platform-completion-plan.md).

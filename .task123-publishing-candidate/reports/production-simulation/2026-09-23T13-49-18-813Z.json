@@ -1,0 +1,135 @@
+{
+  "runId": "2026-09-23T13-49-18-813Z",
+  "workspace": "/home/runner/workspace/.local/production-simulation/runs/2026-09-23T13-49-18-813Z (disposable isolated copy; remove with --cleanup)",
+  "commands": {
+    "build": "DEPLOY_PACK=1 npm run build",
+    "start": "bash start.sh"
+  },
+  "safety": {
+    "sourceRoot": "/home/runner/workspace",
+    "sourceRootUsedAsBuildCwd": false,
+    "sourceFilesMutated": false,
+    "excluded": [
+      ".replit",
+      ".git",
+      "data",
+      "logs",
+      "attached_assets",
+      "*.env secrets",
+      "dns-node/keys"
+    ],
+    "networkCredentialsProvided": false,
+    "thirdPartyOrLiveDatabaseTargeted": false,
+    "runtimeIsolationPolicy": {
+      "required": true,
+      "transport": "Linux user+network namespace; only namespace-local loopback is reachable by the app and every native/Python descendant",
+      "filesystem": "all build and runtime writes are rooted in the disposable copy; source credentials, data, logs, media, and VCS metadata are excluded",
+      "credentials": "env-i style allowlist; generated simulation-only secrets; ephemeral local PostgreSQL only"
+    },
+    "hostNetworkNamespace": "net:[4026532714]",
+    "runtimeNetworkNamespace": null,
+    "runtimeIsolationEnforced": false,
+    "deployPackOnSourceWorkspace": false,
+    "networkNamespacePreflight": {
+      "available": false,
+      "exitCode": 1,
+      "signal": null,
+      "error": "unshare: unshare failed: Operation not permitted\n",
+      "classification": "test-environment blocker; not an application defect"
+    }
+  },
+  "resourceProfile": {
+    "configured": {
+      "cpu": 4,
+      "memoryBytes": 8589934592,
+      "imageHardLimitBytes": 8589934592
+    },
+    "observed": {
+      "cpuQuota": 4,
+      "logicalCpuCount": 4,
+      "memoryLimitBytes": 8589934592,
+      "memoryCurrentBytes": 5736525824,
+      "memoryHeadroomBytes": 2853408768,
+      "diskAvailableBytes": 241932554240
+    },
+    "admission": {
+      "safe": false,
+      "reasons": [
+        "less than 4 GiB memory headroom (2853408768 bytes observed)",
+        "required host-level Linux network namespace creation is unavailable in this test environment"
+      ],
+      "estimatedScratchBytes": 0
+    }
+  },
+  "sourceSnapshot": {
+    "capturedAt": null,
+    "note": "All build/start stages use the immutable disposable copy captured at copy stage; source edits after that point are intentionally excluded."
+  },
+  "nodeResolution": {
+    "bundledNodePresentInCopy": false,
+    "pathNodeProbe": null,
+    "startScriptEvidence": null
+  },
+  "copyIntegrity": {
+    "checked": [],
+    "passed": false
+  },
+  "configValidation": {
+    "checked": [],
+    "passed": false
+  },
+  "build": {
+    "exitCode": null,
+    "signal": null,
+    "durationMs": null,
+    "artifacts": {},
+    "outputTail": [],
+    "nixPreflight": null
+  },
+  "pythonCapability": {
+    "status": "not_evaluated",
+    "note": "The production build recreates the pinned portable Python runtime; this has not run yet."
+  },
+  "capsuleRestore": {
+    "buildCapsules": {},
+    "manifestValidation": [],
+    "historicalCompatibility": [],
+    "coldCriticalRestore": null,
+    "coldBackgroundRestore": null,
+    "warmIdempotentRestore": null
+  },
+  "imageSize": null,
+  "productionReadiness": {
+    "publishReady": false,
+    "reason": "Not evaluated yet; a passing run requires current-source MaxCore/PDIM capsules and namespace-isolated runtime evidence."
+  },
+  "startup": {
+    "exitCode": null,
+    "signal": null,
+    "liveness": {
+      "observed": false,
+      "transportOnly": false,
+      "realServer": false,
+      "jsonObserved": false,
+      "earlyAppResponse": false,
+      "startupResponseObserved": false,
+      "samples": []
+    },
+    "readiness": {
+      "observed": false,
+      "fullReady": false,
+      "statusCodes": [],
+      "lastBody": null,
+      "note": null
+    },
+    "attempts": []
+  },
+  "failures": [
+    {
+      "stage": "resource-admission",
+      "message": "less than 4 GiB memory headroom (2853408768 bytes observed); required host-level Linux network namespace creation is unavailable in this test environment"
+    }
+  ],
+  "result": "RESOURCE_ADMISSION_BLOCKED",
+  "completedStages": []
+}

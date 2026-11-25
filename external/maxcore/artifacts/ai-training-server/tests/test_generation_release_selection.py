@@ -40,6 +40,7 @@ class ReleaseSelectionTests(unittest.TestCase):
                 load_selected_release("live-awareness", registry=directory, factory=factory)
             factory.assert_not_called()
             pointer.write_text(json.dumps({"schema": 1, "scope": "candidate-only-not-production",
+                "eligibility_policy": "certified-public-live-v1",
                 "fingerprints": {"run": "/runs/live-123", "checkpoint_sha256": "abc"}}))
             factory.side_effect = ValueError("Independent review signature invalid")
             with self.assertRaisesRegex(ValueError, "signature"):
@@ -50,7 +51,9 @@ class ReleaseSelectionTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as directory:
             pointer = Path(directory) / "selected.json"
             pointer.write_text(json.dumps({"schema": 1, "scope": "candidate-only-not-production",
-                                           "fingerprints": {"checkpoint_sha256": "abc"}}))
+                                           "eligibility_policy": "signed-review-v1",
+                                           "fingerprints": {"run": "/runs/internal-abc",
+                                                            "checkpoint_sha256": "abc"}}))
             factory = Mock(side_effect=ValueError("Exclusive backend unavailable"))
             with self.assertRaisesRegex(ValueError, "Exclusive backend"):
                 load_selected_release("reviewed-candidate", registry=directory, factory=factory)
@@ -82,15 +85,50 @@ class ReleaseSelectionTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as directory:
             (Path(directory) / "selected.json").write_text(json.dumps({
                 "schema": 1, "scope": "candidate-only-not-production",
-                "fingerprints": {"checkpoint_sha256": "reviewed-test-identity"}}))
-            serving, status = load_selected_release(
-                "reviewed-candidate", registry=directory, factory=lambda **kwargs: adapter)
+                "eligibility_policy": "signed-review-v1",
+                "fingerprints": {"run": "/runs/internal-reviewed",
+                                 "checkpoint_sha256": "reviewed-test-identity"}}))
+            with patch(
+                "ai_model.generation.capability.verify_text_capability",
+                return_value={"passed": True},
+            ) as verify:
+                serving, status = load_selected_release(
+                    "reviewed-candidate", registry=directory, factory=lambda **kwargs: adapter)
+            verify.assert_called_once_with(adapter)
         self.assertEqual(status["sampling_defaults"]["top_p"], .92)
         self.assertIn("seed", status["supported_sampling"])
         self.assertEqual(status["context_tokens"], 128)
         self.assertTrue(status["inference_backend_exclusive"])
         self.assertTrue(status["training_backend_exclusive"])
         self.assertEqual(status["agent_pipeline"], "adapter_validated_no_fallback")
+        self.assertEqual(status["operational_text_capability"], {"passed": True})
+
+    def test_live_runtime_accepts_only_signed_internal_training_as_trained(self):
+        model = SimpleNamespace(architecture="byte-causal-transformer-v1",
+                                tokenizer=None, context=128)
+        adapter = CandidateServingAdapter(model, runtime_only=False, training_exclusive=True)
+        with tempfile.TemporaryDirectory() as directory:
+            pointer = Path(directory) / "selected.json"
+            pointer.write_text(json.dumps({
+                "schema": 1, "scope": "candidate-only-not-production",
+                "eligibility_policy": "signed-review-v1",
+                "fingerprints": {
+                    "run": "/runs/internal-0123456789abcdef",
+                    "checkpoint_sha256": "reviewed-internal-identity",
+                },
+            }))
+            with patch(
+                "ai_model.generation.capability.verify_text_capability",
+                return_value={"passed": True},
+            ) as verify:
+                serving, status = load_selected_release(
+                    "live-or-trained", registry=directory, factory=lambda **kwargs: adapter,
+                )
+            verify.assert_called_once_with(adapter)
+        self.assertIsNotNone(serving)
+        self.assertTrue(status["trained_checkpoint_loaded"])
+        self.assertEqual(status["release_source"], "owner_and_simulation")
+        self.assertEqual(status["active"], "reviewed-owner-simulation-training")
 
     def test_adapter_preserves_current_stochastic_sampling_parameters(self):
         model = Mock()
@@ -120,12 +158,24 @@ class ReleaseSelectionTests(unittest.TestCase):
     def test_blocked_selected_release_health_remains_liveness(self):
         import time
         tree = ast.parse((ROOT / "server.py").read_text())
+        capability_node = next(
+            n for n in tree.body
+            if isinstance(n, ast.FunctionDef) and n.name == "_live_awareness_capability"
+        )
+        readiness_node = next(
+            n for n in tree.body
+            if isinstance(n, ast.FunctionDef) and n.name == "_generation_readiness"
+        )
         node = next(n for n in tree.body if isinstance(n, ast.AsyncFunctionDef) and n.name == "health")
         node.decorator_list = []
-        scope = {"time": time, "_serving_release_status": {"candidate_quality": "blocked"},
-                 "_model_ready": False, "_start_time": time.time(), "_warm_status": {},
+        scope = {"time": time, "os": os, "_script_agent": None,
+                 "_live_learning_loop": None, "_live_serving_model": None,
+                 "_serving_release_status": {"candidate_quality": "blocked"},
+                 "_model_ready": False, "_trained_checkpoint_loaded": False,
+                 "_start_time": time.time(), "_warm_status": {},
                  "_get_storage_mode": lambda: "offline"}
-        exec(compile(ast.Module(body=[node], type_ignores=[]), "server.py", "exec"), scope)
+        exec(compile(ast.Module(body=[capability_node, readiness_node, node], type_ignores=[]),
+                     "server.py", "exec"), scope)
         response = asyncio.run(scope["health"]())
         self.assertEqual(response["status"], "healthy")
         self.assertTrue(response["model_blocked"])

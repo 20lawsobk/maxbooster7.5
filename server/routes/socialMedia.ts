@@ -47,7 +47,10 @@ import { AIUnavailableError, requireMaxCore } from "../lib/aiSource.js";
 import { MaxCoreControlError } from "../services/maxcoreControlTransport.js";
 import { MaxCoreAIClient } from "../services/maxcoreClient.js";
 import { generatedImageUrl, persistGeneratedImage } from "../services/generatedImageAsset.js";
-import { generateSocialUrlWithMaxCore } from "../services/socialUrlMaxCoreTransport.js";
+import {
+  classifySocialUrlGenerationFailure,
+  generateSocialUrlWithMaxCore,
+} from "../services/socialUrlMaxCoreTransport.js";
 import { resolveFirstPartySocialSource } from "../services/firstPartySocialSource.js";
 import { generateSocialDirect } from "../services/maxcoreDomainAdapter.js";
 import {
@@ -66,6 +69,7 @@ import {
   normalizePublishingPlatform,
   SocialPublishRequestError,
 } from "../services/autoPostingServiceV2.js";
+import { autoPostGenerator } from "../services/autoPostGenerator.js";
 import {
   audioUpload,
   artworkUpload,
@@ -477,6 +481,13 @@ router.post(
         });
       }
     } catch (error) {
+      if (error instanceof SocialPublishRequestError) {
+        return res.status(error.status).json({
+          success: false,
+          code: error.code,
+          error: error.message,
+        });
+      }
       logger.warn({ err: error }, "Failed to schedule post:");
       res.status(500).json({ error: "Failed to schedule post" });
     }
@@ -765,6 +776,13 @@ router.post(
         ...(postStatus === "scheduled" ? { queued: true } : {}),
       });
     } catch (error) {
+      if (error instanceof SocialPublishRequestError) {
+        return res.status(error.status).json({
+          success: false,
+          code: error.code,
+          error: error.message,
+        });
+      }
       logger.warn({ err: error }, "Failed to create calendar post:");
       res.status(500).json({ error: "Failed to create calendar post" });
     }
@@ -886,6 +904,13 @@ router.put(
 
       res.json(updated);
     } catch (error) {
+      if (error instanceof SocialPublishRequestError) {
+        return res.status(error.status).json({
+          success: false,
+          code: error.code,
+          error: error.message,
+        });
+      }
       logger.warn({ err: error }, "Failed to update calendar post:");
       res.status(500).json({ error: "Failed to update calendar post" });
     }
@@ -1479,6 +1504,7 @@ router.get(
       const ai = await getUnifiedAI();
       const mcResult = await Promise.race([
         ai?.generateContent({
+          userId,
           topic: "trending music hashtags for social media marketing",
           platform: "instagram",
           tone: "energetic",
@@ -3435,6 +3461,15 @@ const manualSocialGenerationSchema = z.object({
   awareness: z.unknown().optional(),
 });
 
+const enhancedSocialGenerationSchema = z.object({
+  platforms: z.array(z.string().trim().min(1).max(50)).min(1).max(8),
+  topic: z.string().trim().min(1).max(1000),
+  objective: z.enum(["awareness", "engagement", "conversions", "viral"]).default("engagement"),
+  tone: z.enum(["professional", "casual", "humorous", "inspirational"]).default("professional"),
+  targetAudience: z.string().trim().max(500).optional(),
+  includeHashtags: z.boolean().default(true),
+});
+
 const MANUAL_SOCIAL_PLATFORMS = new Set([
   "instagram",
   "twitter",
@@ -3592,6 +3627,87 @@ router.post(
       return res
         .status(500)
         .json({ success: false, error: "Social content generation failed" });
+    }
+  },
+);
+
+router.post(
+  "/generate-enhanced-content",
+  requireAuth,
+  aiRateLimiter,
+  async (req: AuthenticatedRequest, res: Response) => {
+    const parsed = enhancedSocialGenerationSchema.safeParse(req.body ?? {});
+    if (!parsed.success) {
+      return res.status(400).json({
+        success: false,
+        error: "Invalid enhanced social content request",
+        details: parsed.error.issues,
+      });
+    }
+    const userId = req.user?.id;
+    if (!userId) {
+      return res.status(401).json({
+        success: false,
+        error: "Authentication required",
+      });
+    }
+
+    const platforms = [
+      ...new Set(parsed.data.platforms.map(normalizePublishingPlatform)),
+    ];
+    const invalidPlatforms = platforms.filter(
+      (platform) => !MANUAL_SOCIAL_PLATFORMS.has(platform),
+    );
+    if (invalidPlatforms.length > 0) {
+      return res.status(400).json({
+        success: false,
+        error: `Unsupported social platform(s): ${invalidPlatforms.join(", ")}`,
+      });
+    }
+
+    try {
+      const generated = await autoPostGenerator.generateEnhancedContent(userId, {
+        ...parsed.data,
+        platforms,
+        generateVariants: 3,
+        mediaType: "text",
+      });
+      if (!generated.body?.trim()) {
+        throw new AIUnavailableError("MaxCore returned no enhanced social content");
+      }
+      if (
+        !(generated.optimalPostingTime instanceof Date) ||
+        !Number.isFinite(generated.optimalPostingTime.getTime())
+      ) {
+        return res.status(502).json({
+          success: false,
+          code: "MAXCORE_INVALID_RESPONSE",
+          error: "Enhanced social generation returned no valid scheduling recommendation",
+        });
+      }
+      return res.json({
+        success: true,
+        ...generated,
+        optimalPostingTime: generated.optimalPostingTime.toISOString(),
+        source: generated.generatedBy,
+        platforms,
+      });
+    } catch (error) {
+      if (error instanceof AIUnavailableError) {
+        return res.status(error.statusCode).json({
+          success: false,
+          code: error.code,
+          error: "MaxCore enhanced social generation is temporarily unavailable",
+        });
+      }
+      logger.warn(
+        { errorType: error instanceof Error ? error.name : typeof error },
+        "Enhanced social content generation failed",
+      );
+      return res.status(500).json({
+        success: false,
+        error: "Enhanced social content generation failed",
+      });
     }
   },
 );
@@ -3812,13 +3928,35 @@ router.post(
       }
 
       if (generatedContent?.length === 0) {
+        const failure = classifySocialUrlGenerationFailure(platformResults);
+        if (failure === "source_rejected") {
+          return res.status(422).json({
+            success: false,
+            code: "SOURCE_NOT_ANALYZABLE",
+            error:
+              "MaxCore could not safely retrieve analyzable content from this URL. Use a publicly accessible source URL.",
+          });
+        }
+        const failureMessages = {
+          service_unavailable:
+            "MaxCore is unavailable for URL-based generation. Check MaxCore readiness, then retry.",
+          authorization_failed:
+            "MaxCore rejected its configured generation authorization. Check the MaxCore connection, then retry.",
+          empty_generation:
+            "MaxCore responded without a usable social variant. Check text-generation readiness, then retry.",
+          transport_failed:
+            "MaxCore could not complete URL-based generation. Check MaxCore health, then retry.",
+          source_rejected: "The source URL could not be analyzed.",
+        } as const;
         logger.warn(
-          `[generate-from-url] MaxCore returned no usable social variants for ${requestedPlatforms.length} platform(s)`,
+          { failure, platformCount: requestedPlatforms.length },
+          "[generate-from-url] MaxCore produced no usable variants",
         );
         return res.status(503).json({
           success: false,
-          code: "AI_UNAVAILABLE",
-          error: "MaxCore did not return usable social content",
+          code: `MAXCORE_${failure.toUpperCase()}`,
+          error: failureMessages[failure],
+          failedPlatforms: requestedPlatforms,
         });
       }
 
@@ -5585,7 +5723,7 @@ router.post(
         direction,
         context,
         awareness,
-      });
+      }, req.user!.id);
       const raw = generatedImageUrl(imgData);
       if (!raw) throw new AIUnavailableError("Image generation did not return an image file");
       const media = await persistGeneratedImage(raw, req.user!.id);
@@ -5949,6 +6087,7 @@ router.post(
       const content = await (
         await getUnifiedAI()
       ).generateContent({
+        userId: req.user!.id,
         type: "social_post",
         platform: platform as import("../../shared/ml/nlp/ContentGenerator.js").Platform,
         topic: seed.topic,
@@ -6034,6 +6173,7 @@ router.post(
       const content = await (
         await getUnifiedAI()
       ).generateContent({
+        userId: req.user!.id,
         type: "social_post",
         platform: platform as import("../../shared/ml/nlp/ContentGenerator.js").Platform,
         topic: `${analysis.mood} visual aesthetic, ${analysis.genre_hint} music`,

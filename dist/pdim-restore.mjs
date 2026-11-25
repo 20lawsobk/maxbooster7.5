@@ -28,7 +28,7 @@ import {
 } from "fs";
 import { createHash } from "crypto";
 import { spawn, spawnSync } from "child_process";
-import { resolve, dirname } from "path";
+import { resolve, dirname, isAbsolute, relative, sep } from "path";
 import { fileURLToPath } from "url";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
@@ -542,11 +542,98 @@ const CAPSULES = {
     ),
 };
 
+const BUILD_CAPSULES = [
+  ["app_remainder.pdim", "app_remainder.manifest.json"],
+  ["node_modules.pdim", "node_modules.manifest.json"],
+  ["python_runtime.pdim", "python_runtime.manifest.json"],
+  ["external_maxcore.pdim", "external_maxcore.manifest.json"],
+  ["external_pdim.pdim", "external_pdim.manifest.json"],
+];
+
+function resolveCapsulePath(root, name) {
+  const base = resolve(root);
+  if (
+    typeof name !== "string" ||
+    !name ||
+    isAbsolute(name) ||
+    name.split(/[\\/]/).some(part => part === "" || part === "." || part === "..")
+  ) {
+    throw new Error("Capsule verification paths must be relative and stay inside the application root");
+  }
+  const target = resolve(base, name);
+  const pathFromRoot = relative(base, target);
+  if (!pathFromRoot || pathFromRoot === ".." ||
+      pathFromRoot.startsWith(`..${sep}`) || isAbsolute(pathFromRoot)) {
+    throw new Error("Capsule verification path escapes the application root");
+  }
+  return target;
+}
+
+/**
+ * Verify the archive bytes against their manifest without extracting,
+ * creating markers, acquiring restore locks, or changing application files.
+ */
+export async function verifyCapsule(capsuleName, manifestName, { root = ROOT } = {}) {
+  const archivePath = resolveCapsulePath(root, capsuleName);
+  const manifestPath = resolveCapsulePath(root, manifestName);
+  if (!existsSync(archivePath)) throw new Error(`Required capsule missing: ${capsuleName}`);
+  if (!existsSync(manifestPath)) throw new Error(`Required capsule manifest missing: ${manifestName}`);
+
+  const archiveStat = lstatSync(archivePath);
+  const manifestStat = lstatSync(manifestPath);
+  if (!archiveStat.isFile() || !manifestStat.isFile()) {
+    throw new Error(`Capsule and manifest must be regular files: ${capsuleName}`);
+  }
+
+  let manifest;
+  try {
+    manifest = JSON.parse(readFileSync(manifestPath, "utf8"));
+  } catch (error) {
+    throw new Error(`Invalid manifest for ${capsuleName}: ${error.message}`);
+  }
+  if (!/^[a-f0-9]{64}$/i.test(manifest?.sha256 || "") ||
+      !/^(gzip(-[1-9])?|xz(-[0-9]e?)?|zstd-(6|19))$/.test(manifest?.compression || "")) {
+    throw new Error(`Invalid manifest for ${capsuleName}`);
+  }
+
+  const digest = createHash("sha256");
+  for await (const chunk of createReadStream(archivePath)) digest.update(chunk);
+  const actual = digest.digest("hex");
+  if (actual !== manifest.sha256.toLowerCase()) {
+    throw new Error(`Checksum mismatch for ${capsuleName}`);
+  }
+  return {
+    capsule: capsuleName,
+    compression: manifest.compression,
+    bytes: archiveStat.size,
+  };
+}
+
+export async function verifyBuildCapsules({ root = ROOT } = {}) {
+  const verified = [];
+  for (const [capsule, manifest] of BUILD_CAPSULES) {
+    const result = await verifyCapsule(capsule, manifest, { root });
+    verified.push(result);
+    console.log(
+      `[pdim-restore] Verified ${result.capsule} (${result.compression}, ${result.bytes} bytes)`,
+    );
+  }
+  return verified;
+}
+
 // Importing the restore API must never start extraction or exit the caller.
 if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
 const mode = process.argv[2] || "all";
 
-if (mode === "critical") {
+if (mode === "--verify" || mode === "verify") {
+  try {
+    const verified = await verifyBuildCapsules();
+    console.log(`[pdim-restore] Read-only verification passed for ${verified.length} capsules.`);
+  } catch (error) {
+    console.error(`[pdim-restore] Verification failed: ${error.message}`);
+    process.exitCode = 1;
+  }
+} else if (mode === "critical") {
   const nodeModulesOk = await CAPSULES.nodeModules();
   if (!nodeModulesOk) {
     console.error(
@@ -562,7 +649,7 @@ if (mode === "critical") {
     CAPSULES.pdim(),
   ]);
   console.log("[pdim-restore] Background capsules processed.");
-} else {
+} else if (mode === "all") {
   // Legacy/dev path: restore everything up front and block on it.
   const [nodeModulesOk, , maxcoreOk] = await Promise.all([
     CAPSULES.nodeModules(),
@@ -582,5 +669,9 @@ if (mode === "critical") {
   }
 
   console.log("[pdim-restore] All capsules processed.");
+} else {
+  console.error(`[pdim-restore] Unknown mode: ${mode}`);
+  console.error("[pdim-restore] Supported modes: all, critical, background, --verify");
+  process.exitCode = 2;
 }
 }

@@ -1,0 +1,109 @@
+entrypoint = "server/index.ts"
+modules = ["python-3.11", "nodejs-24"]
+run = "npm run dev"
+
+[gitHubImport]
+requiredFiles = [".replit", "replit.nix"]
+
+[deployment]
+build = ["bash", "build.sh"]
+run = ["npm", "run", "deployment:start"]
+ignorePorts = false
+deploymentTarget = "gce"
+
+[env]
+NODE_ENV = "development"
+PORT = "5000"
+DNS_AUTHORITY_PORT = "1053"
+DNS_NODE_LOCAL_PORT = "5353"
+DNS_NODE_LOCAL = "1"
+DNS_NODE_LOCAL_HEALTH_PORT = "5380"
+DNS_API_PORT = "8080"
+LOCAL_PDIM_PORT = "5556"
+VIDEO_DIFFUSION_PORT = "8008"
+MAXCORE_LOCAL_PORT = "8090"
+BOOSTERSTATE_SIDECAR_PORT = "9877"
+MODEL_API_PORT = "9878"
+MODEL_API_HEALTH_PORT = "9879"
+PYTHON_AI_PORT = "9880"
+ENABLE_LEGACY_AI_SIDECAR = "1"
+MAXCORE_LOCAL = "1"
+PDIM_FORCE_REMOTE = "0"
+MAXCORE_SERVING_RELEASE = "live-awareness"
+STRIPE_ALLOW_CATALOG_PROVISIONING = "0"
+
+[[ports]]
+localPort = 1053
+
+[[ports]]
+localPort = 5000
+externalPort = 80
+
+[[ports]]
+localPort = 5353
+
+[[ports]]
+localPort = 5556
+
+[[ports]]
+localPort = 8008
+
+[[ports]]
+localPort = 8080
+
+[[ports]]
+localPort = 8090
+
+[[ports]]
+localPort = 9877
+
+[[ports]]
+localPort = 9878
+
+[[ports]]
+localPort = 9879
+
+[[ports]]
+localPort = 9880
+
+[nix]
+channel = "stable-25_05"
+packages = ["cacert", "freetype", "lcms2", "libimagequant", "libjpeg", "libtiff", "libwebp", "libxcrypt", "openjpeg", "pkg-config", "tcl", "tk", "xsimd", "zlib"]
+
+[workflows]
+runButton = "Project"
+
+[[workflows.workflow]]
+name = "Project"
+mode = "parallel"
+author = "agent"
+
+[[workflows.workflow.tasks]]
+task = "workflow.run"
+args = "Start application"
+
+[[workflows.workflow]]
+name = "Start application"
+author = "agent"
+
+[[workflows.workflow.tasks]]
+task = "shell.exec"
+args = "npm run dev"
+waitForPort = 5000
+
+[workflows.workflow.metadata]
+outputType = "webview"
+
+[postMerge]
+path = "scripts/post-merge.sh"
+timeoutMs = 600000
+
+[userenv]
+
+[userenv.development]
+MAXCORE_AWARENESS_PLATFORM_DISCOVERY = "1"
+MAXCORE_AWARENESS_PLATFORM_DISCOVERY_PROVIDER = "exa"
+TOOLOST_ENVIRONMENT = "sandbox"
+
+[objectStorage]
+defaultBucketID = "replit-objstore-dff07b1e-3724-424b-9a40-6603b5908003"

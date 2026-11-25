@@ -1,0 +1,135 @@
+{
+  "schemaVersion": 1,
+  "paths": [
+    {
+      "id": "social-url-text",
+      "modality": "text",
+      "ui": "client/src/pages/SocialMedia.tsx — Generate Content from URL",
+      "backend": "POST /api/social/generate-from-url",
+      "provider": "URL analyzer → MaxCore /api/platform/social/generate",
+      "result": "non-empty MaxCore copy; returned source URL and source-provenance metadata match the submitted page",
+      "runner": "social-url-text",
+      "writesMedia": false
+    },
+    {
+      "id": "social-url-image",
+      "modality": "image",
+      "ui": "client/src/pages/SocialMedia.tsx — URL composer with Image / Graphics",
+      "backend": "POST /api/social/generate-from-url → POST /api/multimodal/generate",
+      "provider": "URL analyzer + MaxCore multimodal image worker",
+      "result": "source-provenance-checked copy plus retrieved, decoded image bytes; safe owner-scoped cleanup required",
+      "runner": "social-url-image",
+      "writesMedia": true
+    },
+    {
+      "id": "social-url-audio",
+      "modality": "audio",
+      "ui": "client/src/pages/SocialMedia.tsx — URL composer with Audio / Voice",
+      "backend": "POST /api/social/generate-from-url → POST /api/multimodal/generate",
+      "provider": "URL analyzer + MaxCore multimodal audio worker",
+      "result": "source-provenance-checked copy plus playable, non-silent retrieved audio; safe owner-scoped cleanup required",
+      "runner": "social-url-audio",
+      "writesMedia": true
+    },
+    {
+      "id": "social-url-video",
+      "modality": "video",
+      "ui": "client/src/pages/SocialMedia.tsx — URL composer with Video / MP4",
+      "backend": "POST /api/social/generate-from-url → POST /api/multimodal/generate",
+      "provider": "URL analyzer + MaxCore multimodal video worker",
+      "result": "source-provenance-checked copy plus playable multiframe video; safe owner-scoped cleanup required",
+      "runner": "social-url-video",
+      "writesMedia": true
+    },
+    {
+      "id": "social-direct-text",
+      "modality": "text",
+      "ui": "client/src/pages/SocialMedia.tsx — manual social content composer",
+      "backend": "POST /api/social/generate-content",
+      "provider": "MaxCore /api/platform/social/generate",
+      "result": "generatedContent contains non-empty platform copy; partial failures are identified",
+      "runner": "social-direct-text",
+      "writesMedia": false
+    },
+    {
+      "id": "shared-text",
+      "modality": "text",
+      "ui": "MaxCore-backed text generation callers",
+      "backend": "POST /api/generate/text",
+      "provider": "MaxCore text generation endpoint",
+      "result": "non-empty generated text differs from the submitted prompt",
+      "runner": "shared-text",
+      "writesMedia": false
+    },
+    {
+      "id": "shared-image",
+      "modality": "image",
+      "ui": "client/src/components/content/LocalMediaRenderer.tsx and image-generation callers",
+      "backend": "POST /api/generate/image",
+      "provider": "MaxCore image endpoint",
+      "result": "validated image bytes with non-zero dimensions and a durable owner-scoped storage receipt",
+      "runner": "shared-image",
+      "writesMedia": true
+    },
+    {
+      "id": "shared-audio",
+      "modality": "audio",
+      "ui": "client/src/components/content/LocalMediaRenderer.tsx and studio audio callers",
+      "backend": "POST /api/generate/audio → bounded GET /api/audio-job/:jobId polling",
+      "provider": "MaxCore audio job API",
+      "result": "completed playable, non-silent audio plus durable owner-scoped storage receipt and verified cleanup",
+      "runner": "shared-audio",
+      "writesMedia": true
+    },
+    {
+      "id": "shared-video",
+      "modality": "video",
+      "ui": "client/src/components/content/LocalMediaRenderer.tsx and video callers",
+      "backend": "POST /api/generate-video → bounded GET /api/video-job/:jobId polling",
+      "provider": "MaxCore video job API",
+      "result": "completed playable multiframe video plus durable owner-scoped storage receipt and verified cleanup",
+      "runner": "shared-video",
+      "writesMedia": true
+    },
+    {
+      "id": "studio-audio",
+      "modality": "audio",
+      "ui": "client/src/components/studio/AIMusicGenerator.tsx",
+      "backend": "POST /api/studio/generation/text → GET /api/audio-job/:jobId",
+      "provider": "MaxCore /api/generate/audio job API",
+      "result": "studio response resolves to retrievable generated audio/MIDI; no submission-only success",
+      "runner": "studio-audio",
+      "writesMedia": true
+    },
+    {
+      "id": "advertising-text",
+      "modality": "text",
+      "ui": "client/src/components/advertising/CreativeVariantGenerator.tsx",
+      "backend": "POST /api/advertising/generate-content",
+      "provider": "MaxCore ads text generation",
+      "result": "requested count of non-empty text creatives returned",
+      "runner": "advertising-text",
+      "writesMedia": false
+    },
+    {
+      "id": "advertising-image",
+      "modality": "image",
+      "ui": "client/src/pages/Advertisement.tsx",
+      "backend": "POST /api/advertising/generate-image",
+      "provider": "MaxCore /api/generate/image + PDIM persistence",
+      "result": "saved image URL, verified image bytes, and owner-scoped durable readback",
+      "runner": "advertising-image",
+      "writesMedia": true
+    },
+    {
+      "id": "advertising-video",
+      "modality": "video",
+      "ui": "client/src/pages/Advertisement.tsx",
+      "backend": "POST /api/advertising/generate-video",
+      "provider": "MaxCore advanced video renderer",
+      "result": "completed playable video artifact; renderer mode is reported honestly",
+      "runner": "advertising-video",
+      "writesMedia": true
+    }
+  ]
+}

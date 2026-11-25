@@ -1,6 +1,7 @@
 import { Request, Response, NextFunction } from "express";
 import { randomUUID } from "crypto";
 import { logger } from "../logger.js";
+import { recordHttpResponse } from "../services/adminHealthTelemetry.js";
 
 // Cache for the maxBooster247 instance to avoid repeated imports
 let maxBooster247Cache: Record<string, unknown> | null = null;
@@ -76,6 +77,7 @@ export function performanceMonitoring(
   // Override res.end to capture timing.
   // We replace res.end with a wrapper and forward all arguments to originalEnd.
   const originalEnd = res.end.bind(res);
+  let responseRecorded = false;
   (res as any).end = function (
     chunk?: unknown,
     encoding?: unknown,
@@ -83,6 +85,11 @@ export function performanceMonitoring(
   ): Response {
     const end = process.hrtime.bigint();
     const duration = Number(end - start) / 1000000; // Convert to milliseconds
+
+    if (!responseRecorded) {
+      responseRecorded = true;
+      recordHttpResponse(res.statusCode);
+    }
 
     // Add performance headers only if headers haven't been sent
     if (!res.headersSent) {

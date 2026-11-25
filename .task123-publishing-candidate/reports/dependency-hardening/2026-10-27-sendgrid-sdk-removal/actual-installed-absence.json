@@ -1,0 +1,24 @@
+{
+  "node": "v22.23.3",
+  "absence": {
+    "@sendgrid/mail": {
+      "absent": true
+    },
+    "@sendgrid/client": {
+      "absent": true
+    },
+    "@sendgrid/helpers": {
+      "absent": true
+    },
+    "deepmerge": {
+      "absent": true
+    }
+  },
+  "gate": {
+    "ready": false,
+    "failures": [
+      "external/pdim/node_modules/.pnpm/qs@6.16.0/node_modules/qs/package.json: qs@6.16.0; validated floor 6.16.1"
+    ],
+    "occurrences": 98
+  }
+}

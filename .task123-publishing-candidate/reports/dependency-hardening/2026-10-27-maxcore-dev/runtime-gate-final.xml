@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8"?>
+<testsuites>
+	<testcase name="release gate excludes legacy only with image exclusion; workspace audit still rejects stale legacy" time="0.044622" classname="test"/>
+	<testcase name="installed stale nested copy fails despite patched top-level package and lock" time="0.002930" classname="test"/>
+	<testcase name="unpatched node-forge is rejected even when only a nested consumer installs it" time="0.002106" classname="test"/>
+	<testcase name="missing workspace, prerelease version and escaping installed symlink fail closed" time="0.002959" classname="test"/>
+	<testcase name="fast-uri accepts independently compatible patched 3.x and 4.x, rejects vulnerable 4.x" time="0.003238" classname="test"/>
+	<testcase name="all security families reject stale nested copies and accept explicitly validated branches" time="0.113174" classname="test"/>
+	<testcase name="unpatched brace walkers and shared HTTP cache policies cannot be reintroduced" time="0.003615" classname="test"/>
+	<testcase name="capsule gate hashes actual bytes and rejects missing, changed and unknown-codec capsules" time="0.010034" classname="test"/>
+	<testcase name="restored output gate rejects absent artifacts and invalid JS without executing it" time="0.064264" classname="test"/>
+	<testcase name="restored Node provenance admits the provisioned pin and rejects stale or malformed records" time="0.001303" classname="test"/>
+	<!-- tests 10 -->
+	<!-- suites 0 -->
+	<!-- pass 10 -->
+	<!-- fail 0 -->
+	<!-- cancelled 0 -->
+	<!-- skipped 0 -->
+	<!-- todo 0 -->
+	<!-- duration_ms 323.84283 -->
+</testsuites>

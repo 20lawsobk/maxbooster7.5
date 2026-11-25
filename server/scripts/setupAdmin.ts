@@ -53,7 +53,7 @@ async function setupAdmin() {
   console?.log(
     "═══════════════════════════════════════════════════════════════════════",
   );
-  console?.log(`   Email: ${adminEmail}`);
+  console?.log("   Email: configured administrator account (value omitted)");
   console?.log("");
 
   try {
@@ -677,7 +677,7 @@ async function setupAdmin() {
     );
     console?.log("");
     console?.log("   Account Details:");
-    console?.log(`   ├── Email: ${adminEmail}`);
+    console?.log("   ├── Email: configured administrator account");
     console?.log("   ├── Username: blawzmusic");
     console?.log("   ├── Name: B-Lawz Music");
     console?.log("   ├── Role: admin");

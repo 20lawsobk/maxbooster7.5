@@ -1,0 +1,817 @@
+server/routes/billing.ts(54,7): error TS2322: Type '"2026-01-28.clover"' is not assignable to type '"2026-02-25.clover"'.
+server/routes/billing.ts(71,3): error TS2349: This expression is not callable.
+  Type 'Record<string, unknown>' has no call signatures.
+server/routes/billing.ts(145,11): error TS2430: Interface 'AuthenticatedRequest' incorrectly extends interface 'Request<ParamsDictionary, any, any, ParsedQs, Record<string, any>>'.
+  Types of property 'user' are incompatible.
+    Type '{ id: string; email: string; stripeCustomerId?: string | undefined; subscriptionTier?: string | undefined; subscriptionStatus?: string | undefined; subscriptionEndsAt?: Date | null | undefined; } | undefined' is not assignable to type '{ id: string; email: string; username: string | null; password: string; firstName: string | null; lastName: string | null; artistName: string | null; bio: string | null; website: string | null; ... 24 more ...; createdAt: Date | null; } | undefined'.
+      Type '{ id: string; email: string; stripeCustomerId?: string | undefined; subscriptionTier?: string | undefined; subscriptionStatus?: string | undefined; subscriptionEndsAt?: Date | null | undefined; }' is missing the following properties from type '{ id: string; email: string; username: string | null; password: string; firstName: string | null; lastName: string | null; artistName: string | null; bio: string | null; website: string | null; ... 24 more ...; createdAt: Date | null; }': username, password, firstName, lastName, and 24 more.
+server/routes/billing.ts(342,3): error TS2769: No overload matches this call.
+  The last overload gave the following error.
+    Argument of type '(req: AuthenticatedRequest, res: Response) => Promise<Response<any, Record<string, any>> | undefined>' is not assignable to parameter of type 'RequestHandlerParams<ParamsDictionary, any, any, ParsedQs, Record<string, any>>'.
+      Type '(req: AuthenticatedRequest, res: Response) => Promise<Response<any, Record<string, any>> | undefined>' is not assignable to type 'RequestHandler<ParamsDictionary, any, any, ParsedQs, Record<string, any>>'.
+        Types of parameters 'req' and 'req' are incompatible.
+          Type 'Request<ParamsDictionary, any, any, ParsedQs, Record<string, any>>' is not assignable to type 'AuthenticatedRequest'.
+            Types of property 'user' are incompatible.
+              Type '{ id: string; email: string; username: string | null; password: string; firstName: string | null; lastName: string | null; artistName: string | null; bio: string | null; website: string | null; ... 24 more ...; createdAt: Date | null; } | undefined' is not assignable to type '{ id: string; email: string; stripeCustomerId?: string | undefined; subscriptionTier?: string | undefined; subscriptionStatus?: string | undefined; subscriptionEndsAt?: Date | null | undefined; } | undefined'.
+                Type '{ id: string; email: string; username: string | null; password: string; firstName: string | null; lastName: string | null; artistName: string | null; bio: string | null; website: string | null; ... 24 more ...; createdAt: Date | null; }' is not assignable to type '{ id: string; email: string; stripeCustomerId?: string | undefined; subscriptionTier?: string | undefined; subscriptionStatus?: string | undefined; subscriptionEndsAt?: Date | null | undefined; }'.
+                  Types of property 'stripeCustomerId' are incompatible.
+                    Type 'string | null' is not assignable to type 'string | undefined'.
+                      Type 'null' is not assignable to type 'string | undefined'.
+server/routes/billing.ts(430,3): error TS2769: No overload matches this call.
+  The last overload gave the following error.
+    Argument of type '(req: AuthenticatedRequest, res: Response) => Promise<Response<any, Record<string, any>> | undefined>' is not assignable to parameter of type 'RequestHandlerParams<ParamsDictionary, any, any, ParsedQs, Record<string, any>>'.
+      Type '(req: AuthenticatedRequest, res: Response) => Promise<Response<any, Record<string, any>> | undefined>' is not assignable to type 'RequestHandler<ParamsDictionary, any, any, ParsedQs, Record<string, any>>'.
+        Types of parameters 'req' and 'req' are incompatible.
+          Type 'Request<ParamsDictionary, any, any, ParsedQs, Record<string, any>>' is not assignable to type 'AuthenticatedRequest'.
+            Types of property 'user' are incompatible.
+              Type '{ id: string; email: string; username: string | null; password: string; firstName: string | null; lastName: string | null; artistName: string | null; bio: string | null; website: string | null; ... 24 more ...; createdAt: Date | null; } | undefined' is not assignable to type '{ id: string; email: string; stripeCustomerId?: string | undefined; subscriptionTier?: string | undefined; subscriptionStatus?: string | undefined; subscriptionEndsAt?: Date | null | undefined; } | undefined'.
+                Type '{ id: string; email: string; username: string | null; password: string; firstName: string | null; lastName: string | null; artistName: string | null; bio: string | null; website: string | null; ... 24 more ...; createdAt: Date | null; }' is not assignable to type '{ id: string; email: string; stripeCustomerId?: string | undefined; subscriptionTier?: string | undefined; subscriptionStatus?: string | undefined; subscriptionEndsAt?: Date | null | undefined; }'.
+                  Types of property 'stripeCustomerId' are incompatible.
+                    Type 'string | null' is not assignable to type 'string | undefined'.
+                      Type 'null' is not assignable to type 'string | undefined'.
+server/routes/billing.ts(651,3): error TS2769: No overload matches this call.
+  The last overload gave the following error.
+    Argument of type '(req: AuthenticatedRequest, res: Response) => Promise<Response<any, Record<string, any>> | undefined>' is not assignable to parameter of type 'RequestHandlerParams<ParamsDictionary, any, any, ParsedQs, Record<string, any>>'.
+      Type '(req: AuthenticatedRequest, res: Response) => Promise<Response<any, Record<string, any>> | undefined>' is not assignable to type 'RequestHandler<ParamsDictionary, any, any, ParsedQs, Record<string, any>>'.
+        Types of parameters 'req' and 'req' are incompatible.
+          Type 'Request<ParamsDictionary, any, any, ParsedQs, Record<string, any>>' is not assignable to type 'AuthenticatedRequest'.
+            Types of property 'user' are incompatible.
+              Type '{ id: string; email: string; username: string | null; password: string; firstName: string | null; lastName: string | null; artistName: string | null; bio: string | null; website: string | null; ... 24 more ...; createdAt: Date | null; } | undefined' is not assignable to type '{ id: string; email: string; stripeCustomerId?: string | undefined; subscriptionTier?: string | undefined; subscriptionStatus?: string | undefined; subscriptionEndsAt?: Date | null | undefined; } | undefined'.
+                Type '{ id: string; email: string; username: string | null; password: string; firstName: string | null; lastName: string | null; artistName: string | null; bio: string | null; website: string | null; ... 24 more ...; createdAt: Date | null; }' is not assignable to type '{ id: string; email: string; stripeCustomerId?: string | undefined; subscriptionTier?: string | undefined; subscriptionStatus?: string | undefined; subscriptionEndsAt?: Date | null | undefined; }'.
+                  Types of property 'stripeCustomerId' are incompatible.
+                    Type 'string | null' is not assignable to type 'string | undefined'.
+                      Type 'null' is not assignable to type 'string | undefined'.
+server/routes/billing.ts(699,3): error TS2769: No overload matches this call.
+  The last overload gave the following error.
+    Argument of type '(req: AuthenticatedRequest, res: Response) => Promise<Response<any, Record<string, any>> | undefined>' is not assignable to parameter of type 'RequestHandlerParams<ParamsDictionary, any, any, ParsedQs, Record<string, any>>'.
+      Type '(req: AuthenticatedRequest, res: Response) => Promise<Response<any, Record<string, any>> | undefined>' is not assignable to type 'RequestHandler<ParamsDictionary, any, any, ParsedQs, Record<string, any>>'.
+        Types of parameters 'req' and 'req' are incompatible.
+          Type 'Request<ParamsDictionary, any, any, ParsedQs, Record<string, any>>' is not assignable to type 'AuthenticatedRequest'.
+            Types of property 'user' are incompatible.
+              Type '{ id: string; email: string; username: string | null; password: string; firstName: string | null; lastName: string | null; artistName: string | null; bio: string | null; website: string | null; ... 24 more ...; createdAt: Date | null; } | undefined' is not assignable to type '{ id: string; email: string; stripeCustomerId?: string | undefined; subscriptionTier?: string | undefined; subscriptionStatus?: string | undefined; subscriptionEndsAt?: Date | null | undefined; } | undefined'.
+                Type '{ id: string; email: string; username: string | null; password: string; firstName: string | null; lastName: string | null; artistName: string | null; bio: string | null; website: string | null; ... 24 more ...; createdAt: Date | null; }' is not assignable to type '{ id: string; email: string; stripeCustomerId?: string | undefined; subscriptionTier?: string | undefined; subscriptionStatus?: string | undefined; subscriptionEndsAt?: Date | null | undefined; }'.
+                  Types of property 'stripeCustomerId' are incompatible.
+                    Type 'string | null' is not assignable to type 'string | undefined'.
+                      Type 'null' is not assignable to type 'string | undefined'.
+server/routes/billing.ts(746,3): error TS2769: No overload matches this call.
+  The last overload gave the following error.
+    Argument of type '(req: AuthenticatedRequest, res: Response) => Promise<Response<any, Record<string, any>> | undefined>' is not assignable to parameter of type 'RequestHandlerParams<ParamsDictionary, any, any, ParsedQs, Record<string, any>>'.
+      Type '(req: AuthenticatedRequest, res: Response) => Promise<Response<any, Record<string, any>> | undefined>' is not assignable to type 'RequestHandler<ParamsDictionary, any, any, ParsedQs, Record<string, any>>'.
+        Types of parameters 'req' and 'req' are incompatible.
+          Type 'Request<ParamsDictionary, any, any, ParsedQs, Record<string, any>>' is not assignable to type 'AuthenticatedRequest'.
+            Types of property 'user' are incompatible.
+              Type '{ id: string; email: string; username: string | null; password: string; firstName: string | null; lastName: string | null; artistName: string | null; bio: string | null; website: string | null; ... 24 more ...; createdAt: Date | null; } | undefined' is not assignable to type '{ id: string; email: string; stripeCustomerId?: string | undefined; subscriptionTier?: string | undefined; subscriptionStatus?: string | undefined; subscriptionEndsAt?: Date | null | undefined; } | undefined'.
+                Type '{ id: string; email: string; username: string | null; password: string; firstName: string | null; lastName: string | null; artistName: string | null; bio: string | null; website: string | null; ... 24 more ...; createdAt: Date | null; }' is not assignable to type '{ id: string; email: string; stripeCustomerId?: string | undefined; subscriptionTier?: string | undefined; subscriptionStatus?: string | undefined; subscriptionEndsAt?: Date | null | undefined; }'.
+                  Types of property 'stripeCustomerId' are incompatible.
+                    Type 'string | null' is not assignable to type 'string | undefined'.
+                      Type 'null' is not assignable to type 'string | undefined'.
+server/routes/billing.ts(828,12): error TS2339: Property 'limit' does not exist on type 'Omit<PgUpdateBase<PgTableWithColumns<{ name: "users"; schema: undefined; columns: { id: PgColumn<{ name: "id"; tableName: "users"; dataType: "string"; columnType: "PgVarchar"; data: string; driverParam: string; notNull: true; hasDefault: true; ... 6 more ...; generated: undefined; }, {}, { ...; }>; ... 32 more ...; ...'.
+server/routes/billing.ts(879,3): error TS2769: No overload matches this call.
+  The last overload gave the following error.
+    Argument of type '(req: AuthenticatedRequest, res: Response) => Promise<Response<any, Record<string, any>> | undefined>' is not assignable to parameter of type 'RequestHandlerParams<ParamsDictionary, any, any, ParsedQs, Record<string, any>>'.
+      Type '(req: AuthenticatedRequest, res: Response) => Promise<Response<any, Record<string, any>> | undefined>' is not assignable to type 'RequestHandler<ParamsDictionary, any, any, ParsedQs, Record<string, any>>'.
+        Types of parameters 'req' and 'req' are incompatible.
+          Type 'Request<ParamsDictionary, any, any, ParsedQs, Record<string, any>>' is not assignable to type 'AuthenticatedRequest'.
+            Types of property 'user' are incompatible.
+              Type '{ id: string; email: string; username: string | null; password: string; firstName: string | null; lastName: string | null; artistName: string | null; bio: string | null; website: string | null; ... 24 more ...; createdAt: Date | null; } | undefined' is not assignable to type '{ id: string; email: string; stripeCustomerId?: string | undefined; subscriptionTier?: string | undefined; subscriptionStatus?: string | undefined; subscriptionEndsAt?: Date | null | undefined; } | undefined'.
+                Type '{ id: string; email: string; username: string | null; password: string; firstName: string | null; lastName: string | null; artistName: string | null; bio: string | null; website: string | null; ... 24 more ...; createdAt: Date | null; }' is not assignable to type '{ id: string; email: string; stripeCustomerId?: string | undefined; subscriptionTier?: string | undefined; subscriptionStatus?: string | undefined; subscriptionEndsAt?: Date | null | undefined; }'.
+                  Types of property 'stripeCustomerId' are incompatible.
+                    Type 'string | null' is not assignable to type 'string | undefined'.
+                      Type 'null' is not assignable to type 'string | undefined'.
+server/routes/billing.ts(962,10): error TS2339: Property 'limit' does not exist on type 'Omit<PgUpdateBase<PgTableWithColumns<{ name: "users"; schema: undefined; columns: { id: PgColumn<{ name: "id"; tableName: "users"; dataType: "string"; columnType: "PgVarchar"; data: string; driverParam: string; notNull: true; hasDefault: true; ... 6 more ...; generated: undefined; }, {}, { ...; }>; ... 32 more ...; ...'.
+server/routes/billing.ts(994,3): error TS2769: No overload matches this call.
+  The last overload gave the following error.
+    Argument of type '(req: AuthenticatedRequest, res: Response) => Promise<void | Response<any, Record<string, any>>>' is not assignable to parameter of type 'RequestHandlerParams<ParamsDictionary, any, any, ParsedQs, Record<string, any>>'.
+      Type '(req: AuthenticatedRequest, res: Response) => Promise<void | Response<any, Record<string, any>>>' is not assignable to type 'RequestHandler<ParamsDictionary, any, any, ParsedQs, Record<string, any>>'.
+        Types of parameters 'req' and 'req' are incompatible.
+          Type 'Request<ParamsDictionary, any, any, ParsedQs, Record<string, any>>' is not assignable to type 'AuthenticatedRequest'.
+            Types of property 'user' are incompatible.
+              Type '{ id: string; email: string; username: string | null; password: string; firstName: string | null; lastName: string | null; artistName: string | null; bio: string | null; website: string | null; ... 24 more ...; createdAt: Date | null; } | undefined' is not assignable to type '{ id: string; email: string; stripeCustomerId?: string | undefined; subscriptionTier?: string | undefined; subscriptionStatus?: string | undefined; subscriptionEndsAt?: Date | null | undefined; } | undefined'.
+                Type '{ id: string; email: string; username: string | null; password: string; firstName: string | null; lastName: string | null; artistName: string | null; bio: string | null; website: string | null; ... 24 more ...; createdAt: Date | null; }' is not assignable to type '{ id: string; email: string; stripeCustomerId?: string | undefined; subscriptionTier?: string | undefined; subscriptionStatus?: string | undefined; subscriptionEndsAt?: Date | null | undefined; }'.
+                  Types of property 'stripeCustomerId' are incompatible.
+                    Type 'string | null' is not assignable to type 'string | undefined'.
+                      Type 'null' is not assignable to type 'string | undefined'.
+server/routes/billing.ts(1083,3): error TS2769: No overload matches this call.
+  The last overload gave the following error.
+    Argument of type '(req: AuthenticatedRequest, res: Response) => Promise<Response<any, Record<string, any>> | undefined>' is not assignable to parameter of type 'RequestHandlerParams<ParamsDictionary, any, any, ParsedQs, Record<string, any>>'.
+      Type '(req: AuthenticatedRequest, res: Response) => Promise<Response<any, Record<string, any>> | undefined>' is not assignable to type 'RequestHandler<ParamsDictionary, any, any, ParsedQs, Record<string, any>>'.
+        Types of parameters 'req' and 'req' are incompatible.
+          Type 'Request<ParamsDictionary, any, any, ParsedQs, Record<string, any>>' is not assignable to type 'AuthenticatedRequest'.
+            Types of property 'user' are incompatible.
+              Type '{ id: string; email: string; username: string | null; password: string; firstName: string | null; lastName: string | null; artistName: string | null; bio: string | null; website: string | null; ... 24 more ...; createdAt: Date | null; } | undefined' is not assignable to type '{ id: string; email: string; stripeCustomerId?: string | undefined; subscriptionTier?: string | undefined; subscriptionStatus?: string | undefined; subscriptionEndsAt?: Date | null | undefined; } | undefined'.
+                Type '{ id: string; email: string; username: string | null; password: string; firstName: string | null; lastName: string | null; artistName: string | null; bio: string | null; website: string | null; ... 24 more ...; createdAt: Date | null; }' is not assignable to type '{ id: string; email: string; stripeCustomerId?: string | undefined; subscriptionTier?: string | undefined; subscriptionStatus?: string | undefined; subscriptionEndsAt?: Date | null | undefined; }'.
+                  Types of property 'stripeCustomerId' are incompatible.
+                    Type 'string | null' is not assignable to type 'string | undefined'.
+                      Type 'null' is not assignable to type 'string | undefined'.
+server/routes/billing.ts(1114,3): error TS2769: No overload matches this call.
+  The last overload gave the following error.
+    Argument of type '(req: AuthenticatedRequest, res: Response) => Promise<Response<any, Record<string, any>> | undefined>' is not assignable to parameter of type 'RequestHandlerParams<ParamsDictionary, any, any, ParsedQs, Record<string, any>>'.
+      Type '(req: AuthenticatedRequest, res: Response) => Promise<Response<any, Record<string, any>> | undefined>' is not assignable to type 'RequestHandler<ParamsDictionary, any, any, ParsedQs, Record<string, any>>'.
+        Types of parameters 'req' and 'req' are incompatible.
+          Type 'Request<ParamsDictionary, any, any, ParsedQs, Record<string, any>>' is not assignable to type 'AuthenticatedRequest'.
+            Types of property 'user' are incompatible.
+              Type '{ id: string; email: string; username: string | null; password: string; firstName: string | null; lastName: string | null; artistName: string | null; bio: string | null; website: string | null; ... 24 more ...; createdAt: Date | null; } | undefined' is not assignable to type '{ id: string; email: string; stripeCustomerId?: string | undefined; subscriptionTier?: string | undefined; subscriptionStatus?: string | undefined; subscriptionEndsAt?: Date | null | undefined; } | undefined'.
+                Type '{ id: string; email: string; username: string | null; password: string; firstName: string | null; lastName: string | null; artistName: string | null; bio: string | null; website: string | null; ... 24 more ...; createdAt: Date | null; }' is not assignable to type '{ id: string; email: string; stripeCustomerId?: string | undefined; subscriptionTier?: string | undefined; subscriptionStatus?: string | undefined; subscriptionEndsAt?: Date | null | undefined; }'.
+                  Types of property 'stripeCustomerId' are incompatible.
+                    Type 'string | null' is not assignable to type 'string | undefined'.
+                      Type 'null' is not assignable to type 'string | undefined'.
+server/routes/billing.ts(1150,3): error TS2769: No overload matches this call.
+  The last overload gave the following error.
+    Argument of type '(req: AuthenticatedRequest, res: Response) => Promise<Response<any, Record<string, any>> | undefined>' is not assignable to parameter of type 'RequestHandlerParams<ParamsDictionary, any, any, ParsedQs, Record<string, any>>'.
+      Type '(req: AuthenticatedRequest, res: Response) => Promise<Response<any, Record<string, any>> | undefined>' is not assignable to type 'RequestHandler<ParamsDictionary, any, any, ParsedQs, Record<string, any>>'.
+        Types of parameters 'req' and 'req' are incompatible.
+          Type 'Request<ParamsDictionary, any, any, ParsedQs, Record<string, any>>' is not assignable to type 'AuthenticatedRequest'.
+            Types of property 'user' are incompatible.
+              Type '{ id: string; email: string; username: string | null; password: string; firstName: string | null; lastName: string | null; artistName: string | null; bio: string | null; website: string | null; ... 24 more ...; createdAt: Date | null; } | undefined' is not assignable to type '{ id: string; email: string; stripeCustomerId?: string | undefined; subscriptionTier?: string | undefined; subscriptionStatus?: string | undefined; subscriptionEndsAt?: Date | null | undefined; } | undefined'.
+                Type '{ id: string; email: string; username: string | null; password: string; firstName: string | null; lastName: string | null; artistName: string | null; bio: string | null; website: string | null; ... 24 more ...; createdAt: Date | null; }' is not assignable to type '{ id: string; email: string; stripeCustomerId?: string | undefined; subscriptionTier?: string | undefined; subscriptionStatus?: string | undefined; subscriptionEndsAt?: Date | null | undefined; }'.
+                  Types of property 'stripeCustomerId' are incompatible.
+                    Type 'string | null' is not assignable to type 'string | undefined'.
+                      Type 'null' is not assignable to type 'string | undefined'.
+server/routes/billing.ts(1205,3): error TS2769: No overload matches this call.
+  The last overload gave the following error.
+    Argument of type '(req: AuthenticatedRequest, res: Response) => Promise<Response<any, Record<string, any>> | undefined>' is not assignable to parameter of type 'RequestHandlerParams<ParamsDictionary, any, any, ParsedQs, Record<string, any>>'.
+      Type '(req: AuthenticatedRequest, res: Response) => Promise<Response<any, Record<string, any>> | undefined>' is not assignable to type 'RequestHandler<ParamsDictionary, any, any, ParsedQs, Record<string, any>>'.
+        Types of parameters 'req' and 'req' are incompatible.
+          Type 'Request<ParamsDictionary, any, any, ParsedQs, Record<string, any>>' is not assignable to type 'AuthenticatedRequest'.
+            Types of property 'user' are incompatible.
+              Type '{ id: string; email: string; username: string | null; password: string; firstName: string | null; lastName: string | null; artistName: string | null; bio: string | null; website: string | null; ... 24 more ...; createdAt: Date | null; } | undefined' is not assignable to type '{ id: string; email: string; stripeCustomerId?: string | undefined; subscriptionTier?: string | undefined; subscriptionStatus?: string | undefined; subscriptionEndsAt?: Date | null | undefined; } | undefined'.
+                Type '{ id: string; email: string; username: string | null; password: string; firstName: string | null; lastName: string | null; artistName: string | null; bio: string | null; website: string | null; ... 24 more ...; createdAt: Date | null; }' is not assignable to type '{ id: string; email: string; stripeCustomerId?: string | undefined; subscriptionTier?: string | undefined; subscriptionStatus?: string | undefined; subscriptionEndsAt?: Date | null | undefined; }'.
+                  Types of property 'stripeCustomerId' are incompatible.
+                    Type 'string | null' is not assignable to type 'string | undefined'.
+                      Type 'null' is not assignable to type 'string | undefined'.
+server/routes/billing.ts(1229,3): error TS2769: No overload matches this call.
+  The last overload gave the following error.
+    Argument of type '(req: AuthenticatedRequest, res: Response) => Promise<void>' is not assignable to parameter of type 'RequestHandlerParams<ParamsDictionary, any, any, ParsedQs, Record<string, any>>'.
+      Type '(req: AuthenticatedRequest, res: Response) => Promise<void>' is not assignable to type 'RequestHandler<ParamsDictionary, any, any, ParsedQs, Record<string, any>>'.
+        Types of parameters 'req' and 'req' are incompatible.
+          Type 'Request<ParamsDictionary, any, any, ParsedQs, Record<string, any>>' is not assignable to type 'AuthenticatedRequest'.
+            Types of property 'user' are incompatible.
+              Type '{ id: string; email: string; username: string | null; password: string; firstName: string | null; lastName: string | null; artistName: string | null; bio: string | null; website: string | null; ... 24 more ...; createdAt: Date | null; } | undefined' is not assignable to type '{ id: string; email: string; stripeCustomerId?: string | undefined; subscriptionTier?: string | undefined; subscriptionStatus?: string | undefined; subscriptionEndsAt?: Date | null | undefined; } | undefined'.
+                Type '{ id: string; email: string; username: string | null; password: string; firstName: string | null; lastName: string | null; artistName: string | null; bio: string | null; website: string | null; ... 24 more ...; createdAt: Date | null; }' is not assignable to type '{ id: string; email: string; stripeCustomerId?: string | undefined; subscriptionTier?: string | undefined; subscriptionStatus?: string | undefined; subscriptionEndsAt?: Date | null | undefined; }'.
+                  Types of property 'stripeCustomerId' are incompatible.
+                    Type 'string | null' is not assignable to type 'string | undefined'.
+                      Type 'null' is not assignable to type 'string | undefined'.
+server/routes/billing.ts(1246,3): error TS2769: No overload matches this call.
+  The last overload gave the following error.
+    Argument of type '(req: AuthenticatedRequest, res: Response) => Promise<void>' is not assignable to parameter of type 'RequestHandlerParams<ParamsDictionary, any, any, ParsedQs, Record<string, any>>'.
+      Type '(req: AuthenticatedRequest, res: Response) => Promise<void>' is not assignable to type 'RequestHandler<ParamsDictionary, any, any, ParsedQs, Record<string, any>>'.
+        Types of parameters 'req' and 'req' are incompatible.
+          Type 'Request<ParamsDictionary, any, any, ParsedQs, Record<string, any>>' is not assignable to type 'AuthenticatedRequest'.
+            Types of property 'user' are incompatible.
+              Type '{ id: string; email: string; username: string | null; password: string; firstName: string | null; lastName: string | null; artistName: string | null; bio: string | null; website: string | null; ... 24 more ...; createdAt: Date | null; } | undefined' is not assignable to type '{ id: string; email: string; stripeCustomerId?: string | undefined; subscriptionTier?: string | undefined; subscriptionStatus?: string | undefined; subscriptionEndsAt?: Date | null | undefined; } | undefined'.
+                Type '{ id: string; email: string; username: string | null; password: string; firstName: string | null; lastName: string | null; artistName: string | null; bio: string | null; website: string | null; ... 24 more ...; createdAt: Date | null; }' is not assignable to type '{ id: string; email: string; stripeCustomerId?: string | undefined; subscriptionTier?: string | undefined; subscriptionStatus?: string | undefined; subscriptionEndsAt?: Date | null | undefined; }'.
+                  Types of property 'stripeCustomerId' are incompatible.
+                    Type 'string | null' is not assignable to type 'string | undefined'.
+                      Type 'null' is not assignable to type 'string | undefined'.
+server/routes/billing.ts(1272,3): error TS2769: No overload matches this call.
+  The last overload gave the following error.
+    Argument of type '(_req: Request, res: Response, next: Record<string, unknown>) => Response<any, Record<string, any>> | undefined' is not assignable to parameter of type 'RequestHandlerParams<ParamsDictionary, any, any, ParsedQs, Record<string, any>>'.
+      Type '(_req: Request, res: Response, next: Record<string, unknown>) => Response<any, Record<string, any>> | undefined' is not assignable to type 'RequestHandler<ParamsDictionary, any, any, ParsedQs, Record<string, any>>'.
+        Types of parameters 'next' and 'next' are incompatible.
+          Type 'NextFunction' is not assignable to type 'Record<string, unknown>'.
+            Index signature for type 'string' is missing in type 'NextFunction'.
+server/routes/billing.ts(1342,14): error TS2339: Property 'limit' does not exist on type 'Omit<PgUpdateBase<PgTableWithColumns<{ name: "users"; schema: undefined; columns: { id: PgColumn<{ name: "id"; tableName: "users"; dataType: "string"; columnType: "PgVarchar"; data: string; driverParam: string; notNull: true; hasDefault: true; ... 6 more ...; generated: undefined; }, {}, { ...; }>; ... 32 more ...; ...'.
+server/routes/billing.ts(1401,3): error TS2769: No overload matches this call.
+  The last overload gave the following error.
+    Argument of type '(_req: Request, res: Response, next: Record<string, unknown>) => Response<any, Record<string, any>> | undefined' is not assignable to parameter of type 'RequestHandlerParams<ParamsDictionary, any, any, ParsedQs, Record<string, any>>'.
+      Type '(_req: Request, res: Response, next: Record<string, unknown>) => Response<any, Record<string, any>> | undefined' is not assignable to type 'RequestHandler<ParamsDictionary, any, any, ParsedQs, Record<string, any>>'.
+        Types of parameters 'next' and 'next' are incompatible.
+          Type 'NextFunction' is not assignable to type 'Record<string, unknown>'.
+            Index signature for type 'string' is missing in type 'NextFunction'.
+server/routes/billing.ts(1476,3): error TS2769: No overload matches this call.
+  The last overload gave the following error.
+    Argument of type '(_req: Request, res: Response, next: Record<string, unknown>) => Response<any, Record<string, any>> | undefined' is not assignable to parameter of type 'RequestHandlerParams<ParamsDictionary, any, any, ParsedQs, Record<string, any>>'.
+      Type '(_req: Request, res: Response, next: Record<string, unknown>) => Response<any, Record<string, any>> | undefined' is not assignable to type 'RequestHandler<ParamsDictionary, any, any, ParsedQs, Record<string, any>>'.
+        Types of parameters 'next' and 'next' are incompatible.
+          Type 'NextFunction' is not assignable to type 'Record<string, unknown>'.
+            Index signature for type 'string' is missing in type 'NextFunction'.
+server/routes/billing.ts(1505,14): error TS2339: Property 'limit' does not exist on type 'Omit<PgUpdateBase<PgTableWithColumns<{ name: "users"; schema: undefined; columns: { id: PgColumn<{ name: "id"; tableName: "users"; dataType: "string"; columnType: "PgVarchar"; data: string; driverParam: string; notNull: true; hasDefault: true; ... 6 more ...; generated: undefined; }, {}, { ...; }>; ... 32 more ...; ...'.
+server/routes/billing.ts(1535,16): error TS2339: Property 'limit' does not exist on type 'Omit<PgUpdateBase<PgTableWithColumns<{ name: "users"; schema: undefined; columns: { id: PgColumn<{ name: "id"; tableName: "users"; dataType: "string"; columnType: "PgVarchar"; data: string; driverParam: string; notNull: true; hasDefault: true; ... 6 more ...; generated: undefined; }, {}, { ...; }>; ... 32 more ...; ...'.
+server/routes/billing.ts(1609,3): error TS2769: No overload matches this call.
+  The last overload gave the following error.
+    Argument of type '(req: AuthenticatedRequest, res: Response) => Promise<Response<any, Record<string, any>> | undefined>' is not assignable to parameter of type 'RequestHandlerParams<ParamsDictionary, any, any, ParsedQs, Record<string, any>>'.
+      Type '(req: AuthenticatedRequest, res: Response) => Promise<Response<any, Record<string, any>> | undefined>' is not assignable to type 'RequestHandler<ParamsDictionary, any, any, ParsedQs, Record<string, any>>'.
+        Types of parameters 'req' and 'req' are incompatible.
+          Type 'Request<ParamsDictionary, any, any, ParsedQs, Record<string, any>>' is not assignable to type 'AuthenticatedRequest'.
+            Types of property 'user' are incompatible.
+              Type '{ id: string; email: string; username: string | null; password: string; firstName: string | null; lastName: string | null; artistName: string | null; bio: string | null; website: string | null; ... 24 more ...; createdAt: Date | null; } | undefined' is not assignable to type '{ id: string; email: string; stripeCustomerId?: string | undefined; subscriptionTier?: string | undefined; subscriptionStatus?: string | undefined; subscriptionEndsAt?: Date | null | undefined; } | undefined'.
+                Type '{ id: string; email: string; username: string | null; password: string; firstName: string | null; lastName: string | null; artistName: string | null; bio: string | null; website: string | null; ... 24 more ...; createdAt: Date | null; }' is not assignable to type '{ id: string; email: string; stripeCustomerId?: string | undefined; subscriptionTier?: string | undefined; subscriptionStatus?: string | undefined; subscriptionEndsAt?: Date | null | undefined; }'.
+                  Types of property 'stripeCustomerId' are incompatible.
+                    Type 'string | null' is not assignable to type 'string | undefined'.
+                      Type 'null' is not assignable to type 'string | undefined'.
+server/routes/billing.ts(1799,3): error TS2769: No overload matches this call.
+  The last overload gave the following error.
+    Argument of type '(req: AuthenticatedRequest, res: Response) => Promise<Response<any, Record<string, any>> | undefined>' is not assignable to parameter of type 'RequestHandlerParams<ParamsDictionary, any, any, ParsedQs, Record<string, any>>'.
+      Type '(req: AuthenticatedRequest, res: Response) => Promise<Response<any, Record<string, any>> | undefined>' is not assignable to type 'RequestHandler<ParamsDictionary, any, any, ParsedQs, Record<string, any>>'.
+        Types of parameters 'req' and 'req' are incompatible.
+          Type 'Request<ParamsDictionary, any, any, ParsedQs, Record<string, any>>' is not assignable to type 'AuthenticatedRequest'.
+            Types of property 'user' are incompatible.
+              Type '{ id: string; email: string; username: string | null; password: string; firstName: string | null; lastName: string | null; artistName: string | null; bio: string | null; website: string | null; ... 24 more ...; createdAt: Date | null; } | undefined' is not assignable to type '{ id: string; email: string; stripeCustomerId?: string | undefined; subscriptionTier?: string | undefined; subscriptionStatus?: string | undefined; subscriptionEndsAt?: Date | null | undefined; } | undefined'.
+                Type '{ id: string; email: string; username: string | null; password: string; firstName: string | null; lastName: string | null; artistName: string | null; bio: string | null; website: string | null; ... 24 more ...; createdAt: Date | null; }' is not assignable to type '{ id: string; email: string; stripeCustomerId?: string | undefined; subscriptionTier?: string | undefined; subscriptionStatus?: string | undefined; subscriptionEndsAt?: Date | null | undefined; }'.
+                  Types of property 'stripeCustomerId' are incompatible.
+                    Type 'string | null' is not assignable to type 'string | undefined'.
+                      Type 'null' is not assignable to type 'string | undefined'.
+server/routes/billing.ts(1925,3): error TS2769: No overload matches this call.
+  The last overload gave the following error.
+    Argument of type '(req: AuthenticatedRequest, res: Response) => Promise<Response<any, Record<string, any>> | undefined>' is not assignable to parameter of type 'RequestHandlerParams<ParamsDictionary, any, any, ParsedQs, Record<string, any>>'.
+      Type '(req: AuthenticatedRequest, res: Response) => Promise<Response<any, Record<string, any>> | undefined>' is not assignable to type 'RequestHandler<ParamsDictionary, any, any, ParsedQs, Record<string, any>>'.
+        Types of parameters 'req' and 'req' are incompatible.
+          Type 'Request<ParamsDictionary, any, any, ParsedQs, Record<string, any>>' is not assignable to type 'AuthenticatedRequest'.
+            Types of property 'user' are incompatible.
+              Type '{ id: string; email: string; username: string | null; password: string; firstName: string | null; lastName: string | null; artistName: string | null; bio: string | null; website: string | null; ... 24 more ...; createdAt: Date | null; } | undefined' is not assignable to type '{ id: string; email: string; stripeCustomerId?: string | undefined; subscriptionTier?: string | undefined; subscriptionStatus?: string | undefined; subscriptionEndsAt?: Date | null | undefined; } | undefined'.
+                Type '{ id: string; email: string; username: string | null; password: string; firstName: string | null; lastName: string | null; artistName: string | null; bio: string | null; website: string | null; ... 24 more ...; createdAt: Date | null; }' is not assignable to type '{ id: string; email: string; stripeCustomerId?: string | undefined; subscriptionTier?: string | undefined; subscriptionStatus?: string | undefined; subscriptionEndsAt?: Date | null | undefined; }'.
+                  Types of property 'stripeCustomerId' are incompatible.
+                    Type 'string | null' is not assignable to type 'string | undefined'.
+                      Type 'null' is not assignable to type 'string | undefined'.
+server/routes/billing.ts(2066,3): error TS2769: No overload matches this call.
+  The last overload gave the following error.
+    Argument of type '(req: AuthenticatedRequest, res: Response) => Promise<Response<any, Record<string, any>> | undefined>' is not assignable to parameter of type 'RequestHandlerParams<ParamsDictionary, any, any, ParsedQs, Record<string, any>>'.
+      Type '(req: AuthenticatedRequest, res: Response) => Promise<Response<any, Record<string, any>> | undefined>' is not assignable to type 'RequestHandler<ParamsDictionary, any, any, ParsedQs, Record<string, any>>'.
+        Types of parameters 'req' and 'req' are incompatible.
+          Type 'Request<ParamsDictionary, any, any, ParsedQs, Record<string, any>>' is not assignable to type 'AuthenticatedRequest'.
+            Types of property 'user' are incompatible.
+              Type '{ id: string; email: string; username: string | null; password: string; firstName: string | null; lastName: string | null; artistName: string | null; bio: string | null; website: string | null; ... 24 more ...; createdAt: Date | null; } | undefined' is not assignable to type '{ id: string; email: string; stripeCustomerId?: string | undefined; subscriptionTier?: string | undefined; subscriptionStatus?: string | undefined; subscriptionEndsAt?: Date | null | undefined; } | undefined'.
+                Type '{ id: string; email: string; username: string | null; password: string; firstName: string | null; lastName: string | null; artistName: string | null; bio: string | null; website: string | null; ... 24 more ...; createdAt: Date | null; }' is not assignable to type '{ id: string; email: string; stripeCustomerId?: string | undefined; subscriptionTier?: string | undefined; subscriptionStatus?: string | undefined; subscriptionEndsAt?: Date | null | undefined; }'.
+                  Types of property 'stripeCustomerId' are incompatible.
+                    Type 'string | null' is not assignable to type 'string | undefined'.
+                      Type 'null' is not assignable to type 'string | undefined'.
+server/routes/billing.ts(2160,3): error TS2769: No overload matches this call.
+  The last overload gave the following error.
+    Argument of type '(req: AuthenticatedRequest, res: Response) => Promise<Response<any, Record<string, any>> | undefined>' is not assignable to parameter of type 'RequestHandlerParams<ParamsDictionary, any, any, ParsedQs, Record<string, any>>'.
+      Type '(req: AuthenticatedRequest, res: Response) => Promise<Response<any, Record<string, any>> | undefined>' is not assignable to type 'RequestHandler<ParamsDictionary, any, any, ParsedQs, Record<string, any>>'.
+        Types of parameters 'req' and 'req' are incompatible.
+          Type 'Request<ParamsDictionary, any, any, ParsedQs, Record<string, any>>' is not assignable to type 'AuthenticatedRequest'.
+            Types of property 'user' are incompatible.
+              Type '{ id: string; email: string; username: string | null; password: string; firstName: string | null; lastName: string | null; artistName: string | null; bio: string | null; website: string | null; ... 24 more ...; createdAt: Date | null; } | undefined' is not assignable to type '{ id: string; email: string; stripeCustomerId?: string | undefined; subscriptionTier?: string | undefined; subscriptionStatus?: string | undefined; subscriptionEndsAt?: Date | null | undefined; } | undefined'.
+                Type '{ id: string; email: string; username: string | null; password: string; firstName: string | null; lastName: string | null; artistName: string | null; bio: string | null; website: string | null; ... 24 more ...; createdAt: Date | null; }' is not assignable to type '{ id: string; email: string; stripeCustomerId?: string | undefined; subscriptionTier?: string | undefined; subscriptionStatus?: string | undefined; subscriptionEndsAt?: Date | null | undefined; }'.
+                  Types of property 'stripeCustomerId' are incompatible.
+                    Type 'string | null' is not assignable to type 'string | undefined'.
+                      Type 'null' is not assignable to type 'string | undefined'.
+server/routes/billing.ts(2267,3): error TS2769: No overload matches this call.
+  The last overload gave the following error.
+    Argument of type '(req: AuthenticatedRequest, res: Response) => Promise<Response<any, Record<string, any>> | undefined>' is not assignable to parameter of type 'RequestHandlerParams<ParamsDictionary, any, any, ParsedQs, Record<string, any>>'.
+      Type '(req: AuthenticatedRequest, res: Response) => Promise<Response<any, Record<string, any>> | undefined>' is not assignable to type 'RequestHandler<ParamsDictionary, any, any, ParsedQs, Record<string, any>>'.
+        Types of parameters 'req' and 'req' are incompatible.
+          Type 'Request<ParamsDictionary, any, any, ParsedQs, Record<string, any>>' is not assignable to type 'AuthenticatedRequest'.
+            Types of property 'user' are incompatible.
+              Type '{ id: string; email: string; username: string | null; password: string; firstName: string | null; lastName: string | null; artistName: string | null; bio: string | null; website: string | null; ... 24 more ...; createdAt: Date | null; } | undefined' is not assignable to type '{ id: string; email: string; stripeCustomerId?: string | undefined; subscriptionTier?: string | undefined; subscriptionStatus?: string | undefined; subscriptionEndsAt?: Date | null | undefined; } | undefined'.
+                Type '{ id: string; email: string; username: string | null; password: string; firstName: string | null; lastName: string | null; artistName: string | null; bio: string | null; website: string | null; ... 24 more ...; createdAt: Date | null; }' is not assignable to type '{ id: string; email: string; stripeCustomerId?: string | undefined; subscriptionTier?: string | undefined; subscriptionStatus?: string | undefined; subscriptionEndsAt?: Date | null | undefined; }'.
+                  Types of property 'stripeCustomerId' are incompatible.
+                    Type 'string | null' is not assignable to type 'string | undefined'.
+                      Type 'null' is not assignable to type 'string | undefined'.
+server/routes/billing.ts(2345,3): error TS2769: No overload matches this call.
+  The last overload gave the following error.
+    Argument of type '(req: AuthenticatedRequest, res: Response) => Promise<void>' is not assignable to parameter of type 'RequestHandlerParams<ParamsDictionary, any, any, ParsedQs, Record<string, any>>'.
+      Type '(req: AuthenticatedRequest, res: Response) => Promise<void>' is not assignable to type 'RequestHandler<ParamsDictionary, any, any, ParsedQs, Record<string, any>>'.
+        Types of parameters 'req' and 'req' are incompatible.
+          Type 'Request<ParamsDictionary, any, any, ParsedQs, Record<string, any>>' is not assignable to type 'AuthenticatedRequest'.
+            Types of property 'user' are incompatible.
+              Type '{ id: string; email: string; username: string | null; password: string; firstName: string | null; lastName: string | null; artistName: string | null; bio: string | null; website: string | null; ... 24 more ...; createdAt: Date | null; } | undefined' is not assignable to type '{ id: string; email: string; stripeCustomerId?: string | undefined; subscriptionTier?: string | undefined; subscriptionStatus?: string | undefined; subscriptionEndsAt?: Date | null | undefined; } | undefined'.
+                Type '{ id: string; email: string; username: string | null; password: string; firstName: string | null; lastName: string | null; artistName: string | null; bio: string | null; website: string | null; ... 24 more ...; createdAt: Date | null; }' is not assignable to type '{ id: string; email: string; stripeCustomerId?: string | undefined; subscriptionTier?: string | undefined; subscriptionStatus?: string | undefined; subscriptionEndsAt?: Date | null | undefined; }'.
+                  Types of property 'stripeCustomerId' are incompatible.
+                    Type 'string | null' is not assignable to type 'string | undefined'.
+                      Type 'null' is not assignable to type 'string | undefined'.
+server/routes/distribution.ts(321,11): error TS2698: Spread types may only be created from object types.
+server/routes/distribution.ts(535,9): error TS2769: No overload matches this call.
+  Overload 1 of 3, '(obj: "LabelGrid ISRC generation unavailable, using internal generator:", msg?: undefined): void', gave the following error.
+    Argument of type 'unknown' is not assignable to parameter of type 'undefined'.
+  Overload 2 of 3, '(obj: "LabelGrid ISRC generation unavailable, using internal generator:", msg?: undefined, ...args: unknown[]): void', gave the following error.
+    Argument of type 'unknown' is not assignable to parameter of type 'undefined'.
+server/routes/distribution.ts(598,9): error TS2769: No overload matches this call.
+  Overload 1 of 3, '(obj: "LabelGrid UPC generation unavailable, using internal generator:", msg?: undefined): void', gave the following error.
+    Argument of type 'unknown' is not assignable to parameter of type 'undefined'.
+  Overload 2 of 3, '(obj: "LabelGrid UPC generation unavailable, using internal generator:", msg?: undefined, ...args: unknown[]): void', gave the following error.
+    Argument of type 'unknown' is not assignable to parameter of type 'undefined'.
+server/routes/distribution.ts(1365,11): error TS2769: No overload matches this call.
+  Overload 1 of 3, '(obj: "Status refresh failed, returning current status:", msg?: undefined): void', gave the following error.
+    Argument of type 'unknown' is not assignable to parameter of type 'undefined'.
+  Overload 2 of 3, '(obj: "Status refresh failed, returning current status:", msg?: undefined, ...args: unknown[]): void', gave the following error.
+    Argument of type 'unknown' is not assignable to parameter of type 'undefined'.
+server/routes/distribution.ts(1603,45): error TS2345: Argument of type '{} | null' is not assignable to parameter of type 'string'.
+  Type 'null' is not assignable to type 'string'.
+server/routes/distribution.ts(1681,9): error TS2345: Argument of type '{}' is not assignable to parameter of type 'string | string[]'.
+server/routes/distribution.ts(1685,9): error TS2769: No overload matches this call.
+  Overload 1 of 3, '(obj: string, msg?: undefined): void', gave the following error.
+    Argument of type '{ userId: string; platforms: {}; }' is not assignable to parameter of type 'undefined'.
+  Overload 2 of 3, '(obj: string, msg?: undefined, ...args: unknown[]): void', gave the following error.
+    Argument of type '{ userId: string; platforms: {}; }' is not assignable to parameter of type 'undefined'.
+server/routes/distribution.ts(1687,61): error TS2345: Argument of type '{ title: unknown; artist: {}; releaseDate: string; upc: string | undefined; artwork: {}; genre: {}; label: {} | undefined; copyrightYear: {}; copyrightOwner: {} | undefined; territoryMode: "worldwide" | "include" | "exclude"; territories: {}; platforms: string[]; tracks: { ...; }[]; }' is not assignable to parameter of type 'LabelGridRelease'.
+  Types of property 'title' are incompatible.
+    Type 'unknown' is not assignable to type 'string'.
+server/routes/distribution.ts(1697,13): error TS2769: No overload matches this call.
+  Overload 1 of 2, '(predicate: (value: LabelGridPlatformStatus, index: number, obj: LabelGridPlatformStatus[]) => value is LabelGridPlatformStatus, thisArg?: any): LabelGridPlatformStatus | undefined', gave the following error.
+    Argument of type '(p: Record<string, unknown>) => boolean' is not assignable to parameter of type '(value: LabelGridPlatformStatus, index: number, obj: LabelGridPlatformStatus[]) => value is LabelGridPlatformStatus'.
+      Types of parameters 'p' and 'value' are incompatible.
+        Type 'LabelGridPlatformStatus' is not assignable to type 'Record<string, unknown>'.
+          Index signature for type 'string' is missing in type 'LabelGridPlatformStatus'.
+  Overload 2 of 2, '(predicate: (value: LabelGridPlatformStatus, index: number, obj: LabelGridPlatformStatus[]) => unknown, thisArg?: any): LabelGridPlatformStatus | undefined', gave the following error.
+    Argument of type '(p: Record<string, unknown>) => boolean' is not assignable to parameter of type '(value: LabelGridPlatformStatus, index: number, obj: LabelGridPlatformStatus[]) => unknown'.
+      Types of parameters 'p' and 'value' are incompatible.
+        Type 'LabelGridPlatformStatus' is not assignable to type 'Record<string, unknown>'.
+          Index signature for type 'string' is missing in type 'LabelGridPlatformStatus'.
+server/routes/distribution.ts(1734,9): error TS2769: No overload matches this call.
+  Overload 1 of 3, '(obj: string, msg?: undefined): void', gave the following error.
+    Argument of type '{ releaseId: string; labelGridReleaseId: string; userId: string; platforms: {}; trackCount: number; }' is not assignable to parameter of type 'undefined'.
+  Overload 2 of 3, '(obj: string, msg?: undefined, ...args: unknown[]): void', gave the following error.
+    Argument of type '{ releaseId: string; labelGridReleaseId: string; userId: string; platforms: {}; trackCount: number; }' is not assignable to parameter of type 'undefined'.
+server/routes/distribution.ts(2027,58): error TS2365: Operator '+' cannot be applied to types 'number' and '{}'.
+server/routes/distribution.ts(2037,13): error TS2769: No overload matches this call.
+  Overload 1 of 3, '(obj: "[Distribution] LabelGrid analytics fetch failed, falling back to DB:", msg?: undefined): void', gave the following error.
+    Argument of type 'unknown' is not assignable to parameter of type 'undefined'.
+  Overload 2 of 3, '(obj: "[Distribution] LabelGrid analytics fetch failed, falling back to DB:", msg?: undefined, ...args: unknown[]): void', gave the following error.
+    Argument of type 'unknown' is not assignable to parameter of type 'undefined'.
+server/routes/distribution.ts(2214,7): error TS2322: Type '{ title: string; artist: string | undefined; featuredArtists: string[] | undefined; isrc: string | undefined; duration: number | undefined; trackNumber: number | undefined; discNumber: number | undefined; ... 5 more ...; genre: string | undefined; }[]' is not assignable to type 'TrackMetadata[]'.
+  Type '{ title: string; artist: string | undefined; featuredArtists: string[] | undefined; isrc: string | undefined; duration: number | undefined; trackNumber: number | undefined; discNumber: number | undefined; ... 5 more ...; genre: string | undefined; }' is not assignable to type 'TrackMetadata'.
+    Types of property 'artist' are incompatible.
+      Type 'string | undefined' is not assignable to type 'string'.
+        Type 'undefined' is not assignable to type 'string'.
+server/routes/distribution.ts(2431,7): error TS2322: Type '{ title: string; artist: string | undefined; featuredArtists: string[] | undefined; isrc: string | undefined; duration: number | undefined; trackNumber: number | undefined; discNumber: number | undefined; ... 5 more ...; genre: string | undefined; }[]' is not assignable to type 'TrackMetadata[]'.
+  Type '{ title: string; artist: string | undefined; featuredArtists: string[] | undefined; isrc: string | undefined; duration: number | undefined; trackNumber: number | undefined; discNumber: number | undefined; ... 5 more ...; genre: string | undefined; }' is not assignable to type 'TrackMetadata'.
+    Types of property 'artist' are incompatible.
+      Type 'string | undefined' is not assignable to type 'string'.
+        Type 'undefined' is not assignable to type 'string'.
+server/routes/distribution.ts(2651,11): error TS2345: Argument of type 'string' is not assignable to parameter of type 'ReleaseState'.
+server/routes/distribution.ts(2777,9): error TS2322: Type 'AudioFingerprint' is not assignable to type 'Record<string, unknown>'.
+  Index signature for type 'string' is missing in type 'AudioFingerprint'.
+server/routes/distribution.ts(3386,9): error TS2345: Argument of type 'string' is not assignable to parameter of type 'IdentifierGenerationOptions'.
+server/routes/distribution.ts(3452,9): error TS2345: Argument of type 'string' is not assignable to parameter of type 'ReleaseStatus'.
+server/routes/distribution.ts(3511,9): error TS2345: Argument of type 'string' is not assignable to parameter of type 'ReleaseStatus'.
+server/routes/distribution.ts(3517,11): error TS2345: Argument of type 'string' is not assignable to parameter of type 'ReleaseStatus'.
+server/routes/distribution.ts(3519,55): error TS2345: Argument of type 'string' is not assignable to parameter of type 'ReleaseStatus'.
+server/routes/distribution.ts(3551,17): error TS2677: A type predicate's type must be assignable to its parameter's type.
+  Type 'PromiseFulfilledResult<unknown>' is not assignable to type 'PromiseSettledResult<LabelGridAnalytics>'.
+    Type 'PromiseFulfilledResult<unknown>' is not assignable to type 'PromiseFulfilledResult<LabelGridAnalytics>'.
+      Type 'unknown' is not assignable to type 'LabelGridAnalytics'.
+server/routes/distribution.ts(3557,48): error TS2365: Operator '+' cannot be applied to types 'number' and '{}'.
+server/routes/distribution.ts(3561,48): error TS2365: Operator '+' cannot be applied to types 'number' and '{}'.
+server/routes/distribution.ts(3574,7): error TS2365: Operator '+=' cannot be applied to types 'number' and '{}'.
+server/routes/distribution.ts(3575,7): error TS2365: Operator '+=' cannot be applied to types 'number' and '{}'.
+server/routes/distribution.ts(3576,7): error TS2365: Operator '+=' cannot be applied to types 'number' and '{}'.
+server/routes/distribution.ts(3643,13): error TS2769: No overload matches this call.
+  Overload 1 of 3, '(obj: "[Distribution] LabelGrid analytics growth failed, falling back to DB:", msg?: undefined): void', gave the following error.
+    Argument of type 'unknown' is not assignable to parameter of type 'undefined'.
+  Overload 2 of 3, '(obj: "[Distribution] LabelGrid analytics growth failed, falling back to DB:", msg?: undefined, ...args: unknown[]): void', gave the following error.
+    Argument of type 'unknown' is not assignable to parameter of type 'undefined'.
+server/routes/distribution.ts(3693,13): error TS2769: No overload matches this call.
+  Overload 1 of 3, '(obj: "[Distribution] LabelGrid streaming trends failed, falling back to DB:", msg?: undefined): void', gave the following error.
+    Argument of type 'unknown' is not assignable to parameter of type 'undefined'.
+  Overload 2 of 3, '(obj: "[Distribution] LabelGrid streaming trends failed, falling back to DB:", msg?: undefined, ...args: unknown[]): void', gave the following error.
+    Argument of type 'unknown' is not assignable to parameter of type 'undefined'.
+server/routes/distribution.ts(3774,13): error TS2769: No overload matches this call.
+  Overload 1 of 3, '(obj: "[Distribution] LabelGrid earnings breakdown failed, falling back to DB:", msg?: undefined): void', gave the following error.
+    Argument of type 'unknown' is not assignable to parameter of type 'undefined'.
+  Overload 2 of 3, '(obj: "[Distribution] LabelGrid earnings breakdown failed, falling back to DB:", msg?: undefined, ...args: unknown[]): void', gave the following error.
+    Argument of type 'unknown' is not assignable to parameter of type 'undefined'.
+server/routes/distribution.ts(3851,13): error TS2769: No overload matches this call.
+  Overload 1 of 3, '(obj: "[Distribution] LabelGrid platform earnings failed, falling back to DB:", msg?: undefined): void', gave the following error.
+    Argument of type 'unknown' is not assignable to parameter of type 'undefined'.
+  Overload 2 of 3, '(obj: "[Distribution] LabelGrid platform earnings failed, falling back to DB:", msg?: undefined, ...args: unknown[]): void', gave the following error.
+    Argument of type 'unknown' is not assignable to parameter of type 'undefined'.
+server/routes/distribution.ts(4452,13): error TS2769: No overload matches this call.
+  Overload 1 of 3, '(obj: "[Distribution] LabelGrid earnings summary failed, falling back to DB:", msg?: undefined): void', gave the following error.
+    Argument of type 'unknown' is not assignable to parameter of type 'undefined'.
+  Overload 2 of 3, '(obj: "[Distribution] LabelGrid earnings summary failed, falling back to DB:", msg?: undefined, ...args: unknown[]): void', gave the following error.
+    Argument of type 'unknown' is not assignable to parameter of type 'undefined'.
+server/routes/distribution.ts(4665,13): error TS2769: No overload matches this call.
+  Overload 1 of 3, '(obj: "[Distribution] LabelGrid royalties/platforms failed, falling back to DB:", msg?: undefined): void', gave the following error.
+    Argument of type 'unknown' is not assignable to parameter of type 'undefined'.
+  Overload 2 of 3, '(obj: "[Distribution] LabelGrid royalties/platforms failed, falling back to DB:", msg?: undefined, ...args: unknown[]): void', gave the following error.
+    Argument of type 'unknown' is not assignable to parameter of type 'undefined'.
+server/routes/distribution.ts(5309,9): error TS2769: No overload matches this call.
+  Overload 1 of 3, '(obj: string, msg?: undefined): void', gave the following error.
+    Argument of type '{ releaseId: string; platform: any; retryCount: any; }' is not assignable to parameter of type 'undefined'.
+  Overload 2 of 3, '(obj: string, msg?: undefined, ...args: unknown[]): void', gave the following error.
+    Argument of type '{ releaseId: string; platform: any; retryCount: any; }' is not assignable to parameter of type 'undefined'.
+server/routes/distribution.ts(5390,22): error TS2554: Expected 3 arguments, but got 2.
+server/routes/distribution.ts(5423,27): error TS2554: Expected 3 arguments, but got 2.
+server/routes/distribution.ts(5425,15): error TS2698: Spread types may only be created from object types.
+server/routes/distribution.ts(5455,39): error TS2304: Cannot find name 'DistroStorage'.
+server/routes/distribution.ts(5460,13): error TS2304: Cannot find name 'updateDistroTrackLoose'.
+server/routes/distribution.ts(5494,22): error TS2554: Expected 3 arguments, but got 2.
+server/routes/distribution.ts(5795,11): error TS2769: No overload matches this call.
+  Overload 1 of 3, '(obj: "LabelGrid ISRC generation unavailable, using internal generator:", msg?: undefined): void', gave the following error.
+    Argument of type 'unknown' is not assignable to parameter of type 'undefined'.
+  Overload 2 of 3, '(obj: "LabelGrid ISRC generation unavailable, using internal generator:", msg?: undefined, ...args: unknown[]): void', gave the following error.
+    Argument of type 'unknown' is not assignable to parameter of type 'undefined'.
+server/routes/distribution.ts(5857,11): error TS2769: No overload matches this call.
+  Overload 1 of 3, '(obj: "LabelGrid UPC generation unavailable, using internal generator:", msg?: undefined): void', gave the following error.
+    Argument of type 'unknown' is not assignable to parameter of type 'undefined'.
+  Overload 2 of 3, '(obj: "LabelGrid UPC generation unavailable, using internal generator:", msg?: undefined, ...args: unknown[]): void', gave the following error.
+    Argument of type 'unknown' is not assignable to parameter of type 'undefined'.
+server/routes/distribution.ts(6808,24): error TS2345: Argument of type '(t: Record<string, unknown>, idx: number) => { title: unknown; artist: {}; isrc: unknown; audioFile: {}; duration: {}; trackNumber: {}; explicit: {}; lyrics: {} | undefined; }' is not assignable to parameter of type '(value: unknown, index: number, array: unknown[]) => { title: unknown; artist: {}; isrc: unknown; audioFile: {}; duration: {}; trackNumber: {}; explicit: {}; lyrics: {} | undefined; }'.
+  Types of parameters 't' and 'value' are incompatible.
+    Type 'unknown' is not assignable to type 'Record<string, unknown>'.
+server/routes/distribution.ts(6847,9): error TS2769: No overload matches this call.
+  Overload 1 of 3, '(obj: string, msg?: undefined): void', gave the following error.
+    Argument of type '{ userId: string; }' is not assignable to parameter of type 'undefined'.
+  Overload 2 of 3, '(obj: string, msg?: undefined, ...args: unknown[]): void', gave the following error.
+    Argument of type '{ userId: string; }' is not assignable to parameter of type 'undefined'.
+server/routes/distribution.ts(6849,60): error TS2345: Argument of type '{ title: unknown; artist: {}; releaseDate: string; upc: string | undefined; artwork: {}; genre: {}; label: {} | undefined; copyrightYear: {}; copyrightOwner: {} | undefined; territoryMode: "worldwide" | "include" | "exclude"; territories: {}; platforms: string[]; tracks: { ...; }[]; }' is not assignable to parameter of type 'LabelGridRelease'.
+  Types of property 'title' are incompatible.
+    Type 'unknown' is not assignable to type 'string'.
+server/routes/distribution.ts(6904,9): error TS2769: No overload matches this call.
+  Overload 1 of 3, '(obj: string, msg?: undefined): void', gave the following error.
+    Argument of type '{ userId: string; }' is not assignable to parameter of type 'undefined'.
+  Overload 2 of 3, '(obj: string, msg?: undefined, ...args: unknown[]): void', gave the following error.
+    Argument of type '{ userId: string; }' is not assignable to parameter of type 'undefined'.
+server/routes/distribution.ts(6906,60): error TS2345: Argument of type '{ title: unknown; artist: {}; releaseDate: string; upc: string | undefined; artwork: {}; genre: {}; label: {} | undefined; copyrightYear: {}; copyrightOwner: {} | undefined; territoryMode: "worldwide" | "include" | "exclude"; territories: {}; platforms: string[]; tracks: { ...; }[]; }' is not assignable to parameter of type 'LabelGridRelease'.
+  Types of property 'title' are incompatible.
+    Type 'unknown' is not assignable to type 'string'.
+server/routes/distribution.ts(6964,9): error TS2769: No overload matches this call.
+  Overload 1 of 3, '(obj: string, msg?: undefined): void', gave the following error.
+    Argument of type '{ userId: string; }' is not assignable to parameter of type 'undefined'.
+  Overload 2 of 3, '(obj: string, msg?: undefined, ...args: unknown[]): void', gave the following error.
+    Argument of type '{ userId: string; }' is not assignable to parameter of type 'undefined'.
+server/routes/distribution.ts(6966,60): error TS2345: Argument of type '{ title: unknown; artist: {}; releaseDate: string; upc: string | undefined; artwork: {}; genre: {}; label: {} | undefined; copyrightYear: {}; copyrightOwner: {} | undefined; territoryMode: "worldwide" | "include" | "exclude"; territories: {}; platforms: string[]; tracks: { ...; }[]; }' is not assignable to parameter of type 'LabelGridRelease'.
+  Types of property 'title' are incompatible.
+    Type 'unknown' is not assignable to type 'string'.
+server/routes/search.ts(121,21): error TS2362: The left-hand side of an arithmetic operation must be of type 'any', 'number', 'bigint' or an enum type.
+server/routes/search.ts(122,21): error TS2362: The left-hand side of an arithmetic operation must be of type 'any', 'number', 'bigint' or an enum type.
+server/routes/search.ts(137,7): error TS2345: Argument of type 'SQL<unknown> | undefined' is not assignable to parameter of type 'Record<string, unknown>'.
+  Type 'undefined' is not assignable to type 'Record<string, unknown>'.
+server/routes/search.ts(146,21): error TS2769: No overload matches this call.
+  Overload 1 of 3, '(left: PgColumn<{ name: "genre"; tableName: "beats"; dataType: "string"; columnType: "PgText"; data: string; driverParam: string; notNull: false; hasDefault: false; isPrimaryKey: false; isAutoincrement: false; ... 4 more ...; generated: undefined; }, {}, {}>, right: string | SQLWrapper): SQL<...>', gave the following error.
+    Argument of type '{}' is not assignable to parameter of type 'string | SQLWrapper'.
+  Overload 2 of 3, '(left: Aliased<{}>, right: {} | SQLWrapper): SQL<unknown>', gave the following error.
+    Argument of type 'PgColumn<{ name: "genre"; tableName: "beats"; dataType: "string"; columnType: "PgText"; data: string; driverParam: string; notNull: false; hasDefault: false; isPrimaryKey: false; isAutoincrement: false; ... 4 more ...; generated: undefined; }, {}, {}>' is not assignable to parameter of type 'Aliased<{}>'.
+      Type 'PgColumn<{ name: "genre"; tableName: "beats"; dataType: "string"; columnType: "PgText"; data: string; driverParam: string; notNull: false; hasDefault: false; isPrimaryKey: false; isAutoincrement: false; ... 4 more ...; generated: undefined; }, {}, {}>' is missing the following properties from type 'Aliased<{}>': sql, fieldAlias
+  Overload 3 of 3, '(left: never, right: unknown): SQL<unknown>', gave the following error.
+    Argument of type 'PgColumn<{ name: "genre"; tableName: "beats"; dataType: "string"; columnType: "PgText"; data: string; driverParam: string; notNull: false; hasDefault: false; isPrimaryKey: false; isAutoincrement: false; ... 4 more ...; generated: undefined; }, {}, {}>' is not assignable to parameter of type 'never'.
+server/routes/search.ts(146,21): error TS2345: Argument of type 'SQL<unknown>' is not assignable to parameter of type 'Record<string, unknown>'.
+  Index signature for type 'string' is missing in type 'SQL<unknown>'.
+server/routes/search.ts(150,21): error TS2769: No overload matches this call.
+  Overload 1 of 3, '(left: PgColumn<{ name: "key"; tableName: "beats"; dataType: "string"; columnType: "PgText"; data: string; driverParam: string; notNull: false; hasDefault: false; isPrimaryKey: false; isAutoincrement: false; ... 4 more ...; generated: undefined; }, {}, {}>, right: string | SQLWrapper): SQL<...>', gave the following error.
+    Argument of type '{}' is not assignable to parameter of type 'string | SQLWrapper'.
+  Overload 2 of 3, '(left: Aliased<{}>, right: {} | SQLWrapper): SQL<unknown>', gave the following error.
+    Argument of type 'PgColumn<{ name: "key"; tableName: "beats"; dataType: "string"; columnType: "PgText"; data: string; driverParam: string; notNull: false; hasDefault: false; isPrimaryKey: false; isAutoincrement: false; ... 4 more ...; generated: undefined; }, {}, {}>' is not assignable to parameter of type 'Aliased<{}>'.
+      Type 'PgColumn<{ name: "key"; tableName: "beats"; dataType: "string"; columnType: "PgText"; data: string; driverParam: string; notNull: false; hasDefault: false; isPrimaryKey: false; isAutoincrement: false; ... 4 more ...; generated: undefined; }, {}, {}>' is missing the following properties from type 'Aliased<{}>': sql, fieldAlias
+  Overload 3 of 3, '(left: never, right: unknown): SQL<unknown>', gave the following error.
+    Argument of type 'PgColumn<{ name: "key"; tableName: "beats"; dataType: "string"; columnType: "PgText"; data: string; driverParam: string; notNull: false; hasDefault: false; isPrimaryKey: false; isAutoincrement: false; ... 4 more ...; generated: undefined; }, {}, {}>' is not assignable to parameter of type 'never'.
+server/routes/search.ts(150,21): error TS2345: Argument of type 'SQL<unknown>' is not assignable to parameter of type 'Record<string, unknown>'.
+  Index signature for type 'string' is missing in type 'SQL<unknown>'.
+server/routes/search.ts(154,21): error TS2769: No overload matches this call.
+  Overload 1 of 3, '(left: PgColumn<{ name: "bpm"; tableName: "beats"; dataType: "number"; columnType: "PgInteger"; data: number; driverParam: string | number; notNull: false; hasDefault: false; isPrimaryKey: false; isAutoincrement: false; ... 4 more ...; generated: undefined; }, {}, {}>, right: number | SQLWrapper): SQL<...>', gave the following error.
+    Argument of type '{}' is not assignable to parameter of type 'number | SQLWrapper'.
+  Overload 2 of 3, '(left: Aliased<{}>, right: {} | SQLWrapper): SQL<unknown>', gave the following error.
+    Argument of type 'PgColumn<{ name: "bpm"; tableName: "beats"; dataType: "number"; columnType: "PgInteger"; data: number; driverParam: string | number; notNull: false; hasDefault: false; isPrimaryKey: false; isAutoincrement: false; ... 4 more ...; generated: undefined; }, {}, {}>' is not assignable to parameter of type 'Aliased<{}>'.
+      Type 'PgColumn<{ name: "bpm"; tableName: "beats"; dataType: "number"; columnType: "PgInteger"; data: number; driverParam: string | number; notNull: false; hasDefault: false; isPrimaryKey: false; isAutoincrement: false; ... 4 more ...; generated: undefined; }, {}, {}>' is missing the following properties from type 'Aliased<{}>': sql, fieldAlias
+  Overload 3 of 3, '(left: never, right: unknown): SQL<unknown>', gave the following error.
+    Argument of type 'PgColumn<{ name: "bpm"; tableName: "beats"; dataType: "number"; columnType: "PgInteger"; data: number; driverParam: string | number; notNull: false; hasDefault: false; isPrimaryKey: false; isAutoincrement: false; ... 4 more ...; generated: undefined; }, {}, {}>' is not assignable to parameter of type 'never'.
+server/routes/search.ts(154,21): error TS2345: Argument of type 'SQL<unknown>' is not assignable to parameter of type 'Record<string, unknown>'.
+  Index signature for type 'string' is missing in type 'SQL<unknown>'.
+server/routes/search.ts(158,21): error TS2769: No overload matches this call.
+  Overload 1 of 3, '(left: PgColumn<{ name: "bpm"; tableName: "beats"; dataType: "number"; columnType: "PgInteger"; data: number; driverParam: string | number; notNull: false; hasDefault: false; isPrimaryKey: false; isAutoincrement: false; ... 4 more ...; generated: undefined; }, {}, {}>, right: number | SQLWrapper): SQL<...>', gave the following error.
+    Argument of type '{}' is not assignable to parameter of type 'number | SQLWrapper'.
+  Overload 2 of 3, '(left: Aliased<{}>, right: {} | SQLWrapper): SQL<unknown>', gave the following error.
+    Argument of type 'PgColumn<{ name: "bpm"; tableName: "beats"; dataType: "number"; columnType: "PgInteger"; data: number; driverParam: string | number; notNull: false; hasDefault: false; isPrimaryKey: false; isAutoincrement: false; ... 4 more ...; generated: undefined; }, {}, {}>' is not assignable to parameter of type 'Aliased<{}>'.
+      Type 'PgColumn<{ name: "bpm"; tableName: "beats"; dataType: "number"; columnType: "PgInteger"; data: number; driverParam: string | number; notNull: false; hasDefault: false; isPrimaryKey: false; isAutoincrement: false; ... 4 more ...; generated: undefined; }, {}, {}>' is missing the following properties from type 'Aliased<{}>': sql, fieldAlias
+  Overload 3 of 3, '(left: never, right: unknown): SQL<unknown>', gave the following error.
+    Argument of type 'PgColumn<{ name: "bpm"; tableName: "beats"; dataType: "number"; columnType: "PgInteger"; data: number; driverParam: string | number; notNull: false; hasDefault: false; isPrimaryKey: false; isAutoincrement: false; ... 4 more ...; generated: undefined; }, {}, {}>' is not assignable to parameter of type 'never'.
+server/routes/search.ts(158,21): error TS2345: Argument of type 'SQL<unknown>' is not assignable to parameter of type 'Record<string, unknown>'.
+  Index signature for type 'string' is missing in type 'SQL<unknown>'.
+server/routes/search.ts(162,21): error TS2769: No overload matches this call.
+  Overload 1 of 3, '(left: PgColumn<{ name: "price"; tableName: "beats"; dataType: "number"; columnType: "PgReal"; data: number; driverParam: string | number; notNull: true; hasDefault: false; isPrimaryKey: false; isAutoincrement: false; ... 4 more ...; generated: undefined; }, {}, {}>, right: number | SQLWrapper): SQL<...>', gave the following error.
+    Argument of type '{}' is not assignable to parameter of type 'number | SQLWrapper'.
+  Overload 2 of 3, '(left: Aliased<{}>, right: {} | SQLWrapper): SQL<unknown>', gave the following error.
+    Argument of type 'PgColumn<{ name: "price"; tableName: "beats"; dataType: "number"; columnType: "PgReal"; data: number; driverParam: string | number; notNull: true; hasDefault: false; isPrimaryKey: false; isAutoincrement: false; ... 4 more ...; generated: undefined; }, {}, {}>' is not assignable to parameter of type 'Aliased<{}>'.
+      Type 'PgColumn<{ name: "price"; tableName: "beats"; dataType: "number"; columnType: "PgReal"; data: number; driverParam: string | number; notNull: true; hasDefault: false; isPrimaryKey: false; isAutoincrement: false; ... 4 more ...; generated: undefined; }, {}, {}>' is missing the following properties from type 'Aliased<{}>': sql, fieldAlias
+  Overload 3 of 3, '(left: never, right: unknown): SQL<unknown>', gave the following error.
+    Argument of type 'PgColumn<{ name: "price"; tableName: "beats"; dataType: "number"; columnType: "PgReal"; data: number; driverParam: string | number; notNull: true; hasDefault: false; isPrimaryKey: false; isAutoincrement: false; ... 4 more ...; generated: undefined; }, {}, {}>' is not assignable to parameter of type 'never'.
+server/routes/search.ts(162,21): error TS2345: Argument of type 'SQL<unknown>' is not assignable to parameter of type 'Record<string, unknown>'.
+  Index signature for type 'string' is missing in type 'SQL<unknown>'.
+server/routes/search.ts(166,21): error TS2769: No overload matches this call.
+  Overload 1 of 3, '(left: PgColumn<{ name: "price"; tableName: "beats"; dataType: "number"; columnType: "PgReal"; data: number; driverParam: string | number; notNull: true; hasDefault: false; isPrimaryKey: false; isAutoincrement: false; ... 4 more ...; generated: undefined; }, {}, {}>, right: number | SQLWrapper): SQL<...>', gave the following error.
+    Argument of type '{}' is not assignable to parameter of type 'number | SQLWrapper'.
+  Overload 2 of 3, '(left: Aliased<{}>, right: {} | SQLWrapper): SQL<unknown>', gave the following error.
+    Argument of type 'PgColumn<{ name: "price"; tableName: "beats"; dataType: "number"; columnType: "PgReal"; data: number; driverParam: string | number; notNull: true; hasDefault: false; isPrimaryKey: false; isAutoincrement: false; ... 4 more ...; generated: undefined; }, {}, {}>' is not assignable to parameter of type 'Aliased<{}>'.
+      Type 'PgColumn<{ name: "price"; tableName: "beats"; dataType: "number"; columnType: "PgReal"; data: number; driverParam: string | number; notNull: true; hasDefault: false; isPrimaryKey: false; isAutoincrement: false; ... 4 more ...; generated: undefined; }, {}, {}>' is missing the following properties from type 'Aliased<{}>': sql, fieldAlias
+  Overload 3 of 3, '(left: never, right: unknown): SQL<unknown>', gave the following error.
+    Argument of type 'PgColumn<{ name: "price"; tableName: "beats"; dataType: "number"; columnType: "PgReal"; data: number; driverParam: string | number; notNull: true; hasDefault: false; isPrimaryKey: false; isAutoincrement: false; ... 4 more ...; generated: undefined; }, {}, {}>' is not assignable to parameter of type 'never'.
+server/routes/search.ts(166,21): error TS2345: Argument of type 'SQL<unknown>' is not assignable to parameter of type 'Record<string, unknown>'.
+  Index signature for type 'string' is missing in type 'SQL<unknown>'.
+server/routes/search.ts(169,19): error TS2345: Argument of type 'SQL<unknown>' is not assignable to parameter of type 'Record<string, unknown>'.
+  Index signature for type 'string' is missing in type 'SQL<unknown>'.
+server/routes/search.ts(179,16): error TS2345: Argument of type 'Record<string, unknown>' is not assignable to parameter of type 'SQLWrapper'.
+  Property 'getSQL' is missing in type 'Record<string, unknown>' but required in type 'SQLWrapper'.
+server/routes/search.ts(187,16): error TS2345: Argument of type 'Record<string, unknown>' is not assignable to parameter of type 'SQLWrapper'.
+  Property 'getSQL' is missing in type 'Record<string, unknown>' but required in type 'SQLWrapper'.
+server/routes/search.ts(257,7): error TS2345: Argument of type 'SQL<unknown> | undefined' is not assignable to parameter of type 'Record<string, unknown>'.
+  Type 'undefined' is not assignable to type 'Record<string, unknown>'.
+server/routes/search.ts(266,21): error TS2345: Argument of type 'SQL<unknown>' is not assignable to parameter of type 'Record<string, unknown>'.
+  Index signature for type 'string' is missing in type 'SQL<unknown>'.
+server/routes/search.ts(272,40): error TS2345: Argument of type 'Record<string, unknown>' is not assignable to parameter of type 'SQLWrapper'.
+  Property 'getSQL' is missing in type 'Record<string, unknown>' but required in type 'SQLWrapper'.
+server/routes/search.ts(280,40): error TS2345: Argument of type 'Record<string, unknown>' is not assignable to parameter of type 'SQLWrapper'.
+  Property 'getSQL' is missing in type 'Record<string, unknown>' but required in type 'SQLWrapper'.
+server/routes/search.ts(327,46): error TS2769: No overload matches this call.
+  Overload 1 of 3, '(obj: "Error in search redirect:", msg?: undefined): void', gave the following error.
+    Argument of type 'string' is not assignable to parameter of type 'undefined'.
+  Overload 2 of 3, '(obj: "Error in search redirect:", msg?: undefined, ...args: unknown[]): void', gave the following error.
+    Argument of type 'string' is not assignable to parameter of type 'undefined'.
+server/routes/search.ts(447,19): error TS2362: The left-hand side of an arithmetic operation must be of type 'any', 'number', 'bigint' or an enum type.
+server/routes/search.ts(447,45): error TS2363: The right-hand side of an arithmetic operation must be of type 'any', 'number', 'bigint' or an enum type.
+server/routes/search.ts(791,52): error TS2322: Type 'SQL<unknown>' is not assignable to type 'Record<string, unknown>'.
+  Index signature for type 'string' is missing in type 'SQL<unknown>'.
+server/routes/search.ts(794,23): error TS2345: Argument of type 'SQL<unknown>' is not assignable to parameter of type 'Record<string, unknown>'.
+  Index signature for type 'string' is missing in type 'SQL<unknown>'.
+server/routes/search.ts(798,23): error TS2345: Argument of type 'SQL<unknown>' is not assignable to parameter of type 'Record<string, unknown>'.
+  Index signature for type 'string' is missing in type 'SQL<unknown>'.
+server/routes/search.ts(799,23): error TS2345: Argument of type 'SQL<unknown>' is not assignable to parameter of type 'Record<string, unknown>'.
+  Index signature for type 'string' is missing in type 'SQL<unknown>'.
+server/routes/search.ts(805,18): error TS2345: Argument of type 'Record<string, unknown>' is not assignable to parameter of type 'SQLWrapper'.
+  Property 'getSQL' is missing in type 'Record<string, unknown>' but required in type 'SQLWrapper'.
+server/routes/search.ts(1188,52): error TS2322: Type 'SQL<unknown>' is not assignable to type 'Record<string, unknown>'.
+  Index signature for type 'string' is missing in type 'SQL<unknown>'.
+server/routes/search.ts(1191,23): error TS2345: Argument of type 'SQL<unknown>' is not assignable to parameter of type 'Record<string, unknown>'.
+  Index signature for type 'string' is missing in type 'SQL<unknown>'.
+server/routes/search.ts(1195,23): error TS2345: Argument of type 'SQL<unknown>' is not assignable to parameter of type 'Record<string, unknown>'.
+  Index signature for type 'string' is missing in type 'SQL<unknown>'.
+server/routes/search.ts(1201,18): error TS2345: Argument of type 'Record<string, unknown>' is not assignable to parameter of type 'SQLWrapper'.
+  Property 'getSQL' is missing in type 'Record<string, unknown>' but required in type 'SQLWrapper'.
+server/routes/search.ts(1209,18): error TS2345: Argument of type 'Record<string, unknown>' is not assignable to parameter of type 'SQLWrapper'.
+  Property 'getSQL' is missing in type 'Record<string, unknown>' but required in type 'SQLWrapper'.
+server/routes/search.ts(1423,7): error TS2322: Type 'SQL<unknown>' is not assignable to type 'Record<string, unknown>'.
+  Index signature for type 'string' is missing in type 'SQL<unknown>'.
+server/routes/search.ts(1427,23): error TS2345: Argument of type 'SQL<unknown>' is not assignable to parameter of type 'Record<string, unknown>'.
+  Index signature for type 'string' is missing in type 'SQL<unknown>'.
+server/routes/search.ts(1431,23): error TS2345: Argument of type 'SQL<unknown>' is not assignable to parameter of type 'Record<string, unknown>'.
+  Index signature for type 'string' is missing in type 'SQL<unknown>'.
+server/routes/search.ts(1435,23): error TS2345: Argument of type 'SQL<unknown>' is not assignable to parameter of type 'Record<string, unknown>'.
+  Index signature for type 'string' is missing in type 'SQL<unknown>'.
+server/routes/search.ts(1440,9): error TS2345: Argument of type 'SQL<unknown>' is not assignable to parameter of type 'Record<string, unknown>'.
+  Index signature for type 'string' is missing in type 'SQL<unknown>'.
+server/routes/search.ts(1446,9): error TS2345: Argument of type 'SQL<unknown>' is not assignable to parameter of type 'Record<string, unknown>'.
+  Index signature for type 'string' is missing in type 'SQL<unknown>'.
+server/routes/search.ts(1462,18): error TS2345: Argument of type 'Record<string, unknown>' is not assignable to parameter of type 'SQLWrapper'.
+  Property 'getSQL' is missing in type 'Record<string, unknown>' but required in type 'SQLWrapper'.
+server/routes/search.ts(1469,18): error TS2345: Argument of type 'Record<string, unknown>' is not assignable to parameter of type 'SQLWrapper'.
+  Property 'getSQL' is missing in type 'Record<string, unknown>' but required in type 'SQLWrapper'.
+server/routes/search.ts(1532,9): error TS2345: Argument of type 'SQL<unknown> | undefined' is not assignable to parameter of type 'Record<string, unknown>'.
+  Type 'undefined' is not assignable to type 'Record<string, unknown>'.
+server/routes/search.ts(1551,42): error TS2345: Argument of type 'Record<string, unknown>' is not assignable to parameter of type 'SQLWrapper'.
+  Property 'getSQL' is missing in type 'Record<string, unknown>' but required in type 'SQLWrapper'.
+server/routes/search.ts(1558,42): error TS2345: Argument of type 'Record<string, unknown>' is not assignable to parameter of type 'SQLWrapper'.
+  Property 'getSQL' is missing in type 'Record<string, unknown>' but required in type 'SQLWrapper'.
+server/routes/socialMedia.ts(596,17): error TS2554: Expected 3 arguments, but got 4.
+server/routes/socialMedia.ts(1074,11): error TS2561: Object literal may only specify known properties, but 'artist_name' does not exist in type 'ContentGenerationOptions'. Did you mean to write 'artistName'?
+server/routes/socialMedia.ts(1841,25): error TS7053: Element implicitly has an 'any' type because expression of type '0' can't be used to index type '{}'.
+  Property '0' does not exist on type '{}'.
+server/routes/socialMedia.ts(2082,13): error TS7034: Variable 'generatedContent' implicitly has type 'any[]' in some locations where its type cannot be determined.
+server/routes/socialMedia.ts(2093,15): error TS2322: Type 'string' is not assignable to type 'Platform'.
+server/routes/socialMedia.ts(2095,15): error TS2322: Type 'string' is not assignable to type '"engagement" | "release" | "behind-the-scenes" | "promotional" | "announcement" | undefined'.
+server/routes/socialMedia.ts(2170,32): error TS7005: Variable 'generatedContent' implicitly has an 'any[]' type.
+server/routes/socialMedia.ts(2327,9): error TS2740: Type 'Record<string, unknown>' is missing the following properties from type 'UrlAnalysis': url, domain, platform, platform_category, and 27 more.
+server/routes/socialMedia.ts(2467,15): error TS2322: Type 'string' is not assignable to type 'Platform'.
+server/routes/socialMedia.ts(2706,15): error TS2769: No overload matches this call.
+  Overload 1 of 4, '(value: string | number | Date): Date', gave the following error.
+    Argument of type 'unknown' is not assignable to parameter of type 'string | number | Date'.
+  Overload 2 of 4, '(value: string | number): Date', gave the following error.
+    Argument of type 'unknown' is not assignable to parameter of type 'string | number'.
+server/routes/socialMedia.ts(2756,11): error TS2365: Operator '+=' cannot be applied to types 'number' and '{}'.
+server/routes/socialMedia.ts(2757,11): error TS2365: Operator '+=' cannot be applied to types 'number' and '{}'.
+server/routes/socialMedia.ts(2758,11): error TS2365: Operator '+=' cannot be applied to types 'number' and '{}'.
+server/routes/socialMedia.ts(2759,11): error TS2365: Operator '+=' cannot be applied to types 'number' and '{}'.
+server/routes/socialMedia.ts(2761,11): error TS2365: Operator '+=' cannot be applied to types 'number' and '{}'.
+server/routes/socialMedia.ts(2762,11): error TS2365: Operator '+=' cannot be applied to types 'number' and '{}'.
+server/routes/socialMedia.ts(2763,11): error TS2365: Operator '+=' cannot be applied to types 'number' and '{}'.
+server/routes/socialMedia.ts(2764,11): error TS2365: Operator '+=' cannot be applied to types 'number' and '{}'.
+server/routes/socialMedia.ts(2765,11): error TS2365: Operator '+=' cannot be applied to types 'number' and '{}'.
+server/routes/socialMedia.ts(2766,11): error TS2365: Operator '+=' cannot be applied to types 'number' and '{}'.
+server/routes/socialMedia.ts(2782,11): error TS2365: Operator '+=' cannot be applied to types 'number' and '{}'.
+server/routes/socialMedia.ts(2783,11): error TS2365: Operator '+=' cannot be applied to types 'number' and '{}'.
+server/routes/socialMedia.ts(2784,11): error TS2365: Operator '+=' cannot be applied to types 'number' and '{}'.
+server/routes/socialMedia.ts(2785,11): error TS2365: Operator '+=' cannot be applied to types 'number' and '{}'.
+server/routes/socialMedia.ts(2787,11): error TS2365: Operator '+=' cannot be applied to types 'number' and '{}'.
+server/routes/socialMedia.ts(2788,11): error TS2365: Operator '+=' cannot be applied to types 'number' and '{}'.
+server/routes/socialMedia.ts(2789,11): error TS2365: Operator '+=' cannot be applied to types 'number' and '{}'.
+server/routes/socialMedia.ts(2790,11): error TS2365: Operator '+=' cannot be applied to types 'number' and '{}'.
+server/routes/socialMedia.ts(2848,15): error TS2365: Operator '+' cannot be applied to types '{}' and '{}'.
+server/routes/socialMedia.ts(2849,13): error TS2365: Operator '+=' cannot be applied to types 'number' and '{}'.
+server/routes/socialMedia.ts(2860,15): error TS2365: Operator '+' cannot be applied to types '{}' and '{}'.
+server/routes/socialMedia.ts(2861,13): error TS2365: Operator '+=' cannot be applied to types 'number' and '{}'.
+server/routes/socialMedia.ts(2875,24): error TS2365: Operator '+' cannot be applied to types '{}' and '{}'.
+server/routes/socialMedia.ts(2925,29): error TS7053: Element implicitly has an 'any' type because expression of type '0' can't be used to index type '{}'.
+  Property '0' does not exist on type '{}'.
+server/routes/socialMedia.ts(2933,13): error TS2769: No overload matches this call.
+  Overload 1 of 3, '(obj: "[Analytics] Spotify artist stats fetch failed:", msg?: undefined): void', gave the following error.
+    Argument of type 'unknown' is not assignable to parameter of type 'undefined'.
+  Overload 2 of 3, '(obj: "[Analytics] Spotify artist stats fetch failed:", msg?: undefined, ...args: unknown[]): void', gave the following error.
+    Argument of type 'unknown' is not assignable to parameter of type 'undefined'.
+server/routes/socialMedia.ts(3085,15): error TS2322: Type 'VideoGenResult' is not assignable to type 'Record<string, unknown>'.
+  Index signature for type 'string' is missing in type 'VideoGenResult'.
+server/routes/socialMedia.ts(3907,13): error TS2769: No overload matches this call.
+  Overload 1 of 3, '(left: PgColumn<{ name: "storefront_id"; tableName: "listings"; dataType: "string"; columnType: "PgVarchar"; data: string; driverParam: string; notNull: false; hasDefault: false; isPrimaryKey: false; isAutoincrement: false; ... 4 more ...; generated: undefined; }, {}, { ...; }>, right: string | SQLWrapper): SQL<...>', gave the following error.
+    Argument of type 'unknown' is not assignable to parameter of type 'string | SQLWrapper'.
+  Overload 2 of 3, '(left: Aliased<unknown>, right: unknown): SQL<unknown>', gave the following error.
+    Argument of type 'PgColumn<{ name: "storefront_id"; tableName: "listings"; dataType: "string"; columnType: "PgVarchar"; data: string; driverParam: string; notNull: false; hasDefault: false; isPrimaryKey: false; isAutoincrement: false; ... 4 more ...; generated: undefined; }, {}, { ...; }>' is not assignable to parameter of type 'Aliased<unknown>'.
+      Type 'PgColumn<{ name: "storefront_id"; tableName: "listings"; dataType: "string"; columnType: "PgVarchar"; data: string; driverParam: string; notNull: false; hasDefault: false; isPrimaryKey: false; isAutoincrement: false; ... 4 more ...; generated: undefined; }, {}, { ...; }>' is missing the following properties from type 'Aliased<unknown>': sql, fieldAlias
+  Overload 3 of 3, '(left: never, right: unknown): SQL<unknown>', gave the following error.
+    Argument of type 'PgColumn<{ name: "storefront_id"; tableName: "listings"; dataType: "string"; columnType: "PgVarchar"; data: string; driverParam: string; notNull: false; hasDefault: false; isPrimaryKey: false; isAutoincrement: false; ... 4 more ...; generated: undefined; }, {}, { ...; }>' is not assignable to parameter of type 'never'.
+server/routes/socialMedia.ts(3969,26): error TS2345: Argument of type 'Record<string, any>' is not assignable to parameter of type 'VeoCampaignRequest'.
+  Type 'Record<string, any>' is missing the following properties from type 'VeoCampaignRequest': title, artist
+server/routes/socialMedia.ts(4047,18): error TS2769: No overload matches this call.
+  Overload 1 of 3, '(left: PgColumn<{ name: "id"; tableName: "storefronts"; dataType: "string"; columnType: "PgVarchar"; data: string; driverParam: string; notNull: true; hasDefault: true; isPrimaryKey: true; isAutoincrement: false; ... 4 more ...; generated: undefined; }, {}, { ...; }>, right: string | SQLWrapper): SQL<...>', gave the following error.
+    Argument of type '{}' is not assignable to parameter of type 'string | SQLWrapper'.
+  Overload 2 of 3, '(left: Aliased<{}>, right: {} | SQLWrapper): SQL<unknown>', gave the following error.
+    Argument of type 'PgColumn<{ name: "id"; tableName: "storefronts"; dataType: "string"; columnType: "PgVarchar"; data: string; driverParam: string; notNull: true; hasDefault: true; isPrimaryKey: true; isAutoincrement: false; ... 4 more ...; generated: undefined; }, {}, { ...; }>' is not assignable to parameter of type 'Aliased<{}>'.
+      Type 'PgColumn<{ name: "id"; tableName: "storefronts"; dataType: "string"; columnType: "PgVarchar"; data: string; driverParam: string; notNull: true; hasDefault: true; isPrimaryKey: true; isAutoincrement: false; ... 4 more ...; generated: undefined; }, {}, { ...; }>' is missing the following properties from type 'Aliased<{}>': sql, fieldAlias
+  Overload 3 of 3, '(left: never, right: unknown): SQL<unknown>', gave the following error.
+    Argument of type 'PgColumn<{ name: "id"; tableName: "storefronts"; dataType: "string"; columnType: "PgVarchar"; data: string; driverParam: string; notNull: true; hasDefault: true; isPrimaryKey: true; isAutoincrement: false; ... 4 more ...; generated: undefined; }, {}, { ...; }>' is not assignable to parameter of type 'never'.
+server/routes/socialMedia.ts(4050,11): error TS2322: Type '{}' is not assignable to type 'string'.
+server/routes/socialMedia.ts(4060,16): error TS2362: The left-hand side of an arithmetic operation must be of type 'any', 'number', 'bigint' or an enum type.
+server/routes/socialMedia.ts(4096,26): error TS2345: Argument of type 'Record<string, any>' is not assignable to parameter of type 'VeoCampaignRequest'.
+  Type 'Record<string, any>' is missing the following properties from type 'VeoCampaignRequest': title, artist
+server/routes/socialMedia.ts(4209,58): error TS2345: Argument of type '"video_post"' is not assignable to parameter of type 'ContentSlot'.
+server/routes/socialMedia.ts(4301,9): error TS2322: Type 'string' is not assignable to type 'ContentTone'.
+server/routes/socialMedia.ts(4496,7): error TS2345: Argument of type 'Record<string, unknown>' is not assignable to parameter of type 'Request<ParamsDictionary, any, any, ParsedQs, Record<string, any>>'.
+  Type 'Record<string, unknown>' is missing the following properties from type 'Request<ParamsDictionary, any, any, ParsedQs, Record<string, any>>': get, header, accepts, acceptsCharsets, and 108 more.
+server/routes/socialMedia.ts(4528,9): error TS2322: Type 'string' is not assignable to type 'Platform'.
+server/routes/socialMedia.ts(4530,9): error TS2322: Type '"default"' is not assignable to type 'ContentTone'.
+server/routes/socialMedia.ts(4574,7): error TS2345: Argument of type 'Record<string, unknown>' is not assignable to parameter of type 'Request<ParamsDictionary, any, any, ParsedQs, Record<string, any>>'.
+  Type 'Record<string, unknown>' is missing the following properties from type 'Request<ParamsDictionary, any, any, ParsedQs, Record<string, any>>': get, header, accepts, acceptsCharsets, and 108 more.
+server/routes/socialMedia.ts(4606,9): error TS2322: Type 'string' is not assignable to type 'Platform'.
+server/routes/socialMedia.ts(4608,9): error TS2322: Type 'string' is not assignable to type 'ContentTone'.
+server/routes/socialMedia.ts(4660,46): error TS2769: No overload matches this call.
+  Overload 1 of 3, '(obj: "[Route] voice-profiles:", msg?: undefined): void', gave the following error.
+    Argument of type 'string' is not assignable to parameter of type 'undefined'.
+  Overload 2 of 3, '(obj: "[Route] voice-profiles:", msg?: undefined, ...args: unknown[]): void', gave the following error.
+    Argument of type 'string' is not assignable to parameter of type 'undefined'.
+server/routes/socialMedia.ts(4681,7): error TS2345: Argument of type 'Record<string, unknown>' is not assignable to parameter of type 'Request<ParamsDictionary, any, any, ParsedQs, Record<string, any>>'.
+  Type 'Record<string, unknown>' is missing the following properties from type 'Request<ParamsDictionary, any, any, ParsedQs, Record<string, any>>': get, header, accepts, acceptsCharsets, and 108 more.
+server/routes/socialMedia.ts(4739,44): error TS2345: Argument of type 'string | undefined' is not assignable to parameter of type 'string'.
+  Type 'undefined' is not assignable to type 'string'.
+server/routes/socialMedia.ts(4759,9): error TS2322: Type 'StoredVoiceFile | null' is not assignable to type 'Record<string, unknown> | null'.
+  Type 'StoredVoiceFile' is not assignable to type 'Record<string, unknown>'.
+    Index signature for type 'string' is missing in type 'StoredVoiceFile'.
+server/routes/socialMedia.ts(4768,11): error TS2769: No overload matches this call.
+  Overload 1 of 3, '(obj: "[Route] voice PDIM store skipped:", msg?: undefined): void', gave the following error.
+    Argument of type 'string' is not assignable to parameter of type 'undefined'.
+  Overload 2 of 3, '(obj: "[Route] voice PDIM store skipped:", msg?: undefined, ...args: unknown[]): void', gave the following error.
+    Argument of type 'string' is not assignable to parameter of type 'undefined'.
+server/routes/socialMedia.ts(4792,48): error TS2769: No overload matches this call.
+  Overload 1 of 3, '(obj: "[Route] synthesize-voice:", msg?: undefined): void', gave the following error.
+    Argument of type 'string' is not assignable to parameter of type 'undefined'.
+  Overload 2 of 3, '(obj: "[Route] synthesize-voice:", msg?: undefined, ...args: unknown[]): void', gave the following error.
+    Argument of type 'string' is not assignable to parameter of type 'undefined'.
+server/routes/socialMedia.ts(4813,7): error TS2345: Argument of type 'Record<string, unknown>' is not assignable to parameter of type 'Request<ParamsDictionary, any, any, ParsedQs, Record<string, any>>'.
+  Type 'Record<string, unknown>' is missing the following properties from type 'Request<ParamsDictionary, any, any, ParsedQs, Record<string, any>>': get, header, accepts, acceptsCharsets, and 108 more.
+server/routes/socialMedia.ts(4830,55): error TS2769: No overload matches this call.
+  Overload 1 of 3, '(obj: "[Route] analyze-reference-voice:", msg?: undefined): void', gave the following error.
+    Argument of type 'string' is not assignable to parameter of type 'undefined'.
+  Overload 2 of 3, '(obj: "[Route] analyze-reference-voice:", msg?: undefined, ...args: unknown[]): void', gave the following error.
+    Argument of type 'string' is not assignable to parameter of type 'undefined'.
+server/routes/socialMedia.ts(4854,7): error TS2345: Argument of type 'Record<string, unknown>' is not assignable to parameter of type 'Request<ParamsDictionary, any, any, ParsedQs, Record<string, any>>'.
+  Type 'Record<string, unknown>' is missing the following properties from type 'Request<ParamsDictionary, any, any, ParsedQs, Record<string, any>>': get, header, accepts, acceptsCharsets, and 108 more.
+server/routes/socialMedia.ts(4896,51): error TS2769: No overload matches this call.
+  Overload 1 of 3, '(obj: "[Route] analyze-audio-beats:", msg?: undefined): void', gave the following error.
+    Argument of type 'string' is not assignable to parameter of type 'undefined'.
+  Overload 2 of 3, '(obj: "[Route] analyze-audio-beats:", msg?: undefined, ...args: unknown[]): void', gave the following error.
+    Argument of type 'string' is not assignable to parameter of type 'undefined'.
+server/routes/socialMedia.ts(4918,7): error TS2345: Argument of type 'Record<string, unknown>' is not assignable to parameter of type 'Request<ParamsDictionary, any, any, ParsedQs, Record<string, any>>'.
+  Type 'Record<string, unknown>' is missing the following properties from type 'Request<ParamsDictionary, any, any, ParsedQs, Record<string, any>>': get, header, accepts, acceptsCharsets, and 108 more.
+server/routes/socialMedia.ts(4989,8): error TS2345: Argument of type 'Record<string, unknown>' is not assignable to parameter of type 'Request<ParamsDictionary, any, any, ParsedQs, Record<string, any>>'.
+  Type 'Record<string, unknown>' is missing the following properties from type 'Request<ParamsDictionary, any, any, ParsedQs, Record<string, any>>': get, header, accepts, acceptsCharsets, and 108 more.
+server/routes/socialMedia.ts(5135,66): error TS2769: No overload matches this call.
+  Overload 1 of 3, '(obj: "[MusicVideo] Voice synthesis skipped:", msg?: undefined): void', gave the following error.
+    Argument of type 'string' is not assignable to parameter of type 'undefined'.
+  Overload 2 of 3, '(obj: "[MusicVideo] Voice synthesis skipped:", msg?: undefined, ...args: unknown[]): void', gave the following error.
+    Argument of type 'string' is not assignable to parameter of type 'undefined'.
+server/routes/socialMedia.ts(5194,11): error TS2322: Type 'StoredMusicVideo | null' is not assignable to type 'Record<string, unknown> | null'.
+  Type 'StoredMusicVideo' is not assignable to type 'Record<string, unknown>'.
+    Index signature for type 'string' is missing in type 'StoredMusicVideo'.
+server/routes/socialMedia.ts(5210,13): error TS2769: No overload matches this call.
+  Overload 1 of 3, '(obj: string, msg?: undefined): void', gave the following error.
+    Argument of type 'string' is not assignable to parameter of type 'undefined'.
+  Overload 2 of 3, '(obj: string, msg?: undefined, ...args: unknown[]): void', gave the following error.
+    Argument of type 'string' is not assignable to parameter of type 'undefined'.
+server/routes/socialMedia.ts(5234,11): error TS2322: Type 'VideoGenResult' is not assignable to type 'Record<string, unknown>'.
+  Index signature for type 'string' is missing in type 'VideoGenResult'.
+server/routes/socialMedia.ts(5241,58): error TS2769: No overload matches this call.
+  Overload 1 of 3, '(obj: string, msg?: undefined): void', gave the following error.
+    Argument of type 'string' is not assignable to parameter of type 'undefined'.
+  Overload 2 of 3, '(obj: string, msg?: undefined, ...args: unknown[]): void', gave the following error.
+    Argument of type 'string' is not assignable to parameter of type 'undefined'.
+server/routes/studio.ts(613,7): error TS2322: Type 'SQL<unknown> | undefined' is not assignable to type 'SQL<unknown>'.
+  Type 'undefined' is not assignable to type 'SQL<unknown>'.
+server/routes/studio.ts(840,12): error TS2769: No overload matches this call.
+  Overload 1 of 2, '(value: { name: string | SQL<unknown> | Placeholder<string, any>; projectId: string | SQL<unknown> | Placeholder<string, any>; id?: string | SQL<unknown> | Placeholder<...> | undefined; ... 10 more ...; warpSettings?: unknown; }): PgInsertBase<...>', gave the following error.
+    Object literal may only specify known properties, and 'sourceUrl' does not exist in type '{ name: string | SQL<unknown> | Placeholder<string, any>; projectId: string | SQL<unknown> | Placeholder<string, any>; id?: string | SQL<unknown> | Placeholder<string, any> | undefined; ... 10 more ...; warpSettings?: unknown; }'.
+  Overload 2 of 2, '(values: { name: string | SQL<unknown> | Placeholder<string, any>; projectId: string | SQL<unknown> | Placeholder<string, any>; id?: string | SQL<unknown> | Placeholder<...> | undefined; ... 10 more ...; warpSettings?: unknown; }[]): PgInsertBase<...>', gave the following error.
+    Object literal may only specify known properties, and 'id' does not exist in type '{ name: string | SQL<unknown> | Placeholder<string, any>; projectId: string | SQL<unknown> | Placeholder<string, any>; id?: string | SQL<unknown> | Placeholder<string, any> | undefined; ... 10 more ...; warpSettings?: unknown; }[]'.
+server/routes/studio.ts(1206,17): error TS2561: Object literal may only specify known properties, but 'muted' does not exist in type '{ name?: string | SQL<unknown> | PgColumn<ColumnBaseConfig<ColumnDataType, string>, {}, {}> | undefined; projectId?: string | SQL<unknown> | PgColumn<...> | undefined; ... 12 more ...; order?: number | ... 3 more ... | undefined; }'. Did you mean to write 'isMuted'?
+server/routes/studio.ts(1382,9): error TS2769: No overload matches this call.
+  Overload 1 of 3, '(obj: string, msg?: undefined): void', gave the following error.
+    Argument of type '{ format: any; sampleRate: any; bitDepth: any; normalize: any; normalizeTarget: any; limiter: any; dither: any; hasISRC: boolean; }' is not assignable to parameter of type 'undefined'.
+  Overload 2 of 3, '(obj: string, msg?: undefined, ...args: unknown[]): void', gave the following error.
+    Argument of type '{ format: any; sampleRate: any; bitDepth: any; normalize: any; normalizeTarget: any; limiter: any; dither: any; hasISRC: boolean; }' is not assignable to parameter of type 'undefined'.
+server/routes/studio.ts(1537,32): error TS2698: Spread types may only be created from object types.
+server/routes/studio.ts(1734,34): error TS2698: Spread types may only be created from object types.
+server/routes/studio.ts(1934,16): error TS2769: No overload matches this call.
+  Overload 1 of 3, '(left: PgColumn<{ name: "id"; tableName: "studio_tracks"; dataType: "string"; columnType: "PgVarchar"; data: string; driverParam: string; notNull: true; hasDefault: true; isPrimaryKey: true; isAutoincrement: false; ... 4 more ...; generated: undefined; }, {}, { ...; }>, right: string | SQLWrapper): SQL<...>', gave the following error.
+    Argument of type 'string | null' is not assignable to parameter of type 'string | SQLWrapper'.
+      Type 'null' is not assignable to type 'string | SQLWrapper'.
+  Overload 2 of 3, '(left: Aliased<string | null>, right: string | SQLWrapper | null): SQL<unknown>', gave the following error.
+    Argument of type 'PgColumn<{ name: "id"; tableName: "studio_tracks"; dataType: "string"; columnType: "PgVarchar"; data: string; driverParam: string; notNull: true; hasDefault: true; isPrimaryKey: true; isAutoincrement: false; ... 4 more ...; generated: undefined; }, {}, { ...; }>' is not assignable to parameter of type 'Aliased<string | null>'.
+      Type 'PgColumn<{ name: "id"; tableName: "studio_tracks"; dataType: "string"; columnType: "PgVarchar"; data: string; driverParam: string; notNull: true; hasDefault: true; isPrimaryKey: true; isAutoincrement: false; ... 4 more ...; generated: undefined; }, {}, { ...; }>' is missing the following properties from type 'Aliased<string | null>': sql, fieldAlias
+  Overload 3 of 3, '(left: never, right: unknown): SQL<unknown>', gave the following error.
+    Argument of type 'PgColumn<{ name: "id"; tableName: "studio_tracks"; dataType: "string"; columnType: "PgVarchar"; data: string; driverParam: string; notNull: true; hasDefault: true; isPrimaryKey: true; isAutoincrement: false; ... 4 more ...; generated: undefined; }, {}, { ...; }>' is not assignable to parameter of type 'never'.
+server/routes/studio.ts(1981,16): error TS2769: No overload matches this call.
+  Overload 1 of 3, '(left: PgColumn<{ name: "id"; tableName: "studio_tracks"; dataType: "string"; columnType: "PgVarchar"; data: string; driverParam: string; notNull: true; hasDefault: true; isPrimaryKey: true; isAutoincrement: false; ... 4 more ...; generated: undefined; }, {}, { ...; }>, right: string | SQLWrapper): SQL<...>', gave the following error.
+    Argument of type 'string | null' is not assignable to parameter of type 'string | SQLWrapper'.
+      Type 'null' is not assignable to type 'string | SQLWrapper'.
+  Overload 2 of 3, '(left: Aliased<string | null>, right: string | SQLWrapper | null): SQL<unknown>', gave the following error.
+    Argument of type 'PgColumn<{ name: "id"; tableName: "studio_tracks"; dataType: "string"; columnType: "PgVarchar"; data: string; driverParam: string; notNull: true; hasDefault: true; isPrimaryKey: true; isAutoincrement: false; ... 4 more ...; generated: undefined; }, {}, { ...; }>' is not assignable to parameter of type 'Aliased<string | null>'.
+      Type 'PgColumn<{ name: "id"; tableName: "studio_tracks"; dataType: "string"; columnType: "PgVarchar"; data: string; driverParam: string; notNull: true; hasDefault: true; isPrimaryKey: true; isAutoincrement: false; ... 4 more ...; generated: undefined; }, {}, { ...; }>' is missing the following properties from type 'Aliased<string | null>': sql, fieldAlias
+  Overload 3 of 3, '(left: never, right: unknown): SQL<unknown>', gave the following error.
+    Argument of type 'PgColumn<{ name: "id"; tableName: "studio_tracks"; dataType: "string"; columnType: "PgVarchar"; data: string; driverParam: string; notNull: true; hasDefault: true; isPrimaryKey: true; isAutoincrement: false; ... 4 more ...; generated: undefined; }, {}, { ...; }>' is not assignable to parameter of type 'never'.
+server/routes/studio.ts(2468,40): error TS2339: Property 'name' does not exist on type 'PgTableWithColumns<{ name: "projects"; schema: undefined; columns: { id: PgColumn<{ name: "id"; tableName: "projects"; dataType: "string"; columnType: "PgVarchar"; data: string; driverParam: string; notNull: true; hasDefault: true; ... 6 more ...; generated: undefined; }, {}, { ...; }>; ... 21 more ...; updatedAt: P...'.
+server/routes/studio.ts(2515,40): error TS2339: Property 'name' does not exist on type 'PgTableWithColumns<{ name: "projects"; schema: undefined; columns: { id: PgColumn<{ name: "id"; tableName: "projects"; dataType: "string"; columnType: "PgVarchar"; data: string; driverParam: string; notNull: true; hasDefault: true; ... 6 more ...; generated: undefined; }, {}, { ...; }>; ... 21 more ...; updatedAt: P...'.
+server/routes/studio.ts(3130,46): error TS2769: No overload matches this call.
+  Overload 1 of 3, '(left: PgColumn<{ name: "user_id"; tableName: "projects"; dataType: "string"; columnType: "PgVarchar"; data: string; driverParam: string; notNull: true; hasDefault: false; isPrimaryKey: false; isAutoincrement: false; ... 4 more ...; generated: undefined; }, {}, { ...; }>, right: string | SQLWrapper): SQL<...>', gave the following error.
+    Argument of type 'number' is not assignable to parameter of type 'string | SQLWrapper'.
+  Overload 2 of 3, '(left: Aliased<number>, right: number | SQLWrapper): SQL<unknown>', gave the following error.
+    Argument of type 'PgColumn<{ name: "user_id"; tableName: "projects"; dataType: "string"; columnType: "PgVarchar"; data: string; driverParam: string; notNull: true; hasDefault: false; isPrimaryKey: false; isAutoincrement: false; ... 4 more ...; generated: undefined; }, {}, { ...; }>' is not assignable to parameter of type 'Aliased<number>'.
+      Type 'PgColumn<{ name: "user_id"; tableName: "projects"; dataType: "string"; columnType: "PgVarchar"; data: string; driverParam: string; notNull: true; hasDefault: false; isPrimaryKey: false; isAutoincrement: false; ... 4 more ...; generated: undefined; }, {}, { ...; }>' is missing the following properties from type 'Aliased<number>': sql, fieldAlias
+  Overload 3 of 3, '(left: never, right: unknown): SQL<unknown>', gave the following error.
+    Argument of type 'PgColumn<{ name: "user_id"; tableName: "projects"; dataType: "string"; columnType: "PgVarchar"; data: string; driverParam: string; notNull: true; hasDefault: false; isPrimaryKey: false; isAutoincrement: false; ... 4 more ...; generated: undefined; }, {}, { ...; }>' is not assignable to parameter of type 'never'.
+server/routes/studio.ts(3133,39): error TS2769: No overload matches this call.
+  Overload 1 of 2, '(value: { userId: string | SQL<unknown> | Placeholder<string, any>; id?: string | SQL<unknown> | Placeholder<string, any> | undefined; title?: string | SQL<unknown> | Placeholder<...> | null | undefined; ... 18 more ...; lastSavedAt?: SQL<...> | ... 3 more ... | undefined; }): PgInsertBase<...>', gave the following error.
+    Type 'number' is not assignable to type 'string | SQL<unknown> | Placeholder<string, any>'.
+  Overload 2 of 2, '(values: { userId: string | SQL<unknown> | Placeholder<string, any>; id?: string | SQL<unknown> | Placeholder<string, any> | undefined; title?: string | SQL<unknown> | Placeholder<...> | null | undefined; ... 18 more ...; lastSavedAt?: SQL<...> | ... 3 more ... | undefined; }[]): PgInsertBase<...>', gave the following error.
+    Object literal may only specify known properties, and 'id' does not exist in type '{ userId: string | SQL<unknown> | Placeholder<string, any>; id?: string | SQL<unknown> | Placeholder<string, any> | undefined; title?: string | SQL<unknown> | Placeholder<...> | null | undefined; ... 18 more ...; lastSavedAt?: SQL<...> | ... 3 more ... | undefined; }[]'.
+server/routes/studio.ts(3136,30): error TS2339: Property 'name' does not exist on type '{ id: string; title: string; genre: string | null; duration: number | null; audioUrl: string | null; metadata: unknown; description: string | null; createdAt: Date | null; userId: string; ... 13 more ...; updatedAt: Date | null; }'.
+server/routes/studio.ts(3143,10): error TS2367: This comparison appears to be unintentional because the types 'string' and 'number' have no overlap.
+server/routes/studio.ts(3157,60): error TS2345: Argument of type 'string' is not assignable to parameter of type 'number'.
+server/routes/studio.ts(3196,62): error TS2345: Argument of type 'string' is not assignable to parameter of type 'number'.
+server/routes/studio.ts(3207,31): error TS2339: Property 'trackNumber' does not exist on type 'PgTableWithColumns<{ name: "studio_tracks"; schema: undefined; columns: { id: PgColumn<{ name: "id"; tableName: "studio_tracks"; dataType: "string"; columnType: "PgVarchar"; data: string; driverParam: string; notNull: true; ... 7 more ...; generated: undefined; }, {}, { ...; }>; ... 13 more ...; createdAt: PgColumn<...'.
+server/routes/studio.ts(3219,45): error TS7053: Element implicitly has an 'any' type because expression of type 'string' can't be used to index type '{}'.
+  No index signature with a parameter of type 'string' was found on type '{}'.
+server/routes/studio.ts(3224,54): error TS7053: Element implicitly has an 'any' type because expression of type 'string' can't be used to index type '{}'.
+  No index signature with a parameter of type 'string' was found on type '{}'.
+server/routes/studio.ts(3280,11): error TS7053: Element implicitly has an 'any' type because expression of type 'string' can't be used to index type '{}'.
+  No index signature with a parameter of type 'string' was found on type '{}'.
+server/routes/studio.ts(3342,11): error TS7053: Element implicitly has an 'any' type because expression of type 'string' can't be used to index type '{}'.
+  No index signature with a parameter of type 'string' was found on type '{}'.
+server/routes/studio.ts(3344,18): error TS7053: Element implicitly has an 'any' type because expression of type 'string' can't be used to index type '{}'.
+  No index signature with a parameter of type 'string' was found on type '{}'.
+server/routes/studio.ts(3419,20): error TS7053: Element implicitly has an 'any' type because expression of type 'string' can't be used to index type '{}'.
+  No index signature with a parameter of type 'string' was found on type '{}'.
+server/routes/studio.ts(3424,20): error TS7053: Element implicitly has an 'any' type because expression of type 'string' can't be used to index type '{}'.
+  No index signature with a parameter of type 'string' was found on type '{}'.
+server/routes/studio.ts(3430,16): error TS7053: Element implicitly has an 'any' type because expression of type 'string' can't be used to index type '{}'.
+  No index signature with a parameter of type 'string' was found on type '{}'.
+server/routes/studio.ts(3468,62): error TS2345: Argument of type 'string' is not assignable to parameter of type 'number'.
+server/routes/studio.ts(3511,30): error TS2698: Spread types may only be created from object types.
+server/routes/studio.ts(3627,62): error TS2345: Argument of type 'string' is not assignable to parameter of type 'number'.
+server/routes/studio.ts(3652,22): error TS2551: Property 'muted' does not exist on type '{ id: string; metadata: unknown; name: string; createdAt: Date | null; projectId: string; color: string | null; trackType: string | null; volume: number | null; pan: number | null; isMuted: boolean | null; ... 4 more ...; order: number | null; }'. Did you mean 'isMuted'?
+server/routes/studio.ts(3653,23): error TS2339: Property 'soloed' does not exist on type '{ id: string; metadata: unknown; name: string; createdAt: Date | null; projectId: string; color: string | null; trackType: string | null; volume: number | null; pan: number | null; isMuted: boolean | null; ... 4 more ...; order: number | null; }'.
+server/routes/studio.ts(3654,22): error TS2551: Property 'armed' does not exist on type '{ id: string; metadata: unknown; name: string; createdAt: Date | null; projectId: string; color: string | null; trackType: string | null; volume: number | null; pan: number | null; isMuted: boolean | null; ... 4 more ...; order: number | null; }'. Did you mean 'isArmed'?
+server/routes/studio.ts(3656,24): error TS2339: Property 'plugins' does not exist on type '{ id: string; metadata: unknown; name: string; createdAt: Date | null; projectId: string; color: string | null; trackType: string | null; volume: number | null; pan: number | null; isMuted: boolean | null; ... 4 more ...; order: number | null; }'.
+server/routes/studio.ts(3657,27): error TS2339: Property 'routingBus' does not exist on type '{ id: string; metadata: unknown; name: string; createdAt: Date | null; projectId: string; color: string | null; trackType: string | null; volume: number | null; pan: number | null; isMuted: boolean | null; ... 4 more ...; order: number | null; }'.
+server/routes/studio.ts(3720,62): error TS2345: Argument of type 'string' is not assignable to parameter of type 'number'.
+server/routes/studio.ts(3763,62): error TS2345: Argument of type 'string' is not assignable to parameter of type 'number'.
+server/routes/studio.ts(3805,62): error TS2345: Argument of type 'string' is not assignable to parameter of type 'number'.
+server/routes/studio.ts(3909,62): error TS2345: Argument of type 'string' is not assignable to parameter of type 'number'.
+server/routes/studio.ts(3934,9): error TS7053: Element implicitly has an 'any' type because expression of type 'any' can't be used to index type '{}'.
+server/routes/studio.ts(3937,9): error TS7053: Element implicitly has an 'any' type because expression of type 'any' can't be used to index type '{}'.
+server/routes/studio.ts(3939,7): error TS7053: Element implicitly has an 'any' type because expression of type 'any' can't be used to index type '{}'.
+server/routes/studio.ts(3955,15): error TS7053: Element implicitly has an 'any' type because expression of type 'any' can't be used to index type '{}'.
+server/routes/studio.ts(3956,17): error TS7053: Element implicitly has an 'any' type because expression of type 'any' can't be used to index type '{}'.
+server/routes/studio.ts(3957,24): error TS7053: Element implicitly has an 'any' type because expression of type 'any' can't be used to index type '{}'.
+server/routes/studio.ts(3976,62): error TS2345: Argument of type 'string' is not assignable to parameter of type 'number'.
+server/routes/studio.ts(3999,27): error TS7053: Element implicitly has an 'any' type because expression of type 'any' can't be used to index type '{}'.
+server/routes/studio.ts(4033,62): error TS2345: Argument of type 'string' is not assignable to parameter of type 'number'.
+server/routes/studio.ts(4160,62): error TS2345: Argument of type 'string' is not assignable to parameter of type 'number'.
+server/routes/studio.ts(4211,33): error TS2339: Property 'plugins' does not exist on type '{ id: string; metadata: unknown; name: string; createdAt: Date | null; projectId: string; color: string | null; trackType: string | null; volume: number | null; pan: number | null; isMuted: boolean | null; ... 4 more ...; order: number | null; }'.
+server/routes/studio.ts(4249,25): error TS7053: Element implicitly has an 'any' type because expression of type 'number' can't be used to index type '{}'.
+  No index signature with a parameter of type 'number' was found on type '{}'.
+server/routes/studio.ts(4250,30): error TS7053: Element implicitly has an 'any' type because expression of type 'number' can't be used to index type '{}'.
+  No index signature with a parameter of type 'number' was found on type '{}'.
+server/routes/studio.ts(4824,62): error TS2345: Argument of type 'string' is not assignable to parameter of type 'number'.
+server/routes/studio.ts(4844,31): error TS2339: Property 'trackNumber' does not exist on type 'PgTableWithColumns<{ name: "studio_tracks"; schema: undefined; columns: { id: PgColumn<{ name: "id"; tableName: "studio_tracks"; dataType: "string"; columnType: "PgVarchar"; data: string; driverParam: string; notNull: true; ... 7 more ...; generated: undefined; }, {}, { ...; }>; ... 13 more ...; createdAt: PgColumn<...'.
+server/routes/studio.ts(4854,22): error TS2551: Property 'muted' does not exist on type '{ id: string; metadata: unknown; name: string; createdAt: Date | null; projectId: string; color: string | null; trackType: string | null; volume: number | null; pan: number | null; isMuted: boolean | null; ... 4 more ...; order: number | null; }'. Did you mean 'isMuted'?
+server/routes/studio.ts(4855,23): error TS2339: Property 'soloed' does not exist on type '{ id: string; metadata: unknown; name: string; createdAt: Date | null; projectId: string; color: string | null; trackType: string | null; volume: number | null; pan: number | null; isMuted: boolean | null; ... 4 more ...; order: number | null; }'.
+server/routes/studio.ts(4856,24): error TS2339: Property 'plugins' does not exist on type '{ id: string; metadata: unknown; name: string; createdAt: Date | null; projectId: string; color: string | null; trackType: string | null; volume: number | null; pan: number | null; isMuted: boolean | null; ... 4 more ...; order: number | null; }'.
+server/routes/studio.ts(4857,27): error TS2339: Property 'routingBus' does not exist on type '{ id: string; metadata: unknown; name: string; createdAt: Date | null; projectId: string; color: string | null; trackType: string | null; volume: number | null; pan: number | null; isMuted: boolean | null; ... 4 more ...; order: number | null; }'.
+server/routes/studio.ts(4877,10): error TS2769: No overload matches this call.
+  Overload 1 of 2, '(value: { name: string | SQL<unknown> | Placeholder<string, any>; id?: string | SQL<unknown> | Placeholder<string, any> | undefined; genre?: string | SQL<unknown> | Placeholder<...> | null | undefined; ... 11 more ...; usageCount?: number | ... 3 more ... | undefined; }): PgInsertBase<...>', gave the following error.
+    Type '{}' is not assignable to type 'string | SQL<unknown> | Placeholder<string, any> | null | undefined'.
+  Overload 2 of 2, '(values: { name: string | SQL<unknown> | Placeholder<string, any>; id?: string | SQL<unknown> | Placeholder<string, any> | undefined; genre?: string | SQL<unknown> | Placeholder<...> | null | undefined; ... 11 more ...; usageCount?: number | ... 3 more ... | undefined; }[]): PgInsertBase<...>', gave the following error.
+    Object literal may only specify known properties, and 'id' does not exist in type '{ name: string | SQL<unknown> | Placeholder<string, any>; id?: string | SQL<unknown> | Placeholder<string, any> | undefined; genre?: string | SQL<unknown> | Placeholder<...> | null | undefined; ... 11 more ...; usageCount?: number | ... 3 more ... | undefined; }[]'.
+server/routes/studio.ts(4999,41): error TS2769: No overload matches this call.
+  Overload 1 of 2, '(value: { userId: string | SQL<unknown> | Placeholder<string, any>; id?: string | SQL<unknown> | Placeholder<string, any> | undefined; title?: string | SQL<unknown> | Placeholder<...> | null | undefined; ... 18 more ...; lastSavedAt?: SQL<...> | ... 3 more ... | undefined; }): PgInsertBase<...>', gave the following error.
+    Type 'unknown' is not assignable to type 'string | SQL<unknown> | Placeholder<string, any> | null | undefined'.
+  Overload 2 of 2, '(values: { userId: string | SQL<unknown> | Placeholder<string, any>; id?: string | SQL<unknown> | Placeholder<string, any> | undefined; title?: string | SQL<unknown> | Placeholder<...> | null | undefined; ... 18 more ...; lastSavedAt?: SQL<...> | ... 3 more ... | undefined; }[]): PgInsertBase<...>', gave the following error.
+    Object literal may only specify known properties, and 'id' does not exist in type '{ userId: string | SQL<unknown> | Placeholder<string, any>; id?: string | SQL<unknown> | Placeholder<string, any> | undefined; title?: string | SQL<unknown> | Placeholder<...> | null | undefined; ... 18 more ...; lastSavedAt?: SQL<...> | ... 3 more ... | undefined; }[]'.
+server/routes/studio.ts(5530,33): error TS2339: Property 'default' does not exist on type 'typeof path'.
+server/routes/studio.ts(5539,33): error TS2339: Property 'filePath' does not exist on type 'PgTableWithColumns<{ name: "audio_clips"; schema: undefined; columns: { id: PgColumn<{ name: "id"; tableName: "audio_clips"; dataType: "string"; columnType: "PgVarchar"; data: string; driverParam: string; notNull: true; ... 7 more ...; generated: undefined; }, {}, { ...; }>; ... 12 more ...; createdAt: PgColumn<...>...'.
+server/routes/studio.ts(5540,33): error TS2339: Property 'originalFilename' does not exist on type 'PgTableWithColumns<{ name: "audio_clips"; schema: undefined; columns: { id: PgColumn<{ name: "id"; tableName: "audio_clips"; dataType: "string"; columnType: "PgVarchar"; data: string; driverParam: string; notNull: true; ... 7 more ...; generated: undefined; }, {}, { ...; }>; ... 12 more ...; createdAt: PgColumn<...>...'.
+server/routes/studio.ts(5607,33): error TS2339: Property 'default' does not exist on type 'typeof path'.
+server/routes/studio.ts(5616,33): error TS2339: Property 'filePath' does not exist on type 'PgTableWithColumns<{ name: "audio_clips"; schema: undefined; columns: { id: PgColumn<{ name: "id"; tableName: "audio_clips"; dataType: "string"; columnType: "PgVarchar"; data: string; driverParam: string; notNull: true; ... 7 more ...; generated: undefined; }, {}, { ...; }>; ... 12 more ...; createdAt: PgColumn<...>...'.
+server/routes/studio.ts(5617,33): error TS2339: Property 'originalFilename' does not exist on type 'PgTableWithColumns<{ name: "audio_clips"; schema: undefined; columns: { id: PgColumn<{ name: "id"; tableName: "audio_clips"; dataType: "string"; columnType: "PgVarchar"; data: string; driverParam: string; notNull: true; ... 7 more ...; generated: undefined; }, {}, { ...; }>; ... 12 more ...; createdAt: PgColumn<...>...'.
+server/routes/studio.ts(5773,43): error TS2339: Property 'limiterCeiling' does not exist on type '{ targetLUFS: number; truePeakLimit: number; platform: "custom" | "youtube" | "spotify" | "apple_music" | "soundcloud"; enhanceBass: boolean; enhanceClarity: boolean; analogWarmth: boolean; }'.
+server/routes/studio.ts(5774,36): error TS2339: Property 'limiterCeiling' does not exist on type '{ targetLUFS: number; truePeakLimit: number; platform: "custom" | "youtube" | "spotify" | "apple_music" | "soundcloud"; enhanceBass: boolean; enhanceClarity: boolean; analogWarmth: boolean; }'.
+server/routes/studio.ts(6020,11): error TS2532: Object is possibly 'undefined'.
+server/routes/studio.ts(6026,13): error TS2339: Property 'limit' does not exist on type 'SQL<unknown>'.
+server/routes/studio.ts(6056,11): error TS2532: Object is possibly 'undefined'.
+server/routes/studio.ts(6063,13): error TS2339: Property 'limit' does not exist on type 'SQL<unknown>'.

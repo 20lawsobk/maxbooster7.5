@@ -90,6 +90,19 @@ fi
 export PATH="$(dirname "$_NODE_BIN"):$PATH"
 echo "[start.sh] node: $_NODE_BIN ($("$_NODE_BIN" --version))"
 
+# Resolve the Nix-managed media tools before launching the supervisor. This
+# exports the exact FFmpeg path expected by ffmpeg-static and Python callers.
+if [ ! -f "$_SCRIPT_DIR/dist/deployment/ffmpeg-path.sh" ]; then
+  echo "[start.sh] FATAL: packaged FFmpeg resolver is missing" >&2
+  exit 1
+fi
+source "$_SCRIPT_DIR/dist/deployment/ffmpeg-path.sh"
+if ! resolve_ffmpeg; then
+  echo "[start.sh] FATAL: required FFmpeg/ffprobe tools are unavailable" >&2
+  exit 1
+fi
+echo "[start.sh] media tools: ffmpeg=$FFMPEG_BIN ffprobe=$FFPROBE_PATH"
+
 # ── 1a. Validate and export the runtime port contract ─────────────────────────
 # This must happen before the liveness stub or any sidecar starts. A duplicate
 # assignment is a configuration failure, never something to "work around" by
@@ -102,8 +115,8 @@ source "$_SCRIPT_DIR/dist/deployment/port-contract.sh"
 # `npm ci` ahead of start.sh. Deferred until after the port-contract.sh env
 # vars above are exported so the check observes the exact values the app will.
 if [ -f "$_SCRIPT_DIR/dist/deployment/check-port-contract.mjs" ]; then
-  if ! "$_NODE_BIN" "$_SCRIPT_DIR/dist/deployment/check-port-contract.mjs"; then
-    echo "[start.sh] FATAL: port contract check failed against .replit; aborting startup" >&2
+  if ! MAXBOOSTER_DEV_PORTS=0 "$_NODE_BIN" "$_SCRIPT_DIR/dist/deployment/check-port-contract.mjs"; then
+    echo "[start.sh] FATAL: production port contract check failed; aborting startup" >&2
     exit 1
   fi
 else
@@ -179,6 +192,17 @@ _service_healthy() {
   ' "$1" >/dev/null 2>&1
 }
 
+_tcp_port_open() {
+  "$_NODE_BIN" --input-type=module -e '
+    import net from "node:net";
+    const socket = net.createConnection({ host: "127.0.0.1", port: Number(process.argv[1]) });
+    const finish = status => { socket.destroy(); process.exit(status); };
+    socket.setTimeout(750, () => finish(1));
+    socket.once("connect", () => finish(0));
+    socket.once("error", () => finish(1));
+  ' "$1" >/dev/null 2>&1
+}
+
 # ── 3. Start boosterstate sidecar ────────────────────────────────────────────
 # Check ./bin/boosterstate first (compiled by build.sh, not in .dockerignore),
 # then fall back to the dev-build path in boosterstate/target/release/.
@@ -203,7 +227,13 @@ fi
 # The sidecar provides all /generate/content, /generate/script, /analyze/audio,
 # etc. endpoints consumed by pythonAIService.ts.  It must start alongside the
 # main server so tier-1 AI content generation works in production.
-if [ "${ENABLE_LEGACY_AI_SIDECAR:-0}" = "1" ] && ! pgrep -f "ai_content_sidecar.py" >/dev/null 2>&1; then
+if [ "${ENABLE_LEGACY_AI_SIDECAR:-0}" = "1" ]; then
+  if _service_healthy "$PYTHON_AI_PORT"; then
+    echo "[start.sh] Python AI Content Sidecar already healthy on configured port ${PYTHON_AI_PORT}"
+  elif _tcp_port_open "$PYTHON_AI_PORT"; then
+    echo "[start.sh] FATAL: configured Python AI port ${PYTHON_AI_PORT} is occupied by a service that failed its health check" >&2
+    exit 1
+  else
   _PY_BIN=""
   # Prefer the venv Python that was just activated (has dependencies)
   if [ "$_PYENV_ACTIVATED" = "1" ] && command -v python3 >/dev/null 2>&1; then
@@ -240,14 +270,12 @@ if [ "${ENABLE_LEGACY_AI_SIDECAR:-0}" = "1" ] && ! pgrep -f "ai_content_sidecar.
       >> /tmp/ai_content_sidecar.log 2>&1 &
     echo "[start.sh] Python AI Content Sidecar started (pid $!) on port ${PYTHON_AI_PORT} via $_PY_BIN"
   else
-    echo "[start.sh] WARNING: Python not found — legacy AI sidecar unavailable"
+    echo "[start.sh] FATAL: Python runtime is required for configured port ${PYTHON_AI_PORT} but is unavailable" >&2
+    exit 1
+  fi
   fi
 else
-  if [ "${ENABLE_LEGACY_AI_SIDECAR:-0}" = "1" ]; then
-    echo "[start.sh] Python AI Content Sidecar already running"
-  else
-    echo "[start.sh] Legacy Python AI sidecar disabled; AI requests must use MaxCore Digital GPU"
-  fi
+  echo "[start.sh] Legacy Python AI sidecar disabled; AI requests must use MaxCore Digital GPU"
 fi
 
 # ── 3c. Start MaxCore Diffusion Gateway ──────────────────────────────────────

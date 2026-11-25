@@ -1,6 +1,13 @@
 import type { RedisStore } from "../../external/pdim/artifacts/api-server/src/redis/store.js";
 import type { RedisEntry, RedisAofRecord } from "../../external/pdim/artifacts/api-server/src/redis/types.js";
-import { PdimBucketJournal, type PdimObjectStore } from "./pdimBucketJournal.js";
+import { performance } from "node:perf_hooks";
+import {
+  DEFAULT_PDIM_RECOVERY_TIMEOUT_MS,
+  PdimBucketJournal,
+  pdimBucketReadFailureCategory,
+  type PdimObjectStore,
+  type PdimRecoveryReadEvent,
+} from "./pdimBucketJournal.js";
 import { isBucketTransaction, orderedBucketRecovery, type PdimBucketTransaction } from "./pdimBucketRecovery.js";
 import { readBucketSnapshot, writeBucketSnapshot } from "./pdimBucketSnapshot.js";
 
@@ -37,7 +44,11 @@ export class PdimBucketPersistence {
     private readonly entries: Map<string, RedisEntry>,
     private readonly validate: (key: string, value: unknown) => RedisEntry,
     private readonly onStage: (stage: string) => void = () => {},
+    private readonly recoveryTimeoutMs = DEFAULT_PDIM_RECOVERY_TIMEOUT_MS,
   ) {
+    if (!Number.isSafeInteger(recoveryTimeoutMs) || recoveryTimeoutMs < 1) {
+      throw new Error("Invalid bucket PDIM recovery timeout");
+    }
     this.journal = new PdimBucketJournal(objects, namespace, isBucketTransaction);
   }
 
@@ -67,13 +78,31 @@ export class PdimBucketPersistence {
       }).finally(() => { this.renewPending = undefined; });
     }, 10_000);
     this.heartbeat.unref();
+    const recoveryStartedAt = performance.now();
+    const deadlineAt = recoveryStartedAt + this.recoveryTimeoutMs;
+    const onRead = (event: PdimRecoveryReadEvent) => {
+      const details = [
+        `recovery-read phase=${event.phase}`,
+        ...(event.sequence === undefined ? [] : [`sequence=${event.sequence}`]),
+        ...(event.ordinal === undefined ? [] : [`ordinal=${event.ordinal}`]),
+        `elapsed_ms=${event.elapsedMs}`,
+        ...(event.byteLength === undefined ? [] : [`bytes=${event.byteLength}`]),
+        `outcome=${event.outcome}`,
+        ...(event.failureCategory ? [`category=${event.failureCategory}`] : []),
+      ];
+      this.onStage(details.join(" "));
+    };
     try {
+      this.onStage(`recovery-start deadline_ms=${this.recoveryTimeoutMs}`);
       const recovered = await this.journal.recover((completed, total) =>
-        this.onStage(`journal:${completed}/${total}`));
+        this.onStage(`journal:${completed}/${total}`), { deadlineAt, onRead });
       const snapshot = await readBucketSnapshot(this.journal, recovered.snapshot, this.validate,
-        (completed, total) => this.onStage(`snapshot-shards:${completed}/${total}`));
+        (completed, total) => this.onStage(`snapshot-shards:${completed}/${total}`),
+        { deadlineAt, onRead });
       this.onStage("snapshot-verified");
+      this.onStage("lease-renew-start");
       await this.journal.renew();
+      this.onStage("lease-renew-complete");
       const ordered = orderedBucketRecovery(recovered.transactions, snapshot.redisSequence, snapshot.capsuleSequence);
       this.assertHealthy();
       // Complete validation before publishing any recovered state to the owner.
@@ -90,6 +119,10 @@ export class PdimBucketPersistence {
     } catch (error) {
       if (this.heartbeat) clearInterval(this.heartbeat);
       this.engine.closeEmbedded();
+      this.onStage(
+        `recovery-failed elapsed_ms=${Math.max(0, Math.round(performance.now() - recoveryStartedAt))}` +
+        ` category=${pdimBucketReadFailureCategory(error)}`,
+      );
       throw error;
     }
   }

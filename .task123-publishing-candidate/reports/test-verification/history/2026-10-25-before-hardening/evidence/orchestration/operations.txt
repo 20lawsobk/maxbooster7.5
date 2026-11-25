@@ -1,0 +1,5 @@
+passed scripts/testing/platform-register.py
+failed evaluations/maxcore-quality/verify_types.py
+failed evaluations/maxcore-quality/verify_evidence.py
+passed scripts/maxcore-isolated-recovery-acceptance.py
+passed tests/payment-processing/run.mjs

@@ -1,0 +1,54 @@
+{
+  "observedAt": "2026-10-28T12:57:12.896079+00:00",
+  "scope": "Read-only manifest file and archive member persistence audit; no repo modification/staging/network/production access",
+  "manifests": 38,
+  "artifactChecks": 1007,
+  "passingArtifactChecks": 1006,
+  "failedArtifactChecks": [
+    {
+      "manifest": "reports/coverage-producer/manifest.json",
+      "path": "reports/coverage-producer/README.md",
+      "pass": false,
+      "expectedSha256": "baef6cc62c39b07b97c9fd6ad0e33e543a98e9b001b6980a440c32531e1359cb",
+      "actualSha256": "843cde783769a83f36f68edba3ac26bc01cce81d8080be64a463dc5e0eb2d4ad",
+      "expectedBytes": 3690,
+      "actualBytes": 3942
+    }
+  ],
+  "archives": [
+    {
+      "archive": "reports/test-verification/history/2026-10-27-before-awareness-release-isolation/master-evidence.tar.gz",
+      "members": 556,
+      "expectedMembers": 556,
+      "mismatchedMembers": [],
+      "missingMembers": [],
+      "pass": true
+    },
+    {
+      "archive": "reports/test-verification/history/2026-10-28-a1603b13-master/master-evidence.tar.gz",
+      "members": 562,
+      "expectedMembers": 562,
+      "mismatchedMembers": [],
+      "missingMembers": [],
+      "pass": true
+    }
+  ],
+  "forceAddCandidates": [
+    {
+      "path": "reports/test-verification/history/2026-10-27-before-awareness-release-isolation/master-evidence.tar.gz",
+      "bytes": 17948024,
+      "sha256": "0f66e0d8b0d17209e794110baa8d4305e48c94d46b081e01b76003bd006884cf",
+      "tracked": false
+    },
+    {
+      "path": "reports/test-verification/history/2026-10-28-a1603b13-master/master-evidence.tar.gz",
+      "bytes": 22714790,
+      "sha256": "5966e0b73530cac2562accf55f8400e19b42fde1ac6bb5f4e65d58df57fcffd0",
+      "tracked": false
+    }
+  ],
+  "credentialValuesCompared": 8,
+  "credentialMatchPaths": [],
+  "errors": [],
+  "over100MiB": []
+}

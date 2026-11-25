@@ -1,0 +1,79 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites name="pytest tests"><testsuite name="pytest" errors="0" failures="1" skipped="0" tests="3" time="0.702" timestamp="2026-11-06T23:52:56.493992+00:00" hostname="repl"><testcase classname="ai_model.rta.test_render_contracts" name="test_image_bytes_identical_across_processes" time="0.089"><failure message="RuntimeError: render subprocess (PYTHONHASHSEED=0) failed:&#10;Traceback (most recent call last):&#10;  File &quot;&lt;repo&gt;/.pythonlibs/lib/python3.12/site-packages/numpy/_core/__init__.py&quot;, line 24, in &lt;module&gt;&#10;    from . import multiarray&#10;  File &quot;&lt;repo&gt;/.pythonlibs/lib/python3.12/site-packages/numpy/_core/multiarray.py&quot;, line 11, in &lt;module&gt;&#10;    from . import _multiarray_umath, overrides&#10;ImportError: libz.so.1: cannot open shared object file: No such file or directory&#10;&#10;[+38 more lines; full report in element text]">def test_image_bytes_identical_across_processes() -&gt; None:
+        """Same inputs → byte-identical image across processes with different hash seeds."""
+&gt;       h0 = _render_hash_in_subprocess("0")
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+ai_model/rta/test_render_contracts.py:85: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+hash_seed = '0'
+
+    def _render_hash_in_subprocess(hash_seed: str) -&gt; str:
+        """Render in a fresh interpreter with an explicit PYTHONHASHSEED."""
+        env = dict(os.environ)
+        env["PYTHONHASHSEED"] = hash_seed
+        # Run from the package root so ``ai_model`` imports resolve, regardless of
+        # the caller's CWD.
+        pkg_root = os.path.abspath(
+            os.path.join(os.path.dirname(__file__), "..", "..")
+        )
+        proc = subprocess.run(
+            [sys.executable, "-c", _RENDER_SNIPPET],
+            env=env,
+            cwd=pkg_root,
+            capture_output=True,
+            text=True,
+            timeout=300,
+        )
+        if proc.returncode != 0:
+&gt;           raise RuntimeError(
+                f"render subprocess (PYTHONHASHSEED={hash_seed}) failed:\n{proc.stderr}"
+            )
+E           RuntimeError: render subprocess (PYTHONHASHSEED=0) failed:
+E           Traceback (most recent call last):
+E             File "&lt;repo&gt;/.pythonlibs/lib/python3.12/site-packages/numpy/_core/__init__.py", line 24, in &lt;module&gt;
+E               from . import multiarray
+E             File "&lt;repo&gt;/.pythonlibs/lib/python3.12/site-packages/numpy/_core/multiarray.py", line 11, in &lt;module&gt;
+E               from . import _multiarray_umath, overrides
+E           ImportError: libz.so.1: cannot open shared object file: No such file or directory
+E           
+E           The above exception was the direct cause of the following exception:
+E           
+E           Traceback (most recent call last):
+E             File "&lt;string&gt;", line 1, in &lt;module&gt;
+E             File "&lt;repo&gt;/external/maxcore/artifacts/ai-training-server/ai_model/rta/__init__.py", line 20, in &lt;module&gt;
+E               from .fabric.media import MediaType, FrameState, MediaState
+E             File "&lt;repo&gt;/external/maxcore/artifacts/ai-training-server/ai_model/rta/fabric/media.py", line 14, in &lt;module&gt;
+E               import numpy as np
+E             File "&lt;repo&gt;/.pythonlibs/lib/python3.12/site-packages/numpy/__init__.py", line 112, in &lt;module&gt;
+E               from numpy.__config__ import show_config
+E             File "&lt;repo&gt;/.pythonlibs/lib/python3.12/site-packages/numpy/__config__.py", line 4, in &lt;module&gt;
+E               from numpy._core._multiarray_umath import (
+E             File "&lt;repo&gt;/.pythonlibs/lib/python3.12/site-packages/numpy/_core/__init__.py", line 85, in &lt;module&gt;
+E               raise ImportError(msg) from exc
+E           ImportError: 
+E           
+E           IMPORTANT: PLEASE READ THIS FOR ADVICE ON HOW TO SOLVE THIS ISSUE!
+E           
+E           Importing the numpy C-extensions failed. This error can happen for
+E           many reasons, often due to issues with your setup or how NumPy was
+E           installed.
+E           
+E           We have compiled some common reasons and troubleshooting tips at:
+E           
+E               https://numpy.org/devdocs/user/troubleshooting-importerror.html
+E           
+E           Please note and check the following:
+E           
+E             * The Python version is: Python 3.12 from "/nix/store/h097imm3w6dpx10qynrd2sz9fks2wbq8-python3-3.12.11/bin/python3"
+E             * The NumPy version is: "2.4.4"
+E           
+E           and make sure that they are the versions you expect.
+E           
+E           Please carefully study the information and documentation linked above.
+E           This is unlikely to be a NumPy issue but will be caused by a bad install
+E           or environment on your machine.
+E           
+E           Original error was: libz.so.1: cannot open shared object file: No such file or directory
+
+ai_model/rta/test_render_contracts.py:77: RuntimeError</failure></testcase><testcase classname="ai_model.rta.test_render_contracts" name="test_spectral_tail_reconstruction_non_hop_aligned" time="0.123" /><testcase classname="ai_model.rta.test_render_contracts" name="test_fabric_self_test_all_mediums_and_gpu" time="0.136" /></testsuite></testsuites>

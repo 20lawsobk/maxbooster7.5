@@ -1,0 +1,1222 @@
+{
+  "scope": "SelfHealingSecurityEngine public behavior contracts; not global platform coverage",
+  "sourceRevision": "4c72114a55a9425d4af743a72a71e4c58a532d2f",
+  "sourceFiles": {
+    "tests/unit/selfHealingSecurityEngine.test.ts": "a70a32788a93517b42f12a0db082c3bc0fcbb45d4e952bc8936e0bd14ce59884",
+    "server/services/selfHealingSecurityEngine.ts": "b1c709efdf1ea37bdf6a035cf1e6c4729874f4a50a4c27a5542fa1df607b9fc4",
+    "vitest.config.ts": "70a05b445fc97945d94580970864ffc302f17f41b6c8fc75dfdb203aa7cc8647"
+  },
+  "baselineCoverage": {
+    "lines": {
+      "total": 374,
+      "covered": 346,
+      "skipped": 0,
+      "pct": 92.51
+    },
+    "statements": {
+      "total": 400,
+      "covered": 366,
+      "skipped": 0,
+      "pct": 91.5
+    },
+    "functions": {
+      "total": 54,
+      "covered": 50,
+      "skipped": 0,
+      "pct": 92.59
+    },
+    "branches": {
+      "total": 265,
+      "covered": 205,
+      "skipped": 0,
+      "pct": 77.35
+    },
+    "branchesTrue": {
+      "total": 0,
+      "covered": 0,
+      "skipped": 0,
+      "pct": "Unknown"
+    }
+  },
+  "finalCoverage": {
+    "lines": {
+      "total": 374,
+      "covered": 370,
+      "skipped": 0,
+      "pct": 98.93
+    },
+    "statements": {
+      "total": 400,
+      "covered": 391,
+      "skipped": 0,
+      "pct": 97.75
+    },
+    "functions": {
+      "total": 54,
+      "covered": 54,
+      "skipped": 0,
+      "pct": 100
+    },
+    "branches": {
+      "total": 265,
+      "covered": 235,
+      "skipped": 0,
+      "pct": 88.67
+    },
+    "branchesTrue": {
+      "total": 0,
+      "covered": 0,
+      "skipped": 0,
+      "pct": "Unknown"
+    }
+  },
+  "assertions": {
+    "name": "vitest tests",
+    "tests": "46",
+    "failures": "0",
+    "errors": "0",
+    "time": "1.4957425"
+  },
+  "run": {
+    "command": [
+      "node",
+      "node_modules/vitest/vitest.mjs",
+      "run",
+      "tests/unit/selfHealingSecurityEngine.test.ts",
+      "--coverage",
+      "--coverage.include=server/services/selfHealingSecurityEngine.ts",
+      "--coverage.reporter=json",
+      "--coverage.reporter=json-summary",
+      "--coverage.reportsDirectory=/workspace/onboarding-results/security-coverage-closure",
+      "--reporter=junit",
+      "--outputFile=/workspace/onboarding-results/security-coverage-closure.xml"
+    ],
+    "cwd": ".",
+    "startedAt": "2026-10-27T09:56:12.290663+00:00",
+    "durationSeconds": 3.134,
+    "exitCode": 1,
+    "timedOut": false,
+    "status": "failed",
+    "log": "/workspace/onboarding-results/security-coverage-closure.txt",
+    "logSha256": "846eee00d217c3d86296f35c459d95084b7686b9d333860b7107280e18de0322"
+  },
+  "lint": {
+    "command": [
+      "node",
+      "node_modules/eslint/bin/eslint.js",
+      "tests/unit/selfHealingSecurityEngine.test.ts",
+      "--quiet"
+    ],
+    "cwd": ".",
+    "startedAt": "2026-10-27T09:56:15.425131+00:00",
+    "durationSeconds": 1.379,
+    "exitCode": 0,
+    "timedOut": false,
+    "status": "passed",
+    "log": "/workspace/onboarding-results/security-coverage-closure-lint.txt",
+    "logSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  "diff": {
+    "command": [
+      "git",
+      "diff",
+      "--check",
+      "--",
+      "tests/unit/selfHealingSecurityEngine.test.ts"
+    ],
+    "cwd": ".",
+    "startedAt": "2026-10-27T09:56:16.804504+00:00",
+    "durationSeconds": 0.008,
+    "exitCode": 0,
+    "timedOut": false,
+    "status": "passed",
+    "log": "/workspace/onboarding-results/security-coverage-closure-diff.txt",
+    "logSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  "remainingUncoveredStatements": [
+    {
+      "start": {
+        "line": 479,
+        "column": 40
+      },
+      "end": {
+        "line": 479,
+        "column": null
+      }
+    },
+    {
+      "start": {
+        "line": 687,
+        "column": 42
+      },
+      "end": {
+        "line": 687,
+        "column": null
+      }
+    },
+    {
+      "start": {
+        "line": 688,
+        "column": 39
+      },
+      "end": {
+        "line": 688,
+        "column": null
+      }
+    },
+    {
+      "start": {
+        "line": 784,
+        "column": 21
+      },
+      "end": {
+        "line": 784,
+        "column": null
+      }
+    },
+    {
+      "start": {
+        "line": 822,
+        "column": 6
+      },
+      "end": {
+        "line": 822,
+        "column": null
+      }
+    },
+    {
+      "start": {
+        "line": 823,
+        "column": 6
+      },
+      "end": {
+        "line": 823,
+        "column": null
+      }
+    },
+    {
+      "start": {
+        "line": 827,
+        "column": 6
+      },
+      "end": {
+        "line": 827,
+        "column": null
+      }
+    },
+    {
+      "start": {
+        "line": 980,
+        "column": 8
+      },
+      "end": {
+        "line": 980,
+        "column": null
+      }
+    },
+    {
+      "start": {
+        "line": 1010,
+        "column": 53
+      },
+      "end": {
+        "line": 1010,
+        "column": null
+      }
+    }
+  ],
+  "remainingUncoveredBranches": [
+    {
+      "loc": {
+        "start": {
+          "line": 52,
+          "column": 4
+        },
+        "end": {
+          "line": 56,
+          "column": null
+        }
+      },
+      "type": "binary-expr",
+      "locations": [
+        {
+          "start": {
+            "line": 52,
+            "column": 4
+          },
+          "end": {
+            "line": 56,
+            "column": 10
+          }
+        },
+        {
+          "start": {
+            "line": 56,
+            "column": 10
+          },
+          "end": {
+            "line": 56,
+            "column": null
+          }
+        }
+      ],
+      "line": 52,
+      "hits": [
+        3175,
+        0
+      ]
+    },
+    {
+      "loc": {
+        "start": {
+          "line": 479,
+          "column": 4
+        },
+        "end": {
+          "line": 479,
+          "column": null
+        }
+      },
+      "type": "if",
+      "locations": [
+        {
+          "start": {
+            "line": 479,
+            "column": 4
+          },
+          "end": {
+            "line": 479,
+            "column": null
+          }
+        },
+        {
+          "start": {},
+          "end": {}
+        }
+      ],
+      "line": 479,
+      "hits": [
+        0,
+        1592
+      ]
+    },
+    {
+      "loc": {
+        "start": {
+          "line": 574,
+          "column": 19
+        },
+        "end": {
+          "line": 574,
+          "column": null
+        }
+      },
+      "type": "cond-expr",
+      "locations": [
+        {
+          "start": {
+            "line": 574,
+            "column": 46
+          },
+          "end": {
+            "line": 574,
+            "column": 61
+          }
+        },
+        {
+          "start": {
+            "line": 574,
+            "column": 61
+          },
+          "end": {
+            "line": 574,
+            "column": null
+          }
+        }
+      ],
+      "line": 574,
+      "hits": [
+        3,
+        0
+      ]
+    },
+    {
+      "loc": {
+        "start": {
+          "line": 670,
+          "column": 6
+        },
+        "end": {
+          "line": 670,
+          "column": null
+        }
+      },
+      "type": "if",
+      "locations": [
+        {
+          "start": {
+            "line": 670,
+            "column": 6
+          },
+          "end": {
+            "line": 670,
+            "column": null
+          }
+        },
+        {
+          "start": {},
+          "end": {}
+        }
+      ],
+      "line": 670,
+      "hits": [
+        1027,
+        0
+      ]
+    },
+    {
+      "loc": {
+        "start": {
+          "line": 687,
+          "column": 6
+        },
+        "end": {
+          "line": 687,
+          "column": null
+        }
+      },
+      "type": "if",
+      "locations": [
+        {
+          "start": {
+            "line": 687,
+            "column": 6
+          },
+          "end": {
+            "line": 687,
+            "column": null
+          }
+        },
+        {
+          "start": {},
+          "end": {}
+        }
+      ],
+      "line": 687,
+      "hits": [
+        0,
+        1022
+      ]
+    },
+    {
+      "loc": {
+        "start": {
+          "line": 688,
+          "column": 6
+        },
+        "end": {
+          "line": 688,
+          "column": null
+        }
+      },
+      "type": "if",
+      "locations": [
+        {
+          "start": {
+            "line": 688,
+            "column": 6
+          },
+          "end": {
+            "line": 688,
+            "column": null
+          }
+        },
+        {
+          "start": {},
+          "end": {}
+        }
+      ],
+      "line": 688,
+      "hits": [
+        0,
+        1022
+      ]
+    },
+    {
+      "loc": {
+        "start": {
+          "line": 740,
+          "column": 8
+        },
+        "end": {
+          "line": 747,
+          "column": null
+        }
+      },
+      "type": "if",
+      "locations": [
+        {
+          "start": {
+            "line": 740,
+            "column": 8
+          },
+          "end": {
+            "line": 747,
+            "column": null
+          }
+        },
+        {
+          "start": {},
+          "end": {}
+        }
+      ],
+      "line": 740,
+      "hits": [
+        1026,
+        0
+      ]
+    },
+    {
+      "loc": {
+        "start": {
+          "line": 752,
+          "column": 8
+        },
+        "end": {
+          "line": 764,
+          "column": null
+        }
+      },
+      "type": "if",
+      "locations": [
+        {
+          "start": {
+            "line": 752,
+            "column": 8
+          },
+          "end": {
+            "line": 764,
+            "column": null
+          }
+        },
+        {
+          "start": {},
+          "end": {}
+        }
+      ],
+      "line": 752,
+      "hits": [
+        7,
+        0
+      ]
+    },
+    {
+      "loc": {
+        "start": {
+          "line": 759,
+          "column": 10
+        },
+        "end": {
+          "line": 763,
+          "column": null
+        }
+      },
+      "type": "if",
+      "locations": [
+        {
+          "start": {
+            "line": 759,
+            "column": 10
+          },
+          "end": {
+            "line": 763,
+            "column": null
+          }
+        },
+        {
+          "start": {},
+          "end": {}
+        }
+      ],
+      "line": 759,
+      "hits": [
+        7,
+        0
+      ]
+    },
+    {
+      "loc": {
+        "start": {
+          "line": 784,
+          "column": 10
+        },
+        "end": {
+          "line": 784,
+          "column": null
+        }
+      },
+      "type": "if",
+      "locations": [
+        {
+          "start": {
+            "line": 784,
+            "column": 10
+          },
+          "end": {
+            "line": 784,
+            "column": null
+          }
+        },
+        {
+          "start": {},
+          "end": {}
+        }
+      ],
+      "line": 784,
+      "hits": [
+        0,
+        2
+      ]
+    },
+    {
+      "loc": {
+        "start": {
+          "line": 821,
+          "column": 4
+        },
+        "end": {
+          "line": 824,
+          "column": null
+        }
+      },
+      "type": "if",
+      "locations": [
+        {
+          "start": {
+            "line": 821,
+            "column": 4
+          },
+          "end": {
+            "line": 824,
+            "column": null
+          }
+        },
+        {
+          "start": {},
+          "end": {}
+        }
+      ],
+      "line": 821,
+      "hits": [
+        0,
+        1026
+      ]
+    },
+    {
+      "loc": {
+        "start": {
+          "line": 826,
+          "column": 4
+        },
+        "end": {
+          "line": 828,
+          "column": null
+        }
+      },
+      "type": "if",
+      "locations": [
+        {
+          "start": {
+            "line": 826,
+            "column": 4
+          },
+          "end": {
+            "line": 828,
+            "column": null
+          }
+        },
+        {
+          "start": {},
+          "end": {}
+        }
+      ],
+      "line": 826,
+      "hits": [
+        0,
+        1026
+      ]
+    },
+    {
+      "loc": {
+        "start": {
+          "line": 831,
+          "column": 6
+        },
+        "end": {
+          "line": 837,
+          "column": null
+        }
+      },
+      "type": "cond-expr",
+      "locations": [
+        {
+          "start": {
+            "line": 832,
+            "column": 10
+          },
+          "end": {
+            "line": 832,
+            "column": null
+          }
+        },
+        {
+          "start": {
+            "line": 833,
+            "column": 10
+          },
+          "end": {
+            "line": 837,
+            "column": null
+          }
+        }
+      ],
+      "line": 831,
+      "hits": [
+        1026,
+        0
+      ]
+    },
+    {
+      "loc": {
+        "start": {
+          "line": 833,
+          "column": 10
+        },
+        "end": {
+          "line": 837,
+          "column": null
+        }
+      },
+      "type": "cond-expr",
+      "locations": [
+        {
+          "start": {
+            "line": 834,
+            "column": 12
+          },
+          "end": {
+            "line": 834,
+            "column": null
+          }
+        },
+        {
+          "start": {
+            "line": 835,
+            "column": 12
+          },
+          "end": {
+            "line": 837,
+            "column": null
+          }
+        }
+      ],
+      "line": 833,
+      "hits": [
+        0,
+        0
+      ]
+    },
+    {
+      "loc": {
+        "start": {
+          "line": 835,
+          "column": 12
+        },
+        "end": {
+          "line": 837,
+          "column": null
+        }
+      },
+      "type": "cond-expr",
+      "locations": [
+        {
+          "start": {
+            "line": 836,
+            "column": 14
+          },
+          "end": {
+            "line": 836,
+            "column": null
+          }
+        },
+        {
+          "start": {
+            "line": 837,
+            "column": 14
+          },
+          "end": {
+            "line": 837,
+            "column": null
+          }
+        }
+      ],
+      "line": 835,
+      "hits": [
+        0,
+        0
+      ]
+    },
+    {
+      "loc": {
+        "start": {
+          "line": 853,
+          "column": 10
+        },
+        "end": {
+          "line": 853,
+          "column": null
+        }
+      },
+      "type": "cond-expr",
+      "locations": [
+        {
+          "start": {
+            "line": 853,
+            "column": 28
+          },
+          "end": {
+            "line": 853,
+            "column": 41
+          }
+        },
+        {
+          "start": {
+            "line": 853,
+            "column": 41
+          },
+          "end": {
+            "line": 853,
+            "column": null
+          }
+        }
+      ],
+      "line": 853,
+      "hits": [
+        1026,
+        0
+      ]
+    },
+    {
+      "loc": {
+        "start": {
+          "line": 853,
+          "column": 41
+        },
+        "end": {
+          "line": 853,
+          "column": null
+        }
+      },
+      "type": "cond-expr",
+      "locations": [
+        {
+          "start": {
+            "line": 853,
+            "column": 59
+          },
+          "end": {
+            "line": 853,
+            "column": 68
+          }
+        },
+        {
+          "start": {
+            "line": 853,
+            "column": 68
+          },
+          "end": {
+            "line": 853,
+            "column": null
+          }
+        }
+      ],
+      "line": 853,
+      "hits": [
+        0,
+        0
+      ]
+    },
+    {
+      "loc": {
+        "start": {
+          "line": 899,
+          "column": 8
+        },
+        "end": {
+          "line": 901,
+          "column": null
+        }
+      },
+      "type": "binary-expr",
+      "locations": [
+        {
+          "start": {
+            "line": 899,
+            "column": 8
+          },
+          "end": {
+            "line": 899,
+            "column": null
+          }
+        },
+        {
+          "start": {
+            "line": 900,
+            "column": 9
+          },
+          "end": {
+            "line": 900,
+            "column": 39
+          }
+        },
+        {
+          "start": {
+            "line": 900,
+            "column": 39
+          },
+          "end": {
+            "line": 900,
+            "column": null
+          }
+        },
+        {
+          "start": {
+            "line": 901,
+            "column": 10
+          },
+          "end": {
+            "line": 901,
+            "column": null
+          }
+        }
+      ],
+      "line": 899,
+      "hits": [
+        1033,
+        1033,
+        7,
+        0
+      ]
+    },
+    {
+      "loc": {
+        "start": {
+          "line": 903,
+          "column": 4
+        },
+        "end": {
+          "line": 903,
+          "column": null
+        }
+      },
+      "type": "if",
+      "locations": [
+        {
+          "start": {
+            "line": 903,
+            "column": 4
+          },
+          "end": {
+            "line": 903,
+            "column": null
+          }
+        },
+        {
+          "start": {},
+          "end": {}
+        }
+      ],
+      "line": 903,
+      "hits": [
+        1033,
+        0
+      ]
+    },
+    {
+      "loc": {
+        "start": {
+          "line": 921,
+          "column": 14
+        },
+        "end": {
+          "line": 925,
+          "column": null
+        }
+      },
+      "type": "cond-expr",
+      "locations": [
+        {
+          "start": {
+            "line": 922,
+            "column": 16
+          },
+          "end": {
+            "line": 922,
+            "column": null
+          }
+        },
+        {
+          "start": {
+            "line": 923,
+            "column": 16
+          },
+          "end": {
+            "line": 925,
+            "column": null
+          }
+        }
+      ],
+      "line": 921,
+      "hits": [
+        3,
+        0
+      ]
+    },
+    {
+      "loc": {
+        "start": {
+          "line": 923,
+          "column": 16
+        },
+        "end": {
+          "line": 925,
+          "column": null
+        }
+      },
+      "type": "cond-expr",
+      "locations": [
+        {
+          "start": {
+            "line": 924,
+            "column": 18
+          },
+          "end": {
+            "line": 924,
+            "column": null
+          }
+        },
+        {
+          "start": {
+            "line": 925,
+            "column": 18
+          },
+          "end": {
+            "line": 925,
+            "column": null
+          }
+        }
+      ],
+      "line": 923,
+      "hits": [
+        0,
+        0
+      ]
+    },
+    {
+      "loc": {
+        "start": {
+          "line": 926,
+          "column": 16
+        },
+        "end": {
+          "line": 926,
+          "column": null
+        }
+      },
+      "type": "cond-expr",
+      "locations": [
+        {
+          "start": {
+            "line": 926,
+            "column": 36
+          },
+          "end": {
+            "line": 926,
+            "column": 49
+          }
+        },
+        {
+          "start": {
+            "line": 926,
+            "column": 49
+          },
+          "end": {
+            "line": 926,
+            "column": null
+          }
+        }
+      ],
+      "line": 926,
+      "hits": [
+        1033,
+        0
+      ]
+    },
+    {
+      "loc": {
+        "start": {
+          "line": 930,
+          "column": 20
+        },
+        "end": {
+          "line": 930,
+          "column": null
+        }
+      },
+      "type": "cond-expr",
+      "locations": [
+        {
+          "start": {
+            "line": 930,
+            "column": 40
+          },
+          "end": {
+            "line": 930,
+            "column": 63
+          }
+        },
+        {
+          "start": {
+            "line": 930,
+            "column": 63
+          },
+          "end": {
+            "line": 930,
+            "column": null
+          }
+        }
+      ],
+      "line": 930,
+      "hits": [
+        1033,
+        0
+      ]
+    },
+    {
+      "loc": {
+        "start": {
+          "line": 941,
+          "column": 14
+        },
+        "end": {
+          "line": 941,
+          "column": 73
+        }
+      },
+      "type": "cond-expr",
+      "locations": [
+        {
+          "start": {
+            "line": 941,
+            "column": 34
+          },
+          "end": {
+            "line": 941,
+            "column": 52
+          }
+        },
+        {
+          "start": {
+            "line": 941,
+            "column": 52
+          },
+          "end": {
+            "line": 941,
+            "column": 73
+          }
+        }
+      ],
+      "line": 941,
+      "hits": [
+        1033,
+        0
+      ]
+    },
+    {
+      "loc": {
+        "start": {
+          "line": 979,
+          "column": 6
+        },
+        "end": {
+          "line": 981,
+          "column": null
+        }
+      },
+      "type": "if",
+      "locations": [
+        {
+          "start": {
+            "line": 979,
+            "column": 6
+          },
+          "end": {
+            "line": 981,
+            "column": null
+          }
+        },
+        {
+          "start": {},
+          "end": {}
+        }
+      ],
+      "line": 979,
+      "hits": [
+        0,
+        917
+      ]
+    },
+    {
+      "loc": {
+        "start": {
+          "line": 1010,
+          "column": 4
+        },
+        "end": {
+          "line": 1010,
+          "column": null
+        }
+      },
+      "type": "if",
+      "locations": [
+        {
+          "start": {
+            "line": 1010,
+            "column": 4
+          },
+          "end": {
+            "line": 1010,
+            "column": null
+          }
+        },
+        {
+          "start": {},
+          "end": {}
+        }
+      ],
+      "line": 1010,
+      "hits": [
+        0,
+        1033
+      ]
+    }
+  ],
+  "productionSourceChangedByThisBatch": false,
+  "thresholds": {
+    "lines": 100,
+    "statements": 100,
+    "functions": 100,
+    "branches": 100
+  },
+  "exitExplanation": "All 46 assertions pass; coverage exit1 preserves unmet100%line/statement/branch thresholds. Functionsreach100%. No denominator exclusions or artificial counters."
+}

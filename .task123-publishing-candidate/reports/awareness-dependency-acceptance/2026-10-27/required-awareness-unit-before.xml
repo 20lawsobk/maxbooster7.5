@@ -1,0 +1,735 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<testsuites name="vitest tests" tests="55" failures="32" errors="0" time="0.237778711">
+    <testsuite name="tests/unit/required-awareness-dependency.test.ts" timestamp="2026-10-28T02:13:22.682Z" hostname="af966a6fd55d" tests="55" failures="32" errors="0" skipped="0" time="0.237778711">
+        <testcase classname="tests/unit/required-awareness-dependency.test.ts" name="required generation awareness is a fixed internal dependency &gt; generate maps required snapshot HTTP 400 to503 and retains the received upstream cause" time="0.117615657">
+            <failure message="expected 400 to be 503 // Object.is equality" type="AssertionError">
+AssertionError: expected 400 to be 503 // Object.is equality
+
+- Expected
++ Received
+
+- 503
++ 400
+
+ ❯ tests/unit/required-awareness-dependency.test.ts:44:28
+            </failure>
+            <failure message="expected 400 to be 503 // Object.is equality" type="AssertionError">
+AssertionError: expected 400 to be 503 // Object.is equality
+
+- Expected
++ Received
+
+- 503
++ 400
+
+ ❯ tests/unit/required-awareness-dependency.test.ts:44:28
+            </failure>
+        </testcase>
+        <testcase classname="tests/unit/required-awareness-dependency.test.ts" name="required generation awareness is a fixed internal dependency &gt; generate maps required snapshot HTTP 401 to503 and retains the received upstream cause" time="0.003633431">
+            <failure message="expected 401 to be 503 // Object.is equality" type="AssertionError">
+AssertionError: expected 401 to be 503 // Object.is equality
+
+- Expected
++ Received
+
+- 503
++ 401
+
+ ❯ tests/unit/required-awareness-dependency.test.ts:44:28
+            </failure>
+            <failure message="expected 401 to be 503 // Object.is equality" type="AssertionError">
+AssertionError: expected 401 to be 503 // Object.is equality
+
+- Expected
++ Received
+
+- 503
++ 401
+
+ ❯ tests/unit/required-awareness-dependency.test.ts:44:28
+            </failure>
+        </testcase>
+        <testcase classname="tests/unit/required-awareness-dependency.test.ts" name="required generation awareness is a fixed internal dependency &gt; generate maps required snapshot HTTP 403 to503 and retains the received upstream cause" time="0.004310072">
+            <failure message="expected 403 to be 503 // Object.is equality" type="AssertionError">
+AssertionError: expected 403 to be 503 // Object.is equality
+
+- Expected
++ Received
+
+- 503
++ 403
+
+ ❯ tests/unit/required-awareness-dependency.test.ts:44:28
+            </failure>
+            <failure message="expected 403 to be 503 // Object.is equality" type="AssertionError">
+AssertionError: expected 403 to be 503 // Object.is equality
+
+- Expected
++ Received
+
+- 503
++ 403
+
+ ❯ tests/unit/required-awareness-dependency.test.ts:44:28
+            </failure>
+        </testcase>
+        <testcase classname="tests/unit/required-awareness-dependency.test.ts" name="required generation awareness is a fixed internal dependency &gt; generate maps required snapshot HTTP 404 to503 and retains the received upstream cause" time="0.003138484">
+            <failure message="expected 404 to be 503 // Object.is equality" type="AssertionError">
+AssertionError: expected 404 to be 503 // Object.is equality
+
+- Expected
++ Received
+
+- 503
++ 404
+
+ ❯ tests/unit/required-awareness-dependency.test.ts:44:28
+            </failure>
+            <failure message="expected 404 to be 503 // Object.is equality" type="AssertionError">
+AssertionError: expected 404 to be 503 // Object.is equality
+
+- Expected
++ Received
+
+- 503
++ 404
+
+ ❯ tests/unit/required-awareness-dependency.test.ts:44:28
+            </failure>
+        </testcase>
+        <testcase classname="tests/unit/required-awareness-dependency.test.ts" name="required generation awareness is a fixed internal dependency &gt; generate maps required snapshot HTTP 405 to503 and retains the received upstream cause" time="0.003905531">
+            <failure message="expected 405 to be 503 // Object.is equality" type="AssertionError">
+AssertionError: expected 405 to be 503 // Object.is equality
+
+- Expected
++ Received
+
+- 503
++ 405
+
+ ❯ tests/unit/required-awareness-dependency.test.ts:44:28
+            </failure>
+            <failure message="expected 405 to be 503 // Object.is equality" type="AssertionError">
+AssertionError: expected 405 to be 503 // Object.is equality
+
+- Expected
++ Received
+
+- 503
++ 405
+
+ ❯ tests/unit/required-awareness-dependency.test.ts:44:28
+            </failure>
+        </testcase>
+        <testcase classname="tests/unit/required-awareness-dependency.test.ts" name="required generation awareness is a fixed internal dependency &gt; generate maps required snapshot HTTP 408 to503 and retains the received upstream cause" time="0.003622073">
+            <failure message="expected 408 to be 503 // Object.is equality" type="AssertionError">
+AssertionError: expected 408 to be 503 // Object.is equality
+
+- Expected
++ Received
+
+- 503
++ 408
+
+ ❯ tests/unit/required-awareness-dependency.test.ts:44:28
+            </failure>
+            <failure message="expected 408 to be 503 // Object.is equality" type="AssertionError">
+AssertionError: expected 408 to be 503 // Object.is equality
+
+- Expected
++ Received
+
+- 503
++ 408
+
+ ❯ tests/unit/required-awareness-dependency.test.ts:44:28
+            </failure>
+        </testcase>
+        <testcase classname="tests/unit/required-awareness-dependency.test.ts" name="required generation awareness is a fixed internal dependency &gt; generate maps required snapshot HTTP 422 to503 and retains the received upstream cause" time="0.003903998">
+            <failure message="expected 422 to be 503 // Object.is equality" type="AssertionError">
+AssertionError: expected 422 to be 503 // Object.is equality
+
+- Expected
++ Received
+
+- 503
++ 422
+
+ ❯ tests/unit/required-awareness-dependency.test.ts:44:28
+            </failure>
+            <failure message="expected 422 to be 503 // Object.is equality" type="AssertionError">
+AssertionError: expected 422 to be 503 // Object.is equality
+
+- Expected
++ Received
+
+- 503
++ 422
+
+ ❯ tests/unit/required-awareness-dependency.test.ts:44:28
+            </failure>
+        </testcase>
+        <testcase classname="tests/unit/required-awareness-dependency.test.ts" name="required generation awareness is a fixed internal dependency &gt; generate maps required snapshot HTTP 429 to503 and retains the received upstream cause" time="0.002518018">
+            <failure message="expected 429 to be 503 // Object.is equality" type="AssertionError">
+AssertionError: expected 429 to be 503 // Object.is equality
+
+- Expected
++ Received
+
+- 503
++ 429
+
+ ❯ tests/unit/required-awareness-dependency.test.ts:44:28
+            </failure>
+            <failure message="expected 429 to be 503 // Object.is equality" type="AssertionError">
+AssertionError: expected 429 to be 503 // Object.is equality
+
+- Expected
++ Received
+
+- 503
++ 429
+
+ ❯ tests/unit/required-awareness-dependency.test.ts:44:28
+            </failure>
+        </testcase>
+        <testcase classname="tests/unit/required-awareness-dependency.test.ts" name="required generation awareness is a fixed internal dependency &gt; generate maps required snapshot HTTP 500 to503 and retains the received upstream cause" time="0.002225578">
+            <failure message="expected 500 to be 503 // Object.is equality" type="AssertionError">
+AssertionError: expected 500 to be 503 // Object.is equality
+
+- Expected
++ Received
+
+- 503
++ 500
+
+ ❯ tests/unit/required-awareness-dependency.test.ts:44:28
+            </failure>
+            <failure message="expected 500 to be 503 // Object.is equality" type="AssertionError">
+AssertionError: expected 500 to be 503 // Object.is equality
+
+- Expected
++ Received
+
+- 503
++ 500
+
+ ❯ tests/unit/required-awareness-dependency.test.ts:44:28
+            </failure>
+        </testcase>
+        <testcase classname="tests/unit/required-awareness-dependency.test.ts" name="required generation awareness is a fixed internal dependency &gt; generate maps required snapshot HTTP 502 to503 and retains the received upstream cause" time="0.002364998">
+            <failure message="expected 502 to be 503 // Object.is equality" type="AssertionError">
+AssertionError: expected 502 to be 503 // Object.is equality
+
+- Expected
++ Received
+
+- 503
++ 502
+
+ ❯ tests/unit/required-awareness-dependency.test.ts:44:28
+            </failure>
+            <failure message="expected 502 to be 503 // Object.is equality" type="AssertionError">
+AssertionError: expected 502 to be 503 // Object.is equality
+
+- Expected
++ Received
+
+- 503
++ 502
+
+ ❯ tests/unit/required-awareness-dependency.test.ts:44:28
+            </failure>
+        </testcase>
+        <testcase classname="tests/unit/required-awareness-dependency.test.ts" name="required generation awareness is a fixed internal dependency &gt; generate maps required snapshot HTTP 503 to503 and retains the received upstream cause" time="0.003531558">
+            <failure message="expected { detail: &apos;owned snapshot HTTP 503&apos; } to be an instance of MaxCoreControlError" type="AssertionError">
+AssertionError: expected { detail: &apos;owned snapshot HTTP 503&apos; } to be an instance of MaxCoreControlError
+ ❯ tests/unit/required-awareness-dependency.test.ts:45:29
+            </failure>
+            <failure message="expected { detail: &apos;owned snapshot HTTP 503&apos; } to be an instance of MaxCoreControlError" type="AssertionError">
+AssertionError: expected { detail: &apos;owned snapshot HTTP 503&apos; } to be an instance of MaxCoreControlError
+ ❯ tests/unit/required-awareness-dependency.test.ts:45:29
+            </failure>
+        </testcase>
+        <testcase classname="tests/unit/required-awareness-dependency.test.ts" name="required generation awareness is a fixed internal dependency &gt; generate maps required snapshot HTTP 504 to503 and retains the received upstream cause" time="0.005338452">
+            <failure message="expected 504 to be 503 // Object.is equality" type="AssertionError">
+AssertionError: expected 504 to be 503 // Object.is equality
+
+- Expected
++ Received
+
+- 503
++ 504
+
+ ❯ tests/unit/required-awareness-dependency.test.ts:44:28
+            </failure>
+            <failure message="expected 504 to be 503 // Object.is equality" type="AssertionError">
+AssertionError: expected 504 to be 503 // Object.is equality
+
+- Expected
++ Received
+
+- 503
++ 504
+
+ ❯ tests/unit/required-awareness-dependency.test.ts:44:28
+            </failure>
+        </testcase>
+        <testcase classname="tests/unit/required-awareness-dependency.test.ts" name="required generation awareness is a fixed internal dependency &gt; generate maps required snapshot network failure to503 without issuing generation" time="0.002767454">
+            <failure message="expected undefined to be an instance of MaxCoreControlError" type="AssertionError">
+AssertionError: expected undefined to be an instance of MaxCoreControlError
+ ❯ tests/unit/required-awareness-dependency.test.ts:68:29
+            </failure>
+            <failure message="expected undefined to be an instance of MaxCoreControlError" type="AssertionError">
+AssertionError: expected undefined to be an instance of MaxCoreControlError
+ ❯ tests/unit/required-awareness-dependency.test.ts:68:29
+            </failure>
+        </testcase>
+        <testcase classname="tests/unit/required-awareness-dependency.test.ts" name="required generation awareness is a fixed internal dependency &gt; generate maps required snapshot timeout failure to503 without issuing generation" time="0.00261197">
+            <failure message="expected undefined to be an instance of MaxCoreControlError" type="AssertionError">
+AssertionError: expected undefined to be an instance of MaxCoreControlError
+ ❯ tests/unit/required-awareness-dependency.test.ts:68:29
+            </failure>
+            <failure message="expected undefined to be an instance of MaxCoreControlError" type="AssertionError">
+AssertionError: expected undefined to be an instance of MaxCoreControlError
+ ❯ tests/unit/required-awareness-dependency.test.ts:68:29
+            </failure>
+        </testcase>
+        <testcase classname="tests/unit/required-awareness-dependency.test.ts" name="required generation awareness is a fixed internal dependency &gt; generate maps required snapshot html failure to503 without issuing generation" time="0.002427371">
+            <failure message="expected 502 to be 503 // Object.is equality" type="AssertionError">
+AssertionError: expected 502 to be 503 // Object.is equality
+
+- Expected
++ Received
+
+- 503
++ 502
+
+ ❯ tests/unit/required-awareness-dependency.test.ts:67:79
+            </failure>
+            <failure message="expected 502 to be 503 // Object.is equality" type="AssertionError">
+AssertionError: expected 502 to be 503 // Object.is equality
+
+- Expected
++ Received
+
+- 503
++ 502
+
+ ❯ tests/unit/required-awareness-dependency.test.ts:67:79
+            </failure>
+        </testcase>
+        <testcase classname="tests/unit/required-awareness-dependency.test.ts" name="required generation awareness is a fixed internal dependency &gt; generate maps required snapshot invalid-json failure to503 without issuing generation" time="0.002500492">
+            <failure message="expected 502 to be 503 // Object.is equality" type="AssertionError">
+AssertionError: expected 502 to be 503 // Object.is equality
+
+- Expected
++ Received
+
+- 503
++ 502
+
+ ❯ tests/unit/required-awareness-dependency.test.ts:67:79
+            </failure>
+            <failure message="expected 502 to be 503 // Object.is equality" type="AssertionError">
+AssertionError: expected 502 to be 503 // Object.is equality
+
+- Expected
++ Received
+
+- 503
++ 502
+
+ ❯ tests/unit/required-awareness-dependency.test.ts:67:79
+            </failure>
+        </testcase>
+        <testcase classname="tests/unit/required-awareness-dependency.test.ts" name="required generation awareness is a fixed internal dependency &gt; generate keeps required warming receipt rejection fail-closed" time="0.002020789">
+        </testcase>
+        <testcase classname="tests/unit/required-awareness-dependency.test.ts" name="required generation awareness is a fixed internal dependency &gt; generate keeps required expired receipt rejection fail-closed" time="0.001404509">
+        </testcase>
+        <testcase classname="tests/unit/required-awareness-dependency.test.ts" name="required generation awareness is a fixed internal dependency &gt; generate keeps required missing-id receipt rejection fail-closed" time="0.00099455">
+        </testcase>
+        <testcase classname="tests/unit/required-awareness-dependency.test.ts" name="required generation awareness is a fixed internal dependency &gt; generate keeps required blank-id receipt rejection fail-closed" time="0.001175002">
+        </testcase>
+        <testcase classname="tests/unit/required-awareness-dependency.test.ts" name="required generation awareness is a fixed internal dependency &gt; generate keeps required empty-text receipt rejection fail-closed" time="0.001241843">
+        </testcase>
+        <testcase classname="tests/unit/required-awareness-dependency.test.ts" name="required generation awareness is a fixed internal dependency &gt; generate keeps required empty-object receipt rejection fail-closed" time="0.001129905">
+        </testcase>
+        <testcase classname="tests/unit/required-awareness-dependency.test.ts" name="required generation awareness is a fixed internal dependency &gt; generate preserves valid required awareness and the caller body for /generate/content" time="0.002029451">
+        </testcase>
+        <testcase classname="tests/unit/required-awareness-dependency.test.ts" name="required generation awareness is a fixed internal dependency &gt; generate preserves valid required awareness and the caller body for /generate/image" time="0.001282244">
+        </testcase>
+        <testcase classname="tests/unit/required-awareness-dependency.test.ts" name="required generation awareness is a fixed internal dependency &gt; generate preserves valid required awareness and the caller body for /generate/audio" time="0.00117371">
+        </testcase>
+        <testcase classname="tests/unit/required-awareness-dependency.test.ts" name="required generation awareness is a fixed internal dependency &gt; infer maps required snapshot HTTP 400 to503 and retains the received upstream cause" time="0.002919944">
+            <failure message="expected 400 to be 503 // Object.is equality" type="AssertionError">
+AssertionError: expected 400 to be 503 // Object.is equality
+
+- Expected
++ Received
+
+- 503
++ 400
+
+ ❯ tests/unit/required-awareness-dependency.test.ts:44:28
+            </failure>
+            <failure message="expected 400 to be 503 // Object.is equality" type="AssertionError">
+AssertionError: expected 400 to be 503 // Object.is equality
+
+- Expected
++ Received
+
+- 503
++ 400
+
+ ❯ tests/unit/required-awareness-dependency.test.ts:44:28
+            </failure>
+        </testcase>
+        <testcase classname="tests/unit/required-awareness-dependency.test.ts" name="required generation awareness is a fixed internal dependency &gt; infer maps required snapshot HTTP 401 to503 and retains the received upstream cause" time="0.002336534">
+            <failure message="expected 401 to be 503 // Object.is equality" type="AssertionError">
+AssertionError: expected 401 to be 503 // Object.is equality
+
+- Expected
++ Received
+
+- 503
++ 401
+
+ ❯ tests/unit/required-awareness-dependency.test.ts:44:28
+            </failure>
+            <failure message="expected 401 to be 503 // Object.is equality" type="AssertionError">
+AssertionError: expected 401 to be 503 // Object.is equality
+
+- Expected
++ Received
+
+- 503
++ 401
+
+ ❯ tests/unit/required-awareness-dependency.test.ts:44:28
+            </failure>
+        </testcase>
+        <testcase classname="tests/unit/required-awareness-dependency.test.ts" name="required generation awareness is a fixed internal dependency &gt; infer maps required snapshot HTTP 403 to503 and retains the received upstream cause" time="0.002165607">
+            <failure message="expected 403 to be 503 // Object.is equality" type="AssertionError">
+AssertionError: expected 403 to be 503 // Object.is equality
+
+- Expected
++ Received
+
+- 503
++ 403
+
+ ❯ tests/unit/required-awareness-dependency.test.ts:44:28
+            </failure>
+            <failure message="expected 403 to be 503 // Object.is equality" type="AssertionError">
+AssertionError: expected 403 to be 503 // Object.is equality
+
+- Expected
++ Received
+
+- 503
++ 403
+
+ ❯ tests/unit/required-awareness-dependency.test.ts:44:28
+            </failure>
+        </testcase>
+        <testcase classname="tests/unit/required-awareness-dependency.test.ts" name="required generation awareness is a fixed internal dependency &gt; infer maps required snapshot HTTP 404 to503 and retains the received upstream cause" time="0.004097161">
+            <failure message="expected 404 to be 503 // Object.is equality" type="AssertionError">
+AssertionError: expected 404 to be 503 // Object.is equality
+
+- Expected
++ Received
+
+- 503
++ 404
+
+ ❯ tests/unit/required-awareness-dependency.test.ts:44:28
+            </failure>
+            <failure message="expected 404 to be 503 // Object.is equality" type="AssertionError">
+AssertionError: expected 404 to be 503 // Object.is equality
+
+- Expected
++ Received
+
+- 503
++ 404
+
+ ❯ tests/unit/required-awareness-dependency.test.ts:44:28
+            </failure>
+        </testcase>
+        <testcase classname="tests/unit/required-awareness-dependency.test.ts" name="required generation awareness is a fixed internal dependency &gt; infer maps required snapshot HTTP 405 to503 and retains the received upstream cause" time="0.002018295">
+            <failure message="expected 405 to be 503 // Object.is equality" type="AssertionError">
+AssertionError: expected 405 to be 503 // Object.is equality
+
+- Expected
++ Received
+
+- 503
++ 405
+
+ ❯ tests/unit/required-awareness-dependency.test.ts:44:28
+            </failure>
+            <failure message="expected 405 to be 503 // Object.is equality" type="AssertionError">
+AssertionError: expected 405 to be 503 // Object.is equality
+
+- Expected
++ Received
+
+- 503
++ 405
+
+ ❯ tests/unit/required-awareness-dependency.test.ts:44:28
+            </failure>
+        </testcase>
+        <testcase classname="tests/unit/required-awareness-dependency.test.ts" name="required generation awareness is a fixed internal dependency &gt; infer maps required snapshot HTTP 408 to503 and retains the received upstream cause" time="0.00214824">
+            <failure message="expected 408 to be 503 // Object.is equality" type="AssertionError">
+AssertionError: expected 408 to be 503 // Object.is equality
+
+- Expected
++ Received
+
+- 503
++ 408
+
+ ❯ tests/unit/required-awareness-dependency.test.ts:44:28
+            </failure>
+            <failure message="expected 408 to be 503 // Object.is equality" type="AssertionError">
+AssertionError: expected 408 to be 503 // Object.is equality
+
+- Expected
++ Received
+
+- 503
++ 408
+
+ ❯ tests/unit/required-awareness-dependency.test.ts:44:28
+            </failure>
+        </testcase>
+        <testcase classname="tests/unit/required-awareness-dependency.test.ts" name="required generation awareness is a fixed internal dependency &gt; infer maps required snapshot HTTP 422 to503 and retains the received upstream cause" time="0.002144695">
+            <failure message="expected 422 to be 503 // Object.is equality" type="AssertionError">
+AssertionError: expected 422 to be 503 // Object.is equality
+
+- Expected
++ Received
+
+- 503
++ 422
+
+ ❯ tests/unit/required-awareness-dependency.test.ts:44:28
+            </failure>
+            <failure message="expected 422 to be 503 // Object.is equality" type="AssertionError">
+AssertionError: expected 422 to be 503 // Object.is equality
+
+- Expected
++ Received
+
+- 503
++ 422
+
+ ❯ tests/unit/required-awareness-dependency.test.ts:44:28
+            </failure>
+        </testcase>
+        <testcase classname="tests/unit/required-awareness-dependency.test.ts" name="required generation awareness is a fixed internal dependency &gt; infer maps required snapshot HTTP 429 to503 and retains the received upstream cause" time="0.001907957">
+            <failure message="expected 429 to be 503 // Object.is equality" type="AssertionError">
+AssertionError: expected 429 to be 503 // Object.is equality
+
+- Expected
++ Received
+
+- 503
++ 429
+
+ ❯ tests/unit/required-awareness-dependency.test.ts:44:28
+            </failure>
+            <failure message="expected 429 to be 503 // Object.is equality" type="AssertionError">
+AssertionError: expected 429 to be 503 // Object.is equality
+
+- Expected
++ Received
+
+- 503
++ 429
+
+ ❯ tests/unit/required-awareness-dependency.test.ts:44:28
+            </failure>
+        </testcase>
+        <testcase classname="tests/unit/required-awareness-dependency.test.ts" name="required generation awareness is a fixed internal dependency &gt; infer maps required snapshot HTTP 500 to503 and retains the received upstream cause" time="0.002855127">
+            <failure message="expected 500 to be 503 // Object.is equality" type="AssertionError">
+AssertionError: expected 500 to be 503 // Object.is equality
+
+- Expected
++ Received
+
+- 503
++ 500
+
+ ❯ tests/unit/required-awareness-dependency.test.ts:44:28
+            </failure>
+            <failure message="expected 500 to be 503 // Object.is equality" type="AssertionError">
+AssertionError: expected 500 to be 503 // Object.is equality
+
+- Expected
++ Received
+
+- 503
++ 500
+
+ ❯ tests/unit/required-awareness-dependency.test.ts:44:28
+            </failure>
+        </testcase>
+        <testcase classname="tests/unit/required-awareness-dependency.test.ts" name="required generation awareness is a fixed internal dependency &gt; infer maps required snapshot HTTP 502 to503 and retains the received upstream cause" time="0.002358167">
+            <failure message="expected 502 to be 503 // Object.is equality" type="AssertionError">
+AssertionError: expected 502 to be 503 // Object.is equality
+
+- Expected
++ Received
+
+- 503
++ 502
+
+ ❯ tests/unit/required-awareness-dependency.test.ts:44:28
+            </failure>
+            <failure message="expected 502 to be 503 // Object.is equality" type="AssertionError">
+AssertionError: expected 502 to be 503 // Object.is equality
+
+- Expected
++ Received
+
+- 503
++ 502
+
+ ❯ tests/unit/required-awareness-dependency.test.ts:44:28
+            </failure>
+        </testcase>
+        <testcase classname="tests/unit/required-awareness-dependency.test.ts" name="required generation awareness is a fixed internal dependency &gt; infer maps required snapshot HTTP 503 to503 and retains the received upstream cause" time="0.002503627">
+            <failure message="expected { detail: &apos;owned snapshot HTTP 503&apos; } to be an instance of MaxCoreControlError" type="AssertionError">
+AssertionError: expected { detail: &apos;owned snapshot HTTP 503&apos; } to be an instance of MaxCoreControlError
+ ❯ tests/unit/required-awareness-dependency.test.ts:45:29
+            </failure>
+            <failure message="expected { detail: &apos;owned snapshot HTTP 503&apos; } to be an instance of MaxCoreControlError" type="AssertionError">
+AssertionError: expected { detail: &apos;owned snapshot HTTP 503&apos; } to be an instance of MaxCoreControlError
+ ❯ tests/unit/required-awareness-dependency.test.ts:45:29
+            </failure>
+        </testcase>
+        <testcase classname="tests/unit/required-awareness-dependency.test.ts" name="required generation awareness is a fixed internal dependency &gt; infer maps required snapshot HTTP 504 to503 and retains the received upstream cause" time="0.002404587">
+            <failure message="expected 504 to be 503 // Object.is equality" type="AssertionError">
+AssertionError: expected 504 to be 503 // Object.is equality
+
+- Expected
++ Received
+
+- 503
++ 504
+
+ ❯ tests/unit/required-awareness-dependency.test.ts:44:28
+            </failure>
+            <failure message="expected 504 to be 503 // Object.is equality" type="AssertionError">
+AssertionError: expected 504 to be 503 // Object.is equality
+
+- Expected
++ Received
+
+- 503
++ 504
+
+ ❯ tests/unit/required-awareness-dependency.test.ts:44:28
+            </failure>
+        </testcase>
+        <testcase classname="tests/unit/required-awareness-dependency.test.ts" name="required generation awareness is a fixed internal dependency &gt; infer maps required snapshot network failure to503 without issuing generation" time="0.002322904">
+            <failure message="expected undefined to be an instance of MaxCoreControlError" type="AssertionError">
+AssertionError: expected undefined to be an instance of MaxCoreControlError
+ ❯ tests/unit/required-awareness-dependency.test.ts:68:29
+            </failure>
+            <failure message="expected undefined to be an instance of MaxCoreControlError" type="AssertionError">
+AssertionError: expected undefined to be an instance of MaxCoreControlError
+ ❯ tests/unit/required-awareness-dependency.test.ts:68:29
+            </failure>
+        </testcase>
+        <testcase classname="tests/unit/required-awareness-dependency.test.ts" name="required generation awareness is a fixed internal dependency &gt; infer maps required snapshot timeout failure to503 without issuing generation" time="0.002177395">
+            <failure message="expected undefined to be an instance of MaxCoreControlError" type="AssertionError">
+AssertionError: expected undefined to be an instance of MaxCoreControlError
+ ❯ tests/unit/required-awareness-dependency.test.ts:68:29
+            </failure>
+            <failure message="expected undefined to be an instance of MaxCoreControlError" type="AssertionError">
+AssertionError: expected undefined to be an instance of MaxCoreControlError
+ ❯ tests/unit/required-awareness-dependency.test.ts:68:29
+            </failure>
+        </testcase>
+        <testcase classname="tests/unit/required-awareness-dependency.test.ts" name="required generation awareness is a fixed internal dependency &gt; infer maps required snapshot html failure to503 without issuing generation" time="0.002434111">
+            <failure message="expected 502 to be 503 // Object.is equality" type="AssertionError">
+AssertionError: expected 502 to be 503 // Object.is equality
+
+- Expected
++ Received
+
+- 503
++ 502
+
+ ❯ tests/unit/required-awareness-dependency.test.ts:67:79
+            </failure>
+            <failure message="expected 502 to be 503 // Object.is equality" type="AssertionError">
+AssertionError: expected 502 to be 503 // Object.is equality
+
+- Expected
++ Received
+
+- 503
++ 502
+
+ ❯ tests/unit/required-awareness-dependency.test.ts:67:79
+            </failure>
+        </testcase>
+        <testcase classname="tests/unit/required-awareness-dependency.test.ts" name="required generation awareness is a fixed internal dependency &gt; infer maps required snapshot invalid-json failure to503 without issuing generation" time="0.004243181">
+            <failure message="expected 502 to be 503 // Object.is equality" type="AssertionError">
+AssertionError: expected 502 to be 503 // Object.is equality
+
+- Expected
++ Received
+
+- 503
++ 502
+
+ ❯ tests/unit/required-awareness-dependency.test.ts:67:79
+            </failure>
+            <failure message="expected 502 to be 503 // Object.is equality" type="AssertionError">
+AssertionError: expected 502 to be 503 // Object.is equality
+
+- Expected
++ Received
+
+- 503
++ 502
+
+ ❯ tests/unit/required-awareness-dependency.test.ts:67:79
+            </failure>
+        </testcase>
+        <testcase classname="tests/unit/required-awareness-dependency.test.ts" name="required generation awareness is a fixed internal dependency &gt; infer keeps required warming receipt rejection fail-closed" time="0.001280101">
+        </testcase>
+        <testcase classname="tests/unit/required-awareness-dependency.test.ts" name="required generation awareness is a fixed internal dependency &gt; infer keeps required expired receipt rejection fail-closed" time="0.001305439">
+        </testcase>
+        <testcase classname="tests/unit/required-awareness-dependency.test.ts" name="required generation awareness is a fixed internal dependency &gt; infer keeps required missing-id receipt rejection fail-closed" time="0.001767486">
+        </testcase>
+        <testcase classname="tests/unit/required-awareness-dependency.test.ts" name="required generation awareness is a fixed internal dependency &gt; infer keeps required blank-id receipt rejection fail-closed" time="0.000956553">
+        </testcase>
+        <testcase classname="tests/unit/required-awareness-dependency.test.ts" name="required generation awareness is a fixed internal dependency &gt; infer keeps required empty-text receipt rejection fail-closed" time="0.000977465">
+        </testcase>
+        <testcase classname="tests/unit/required-awareness-dependency.test.ts" name="required generation awareness is a fixed internal dependency &gt; infer keeps required empty-object receipt rejection fail-closed" time="0.001195784">
+        </testcase>
+        <testcase classname="tests/unit/required-awareness-dependency.test.ts" name="required generation awareness is a fixed internal dependency &gt; infer preserves valid required awareness and the caller body for /generate/content" time="0.001864772">
+        </testcase>
+        <testcase classname="tests/unit/required-awareness-dependency.test.ts" name="required generation awareness is a fixed internal dependency &gt; infer preserves valid required awareness and the caller body for /generate/image" time="0.001088172">
+        </testcase>
+        <testcase classname="tests/unit/required-awareness-dependency.test.ts" name="required generation awareness is a fixed internal dependency &gt; infer preserves valid required awareness and the caller body for /generate/audio" time="0.001251788">
+        </testcase>
+        <testcase classname="tests/unit/required-awareness-dependency.test.ts" name="required generation awareness is a fixed internal dependency &gt; does not request or replace awareness for unrelated private analytics endpoints" time="0.001042452">
+        </testcase>
+        <testcase classname="tests/unit/required-awareness-dependency.test.ts" name="required generation awareness is a fixed internal dependency &gt; preserves generic operation HTTP400; snapshot classification never rewrites public/domain policy" time="0.000844093">
+        </testcase>
+        <testcase classname="tests/unit/required-awareness-dependency.test.ts" name="required generation awareness is a fixed internal dependency &gt; preserves generic operation HTTP401; snapshot classification never rewrites public/domain policy" time="0.000543089">
+        </testcase>
+        <testcase classname="tests/unit/required-awareness-dependency.test.ts" name="required generation awareness is a fixed internal dependency &gt; preserves generic operation HTTP403; snapshot classification never rewrites public/domain policy" time="0.00062351">
+        </testcase>
+        <testcase classname="tests/unit/required-awareness-dependency.test.ts" name="required generation awareness is a fixed internal dependency &gt; preserves generic operation HTTP404; snapshot classification never rewrites public/domain policy" time="0.000493204">
+        </testcase>
+    </testsuite>
+</testsuites>

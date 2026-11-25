@@ -1,0 +1,9 @@
+{
+  "command": [
+    "/workspace/.cloud-python/bin/python",
+    "/workspace/maxbooster7.5/reports/release-rehearsal/2026-10-27-runtime-upload-isolation/python/late-import-probe.py"
+  ],
+  "exitCode": 1,
+  "logSha256": "ffdb24501d85158f391b0e3fb333052879a22b28c7998db130c52b322ebe7380",
+  "expectedRegression": "Late-import reader must restore its original source path"
+}

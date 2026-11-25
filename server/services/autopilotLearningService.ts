@@ -10,6 +10,13 @@ import {
 
 const CURRICULUM_TRIGGER_ENGAGEMENT_THRESHOLD = 3.0;
 
+function hasMeasuredEngagement(analytics: AnalyticsData): boolean {
+  return [analytics.impressions, analytics.reach].some(
+    (value) =>
+      typeof value === "number" && Number.isFinite(value) && value > 0,
+  );
+}
+
 export interface PostData {
   platform: string;
   contentType?: string;
@@ -97,7 +104,7 @@ class AutopilotLearningService {
       .limit(50);
     const platform = options.platform || recent[0]?.platform || "instagram";
     const result = await maxCoreControlTransport.request<MaxCoreAutopilotResult>(
-      "/platform/social/autopilot",
+      "/api/platform/social/autopilot",
       {
         method: "POST",
         authScope: "generation",
@@ -204,8 +211,21 @@ class AutopilotLearningService {
 
       await this.updateInsightsIfNeeded(userId, postData?.platform);
 
-      if (engagementRate >= CURRICULUM_TRIGGER_ENGAGEMENT_THRESHOLD) {
-        this.dispatchCurriculumSessionAsync(engagementRate, postData).catch(
+      // A successful publish with zero counters is not a measured outcome.
+      // Only send a reinforcement label after real exposure is measured and
+      // the result meets the existing positive-performance threshold. Lower
+      // outcomes remain in the user's application learning history but are
+      // not presented to MaxCore as examples to replicate.
+      if (
+        hasMeasuredEngagement(analytics) &&
+        engagementRate >= CURRICULUM_TRIGGER_ENGAGEMENT_THRESHOLD
+      ) {
+        this.dispatchCurriculumSessionAsync(
+          userId,
+          engagementRate,
+          postData,
+          record?.id,
+        ).catch(
           (err) =>
             logger.warn(
               { err: err },
@@ -222,7 +242,13 @@ class AutopilotLearningService {
   }
 
   calculateEngagementScore(analytics: AnalyticsData): number {
-    const impressions = analytics?.impressions || 1;
+    const impressions =
+      Number(analytics?.impressions) > 0
+        ? Number(analytics.impressions)
+        : Number(analytics?.reach) > 0
+          ? Number(analytics.reach)
+          : 0;
+    if (!Number.isFinite(impressions) || impressions <= 0) return 0;
     const totalEngagements =
       (analytics?.likes || 0) +
       (analytics?.comments || 0) * 2 +
@@ -650,28 +676,30 @@ class AutopilotLearningService {
   }
 
   /**
-   * Dispatches a CurriculumTrainer training session to the AI server when a
-   * high-engagement post is recorded. The engagement data acts as a reinforcement
-   * label: the visual/content style that drove high engagement is signalled to the
-   * DiffusionTrainer so it can reinforce those visual patterns in the next session.
+   * Dispatches measured autopilot outcomes to the account's MaxCore curriculum.
+   * MaxCore stores these signals per user and uses the highest-performing
+   * examples when producing subsequent social and advertising recommendations.
    *
    * Fire-and-forget — never blocks the request path.
    */
   private async dispatchCurriculumSessionAsync(
+    userId: string,
     engagementRate: number,
     postData: PostData,
+    feedbackId?: string,
   ): Promise<void> {
     await pushTrainingFeedback({
-      content: postData.contentText || "",
-      source: "autopilot_learning",
-      trigger: "high_engagement_post",
+      user_id: userId,
+      source: "autopilot_performance",
+      trigger: "measured_autopilot_outcome",
       engagement_rate: engagementRate,
       platform: postData.platform,
       content_type: postData.contentType || "unknown",
       hook_type: postData.hookType || "unknown",
       media_type: postData.mediaType || "unknown",
-      curriculum_hint: "reinforce_high_engagement_visual_style",
+      curriculum_hint: "reinforce_high_engagement_style",
       dispatched_at: new Date().toISOString(),
+      feedback_id: feedbackId,
     });
   }
 }

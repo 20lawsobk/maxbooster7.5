@@ -1,5 +1,4 @@
-import { createStripeClient } from "../lib/stripeClient";
-import { env } from "../config/env.js";
+import { createStripeClient, getStripeSecretKey } from "../lib/stripeClient";
 import { consentService } from "./consentService.js";
 import { logger } from "../logger.js";
 
@@ -32,11 +31,12 @@ function parseDateOnly(value: string): Date | null {
 export async function finalizePaidRegistrationConsent(
   input: PaidRegistrationConsentInput,
 ): Promise<void> {
-  if (!env.STRIPE_SECRET_KEY) {
+  const stripeSecretKey = getStripeSecretKey();
+  if (!stripeSecretKey) {
     throw new Error("Stripe is not configured");
   }
 
-  const stripe = createStripeClient(env.STRIPE_SECRET_KEY, {
+  const stripe = createStripeClient(stripeSecretKey, {
     apiVersion: "2026-02-25.clover",
   });
   const session = await stripe.checkout.sessions.retrieve(input.sessionId);

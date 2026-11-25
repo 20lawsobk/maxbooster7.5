@@ -24,6 +24,21 @@ describe("MaxCore connector contract", () => {
     expect(connector.getMaxcoreGenerationHeaders()).not.toHaveProperty("X-Admin-Key");
   });
 
+  it.each([
+    "https://maxcore.example.test",
+    "https://maxcore.example.test/",
+    "https://maxcore.example.test/api",
+    "https://maxcore.example.test/api/",
+  ])("resolves the public API-server root from %s", async (configuredUrl) => {
+    process.env.AI_SERVER_URL = configuredUrl;
+    const connector = await import("../../server/services/maxcoreConnector.js");
+
+    expect(connector.getMaxcoreOrigin()).toBe("https://maxcore.example.test");
+    expect(connector.maxcoreUrl("/api/health")).toBe("https://maxcore.example.test/api/health");
+    expect(connector.maxcoreUrl("/api/awareness/unified/status"))
+      .toBe("https://maxcore.example.test/api/awareness/unified/status");
+  });
+
   it("generates one inherited local channel key without external service credentials", async () => {
     process.env.MAXCORE_LOCAL = "1";
     delete process.env.AI_SERVER_KEY;

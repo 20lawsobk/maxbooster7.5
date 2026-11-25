@@ -1,0 +1,37 @@
+TAP version 13
+# Launching browser...
+# Subtest: upstream Puppeteer browser manager no longer requires extract-zip
+ok 1 - upstream Puppeteer browser manager no longer requires extract-zip
+  ---
+  duration_ms: 4.53431
+  type: 'test'
+  ...
+# Loading: file:///tmp/maxbooster-test-fjfl9kqb/maxbooster-test-nz4qe2ku/patent-pdf-runtime-X0AmMm/patent%20%23%20fixture.html
+# Subtest: actual patent generator renders valid Letter PDF using supplied local Chromium
+not ok 2 - actual patent generator renders valid Letter PDF using supplied local Chromium
+  ---
+  duration_ms: 385.095041
+  type: 'test'
+  location: '/workspace/maxbooster7.5/tests/patent-pdf-runtime.test.mjs:28:1'
+  failureType: 'testCodeFailure'
+  error: 'net::ERR_BLOCKED_BY_ADMINISTRATOR at file:///tmp/maxbooster-test-fjfl9kqb/maxbooster-test-nz4qe2ku/patent-pdf-runtime-X0AmMm/patent%20%23%20fixture.html'
+  code: 'ERR_TEST_FAILURE'
+  stack: |-
+    navigate (/workspace/maxbooster7.5/external/maxcore/node_modules/.pnpm/puppeteer-core@25.11.0/node_modules/puppeteer-core/src/cdp/Frame.ts:226:13)
+    async Function.race (/workspace/maxbooster7.5/external/maxcore/node_modules/.pnpm/puppeteer-core@25.11.0/node_modules/puppeteer-core/src/util/Deferred.ts:49:14)
+    async CdpFrame.goto (/workspace/maxbooster7.5/external/maxcore/node_modules/.pnpm/puppeteer-core@25.11.0/node_modules/puppeteer-core/src/cdp/Frame.ts:179:17)
+    async CdpPage.goto (/workspace/maxbooster7.5/external/maxcore/node_modules/.pnpm/puppeteer-core@25.11.0/node_modules/puppeteer-core/src/api/Page.ts:1886:12)
+    async generatePatentPdf (/workspace/maxbooster7.5/external/maxcore/scripts/src/generate-patent.ts:41:5)
+    async TestContext.<anonymous> (file:///workspace/maxbooster7.5/tests/patent-pdf-runtime.test.mjs:35:16)
+    async Test.run (node:internal/test_runner/test:1054:7)
+    async Test.processPendingSubtests (node:internal/test_runner/test:744:7)
+  ...
+1..2
+# tests 2
+# suites 0
+# pass 1
+# fail 1
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 770.569929

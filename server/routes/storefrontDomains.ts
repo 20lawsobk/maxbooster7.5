@@ -28,7 +28,7 @@ async function getUserDomainUsage(
        SELECT domain FROM dns_zones WHERE user_id = $1
        UNION
        SELECT sd.domain
-       FROM storefront_domains sd
+       FROM public.storefront_domains sd
        JOIN storefronts s ON s.id = sd.storefront_id
        WHERE s.user_id = $1 AND sd.type = 'platform_subdomain'
      ) combined`,

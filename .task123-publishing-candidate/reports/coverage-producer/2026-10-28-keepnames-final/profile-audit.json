@@ -1,0 +1,212 @@
+{
+  "schemaVersion": 1,
+  "scope": "Independent current-source retained-runtime validation/reconversion; disk-serialization comparison is diagnostic only, no profile combination",
+  "sourceRevision": "bca5f4e1f632db835dc90b1e57d85f919ed6e0aa",
+  "converter": {
+    "package": "ast-v8-to-istanbul",
+    "version": "1.0.7"
+  },
+  "canonicalCoverageSha256": "b869f5617c61a51182802193ec63ec70899e2bd45ab6e0811b6118120f160434",
+  "canonicalCoverageUnchanged": true,
+  "profiles": 1,
+  "files": [
+    {
+      "file": "server/pocket-dimension/fabric/storage/PocketDimensionChunkStore.ts",
+      "rawRuntimeValidated": true,
+      "savedArtifactReproduced": true,
+      "ignoredCompilerNodes": 2,
+      "strict": {
+        "compatible": false,
+        "mismatches": [
+          "statementMap",
+          "fnMap",
+          "branchMap"
+        ]
+      },
+      "serializedMapDiagnostic": {
+        "compatible": false,
+        "mismatches": [
+          "statementMap",
+          "fnMap",
+          "branchMap"
+        ]
+      }
+    },
+    {
+      "file": "external/pdim/artifacts/api-server/src/redis/store.ts",
+      "rawRuntimeValidated": true,
+      "savedArtifactReproduced": true,
+      "ignoredCompilerNodes": 8,
+      "strict": {
+        "compatible": false,
+        "mismatches": [
+          "statementMap",
+          "fnMap",
+          "branchMap"
+        ]
+      },
+      "serializedMapDiagnostic": {
+        "compatible": false,
+        "mismatches": [
+          "statementMap",
+          "fnMap",
+          "branchMap"
+        ]
+      }
+    },
+    {
+      "file": "server/lib/pdimClient.ts",
+      "rawRuntimeValidated": true,
+      "savedArtifactReproduced": true,
+      "ignoredCompilerNodes": 25,
+      "strict": {
+        "compatible": false,
+        "mismatches": [
+          "statementMap",
+          "fnMap",
+          "branchMap"
+        ]
+      },
+      "serializedMapDiagnostic": {
+        "compatible": false,
+        "mismatches": [
+          "statementMap",
+          "fnMap",
+          "branchMap"
+        ]
+      }
+    },
+    {
+      "file": "server/logger.ts",
+      "rawRuntimeValidated": true,
+      "savedArtifactReproduced": true,
+      "ignoredCompilerNodes": 3,
+      "strict": {
+        "compatible": false,
+        "mismatches": [
+          "statementMap",
+          "fnMap",
+          "branchMap"
+        ]
+      },
+      "serializedMapDiagnostic": {
+        "compatible": false,
+        "mismatches": [
+          "statementMap",
+          "fnMap",
+          "branchMap"
+        ]
+      }
+    },
+    {
+      "file": "external/pdim/artifacts/api-server/src/workers/lua-pool.ts",
+      "rawRuntimeValidated": true,
+      "savedArtifactReproduced": true,
+      "ignoredCompilerNodes": 3,
+      "strict": {
+        "compatible": false,
+        "mismatches": [
+          "statementMap",
+          "fnMap",
+          "branchMap"
+        ]
+      },
+      "serializedMapDiagnostic": {
+        "compatible": false,
+        "mismatches": [
+          "statementMap",
+          "fnMap"
+        ]
+      }
+    },
+    {
+      "file": "server/config/ports.ts",
+      "rawRuntimeValidated": true,
+      "savedArtifactReproduced": true,
+      "ignoredCompilerNodes": 5,
+      "strict": {
+        "compatible": false,
+        "mismatches": [
+          "branchMap"
+        ]
+      },
+      "serializedMapDiagnostic": {
+        "compatible": true,
+        "mismatches": []
+      },
+      "portsOriginalNodes": {
+        "statements": 21,
+        "functions": 3,
+        "uncalledLoopbackUrlCount": 0
+      }
+    },
+    {
+      "file": "server/lib/luaExecutor.ts",
+      "rawRuntimeValidated": true,
+      "savedArtifactReproduced": true,
+      "ignoredCompilerNodes": 12,
+      "strict": {
+        "compatible": false,
+        "mismatches": [
+          "statementMap",
+          "fnMap",
+          "branchMap"
+        ]
+      },
+      "serializedMapDiagnostic": {
+        "compatible": false,
+        "mismatches": [
+          "statementMap",
+          "fnMap",
+          "branchMap"
+        ]
+      }
+    },
+    {
+      "file": "server/lib/pdimCircuitBreaker.ts",
+      "rawRuntimeValidated": true,
+      "savedArtifactReproduced": true,
+      "ignoredCompilerNodes": 13,
+      "strict": {
+        "compatible": false,
+        "mismatches": [
+          "branchMap"
+        ]
+      },
+      "serializedMapDiagnostic": {
+        "compatible": true,
+        "mismatches": []
+      }
+    },
+    {
+      "file": "server/logSanitizer.ts",
+      "rawRuntimeValidated": true,
+      "savedArtifactReproduced": true,
+      "ignoredCompilerNodes": 4,
+      "strict": {
+        "compatible": false,
+        "mismatches": [
+          "statementMap",
+          "fnMap",
+          "branchMap"
+        ]
+      },
+      "serializedMapDiagnostic": {
+        "compatible": false,
+        "mismatches": [
+          "statementMap",
+          "fnMap",
+          "branchMap"
+        ]
+      }
+    }
+  ],
+  "strictCompatibleFiles": [],
+  "serializedMapDiagnosticCompatibleFiles": [
+    "server/config/ports.ts",
+    "server/lib/pdimCircuitBreaker.ts"
+  ],
+  "ownedCleanupComplete": true,
+  "mergedIntoGlobalCoverage": false,
+  "productionReady": false
+}

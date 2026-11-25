@@ -1,0 +1,100 @@
+TAP version 13
+# Subtest: CLI options reject dangerous/unbounded invalid integers
+ok 1 - CLI options reject dangerous/unbounded invalid integers
+  ---
+  duration_ms: 1.464714
+  type: 'test'
+  ...
+# Subtest: repository scope inventories full Git index, not only client/server
+ok 2 - repository scope inventories full Git index, not only client/server
+  ---
+  duration_ms: 2346.859073
+  type: 'test'
+  ...
+# Subtest: controller integration preserves the existing npm build and start commands
+ok 3 - controller integration preserves the existing npm build and start commands
+  ---
+  duration_ms: 0.624543
+  type: 'test'
+  ...
+# Subtest: verification cannot pass when evidence is not bound to a clean HEAD
+ok 4 - verification cannot pass when evidence is not bound to a clean HEAD
+  ---
+  duration_ms: 0.257192
+  type: 'test'
+  ...
+# Subtest: output paths reject symlink traversal and paths outside the checkout
+ok 5 - output paths reject symlink traversal and paths outside the checkout
+  ---
+  duration_ms: 1.679402
+  type: 'test'
+  ...
+# Subtest: only explicit isolated review branches can enable repair
+ok 6 - only explicit isolated review branches can enable repair
+  ---
+  duration_ms: 1.387011
+  type: 'test'
+  ...
+# Subtest: repair routing accepts only reviewed lint and split typecheck gates
+ok 7 - repair routing accepts only reviewed lint and split typecheck gates
+  ---
+  duration_ms: 1.499484
+  type: 'test'
+  ...
+# Subtest: repair routing leaves Python, MaxCore, PDIM, integration, and infrastructure failures blocked
+ok 8 - repair routing leaves Python, MaxCore, PDIM, integration, and infrastructure failures blocked
+  ---
+  duration_ms: 0.422063
+  type: 'test'
+  ...
+# Subtest: repair routing fails closed for mixed and unclassified failures
+ok 9 - repair routing fails closed for mixed and unclassified failures
+  ---
+  duration_ms: 0.358105
+  type: 'test'
+  ...
+# Subtest: a verified uncommitted repair is successful without forcing a commit
+ok 10 - a verified uncommitted repair is successful without forcing a commit
+  ---
+  duration_ms: 0.357297
+  type: 'test'
+  ...
+# Subtest: supervisor lock is exclusive and released explicitly
+ok 11 - supervisor lock is exclusive and released explicitly
+  ---
+  duration_ms: 1.155862
+  type: 'test'
+  ...
+# Subtest: supervisor rejects malformed or unsafe adaptive policy state
+ok 12 - supervisor rejects malformed or unsafe adaptive policy state
+  ---
+  duration_ms: 0.35636
+  type: 'test'
+  ...
+# Subtest: supervisor retains each run's complete verification receipt
+ok 13 - supervisor retains each run's complete verification receipt
+  ---
+  duration_ms: 1.289387
+  type: 'test'
+  ...
+# Subtest: independent approval is required and must match current revision
+ok 14 - independent approval is required and must match current revision
+  ---
+  duration_ms: 1.781774
+  type: 'test'
+  ...
+# Subtest: child failures, timeouts and logs are recorded rather than silently passed
+ok 15 - child failures, timeouts and logs are recorded rather than silently passed
+  ---
+  duration_ms: 341.313953
+  type: 'test'
+  ...
+1..15
+# tests 15
+# suites 0
+# pass 15
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 2829.795138

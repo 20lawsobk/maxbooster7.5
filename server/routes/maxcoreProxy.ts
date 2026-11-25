@@ -42,7 +42,23 @@ const router = Router();
 
 // Existing application authorization and transport credentials remain unchanged.
 router.get("/api/awareness/unified/status", requireAuthOnly, proxyToMaxCore);
+router.get("/api/awareness/unified/ready", requireAuthOnly, proxyToMaxCore);
+router.get("/api/generation/capabilities", requireAuthOnly, proxyToMaxCore);
+router.get("/api/admin/maxcore/health", requireAdmin, proxyToMaxCore);
+router.get("/api/admin/maxcore/readiness", requireAdmin, proxyToMaxCore);
+router.get("/api/admin/maxcore/warm/status", requireAdmin, proxyToMaxCore);
+router.get(
+  "/api/awareness/unified/admin/source-status",
+  requireAdmin,
+  proxyToMaxCore,
+);
+router.post(
+  "/api/awareness/unified/admin/source-review",
+  requireAdmin,
+  proxyToMaxCore,
+);
 router.post("/api/awareness/unified/context", requireAuthOnly, proxyToMaxCore);
+router.post("/api/awareness/unified/profile-discover", requireAuthOnly, proxyToMaxCore);
 
 export function isPrivateArtifactPeer(req: Request): boolean {
   const secret = process.env.PDIM_LOCAL_CHANNEL_TOKEN;
@@ -104,7 +120,10 @@ generatedArtifactRouter.post("/api/internal/generated-artifacts/commit",
 // It is routed separately below so application-level admin authorization is
 // required before Max Booster supplies that trusted credential upstream.
 const ADMIN_PATH_SUFFIXES = [
+  "/awareness/unified/admin/source-status",
+  "/awareness/unified/admin/source-review",
   "/training/live/status",
+  "/training/candidates/internal",
   "/platform/model/reload",
   "/training/start",
   "/training/stop",
@@ -116,6 +135,12 @@ const ADMIN_PATH_SUFFIXES = [
   "/training/puller/stop",
   "/training/start-from-storage",
 ];
+
+const ADMIN_MAXCORE_ENDPOINT_ALIASES: Record<string, string> = {
+  "/api/admin/maxcore/health": "/health",
+  "/api/admin/maxcore/readiness": "/ready",
+  "/api/admin/maxcore/warm/status": "/api/warm/status",
+};
 
 // Generous timeout — generation calls (image/video/audio) can be slow.
 const GEN_TIMEOUT_MS = 120_000;
@@ -203,7 +228,7 @@ async function proxyToMaxCore(
   // Enforce identity binding: a caller may only address their own user id in
   // path params (admins may address any). Prevents IDOR on routes like
   // /api/platform/ads/performance/:userId and /api/storage/artist/:profileId.
-  const authUser = req.user as { id?: string; role?: string } | undefined;
+  const authUser = req.user as { id?: string; role?: string; email?: string } | undefined;
   const paramId = req.params.userId || req.params.profileId;
   if (paramId && authUser?.role !== "admin" && paramId !== authUser?.id) {
     res.status(403).json({
@@ -213,12 +238,21 @@ async function proxyToMaxCore(
     return;
   }
 
-  const targetUrl = `${origin}${req.originalUrl}`;
+  const upstreamPath = ADMIN_MAXCORE_ENDPOINT_ALIASES[req.path];
+  const requestSuffix = upstreamPath
+    ? req.originalUrl.slice(req.path.length)
+    : "";
+  const targetUrl = upstreamPath
+    ? `${origin}${upstreamPath}${requestSuffix}`
+    : `${origin}${req.originalUrl}`;
   const method = req.method.toUpperCase();
   const hasBody = method !== "GET" && method !== "HEAD" && method !== "DELETE";
 
+  const ownerEmail = process.env.ADMIN_EMAIL?.trim().toLowerCase();
+  const isOwnerAdmin = authUser?.id && authUser.role === "admin" && ownerEmail &&
+    authUser.email?.trim().toLowerCase() === ownerEmail;
   const headers: Record<string, string> = {
-    ...getMaxcoreGenerationHeaders(),
+    ...(isOwnerAdmin ? getMaxcoreAdminHeaders() : getMaxcoreGenerationHeaders()),
     Accept: "application/json, */*",
   };
   if (authUser?.id) {
@@ -229,7 +263,7 @@ async function proxyToMaxCore(
 
   const isAdminPath = ADMIN_PATH_SUFFIXES.some((s) =>
     req.originalUrl.startsWith(`/api${s}`),
-  );
+  ) || Object.hasOwn(ADMIN_MAXCORE_ENDPOINT_ALIASES, req.path);
   if (isAdminPath) {
     delete headers.Authorization;
     Object.assign(headers, getMaxcoreAdminHeaders());
@@ -562,13 +596,14 @@ router.get(
   proxyToMaxCore,
 );
 router.get("/api/platform/model/info", requireAuthOnly, proxyToMaxCore);
-router.get("/api/generation/capabilities", requireAuthOnly, proxyToMaxCore);
 router.get("/api/models/social/state", requireAuthOnly, proxyToMaxCore);
 router.get("/api/models/advertising/state", requireAuthOnly, proxyToMaxCore);
 router.get("/api/models/content/state", requireAuthOnly, proxyToMaxCore);
 router.get("/api/models/engagement/state", requireAuthOnly, proxyToMaxCore);
 router.get("/api/training/status", requireAdmin, proxyToMaxCore);
 router.get("/api/training/live/status", requireAdmin, proxyToMaxCore);
+router.get("/api/training/candidates/internal", requireAdmin, proxyToMaxCore);
+router.get("/api/training/candidates/internal/:runId", requireAdmin, proxyToMaxCore);
 router.get("/api/training/logs", requireAdmin, proxyToMaxCore);
 router.get("/api/training/datasets", requireAdmin, proxyToMaxCore);
 router.get("/api/training/continuous/status", requireAdmin, proxyToMaxCore);

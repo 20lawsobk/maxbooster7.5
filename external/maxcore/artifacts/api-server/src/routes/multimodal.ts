@@ -385,12 +385,17 @@ function validateTaskPlan(raw: unknown, requestId: string): TaskPlan {
   return { requestId, steps: [] };
 }
 
+function maxcoreBearerHeaders(): { Authorization: string } {
+  if (!MAXCORE_API_KEY) throw new Error("MaxCore generation credential is not configured");
+  return { Authorization: `Bearer ${MAXCORE_API_KEY}` };
+}
+
 async function maxcorePost(path: string, body: unknown): Promise<unknown> {
   const res = await undiciFetch(`${MAXCORE_URL}${path}`, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
-      "X-Api-Key": MAXCORE_API_KEY,
+      ...maxcoreBearerHeaders(),
     },
     body: JSON.stringify(body),
     dispatcher: _modelPool,
@@ -405,7 +410,7 @@ async function maxcorePost(path: string, body: unknown): Promise<unknown> {
 async function maxcoreGet(path: string, timeoutMs: number): Promise<unknown> {
   const res = await undiciFetch(`${MAXCORE_URL}${path}`, {
     method: "GET",
-    headers: { "X-Api-Key": MAXCORE_API_KEY },
+    headers: maxcoreBearerHeaders(),
     dispatcher: _modelPool,
     signal: AbortSignal.timeout(timeoutMs),
   });
@@ -884,7 +889,7 @@ async function fetchCurriculumStyleTags(
     const res = await undiciFetch(
       `${MAXCORE_URL}/storage/curriculum/${encodeURIComponent(userId)}`,
       {
-        headers: { "X-Api-Key": MAXCORE_API_KEY },
+        headers: maxcoreBearerHeaders(),
         dispatcher: _modelPool,
       },
     );

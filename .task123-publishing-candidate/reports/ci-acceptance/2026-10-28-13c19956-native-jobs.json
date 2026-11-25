@@ -1,0 +1,223 @@
+{
+  "observedAt": "2026-10-28T13:11:29.148790+00:00",
+  "scope": "Read-only actual new review-checkpoint GitHub native workflow metadata and check annotations; no workflow rerun, billing/account mutation or release performed",
+  "sourceRevision": "13c199569e5f6fa29a6002b36169b76c65e26b5f",
+  "productionReady": false,
+  "runs": [
+    {
+      "run": {
+        "conclusion": "failure",
+        "event": "deployment",
+        "head_sha": "13c199569e5f6fa29a6002b36169b76c65e26b5f",
+        "html_url": "https://github.com/20lawsobk/maxbooster7.5/actions/runs/40692718541",
+        "id": 40692718541,
+        "name": "Build Desktop Apps",
+        "run_started_at": "2026-10-28T13:01:31Z",
+        "status": "completed"
+      },
+      "jobs": [
+        {
+          "completed_at": "2026-10-28T13:01:35Z",
+          "conclusion": "failure",
+          "id": 122831376547,
+          "name": "build-macos",
+          "started_at": "2026-10-28T13:01:32Z",
+          "status": "completed",
+          "steps": 0,
+          "annotations": [
+            {
+              "annotation_level": "failure",
+              "message": "The job was not started because your account is locked due to a billing issue.",
+              "title": ""
+            },
+            {
+              "annotation_level": "notice",
+              "message": "Due to capacity constraints, jobs targeting macOS arm64 runners may experience longer queue times.",
+              "title": ""
+            }
+          ]
+        },
+        {
+          "completed_at": "2026-10-28T13:01:35Z",
+          "conclusion": "failure",
+          "id": 122831376895,
+          "name": "build-windows",
+          "started_at": "2026-10-28T13:01:32Z",
+          "status": "completed",
+          "steps": 0,
+          "annotations": [
+            {
+              "annotation_level": "failure",
+              "message": "The job was not started because your account is locked due to a billing issue.",
+              "title": ""
+            }
+          ]
+        },
+        {
+          "completed_at": "2026-10-28T13:01:35Z",
+          "conclusion": "failure",
+          "id": 122831376920,
+          "name": "build-linux",
+          "started_at": "2026-10-28T13:01:32Z",
+          "status": "completed",
+          "steps": 0,
+          "annotations": [
+            {
+              "annotation_level": "failure",
+              "message": "The job was not started because your account is locked due to a billing issue.",
+              "title": ""
+            },
+            {
+              "annotation_level": "notice",
+              "message": "\"The ubuntu-latest label will migrate to Ubuntu 26 beginning October 19, 2026. For more information, see https://github.com/actions/runner-images/issues/14748\"",
+              "title": ""
+            }
+          ]
+        },
+        {
+          "completed_at": "2026-10-28T13:01:38Z",
+          "conclusion": "failure",
+          "id": 122831405278,
+          "name": "build-summary",
+          "started_at": "2026-10-28T13:01:35Z",
+          "status": "completed",
+          "steps": 0,
+          "annotations": [
+            {
+              "annotation_level": "failure",
+              "message": "The job was not started because your account is locked due to a billing issue.",
+              "title": ""
+            },
+            {
+              "annotation_level": "notice",
+              "message": "\"The ubuntu-latest label will migrate to Ubuntu 26 beginning October 19, 2026. For more information, see https://github.com/actions/runner-images/issues/14748\"",
+              "title": ""
+            }
+          ]
+        },
+        {
+          "completed_at": "2026-10-28T13:01:35Z",
+          "conclusion": "skipped",
+          "id": 122831406911,
+          "name": "create-release",
+          "started_at": "2026-10-28T13:01:35Z",
+          "status": "completed",
+          "steps": 0,
+          "annotations": []
+        }
+      ],
+      "total_count": 5
+    },
+    {
+      "run": {
+        "conclusion": "failure",
+        "event": "deployment",
+        "head_sha": "13c199569e5f6fa29a6002b36169b76c65e26b5f",
+        "html_url": "https://github.com/20lawsobk/maxbooster7.5/actions/runs/40692718242",
+        "id": 40692718242,
+        "name": "Build Mobile Apps",
+        "run_started_at": "2026-10-28T13:01:31Z",
+        "status": "completed"
+      },
+      "jobs": [
+        {
+          "completed_at": "2026-10-28T13:01:35Z",
+          "conclusion": "failure",
+          "id": 122831376250,
+          "name": "build-android",
+          "started_at": "2026-10-28T13:01:32Z",
+          "status": "completed",
+          "steps": 0,
+          "annotations": [
+            {
+              "annotation_level": "failure",
+              "message": "The job was not started because your account is locked due to a billing issue.",
+              "title": ""
+            },
+            {
+              "annotation_level": "notice",
+              "message": "\"The ubuntu-latest label will migrate to Ubuntu 26 beginning October 19, 2026. For more information, see https://github.com/actions/runner-images/issues/14748\"",
+              "title": ""
+            }
+          ]
+        },
+        {
+          "completed_at": "2026-10-28T13:01:35Z",
+          "conclusion": "failure",
+          "id": 122831376704,
+          "name": "build-ios",
+          "started_at": "2026-10-28T13:01:32Z",
+          "status": "completed",
+          "steps": 0,
+          "annotations": [
+            {
+              "annotation_level": "failure",
+              "message": "The job was not started because your account is locked due to a billing issue.",
+              "title": ""
+            },
+            {
+              "annotation_level": "notice",
+              "message": "\"The ubuntu-latest label will migrate to Ubuntu 26 beginning October 19, 2026. For more information, see https://github.com/actions/runner-images/issues/14748\"",
+              "title": ""
+            }
+          ]
+        },
+        {
+          "completed_at": "2026-10-28T13:01:35Z",
+          "conclusion": "skipped",
+          "id": 122831403958,
+          "name": "create-release",
+          "started_at": "2026-10-28T13:01:35Z",
+          "status": "completed",
+          "steps": 0,
+          "annotations": []
+        },
+        {
+          "completed_at": "2026-10-28T13:01:35Z",
+          "conclusion": "skipped",
+          "id": 122831404636,
+          "name": "upload-to-play-store",
+          "started_at": "2026-10-28T13:01:35Z",
+          "status": "completed",
+          "steps": 0,
+          "annotations": []
+        },
+        {
+          "completed_at": "2026-10-28T13:01:45Z",
+          "conclusion": "failure",
+          "id": 122831408423,
+          "name": "build-summary",
+          "started_at": "2026-10-28T13:01:36Z",
+          "status": "completed",
+          "steps": 0,
+          "annotations": [
+            {
+              "annotation_level": "failure",
+              "message": "The job was not started because your account is locked due to a billing issue.",
+              "title": ""
+            },
+            {
+              "annotation_level": "notice",
+              "message": "\"The ubuntu-latest label will migrate to Ubuntu 26 beginning October 19, 2026. For more information, see https://github.com/actions/runner-images/issues/14748\"",
+              "title": ""
+            }
+          ]
+        }
+      ],
+      "total_count": 5
+    }
+  ],
+  "jobs": 10,
+  "executedSteps": 0,
+  "billingLockMessage": "The job was not started because your account is locked due to a billing issue.",
+  "billingLockJobs": [
+    "build-macos",
+    "build-windows",
+    "build-linux",
+    "build-summary",
+    "build-android",
+    "build-ios",
+    "build-summary"
+  ],
+  "interpretation": "Native CI has no executed build validation for this source; metadata failure is an external account gate, not evidence of a source build failure or production API-key absence."
+}

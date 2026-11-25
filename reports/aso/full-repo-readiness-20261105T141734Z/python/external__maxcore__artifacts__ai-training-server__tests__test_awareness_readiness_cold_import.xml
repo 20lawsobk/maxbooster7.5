@@ -1,0 +1,78 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites name="pytest tests"><testsuite name="pytest" errors="0" failures="1" skipped="0" tests="1" time="0.106" timestamp="2026-11-05T14:37:10.403219+00:00" hostname="repl"><testcase classname="tests.test_awareness_readiness_cold_import.AwarenessReadinessColdImportTests" name="test_awareness_telemetry_imports_without_torch" time="0.034"><failure message="AssertionError: 1 != 0 : awareness telemetry cold import failed: Traceback (most recent call last):&#10;  File &quot;&lt;repo&gt;/.pythonlibs/lib/python3.12/site-packages/numpy/_core/__init__.py&quot;, line 24, in &lt;module&gt;&#10;    from . import multiarray&#10;  File &quot;&lt;repo&gt;/.pythonlibs/lib/python3.12/site-packages/numpy/_core/multiarray.py&quot;, line 11, in &lt;module&gt;&#10;    from . import _multiarray_umath, overrides&#10;[+40 more lines; full report in element text]">self = &lt;tests.test_awareness_readiness_cold_import.AwarenessReadinessColdImportTests testMethod=test_awareness_telemetry_imports_without_torch&gt;
+
+        def test_awareness_telemetry_imports_without_torch(self):
+            script = """
+    import sys
+    
+    class RejectTorchImport:
+        def find_spec(self, fullname, path=None, target=None):
+            if fullname == "torch" or fullname.startswith("torch."):
+                raise AssertionError("awareness readiness imported the optional Torch backend")
+    
+    sys.meta_path.insert(0, RejectTorchImport())
+    from ai_model.gpu.awareness_kernels import telemetry
+    result = telemetry()
+    assert result["backend"] == "digital_gpu_awareness_software"
+    assert result["completed"] == 0
+    assert not any(name == "torch" or name.startswith("torch.") for name in sys.modules)
+    """
+            completed = subprocess.run(
+                [sys.executable, "-c", script],
+                cwd=ROOT,
+                capture_output=True,
+                text=True,
+                timeout=15,
+                check=False,
+            )
+&gt;           self.assertEqual(
+                completed.returncode,
+                0,
+                msg=f"awareness telemetry cold import failed: {completed.stderr}",
+            )
+E           AssertionError: 1 != 0 : awareness telemetry cold import failed: Traceback (most recent call last):
+E             File "&lt;repo&gt;/.pythonlibs/lib/python3.12/site-packages/numpy/_core/__init__.py", line 24, in &lt;module&gt;
+E               from . import multiarray
+E             File "&lt;repo&gt;/.pythonlibs/lib/python3.12/site-packages/numpy/_core/multiarray.py", line 11, in &lt;module&gt;
+E               from . import _multiarray_umath, overrides
+E           ImportError: libstdc++.so.6: cannot open shared object file: No such file or directory
+E           
+E           The above exception was the direct cause of the following exception:
+E           
+E           Traceback (most recent call last):
+E             File "&lt;string&gt;", line 10, in &lt;module&gt;
+E             File "&lt;repo&gt;/external/maxcore/artifacts/ai-training-server/ai_model/gpu/__init__.py", line 12, in &lt;module&gt;
+E               from ai_model.gpu.digital_gpu import (
+E             File "&lt;repo&gt;/external/maxcore/artifacts/ai-training-server/ai_model/gpu/digital_gpu.py", line 2, in &lt;module&gt;
+E               import numpy as np
+E             File "&lt;repo&gt;/.pythonlibs/lib/python3.12/site-packages/numpy/__init__.py", line 112, in &lt;module&gt;
+E               from numpy.__config__ import show_config
+E             File "&lt;repo&gt;/.pythonlibs/lib/python3.12/site-packages/numpy/__config__.py", line 4, in &lt;module&gt;
+E               from numpy._core._multiarray_umath import (
+E             File "&lt;repo&gt;/.pythonlibs/lib/python3.12/site-packages/numpy/_core/__init__.py", line 85, in &lt;module&gt;
+E               raise ImportError(msg) from exc
+E           ImportError: 
+E           
+E           IMPORTANT: PLEASE READ THIS FOR ADVICE ON HOW TO SOLVE THIS ISSUE!
+E           
+E           Importing the numpy C-extensions failed. This error can happen for
+E           many reasons, often due to issues with your setup or how NumPy was
+E           installed.
+E           
+E           We have compiled some common reasons and troubleshooting tips at:
+E           
+E               https://numpy.org/devdocs/user/troubleshooting-importerror.html
+E           
+E           Please note and check the following:
+E           
+E             * The Python version is: Python 3.12 from "/nix/store/h097imm3w6dpx10qynrd2sz9fks2wbq8-python3-3.12.11/bin/python3"
+E             * The NumPy version is: "2.4.4"
+E           
+E           and make sure that they are the versions you expect.
+E           
+E           Please carefully study the information and documentation linked above.
+E           This is unlikely to be a NumPy issue but will be caused by a bad install
+E           or environment on your machine.
+E           
+E           Original error was: libstdc++.so.6: cannot open shared object file: No such file or directory
+
+tests/test_awareness_readiness_cold_import.py:36: AssertionError</failure></testcase></testsuite></testsuites>

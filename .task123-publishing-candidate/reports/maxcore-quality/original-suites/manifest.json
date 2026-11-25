@@ -1,0 +1,28 @@
+{
+  "before": {
+    "external/maxcore/artifacts/ai-training-server/ai_model/weights/model.pt": "80c19ffc3ec155808f0a2a3ce5b75f09e203d336ebf3e076144dd6e970d3b419",
+    "external/maxcore/artifacts/ai-training-server/ai_model/weights/model.release.json": "84b2d85f4ba64d97bd1e35bf939bd7faef533c5abaa1edd62d6aff6121dedef3",
+    "external/maxcore/artifacts/ai-training-server/tests/test_w6_90m.py": "f52db0346d5f20ef8a4ef5b20039100e521b16f453cb709c4248f01f7a7664fb",
+    "external/maxcore/artifacts/ai-training-server/tests/test_awareness_and_quality.py": "27a40d4752068758f73152b0a5885da4fe30fc7ae41a603cd9ba1d2d1c27cf6c"
+  },
+  "suites": [
+    {
+      "name": "test_w6_90m-quality-only",
+      "exit_code": 1,
+      "elapsed_seconds": 13.77
+    },
+    {
+      "name": "test_awareness_and_quality",
+      "exit_code": 1,
+      "elapsed_seconds": 3.65
+    }
+  ],
+  "proxy_port_override": 8090,
+  "after": {
+    "external/maxcore/artifacts/ai-training-server/ai_model/weights/model.pt": "80c19ffc3ec155808f0a2a3ce5b75f09e203d336ebf3e076144dd6e970d3b419",
+    "external/maxcore/artifacts/ai-training-server/ai_model/weights/model.release.json": "84b2d85f4ba64d97bd1e35bf939bd7faef533c5abaa1edd62d6aff6121dedef3",
+    "external/maxcore/artifacts/ai-training-server/tests/test_w6_90m.py": "f52db0346d5f20ef8a4ef5b20039100e521b16f453cb709c4248f01f7a7664fb",
+    "external/maxcore/artifacts/ai-training-server/tests/test_awareness_and_quality.py": "27a40d4752068758f73152b0a5885da4fe30fc7ae41a603cd9ba1d2d1c27cf6c"
+  },
+  "preserved": true
+}

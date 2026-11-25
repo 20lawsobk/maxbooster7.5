@@ -1498,6 +1498,18 @@ export default function Distribution() {
   const [showEditRelease, setShowEditRelease] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [selectedRelease, setSelectedRelease] = useState<Release | null>(null);
+  const [ddexPreviewDialogOpen, setDdexPreviewDialogOpen] = useState(false);
+  const [ddexPreview, setDdexPreview] = useState<{
+    xml: string;
+    validation: {
+      valid: boolean;
+      errors: string[];
+      ddexSchemaValidated: false;
+      distributorAccepted: false;
+    };
+  } | null>(null);
+  const [ddexPreviewLoading, setDdexPreviewLoading] = useState(false);
+  const [ddexDownloadLoading, setDdexDownloadLoading] = useState(false);
   const [wizardReleaseId, setWizardReleaseId] = useState<string | undefined>();
   const [editReleaseForm, setEditReleaseForm] = useState({
     title: "",
@@ -2091,15 +2103,21 @@ export default function Distribution() {
       if (!response.ok) {
         throw new Error("Export failed");
       }
+      if (!(response.headers.get("content-type") || "").includes("text/csv")) {
+        throw new Error("Export service did not return a CSV file");
+      }
 
       // Download the CSV
       const blob = await response.blob();
+      if (blob.size === 0) throw new Error("Export service returned an empty CSV");
       const url = window.URL.createObjectURL(blob);
       const a = document.createElement("a");
       a.href = url;
       a.download = `distribution-report-${Date.now()}.csv`;
+      document.body.appendChild(a);
       a.click();
-      window.URL.revokeObjectURL(url);
+      a.remove();
+      window.setTimeout(() => window.URL.revokeObjectURL(url), 1000);
     },
     onSuccess: () => {
       toast({
@@ -2115,6 +2133,91 @@ export default function Distribution() {
       });
     },
   });
+
+  const handleDDEXPreview = async (release: Release) => {
+    setDdexPreviewLoading(true);
+    try {
+      const response = await apiRequest(
+        "POST",
+        `/api/distribution/releases/${encodeURIComponent(release.id)}/ddex/preview`,
+        {},
+      );
+      const data = await response.json();
+      if (!response.ok || typeof data.xml !== "string") {
+        throw new Error(
+          data.message || data.error || "DDEX preview could not be generated.",
+        );
+      }
+      setDdexPreview(data);
+      setDdexPreviewDialogOpen(true);
+    } catch (error) {
+      toast({
+        title: "DDEX preview unavailable",
+        description:
+          error instanceof Error ? error.message : "The preview failed.",
+        variant: "destructive",
+      });
+    } finally {
+      setDdexPreviewLoading(false);
+    }
+  };
+
+  const handleDDEXDownload = async (release: Release) => {
+    setDdexDownloadLoading(true);
+    try {
+      const response = await fetch(
+        `/api/distribution/releases/${encodeURIComponent(release.id)}/ddex/download`,
+        { credentials: "include" },
+      );
+      if (!response.ok) {
+        const body = await response.json().catch(() => ({}));
+        throw new Error(
+          body.message || body.error || "DDEX package could not be created.",
+        );
+      }
+      const contentType = response.headers.get("content-type") || "";
+      if (!contentType.toLowerCase().includes("application/zip")) {
+        throw new Error("The server did not return a DDEX ZIP package.");
+      }
+      const blob = await response.blob();
+      if (!blob.size) throw new Error("The DDEX ZIP package is empty.");
+      const signature = new Uint8Array(
+        await blob.slice(0, 4).arrayBuffer(),
+      );
+      if (
+        signature[0] !== 0x50 ||
+        signature[1] !== 0x4b ||
+        signature[2] !== 0x03 ||
+        signature[3] !== 0x04
+      ) {
+        throw new Error("The downloaded DDEX file is not a valid ZIP archive.");
+      }
+      const objectUrl = window.URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = objectUrl;
+      link.download = `${release.title
+        .replace(/[^a-zA-Z0-9 _-]/g, "")
+        .slice(0, 80)}_DDEX.zip`;
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      window.setTimeout(() => window.URL.revokeObjectURL(objectUrl), 1000);
+      toast({
+        title: "DDEX package downloaded",
+        description:
+          "This ZIP is a local package preview; distributor acceptance and DDEX schema certification are not verified.",
+      });
+    } catch (error) {
+      toast({
+        title: "DDEX package unavailable",
+        description:
+          error instanceof Error ? error.message : "The download failed.",
+        variant: "destructive",
+      });
+    } finally {
+      setDdexDownloadLoading(false);
+    }
+  };
 
   // Handler Functions
   const handleFileUpload = (
@@ -3913,17 +4016,6 @@ export default function Distribution() {
               </div>
               <ISRCManager
                 releaseId={selectedRelease?.id}
-                onCodeAssigned={(code, type) => {
-                  if (type === "isrc") {
-                    setGeneratedISRC(code);
-                  } else {
-                    setGeneratedUPC(code);
-                  }
-                  toast({
-                    title: `${type.toUpperCase()} Assigned`,
-                    description: `Code: ${code}`,
-                  });
-                }}
               />
             </TabsContent>
 
@@ -4253,9 +4345,9 @@ export default function Distribution() {
                   )}
                   onComplete={() => {
                     toast({
-                      title: "Content ID Complete",
+                      title: "Exact file digests saved",
                       description:
-                        "All tracks have been registered for Content ID protection.",
+                        "Track file digests were saved locally. No platform Content ID registration was performed.",
                     });
                   }}
                 />
@@ -4264,13 +4356,13 @@ export default function Distribution() {
                   <CardHeader>
                     <CardTitle className="flex items-center text-gray-900 dark:text-white">
                       <Shield className="w-5 h-5 mr-2 text-green-600" />
-                      Content ID Protection
+                      Track File Digests
                     </CardTitle>
                   </CardHeader>
                   <CardContent>
                     <p className="text-gray-500 dark:text-gray-400 mb-4">
-                      Select a release to manage Content ID protection for its
-                      tracks.
+                      Select a release to calculate exact-file SHA-256 digests.
+                      This does not register tracks with any platform.
                     </p>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       {releases.slice(0, 6).map((release: Release) => (
@@ -5435,6 +5527,34 @@ export default function Distribution() {
               <DialogFooter>
                 <Button
                   variant="outline"
+                  onClick={() =>
+                    selectedRelease && handleDDEXPreview(selectedRelease)
+                  }
+                  disabled={!selectedRelease || ddexPreviewLoading}
+                >
+                  {ddexPreviewLoading ? (
+                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                  ) : (
+                    <FileAudio className="w-4 h-4 mr-2" />
+                  )}
+                  Preview DDEX XML
+                </Button>
+                <Button
+                  variant="outline"
+                  onClick={() =>
+                    selectedRelease && handleDDEXDownload(selectedRelease)
+                  }
+                  disabled={!selectedRelease || ddexDownloadLoading}
+                >
+                  {ddexDownloadLoading ? (
+                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                  ) : (
+                    <Download className="w-4 h-4 mr-2" />
+                  )}
+                  Download DDEX ZIP
+                </Button>
+                <Button
+                  variant="outline"
                   onClick={() => setShowReleaseDetails(false)}
                 >
                   Close
@@ -5470,6 +5590,43 @@ export default function Distribution() {
                   Edit Release
                 </Button>
               </DialogFooter>
+            </DialogContent>
+          </Dialog>
+
+          <Dialog
+            open={ddexPreviewDialogOpen}
+            onOpenChange={setDdexPreviewDialogOpen}
+          >
+            <DialogContent className="max-w-4xl">
+              <DialogHeader>
+                <DialogTitle>DDEX XML Preview</DialogTitle>
+                <DialogDescription>
+                  Generated from this release's owner-stored media and saved
+                  metadata. Checks cover XML well-formedness and basic
+                  identifiers only; DDEX XSD conformance and distributor
+                  acceptance are not verified.
+                </DialogDescription>
+              </DialogHeader>
+              {ddexPreview && (
+                <div className="space-y-3">
+                  <Alert
+                    variant={ddexPreview.validation.valid ? "default" : "destructive"}
+                  >
+                    <AlertDescription>
+                      {ddexPreview.validation.valid
+                        ? "Basic checks passed; this is not a certified DDEX package."
+                        : ddexPreview.validation.errors.join("; ")}
+                    </AlertDescription>
+                  </Alert>
+                  <Textarea
+                    value={ddexPreview.xml}
+                    readOnly
+                    rows={20}
+                    aria-label="Generated DDEX XML"
+                    className="font-mono text-xs"
+                  />
+                </div>
+              )}
             </DialogContent>
           </Dialog>
 

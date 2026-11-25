@@ -1,0 +1,87 @@
+F                                                                        [100%]
+=================================== FAILURES ===================================
+_ AwarenessReadinessColdImportTests.test_awareness_telemetry_imports_without_torch _
+
+self = <tests.test_awareness_readiness_cold_import.AwarenessReadinessColdImportTests testMethod=test_awareness_telemetry_imports_without_torch>
+
+        def test_awareness_telemetry_imports_without_torch(self):
+            script = """
+    import sys
+    
+    class RejectTorchImport:
+        def find_spec(self, fullname, path=None, target=None):
+            if fullname == "torch" or fullname.startswith("torch."):
+                raise AssertionError("awareness readiness imported the optional Torch backend")
+    
+    sys.meta_path.insert(0, RejectTorchImport())
+    from ai_model.gpu.awareness_kernels import telemetry
+    result = telemetry()
+    assert result["backend"] == "digital_gpu_awareness_software"
+    assert result["completed"] == 0
+    assert not any(name == "torch" or name.startswith("torch.") for name in sys.modules)
+    """
+            completed = subprocess.run(
+                [sys.executable, "-c", script],
+                cwd=ROOT,
+                capture_output=True,
+                text=True,
+                timeout=15,
+                check=False,
+            )
+>           self.assertEqual(
+                completed.returncode,
+                0,
+                msg=f"awareness telemetry cold import failed: {completed.stderr}",
+            )
+E           AssertionError: 1 != 0 : awareness telemetry cold import failed: Traceback (most recent call last):
+E             File "<repo>/.pythonlibs/lib/python3.12/site-packages/numpy/_core/__init__.py", line 24, in <module>
+E               from . import multiarray
+E             File "<repo>/.pythonlibs/lib/python3.12/site-packages/numpy/_core/multiarray.py", line 11, in <module>
+E               from . import _multiarray_umath, overrides
+E           ImportError: libstdc++.so.6: cannot open shared object file: No such file or directory
+E           
+E           The above exception was the direct cause of the following exception:
+E           
+E           Traceback (most recent call last):
+E             File "<string>", line 10, in <module>
+E             File "<repo>/external/maxcore/artifacts/ai-training-server/ai_model/gpu/__init__.py", line 12, in <module>
+E               from ai_model.gpu.digital_gpu import (
+E             File "<repo>/external/maxcore/artifacts/ai-training-server/ai_model/gpu/digital_gpu.py", line 2, in <module>
+E               import numpy as np
+E             File "<repo>/.pythonlibs/lib/python3.12/site-packages/numpy/__init__.py", line 112, in <module>
+E               from numpy.__config__ import show_config
+E             File "<repo>/.pythonlibs/lib/python3.12/site-packages/numpy/__config__.py", line 4, in <module>
+E               from numpy._core._multiarray_umath import (
+E             File "<repo>/.pythonlibs/lib/python3.12/site-packages/numpy/_core/__init__.py", line 85, in <module>
+E               raise ImportError(msg) from exc
+E           ImportError: 
+E           
+E           IMPORTANT: PLEASE READ THIS FOR ADVICE ON HOW TO SOLVE THIS ISSUE!
+E           
+E           Importing the numpy C-extensions failed. This error can happen for
+E           many reasons, often due to issues with your setup or how NumPy was
+E           installed.
+E           
+E           We have compiled some common reasons and troubleshooting tips at:
+E           
+E               https://numpy.org/devdocs/user/troubleshooting-importerror.html
+E           
+E           Please note and check the following:
+E           
+E             * The Python version is: Python 3.12 from "/nix/store/h097imm3w6dpx10qynrd2sz9fks2wbq8-python3-3.12.11/bin/python3"
+E             * The NumPy version is: "2.4.4"
+E           
+E           and make sure that they are the versions you expect.
+E           
+E           Please carefully study the information and documentation linked above.
+E           This is unlikely to be a NumPy issue but will be caused by a bad install
+E           or environment on your machine.
+E           
+E           Original error was: libstdc++.so.6: cannot open shared object file: No such file or directory
+
+tests/test_awareness_readiness_cold_import.py:36: AssertionError
+=========================== short test summary info ============================
+FAILED tests/test_awareness_readiness_cold_import.py::AwarenessReadinessColdImportTests::test_awareness_telemetry_imports_without_torch
+1 failed in 0.10s
+<repo>/.pythonlibs/lib/python3.12/site-packages/coverage/control.py:967: CoverageWarning: No data was collected. (no-data-collected); see https://coverage.readthedocs.io/en/7.17.0/messages.html#warning-no-data-collected
+  self._warn("No data was collected.", slug="no-data-collected")

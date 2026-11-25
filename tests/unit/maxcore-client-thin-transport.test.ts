@@ -1,5 +1,12 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
+const cognitiveContextMocks = vi.hoisted(() => ({
+  prepare: vi.fn(async (body: Record<string, unknown>) => ({
+    ...body,
+    maxbooster_cognitive_context: { status: "available", evidence: [] },
+  })),
+}));
+
 vi.mock("../../server/logger.js", () => ({
   logger: { debug: vi.fn(), info: vi.fn(), warn: vi.fn(), error: vi.fn() },
 }));
@@ -13,9 +20,15 @@ vi.mock("../../server/services/maxcoreConnector.js", () => ({
 vi.mock("../../server/services/awarenessContext.js", () => {
   throw new Error("The HTTP transport must not initialize application AI context");
 });
+vi.mock("../../server/services/cognitiveGenerationContext.js", () => ({
+  prepareCognitiveGenerationRequest: cognitiveContextMocks.prepare,
+}));
 
 describe("MaxCore client is transport, not another AI processing layer", () => {
-  beforeEach(() => vi.resetModules());
+  beforeEach(() => {
+    vi.resetModules();
+    vi.clearAllMocks();
+  });
   afterEach(() => {
     vi.useRealTimers();
     vi.unstubAllGlobals();
@@ -51,11 +64,153 @@ describe("MaxCore client is transport, not another AI processing layer", () => {
       expect(JSON.parse(request.body)).toEqual({
         ...original, owner_id: "authenticated-caller", userId: "authenticated-caller",
         awareness: { ...receipt, caller_context: original.awareness },
+        maxbooster_cognitive_context: { status: "available", evidence: [] },
       });
+      expect(cognitiveContextMocks.prepare).toHaveBeenCalledWith(
+        expect.objectContaining({ topic: "Artist supplied brief" }),
+        "authenticated-caller",
+      );
       expect(request.headers.Authorization).toBe("Bearer test-generation-key");
       expect(request.headers["X-MaxCore-User-Id"]).toBe("authenticated-caller");
     },
   );
+
+  it("does not infer generation readiness from model liveness or awareness alone", async () => {
+    const fetchMock = vi.fn()
+      .mockResolvedValueOnce(new Response(JSON.stringify({
+        ready: false,
+        model_loaded: false,
+        awareness: { ready: true },
+        live_awareness: { available: true },
+      }), { status: 503, headers: { "content-type": "application/json" } }))
+      .mockResolvedValueOnce(new Response(JSON.stringify({
+        ready: true,
+        model_loaded: true,
+        awareness: { ready: true },
+      }), { headers: { "content-type": "application/json" } }));
+    vi.stubGlobal("fetch", fetchMock);
+    const { MaxCoreAIClient } = await import("../../server/services/maxcoreClient.js");
+
+    expect(await MaxCoreAIClient.isAvailable()).toBe(false);
+    expect(await MaxCoreAIClient.isAvailable()).toBe(false);
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+    const { logger } = await import("../../server/logger.js");
+    expect(logger.info).toHaveBeenCalledWith(
+      "[MaxCoreAI] Live awareness is available; generation readiness is not confirmed",
+    );
+
+    expect((MaxCoreAIClient as any)._remoteAvailable).toBe(true);
+    (MaxCoreAIClient as any)._lastReadinessCheck = Date.now() - 31_000;
+    expect(await MaxCoreAIClient.isAvailable()).toBe(true);
+    expect(fetchMock).toHaveBeenCalledTimes(2);
+    expect(fetchMock.mock.calls.map(([url]) => url)).toEqual([
+      "https://maxcore.example.test/api/ready",
+      "https://maxcore.example.test/api/ready",
+    ]);
+  });
+
+  it("accepts explicit fresh live-awareness generation readiness without claiming trained weights", async () => {
+    const fetchMock = vi.fn().mockResolvedValue(new Response(JSON.stringify({
+      ready: true,
+      model_loaded: false,
+      generation_ready: true,
+      generation_mode: "live_awareness",
+      awareness: { ready: true },
+      live_awareness: {
+        available: true,
+        live_awareness_serving: true,
+        trained_model_loaded: false,
+      },
+    }), { headers: { "content-type": "application/json" } }));
+    vi.stubGlobal("fetch", fetchMock);
+    const { MaxCoreAIClient } = await import("../../server/services/maxcoreClient.js");
+
+    expect(await MaxCoreAIClient.isAvailable()).toBe(true);
+    expect((MaxCoreAIClient as any)._remoteAvailable).toBe(true);
+    const { logger } = await import("../../server/logger.js");
+    expect(logger.info).toHaveBeenCalledWith(
+      "[MaxCoreAI] Live-awareness generation and fresh awareness readiness confirmed",
+    );
+  });
+
+  it("does not treat a successful generation response as proof of model readiness", async () => {
+    const receipt = {
+      ready: true,
+      snapshot_id: "live-awareness-receipt",
+      awareness: "Current public industry context",
+      expires_at: Date.now() / 1000 + 60,
+    };
+    const fetchMock = vi.fn().mockImplementation(async url => {
+      const path = String(url);
+      if (path.endsWith("/api/awareness/unified/context")) {
+        return new Response(JSON.stringify(receipt), {
+          headers: { "content-type": "application/json" },
+        });
+      }
+      if (path.endsWith("/api/ready")) {
+        return new Response(JSON.stringify({
+          ready: false,
+          model_loaded: false,
+          awareness: { ready: true },
+        }), { status: 503, headers: { "content-type": "application/json" } });
+      }
+      return new Response(JSON.stringify({ output: "generation response" }), {
+        headers: { "content-type": "application/json" },
+      });
+    });
+    vi.stubGlobal("fetch", fetchMock);
+    const { MaxCoreAIClient } = await import("../../server/services/maxcoreClient.js");
+
+    await expect(MaxCoreAIClient.generate(
+      "/generate/content",
+      { topic: "Owned brief" },
+      "owner-a",
+    )).resolves.toEqual({ output: "generation response" });
+    expect((MaxCoreAIClient as any)._remoteAvailable).toBe(true);
+    expect((MaxCoreAIClient as any)._modelReady).toBeNull();
+    expect(await MaxCoreAIClient.isAvailable()).toBe(false);
+    expect((MaxCoreAIClient as any)._modelReady).toBe(false);
+    expect(fetchMock.mock.calls.map(([url]) => String(url).split(".test")[1])).toEqual([
+      "/api/awareness/unified/context",
+      "/api/generate/content",
+      "/api/ready",
+    ]);
+  });
+
+  it.each([
+    "/generate/content",
+    "/generate/text",
+    "/generate/image",
+    "/generate/audio",
+    "/generate-video",
+  ])("adds owner-scoped persisted context to %s requests", async endpoint => {
+    const receipt = {
+      ready: true,
+      snapshot_id: "live-awareness-receipt",
+      awareness: "Current public industry context",
+      expires_at: Date.now() / 1000 + 60,
+    };
+    const fetchMock = vi.fn().mockImplementation(async url =>
+      new Response(JSON.stringify(String(url).endsWith("/api/awareness/unified/context")
+        ? receipt
+        : { job_id: "maxcore-job", status: "processing" }), {
+        headers: { "content-type": "application/json" },
+      }),
+    );
+    vi.stubGlobal("fetch", fetchMock);
+    const { MaxCoreAIClient } = await import("../../server/services/maxcoreClient.js");
+
+    await MaxCoreAIClient.generate(endpoint, { topic: "Owner's new single" }, "owner-a");
+
+    expect(cognitiveContextMocks.prepare).toHaveBeenCalledTimes(1);
+    expect(cognitiveContextMocks.prepare).toHaveBeenCalledWith(
+      expect.objectContaining({
+        topic: "Owner's new single",
+        awareness: expect.objectContaining({ snapshot_id: "live-awareness-receipt" }),
+      }),
+      "owner-a",
+    );
+  });
 
   async function openCircuit(MaxCoreAIClient: typeof import(
     "../../server/services/maxcoreClient.js"

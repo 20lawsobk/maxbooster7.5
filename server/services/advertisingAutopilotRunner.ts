@@ -243,6 +243,7 @@ async function launch(
     const asset = await aiContentService.generateContent({
       prompt: `${String(recommendation.name || source.title)}\n${recommendation.content}`,
       platform: platforms[0] as "twitter" | "facebook" | "instagram" | "linkedin" | "tiktok" | "youtube",
+      userId,
       format: mediaType as "text" | "image" | "video" | "audio",
       tone: mediaTone,
       length: "medium",

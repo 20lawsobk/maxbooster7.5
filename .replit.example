@@ -1,7 +1,7 @@
 # Public configuration template; keep credentials in Replit Secrets.
 # Development and deployment share the repository entrypoints.
 entrypoint = "server/index.ts"
-modules = ["nodejs-22", "python-3.11"]
+modules = ["python-3.11", "nodejs-24"]
 run = "npm run dev"
 
 [gitHubImport]
@@ -9,8 +9,8 @@ requiredFiles = [".replit", "replit.nix"]
 
 [deployment]
 # Replit executes this in its disposable publishing copy, never the editor.
-build = ["bash", "build.sh"]
-run = ["bash", "start.sh"]
+build = ["npm", "run", "deployment:build"]
+run = ["npm", "run", "deployment:start"]
 ignorePorts = false
 
 [env]

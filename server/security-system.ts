@@ -1811,7 +1811,11 @@ export class SelfHealingSecuritySystem {
 
       // Deterministic security configuration checks (no random vulnerability injection)
       const securityConfig = {
-        sql_injection: !!env.DATABASE_URL, // parameterized queries via Drizzle ORM
+        sql_injection: !!(
+          env.NEON_PRIMARY_URL ||
+          env.NEON_DATABASE_URL ||
+          env.DATABASE_URL
+        ), // parameterized queries via Drizzle ORM
         xss: true, // helmet CSP headers enabled
         csrf: !!env.SESSION_SECRET, // CSRF protection tied to session secret
         auth_bypass: true, // requireAuth middleware on all protected routes

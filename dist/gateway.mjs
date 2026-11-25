@@ -11,13 +11,18 @@ var envSchema = z.object({
   NODE_ENV: z.enum(["development", "production", "test", "staging"]).default("development"),
   PORT: z.coerce.number().min(1).max(65535).default(5e3),
   // ── Database ──────────────────────────────────────────────────────────────
-  // Optional here — the app prefers NEON_DATABASE_URL (see config/defaults.ts).
-  // db.ts enforces that at least one is present at pool-creation time.
+  // Optional here — databaseTarget.ts selects the primary Neon URL first,
+  // followed by the app-specific Neon URL and the generic compatibility URL.
+  // db.ts enforces that a target is configured at pool-creation time.
   DATABASE_URL: z.string().url().startsWith("postgresql://").optional(),
   // ── Session / Auth ────────────────────────────────────────────────────────
   SESSION_SECRET: z.string().min(32),
   // ── Stripe ────────────────────────────────────────────────────────────────
   STRIPE_SECRET_KEY: z.string().min(1).optional(),
+  STRIPE_TEST_SECRET: z.string().min(1).optional(),
+  STRIPE_TEST_CLIENT: z.string().min(1).optional(),
+  STRIPE_PUBLISHABLE_KEY: z.string().min(1).optional(),
+  VITE_STRIPE_PUBLIC_KEY: z.string().min(1).optional(),
   STRIPE_WEBHOOK_SECRET: z.string().startsWith("whsec_").optional(),
   STRIPE_PRICE_ID_PRO_MONTHLY: z.string().optional(),
   STRIPE_PRICE_ID_PRO_ANNUAL: z.string().optional(),
@@ -51,8 +56,9 @@ var envSchema = z.object({
   APP_URL: z.string().optional(),
   DOMAIN: z.string().optional(),
   CORS_ORIGIN: z.string().optional(),
-  // ── Database aliases ──────────────────────────────────────────────────────
-  NEON_DATABASE_URL: z.string().url().optional(),
+  // ── Database URLs ─────────────────────────────────────────────────────────
+  NEON_PRIMARY_URL: z.string().url().startsWith("postgresql://").optional(),
+  NEON_DATABASE_URL: z.string().url().startsWith("postgresql://").optional(),
   // ── Feature flags ─────────────────────────────────────────────────────────
   SKIP_BOOSTERSTATE: z.string().optional(),
   DEPLOYMENT_PHASES: z.string().optional(),
@@ -90,7 +96,7 @@ import { isIP } from "node:net";
 var REDACTED = "[REDACTED]";
 var sensitiveKey = /^(?:.*(?:password|secret|token|apikey|privatekey|authorization|cookie)|.*email(?:address)?|.*username|(?:client|remote|source|user)?ip(?:address)?|.*phone(?:number)?|cardnumber|cvc|cvv|xforwardedfor|xrealip|setcookie)$/i;
 function sanitizeLogText(text) {
-  return text.replace(/\b(?:Bearer|Basic)\s+[A-Za-z0-9+/_.=~:-]+/gi, REDACTED).replace(/((?:password|secret|access[_-]?token|refresh[_-]?token|api[_-]?key)\s*[=:]\s*)[^\s,;&]+/gi, `$1${REDACTED}`).replace(/[A-Z0-9.!#$%&'*+/=?^_`{|}~-]+@[A-Z0-9.-]+\.[A-Z]{2,}/gi, REDACTED).replace(/\b(?:\d{1,3}\.){3}\d{1,3}\b/g, (value) => isIP(value) ? REDACTED : value).replace(
+  return text.replace(/\b(?:Bearer|Basic)\s+[A-Za-z0-9+/_.=~:-]+/gi, REDACTED).replace(/\b(?:sk|rk)_(?:live|test)_[A-Za-z0-9]{8,}\b/gi, REDACTED).replace(/\bwhsec_[A-Za-z0-9]{8,}\b/gi, REDACTED).replace(/((?:password|secret|access[_-]?token|refresh[_-]?token|api[_-]?key)\s*[=:]\s*)[^\s,;&]+/gi, `$1${REDACTED}`).replace(/[A-Z0-9.!#$%&'*+/=?^_`{|}~-]+@[A-Z0-9.-]+\.[A-Z]{2,}/gi, REDACTED).replace(/\b(?:\d{1,3}\.){3}\d{1,3}\b/g, (value) => isIP(value) ? REDACTED : value).replace(
     /(?<![a-zA-Z0-9])(?:[a-fA-F0-9]*:){2,}[a-fA-F0-9:.]*(?:%[a-zA-Z0-9]+)?/g,
     (value) => isIP(value) ? REDACTED : value
   );
@@ -218,6 +224,9 @@ var MIN_PORT = 1;
 var MAX_PORT = 65535;
 var defaultPorts = Object.freeze({
   app: 5e3,
+  dnsAuthority: 53,
+  dnsNodeLocal: 5353,
+  dnsApi: 8080,
   localPdim: 5556,
   diffusionGateway: 8008,
   maxcoreApi: 8090,
@@ -257,6 +266,9 @@ function assertUniquePorts(ports) {
 }
 var runtimePorts = assertUniquePorts({
   app: readPort("PORT", defaultPorts.app),
+  dnsAuthority: readPort("DNS_AUTHORITY_PORT", defaultPorts.dnsAuthority),
+  dnsNodeLocal: readPort("DNS_NODE_LOCAL_PORT", defaultPorts.dnsNodeLocal),
+  dnsApi: readPort("DNS_API_PORT", defaultPorts.dnsApi),
   localPdim: readPort("LOCAL_PDIM_PORT", defaultPorts.localPdim),
   diffusionGateway: readPort(
     "VIDEO_DIFFUSION_PORT",
@@ -277,8 +289,22 @@ var runtimePorts = assertUniquePorts({
   ),
   legacyPythonAi: readPort("PYTHON_AI_PORT", defaultPorts.legacyPythonAi)
 });
+var dnsNodeLocalHealthPort = readPort(
+  "DNS_NODE_LOCAL_HEALTH_PORT",
+  5380
+);
+if (Object.values(runtimePorts).includes(dnsNodeLocalHealthPort)) {
+  throw new Error(
+    `[Ports] DNS_NODE_LOCAL_HEALTH_PORT collides with configured service port ${dnsNodeLocalHealthPort}`
+  );
+}
 function loopbackUrl(port) {
   return `http://127.0.0.1:${port}`;
+}
+
+// server/config/databaseTarget.ts
+function selectApplicationDatabaseUrl(environment) {
+  return environment.NEON_PRIMARY_URL?.trim() || environment.NEON_DATABASE_URL?.trim() || environment.DATABASE_URL?.trim() || "";
 }
 
 // server/config/defaults.ts
@@ -312,7 +338,7 @@ var config = {
   isReplitWorkspace,
   port: runtimePorts.app,
   database: {
-    url: env.NEON_DATABASE_URL || env.DATABASE_URL || "",
+    url: selectApplicationDatabaseUrl(env),
     // In production each worker creates its own pool.  With the default of 20
     // connections × N workers we easily exceed Neon's connection limit (53100).
     // Scale the per-worker pool so all workers combined stay ≤ 15 connections:
@@ -424,6 +450,32 @@ var config = {
   }
 };
 
+// shared/stripeCredentials.ts
+function configured(value) {
+  return typeof value === "string" && value.length > 0 && value === value.trim() && !/[\r\n]/.test(value);
+}
+function selectStripeSecretKey(bindings, production) {
+  if (production) {
+    return configured(bindings.STRIPE_SECRET_KEY) ? bindings.STRIPE_SECRET_KEY : void 0;
+  }
+  if (configured(bindings.STRIPE_TEST_SECRET)) return bindings.STRIPE_TEST_SECRET;
+  if (configured(bindings.TESTING_STRIPE_SECRET_KEY)) return bindings.TESTING_STRIPE_SECRET_KEY;
+  if (bindings.NODE_ENV === "test" && configured(bindings.STRIPE_SECRET_KEY)) {
+    return bindings.STRIPE_SECRET_KEY;
+  }
+  return void 0;
+}
+function selectStripePublishableKey(bindings, production) {
+  if (production) {
+    if (configured(bindings.STRIPE_PUBLISHABLE_KEY)) return bindings.STRIPE_PUBLISHABLE_KEY;
+    return configured(bindings.VITE_STRIPE_PUBLIC_KEY) ? bindings.VITE_STRIPE_PUBLIC_KEY : void 0;
+  }
+  return configured(bindings.STRIPE_TEST_CLIENT) ? bindings.STRIPE_TEST_CLIENT : void 0;
+}
+
+// server/lib/envHelpers.ts
+var isProductionEnv = () => process.env.NODE_ENV === "production" || !!process.env.REPLIT_DEPLOYMENT;
+
 // server/config/index.ts
 import { createHmac, randomBytes } from "node:crypto";
 var p = process.env;
@@ -440,8 +492,9 @@ var config2 = {
   // Core
   port: runtimePorts.app,
   nodeEnv: p.NODE_ENV || "development",
-  // Database — prefer Neon URL, fall back to DATABASE_URL
-  dbUrl: p.NEON_DATABASE_URL || p.NEON_PRIMARY_URL || p.DATABASE_URL || "",
+  // Database — use the primary Neon URL first; retain app-specific and generic
+  // URLs as fallbacks for older environments.
+  dbUrl: selectApplicationDatabaseUrl(p),
   // MaxCore AI — runs as a LOCAL supervised subsystem by default (the imported
   // repo at external/maxcore). Set MAXCORE_LOCAL=0 to point back at a remote
   // MaxCore deployment via MAXCORE_URL / AI_SERVER_URL.
@@ -460,9 +513,16 @@ var config2 = {
   // DNS_NODE_LOCAL=1 for internal verification only.
   dnsNodeLocal: {
     enabled: p.DNS_NODE_LOCAL === "1",
-    port: Number(p.DNS_NODE_LOCAL_PORT) || 5353,
-    healthPort: Number(p.DNS_NODE_LOCAL_HEALTH_PORT) || 5380,
+    port: runtimePorts.dnsNodeLocal,
+    healthPort: dnsNodeLocalHealthPort,
     domain: p.DNS_NODE_LOCAL_DOMAIN || "max-booster.com"
+  },
+  // Internal DNS management API. It is supervised by this app, bound to
+  // loopback, and isolated from existing application DNS tables.
+  dnsApi: {
+    host: "127.0.0.1",
+    port: runtimePorts.dnsApi,
+    schema: "dns_os"
   },
   // Keep generation and administrative credentials distinct. A missing
   // generation key may fall back to the admin key for backwards-compatible
@@ -484,9 +544,9 @@ var config2 = {
   baseDomain: p.BASE_DOMAIN || "",
   corsOrigin: p.CORS_ORIGIN || "",
   // Stripe
-  stripeSecretKey: p.STRIPE_SECRET_KEY || "",
+  stripeSecretKey: selectStripeSecretKey(p, isProductionEnv()) || "",
   stripeWebhookSecret: p.STRIPE_WEBHOOK_SECRET || "",
-  stripePublishableKey: p.STRIPE_PUBLISHABLE_KEY || p.VITE_STRIPE_PUBLIC_KEY || "",
+  stripePublishableKey: selectStripePublishableKey(p, isProductionEnv()) || "",
   // Email
   sendgridApiKey: p.SENDGRID_API_KEY || "",
   sendgridFrom: p.SENDGRID_FROM_EMAIL || "",

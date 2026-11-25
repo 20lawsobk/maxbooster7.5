@@ -1,0 +1,155 @@
+{
+  "recordedAt": "2026-10-27T22:15:34.383Z",
+  "node": "v22.23.3",
+  "advisory": "GHSA-6pq8-jhm2-2vcw",
+  "scope": "Installed dependency PoC only; not evidence that an existing Max Booster endpoint uses comma serialization or crashes.",
+  "results": [
+    {
+      "scope": ".",
+      "version": "6.16.0",
+      "qsPath": "/workspace/maxbooster7.5/node_modules/qs/lib/index.js",
+      "cases": [
+        {
+          "source": "json",
+          "encodeValuesOnly": false,
+          "threw": true,
+          "errorType": "TypeError",
+          "message": "Cannot convert object to primitive value"
+        },
+        {
+          "source": "json",
+          "encodeValuesOnly": true,
+          "threw": true,
+          "errorType": "TypeError",
+          "message": "Cannot convert object to primitive value"
+        },
+        {
+          "source": "allowPrototypes",
+          "encodeValuesOnly": false,
+          "threw": true,
+          "errorType": "TypeError",
+          "message": "Cannot convert object to primitive value"
+        },
+        {
+          "source": "allowPrototypes",
+          "encodeValuesOnly": true,
+          "threw": true,
+          "errorType": "TypeError",
+          "message": "Cannot convert object to primitive value"
+        },
+        {
+          "source": "plainObjects",
+          "encodeValuesOnly": false,
+          "threw": true,
+          "errorType": "TypeError",
+          "message": "Cannot convert object to primitive value"
+        },
+        {
+          "source": "plainObjects",
+          "encodeValuesOnly": true,
+          "threw": true,
+          "errorType": "TypeError",
+          "message": "Cannot convert object to primitive value"
+        }
+      ]
+    },
+    {
+      "scope": "external/maxcore/artifacts/api-server",
+      "version": "6.16.0",
+      "qsPath": "/workspace/maxbooster7.5/external/maxcore/node_modules/.pnpm/qs@6.16.0/node_modules/qs/lib/index.js",
+      "cases": [
+        {
+          "source": "json",
+          "encodeValuesOnly": false,
+          "threw": true,
+          "errorType": "TypeError",
+          "message": "Cannot convert object to primitive value"
+        },
+        {
+          "source": "json",
+          "encodeValuesOnly": true,
+          "threw": true,
+          "errorType": "TypeError",
+          "message": "Cannot convert object to primitive value"
+        },
+        {
+          "source": "allowPrototypes",
+          "encodeValuesOnly": false,
+          "threw": true,
+          "errorType": "TypeError",
+          "message": "Cannot convert object to primitive value"
+        },
+        {
+          "source": "allowPrototypes",
+          "encodeValuesOnly": true,
+          "threw": true,
+          "errorType": "TypeError",
+          "message": "Cannot convert object to primitive value"
+        },
+        {
+          "source": "plainObjects",
+          "encodeValuesOnly": false,
+          "threw": true,
+          "errorType": "TypeError",
+          "message": "Cannot convert object to primitive value"
+        },
+        {
+          "source": "plainObjects",
+          "encodeValuesOnly": true,
+          "threw": true,
+          "errorType": "TypeError",
+          "message": "Cannot convert object to primitive value"
+        }
+      ]
+    },
+    {
+      "scope": "external/pdim/artifacts/api-server",
+      "version": "6.16.0",
+      "qsPath": "/workspace/maxbooster7.5/external/pdim/node_modules/.pnpm/qs@6.16.0/node_modules/qs/lib/index.js",
+      "cases": [
+        {
+          "source": "json",
+          "encodeValuesOnly": false,
+          "threw": true,
+          "errorType": "TypeError",
+          "message": "Cannot convert object to primitive value"
+        },
+        {
+          "source": "json",
+          "encodeValuesOnly": true,
+          "threw": true,
+          "errorType": "TypeError",
+          "message": "Cannot convert object to primitive value"
+        },
+        {
+          "source": "allowPrototypes",
+          "encodeValuesOnly": false,
+          "threw": true,
+          "errorType": "TypeError",
+          "message": "Cannot convert object to primitive value"
+        },
+        {
+          "source": "allowPrototypes",
+          "encodeValuesOnly": true,
+          "threw": true,
+          "errorType": "TypeError",
+          "message": "Cannot convert object to primitive value"
+        },
+        {
+          "source": "plainObjects",
+          "encodeValuesOnly": false,
+          "threw": true,
+          "errorType": "TypeError",
+          "message": "Cannot convert object to primitive value"
+        },
+        {
+          "source": "plainObjects",
+          "encodeValuesOnly": true,
+          "threw": true,
+          "errorType": "TypeError",
+          "message": "Cannot convert object to primitive value"
+        }
+      ]
+    }
+  ]
+}

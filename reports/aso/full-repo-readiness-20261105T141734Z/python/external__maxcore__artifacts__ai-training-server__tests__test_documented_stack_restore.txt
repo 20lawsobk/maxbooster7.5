@@ -1,0 +1,949 @@
+..FFF............F.F                                                     [100%]
+=================================== FAILURES ===================================
+__ test_literal_direction_composes_real_model_without_claiming_raw_provenance __
+
+    """
+    Contains the core of NumPy: ndarray, ufuncs, dtypes, etc.
+    
+    Please note that this module is private.  All functions and objects
+    are available in the main ``numpy`` namespace - use that instead.
+    
+    """
+    
+    import os
+    
+    from numpy.version import version as __version__
+    
+    # disables OpenBLAS affinity setting of the main thread that limits
+    # python threads or processes to one core
+    env_added = []
+    for envkey in ['OPENBLAS_MAIN_FREE']:
+        if envkey not in os.environ:
+            # Note: using `putenv` (and `unsetenv` further down) instead of updating
+            # `os.environ` on purpose to avoid a race condition, see gh-30627.
+            os.putenv(envkey, '1')
+            env_added.append(envkey)
+    
+    try:
+>       from . import multiarray
+
+../../../../.pythonlibs/lib/python3.12/site-packages/numpy/_core/__init__.py:24: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+    """
+    Create the numpy._core.multiarray namespace for backward compatibility.
+    In v1.16 the multiarray and umath c-extension modules were merged into
+    a single _multiarray_umath extension module. So we replicate the old
+    namespace by importing from the extension module.
+    
+    """
+    
+    import functools
+    
+>   from . import _multiarray_umath, overrides
+E   ImportError: libstdc++.so.6: cannot open shared object file: No such file or directory
+
+../../../../.pythonlibs/lib/python3.12/site-packages/numpy/_core/multiarray.py:11: ImportError
+
+The above exception was the direct cause of the following exception:
+
+    def test_literal_direction_composes_real_model_without_claiming_raw_provenance():
+>       from ai_model.agents.script_agent import _apply_direction, ScriptResponse
+
+tests/test_documented_stack_restore.py:73: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+ai_model/agents/__init__.py:2: in <module>
+    from .script_agent import ScriptAgent, ScriptRequest, ScriptResponse  # noqa: F401
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+ai_model/agents/script_agent.py:9: in <module>
+    from ai_model.generation.awareness import generation_guard
+ai_model/generation/__init__.py:18: in <module>
+    from .technique import TechniqueProfile, extract_technique
+ai_model/generation/technique.py:31: in <module>
+    import numpy as np
+../../../../.pythonlibs/lib/python3.12/site-packages/numpy/__init__.py:112: in <module>
+    from numpy.__config__ import show_config
+../../../../.pythonlibs/lib/python3.12/site-packages/numpy/__config__.py:4: in <module>
+    from numpy._core._multiarray_umath import (
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+    """
+    Contains the core of NumPy: ndarray, ufuncs, dtypes, etc.
+    
+    Please note that this module is private.  All functions and objects
+    are available in the main ``numpy`` namespace - use that instead.
+    
+    """
+    
+    import os
+    
+    from numpy.version import version as __version__
+    
+    # disables OpenBLAS affinity setting of the main thread that limits
+    # python threads or processes to one core
+    env_added = []
+    for envkey in ['OPENBLAS_MAIN_FREE']:
+        if envkey not in os.environ:
+            # Note: using `putenv` (and `unsetenv` further down) instead of updating
+            # `os.environ` on purpose to avoid a race condition, see gh-30627.
+            os.putenv(envkey, '1')
+            env_added.append(envkey)
+    
+    try:
+        from . import multiarray
+    except ImportError as exc:
+        import sys
+    
+        # Bypass for the module re-initialization opt-out
+        if exc.msg == "cannot load module more than once per process":
+            raise
+    
+        # Basically always, the problem should be that the C module is wrong/missing...
+        if (
+            isinstance(exc, ModuleNotFoundError)
+            and exc.name == "numpy._core._multiarray_umath"
+        ):
+            import sys
+            candidates = []
+            for path in __path__:
+                candidates.extend(
+                    f for f in os.listdir(path) if f.startswith("_multiarray_umath"))
+            if len(candidates) == 0:
+                bad_c_module_info = (
+                    "We found no compiled module, did NumPy build successfully?\n")
+            else:
+                candidate_str = '\n  * '.join(candidates)
+                # cache_tag is documented to be possibly None, so just use name if it is
+                # this guesses at cache_tag being the same as the extension module scheme
+                tag = sys.implementation.cache_tag or sys.implementation.name
+                bad_c_module_info = (
+                    f"The following compiled module files exist, but seem incompatible\n"
+                    f"with with either python '{tag}' or the "
+                    f"platform '{sys.platform}':\n\n  * {candidate_str}\n"
+                )
+        else:
+            bad_c_module_info = ""
+    
+        major, minor, *_ = sys.version_info
+        msg = f"""
+    
+    IMPORTANT: PLEASE READ THIS FOR ADVICE ON HOW TO SOLVE THIS ISSUE!
+    
+    Importing the numpy C-extensions failed. This error can happen for
+    many reasons, often due to issues with your setup or how NumPy was
+    installed.
+    {bad_c_module_info}
+    We have compiled some common reasons and troubleshooting tips at:
+    
+        https://numpy.org/devdocs/user/troubleshooting-importerror.html
+    
+    Please note and check the following:
+    
+      * The Python version is: Python {major}.{minor} from "{sys.executable}"
+      * The NumPy version is: "{__version__}"
+    
+    and make sure that they are the versions you expect.
+    
+    Please carefully study the information and documentation linked above.
+    This is unlikely to be a NumPy issue but will be caused by a bad install
+    or environment on your machine.
+    
+    Original error was: {exc}
+    """
+    
+>       raise ImportError(msg) from exc
+E       ImportError: 
+E       
+E       IMPORTANT: PLEASE READ THIS FOR ADVICE ON HOW TO SOLVE THIS ISSUE!
+E       
+E       Importing the numpy C-extensions failed. This error can happen for
+E       many reasons, often due to issues with your setup or how NumPy was
+E       installed.
+E       
+E       We have compiled some common reasons and troubleshooting tips at:
+E       
+E           https://numpy.org/devdocs/user/troubleshooting-importerror.html
+E       
+E       Please note and check the following:
+E       
+E         * The Python version is: Python 3.12 from "/nix/store/h097imm3w6dpx10qynrd2sz9fks2wbq8-python3-3.12.11/bin/python3"
+E         * The NumPy version is: "2.4.4"
+E       
+E       and make sure that they are the versions you expect.
+E       
+E       Please carefully study the information and documentation linked above.
+E       This is unlikely to be a NumPy issue but will be caused by a bad install
+E       or environment on your machine.
+E       
+E       Original error was: libstdc++.so.6: cannot open shared object file: No such file or directory
+
+../../../../.pythonlibs/lib/python3.12/site-packages/numpy/_core/__init__.py:85: ImportError
+_______ test_awareness_prompt_does_not_invent_checkpoint_special_tokens ________
+
+    """
+    Contains the core of NumPy: ndarray, ufuncs, dtypes, etc.
+    
+    Please note that this module is private.  All functions and objects
+    are available in the main ``numpy`` namespace - use that instead.
+    
+    """
+    
+    import os
+    
+    from numpy.version import version as __version__
+    
+    # disables OpenBLAS affinity setting of the main thread that limits
+    # python threads or processes to one core
+    env_added = []
+    for envkey in ['OPENBLAS_MAIN_FREE']:
+        if envkey not in os.environ:
+            # Note: using `putenv` (and `unsetenv` further down) instead of updating
+            # `os.environ` on purpose to avoid a race condition, see gh-30627.
+            os.putenv(envkey, '1')
+            env_added.append(envkey)
+    
+    try:
+>       from . import multiarray
+
+../../../../.pythonlibs/lib/python3.12/site-packages/numpy/_core/__init__.py:24: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+    """
+    Create the numpy._core.multiarray namespace for backward compatibility.
+    In v1.16 the multiarray and umath c-extension modules were merged into
+    a single _multiarray_umath extension module. So we replicate the old
+    namespace by importing from the extension module.
+    
+    """
+    
+    import functools
+    
+>   from . import _multiarray_umath, overrides
+E   ImportError: libstdc++.so.6: cannot open shared object file: No such file or directory
+
+../../../../.pythonlibs/lib/python3.12/site-packages/numpy/_core/multiarray.py:11: ImportError
+
+The above exception was the direct cause of the following exception:
+
+    def test_awareness_prompt_does_not_invent_checkpoint_special_tokens():
+>       from ai_model.agents.script_agent import _format_awareness_prefix
+
+tests/test_documented_stack_restore.py:88: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+ai_model/agents/__init__.py:2: in <module>
+    from .script_agent import ScriptAgent, ScriptRequest, ScriptResponse  # noqa: F401
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+ai_model/agents/script_agent.py:9: in <module>
+    from ai_model.generation.awareness import generation_guard
+ai_model/generation/__init__.py:18: in <module>
+    from .technique import TechniqueProfile, extract_technique
+ai_model/generation/technique.py:31: in <module>
+    import numpy as np
+../../../../.pythonlibs/lib/python3.12/site-packages/numpy/__init__.py:112: in <module>
+    from numpy.__config__ import show_config
+../../../../.pythonlibs/lib/python3.12/site-packages/numpy/__config__.py:4: in <module>
+    from numpy._core._multiarray_umath import (
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+    """
+    Contains the core of NumPy: ndarray, ufuncs, dtypes, etc.
+    
+    Please note that this module is private.  All functions and objects
+    are available in the main ``numpy`` namespace - use that instead.
+    
+    """
+    
+    import os
+    
+    from numpy.version import version as __version__
+    
+    # disables OpenBLAS affinity setting of the main thread that limits
+    # python threads or processes to one core
+    env_added = []
+    for envkey in ['OPENBLAS_MAIN_FREE']:
+        if envkey not in os.environ:
+            # Note: using `putenv` (and `unsetenv` further down) instead of updating
+            # `os.environ` on purpose to avoid a race condition, see gh-30627.
+            os.putenv(envkey, '1')
+            env_added.append(envkey)
+    
+    try:
+        from . import multiarray
+    except ImportError as exc:
+        import sys
+    
+        # Bypass for the module re-initialization opt-out
+        if exc.msg == "cannot load module more than once per process":
+            raise
+    
+        # Basically always, the problem should be that the C module is wrong/missing...
+        if (
+            isinstance(exc, ModuleNotFoundError)
+            and exc.name == "numpy._core._multiarray_umath"
+        ):
+            import sys
+            candidates = []
+            for path in __path__:
+                candidates.extend(
+                    f for f in os.listdir(path) if f.startswith("_multiarray_umath"))
+            if len(candidates) == 0:
+                bad_c_module_info = (
+                    "We found no compiled module, did NumPy build successfully?\n")
+            else:
+                candidate_str = '\n  * '.join(candidates)
+                # cache_tag is documented to be possibly None, so just use name if it is
+                # this guesses at cache_tag being the same as the extension module scheme
+                tag = sys.implementation.cache_tag or sys.implementation.name
+                bad_c_module_info = (
+                    f"The following compiled module files exist, but seem incompatible\n"
+                    f"with with either python '{tag}' or the "
+                    f"platform '{sys.platform}':\n\n  * {candidate_str}\n"
+                )
+        else:
+            bad_c_module_info = ""
+    
+        major, minor, *_ = sys.version_info
+        msg = f"""
+    
+    IMPORTANT: PLEASE READ THIS FOR ADVICE ON HOW TO SOLVE THIS ISSUE!
+    
+    Importing the numpy C-extensions failed. This error can happen for
+    many reasons, often due to issues with your setup or how NumPy was
+    installed.
+    {bad_c_module_info}
+    We have compiled some common reasons and troubleshooting tips at:
+    
+        https://numpy.org/devdocs/user/troubleshooting-importerror.html
+    
+    Please note and check the following:
+    
+      * The Python version is: Python {major}.{minor} from "{sys.executable}"
+      * The NumPy version is: "{__version__}"
+    
+    and make sure that they are the versions you expect.
+    
+    Please carefully study the information and documentation linked above.
+    This is unlikely to be a NumPy issue but will be caused by a bad install
+    or environment on your machine.
+    
+    Original error was: {exc}
+    """
+    
+>       raise ImportError(msg) from exc
+E       ImportError: 
+E       
+E       IMPORTANT: PLEASE READ THIS FOR ADVICE ON HOW TO SOLVE THIS ISSUE!
+E       
+E       Importing the numpy C-extensions failed. This error can happen for
+E       many reasons, often due to issues with your setup or how NumPy was
+E       installed.
+E       
+E       We have compiled some common reasons and troubleshooting tips at:
+E       
+E           https://numpy.org/devdocs/user/troubleshooting-importerror.html
+E       
+E       Please note and check the following:
+E       
+E         * The Python version is: Python 3.12 from "/nix/store/h097imm3w6dpx10qynrd2sz9fks2wbq8-python3-3.12.11/bin/python3"
+E         * The NumPy version is: "2.4.4"
+E       
+E       and make sure that they are the versions you expect.
+E       
+E       Please carefully study the information and documentation linked above.
+E       This is unlikely to be a NumPy issue but will be caused by a bad install
+E       or environment on your machine.
+E       
+E       Original error was: libstdc++.so.6: cannot open shared object file: No such file or directory
+
+../../../../.pythonlibs/lib/python3.12/site-packages/numpy/_core/__init__.py:85: ImportError
+___ test_prompt_keeps_user_words_and_punctuation_without_fabricated_suffixes ___
+
+    """
+    Contains the core of NumPy: ndarray, ufuncs, dtypes, etc.
+    
+    Please note that this module is private.  All functions and objects
+    are available in the main ``numpy`` namespace - use that instead.
+    
+    """
+    
+    import os
+    
+    from numpy.version import version as __version__
+    
+    # disables OpenBLAS affinity setting of the main thread that limits
+    # python threads or processes to one core
+    env_added = []
+    for envkey in ['OPENBLAS_MAIN_FREE']:
+        if envkey not in os.environ:
+            # Note: using `putenv` (and `unsetenv` further down) instead of updating
+            # `os.environ` on purpose to avoid a race condition, see gh-30627.
+            os.putenv(envkey, '1')
+            env_added.append(envkey)
+    
+    try:
+>       from . import multiarray
+
+../../../../.pythonlibs/lib/python3.12/site-packages/numpy/_core/__init__.py:24: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+    """
+    Create the numpy._core.multiarray namespace for backward compatibility.
+    In v1.16 the multiarray and umath c-extension modules were merged into
+    a single _multiarray_umath extension module. So we replicate the old
+    namespace by importing from the extension module.
+    
+    """
+    
+    import functools
+    
+>   from . import _multiarray_umath, overrides
+E   ImportError: libstdc++.so.6: cannot open shared object file: No such file or directory
+
+../../../../.pythonlibs/lib/python3.12/site-packages/numpy/_core/multiarray.py:11: ImportError
+
+The above exception was the direct cause of the following exception:
+
+    def test_prompt_keeps_user_words_and_punctuation_without_fabricated_suffixes():
+>       from ai_model.agents.script_agent import ScriptRequest, _script_prompt
+
+tests/test_documented_stack_restore.py:97: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+ai_model/agents/__init__.py:2: in <module>
+    from .script_agent import ScriptAgent, ScriptRequest, ScriptResponse  # noqa: F401
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+ai_model/agents/script_agent.py:9: in <module>
+    from ai_model.generation.awareness import generation_guard
+ai_model/generation/__init__.py:18: in <module>
+    from .technique import TechniqueProfile, extract_technique
+ai_model/generation/technique.py:31: in <module>
+    import numpy as np
+../../../../.pythonlibs/lib/python3.12/site-packages/numpy/__init__.py:112: in <module>
+    from numpy.__config__ import show_config
+../../../../.pythonlibs/lib/python3.12/site-packages/numpy/__config__.py:4: in <module>
+    from numpy._core._multiarray_umath import (
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+    """
+    Contains the core of NumPy: ndarray, ufuncs, dtypes, etc.
+    
+    Please note that this module is private.  All functions and objects
+    are available in the main ``numpy`` namespace - use that instead.
+    
+    """
+    
+    import os
+    
+    from numpy.version import version as __version__
+    
+    # disables OpenBLAS affinity setting of the main thread that limits
+    # python threads or processes to one core
+    env_added = []
+    for envkey in ['OPENBLAS_MAIN_FREE']:
+        if envkey not in os.environ:
+            # Note: using `putenv` (and `unsetenv` further down) instead of updating
+            # `os.environ` on purpose to avoid a race condition, see gh-30627.
+            os.putenv(envkey, '1')
+            env_added.append(envkey)
+    
+    try:
+        from . import multiarray
+    except ImportError as exc:
+        import sys
+    
+        # Bypass for the module re-initialization opt-out
+        if exc.msg == "cannot load module more than once per process":
+            raise
+    
+        # Basically always, the problem should be that the C module is wrong/missing...
+        if (
+            isinstance(exc, ModuleNotFoundError)
+            and exc.name == "numpy._core._multiarray_umath"
+        ):
+            import sys
+            candidates = []
+            for path in __path__:
+                candidates.extend(
+                    f for f in os.listdir(path) if f.startswith("_multiarray_umath"))
+            if len(candidates) == 0:
+                bad_c_module_info = (
+                    "We found no compiled module, did NumPy build successfully?\n")
+            else:
+                candidate_str = '\n  * '.join(candidates)
+                # cache_tag is documented to be possibly None, so just use name if it is
+                # this guesses at cache_tag being the same as the extension module scheme
+                tag = sys.implementation.cache_tag or sys.implementation.name
+                bad_c_module_info = (
+                    f"The following compiled module files exist, but seem incompatible\n"
+                    f"with with either python '{tag}' or the "
+                    f"platform '{sys.platform}':\n\n  * {candidate_str}\n"
+                )
+        else:
+            bad_c_module_info = ""
+    
+        major, minor, *_ = sys.version_info
+        msg = f"""
+    
+    IMPORTANT: PLEASE READ THIS FOR ADVICE ON HOW TO SOLVE THIS ISSUE!
+    
+    Importing the numpy C-extensions failed. This error can happen for
+    many reasons, often due to issues with your setup or how NumPy was
+    installed.
+    {bad_c_module_info}
+    We have compiled some common reasons and troubleshooting tips at:
+    
+        https://numpy.org/devdocs/user/troubleshooting-importerror.html
+    
+    Please note and check the following:
+    
+      * The Python version is: Python {major}.{minor} from "{sys.executable}"
+      * The NumPy version is: "{__version__}"
+    
+    and make sure that they are the versions you expect.
+    
+    Please carefully study the information and documentation linked above.
+    This is unlikely to be a NumPy issue but will be caused by a bad install
+    or environment on your machine.
+    
+    Original error was: {exc}
+    """
+    
+>       raise ImportError(msg) from exc
+E       ImportError: 
+E       
+E       IMPORTANT: PLEASE READ THIS FOR ADVICE ON HOW TO SOLVE THIS ISSUE!
+E       
+E       Importing the numpy C-extensions failed. This error can happen for
+E       many reasons, often due to issues with your setup or how NumPy was
+E       installed.
+E       
+E       We have compiled some common reasons and troubleshooting tips at:
+E       
+E           https://numpy.org/devdocs/user/troubleshooting-importerror.html
+E       
+E       Please note and check the following:
+E       
+E         * The Python version is: Python 3.12 from "/nix/store/h097imm3w6dpx10qynrd2sz9fks2wbq8-python3-3.12.11/bin/python3"
+E         * The NumPy version is: "2.4.4"
+E       
+E       and make sure that they are the versions you expect.
+E       
+E       Please carefully study the information and documentation linked above.
+E       This is unlikely to be a NumPy issue but will be caused by a bad install
+E       or environment on your machine.
+E       
+E       Original error was: libstdc++.so.6: cannot open shared object file: No such file or directory
+
+../../../../.pythonlibs/lib/python3.12/site-packages/numpy/_core/__init__.py:85: ImportError
+_________ test_model_failure_never_runs_awareness_template_substitute __________
+
+    """
+    Contains the core of NumPy: ndarray, ufuncs, dtypes, etc.
+    
+    Please note that this module is private.  All functions and objects
+    are available in the main ``numpy`` namespace - use that instead.
+    
+    """
+    
+    import os
+    
+    from numpy.version import version as __version__
+    
+    # disables OpenBLAS affinity setting of the main thread that limits
+    # python threads or processes to one core
+    env_added = []
+    for envkey in ['OPENBLAS_MAIN_FREE']:
+        if envkey not in os.environ:
+            # Note: using `putenv` (and `unsetenv` further down) instead of updating
+            # `os.environ` on purpose to avoid a race condition, see gh-30627.
+            os.putenv(envkey, '1')
+            env_added.append(envkey)
+    
+    try:
+>       from . import multiarray
+
+../../../../.pythonlibs/lib/python3.12/site-packages/numpy/_core/__init__.py:24: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+    """
+    Create the numpy._core.multiarray namespace for backward compatibility.
+    In v1.16 the multiarray and umath c-extension modules were merged into
+    a single _multiarray_umath extension module. So we replicate the old
+    namespace by importing from the extension module.
+    
+    """
+    
+    import functools
+    
+>   from . import _multiarray_umath, overrides
+E   ImportError: libstdc++.so.6: cannot open shared object file: No such file or directory
+
+../../../../.pythonlibs/lib/python3.12/site-packages/numpy/_core/multiarray.py:11: ImportError
+
+The above exception was the direct cause of the following exception:
+
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x7f156326af00>
+
+    def test_model_failure_never_runs_awareness_template_substitute(monkeypatch):
+>       from ai_model.agents.script_agent import ScriptAgent, ScriptRequest
+
+tests/test_documented_stack_restore.py:262: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+ai_model/agents/__init__.py:2: in <module>
+    from .script_agent import ScriptAgent, ScriptRequest, ScriptResponse  # noqa: F401
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+ai_model/agents/script_agent.py:9: in <module>
+    from ai_model.generation.awareness import generation_guard
+ai_model/generation/__init__.py:18: in <module>
+    from .technique import TechniqueProfile, extract_technique
+ai_model/generation/technique.py:31: in <module>
+    import numpy as np
+../../../../.pythonlibs/lib/python3.12/site-packages/numpy/__init__.py:112: in <module>
+    from numpy.__config__ import show_config
+../../../../.pythonlibs/lib/python3.12/site-packages/numpy/__config__.py:4: in <module>
+    from numpy._core._multiarray_umath import (
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+    """
+    Contains the core of NumPy: ndarray, ufuncs, dtypes, etc.
+    
+    Please note that this module is private.  All functions and objects
+    are available in the main ``numpy`` namespace - use that instead.
+    
+    """
+    
+    import os
+    
+    from numpy.version import version as __version__
+    
+    # disables OpenBLAS affinity setting of the main thread that limits
+    # python threads or processes to one core
+    env_added = []
+    for envkey in ['OPENBLAS_MAIN_FREE']:
+        if envkey not in os.environ:
+            # Note: using `putenv` (and `unsetenv` further down) instead of updating
+            # `os.environ` on purpose to avoid a race condition, see gh-30627.
+            os.putenv(envkey, '1')
+            env_added.append(envkey)
+    
+    try:
+        from . import multiarray
+    except ImportError as exc:
+        import sys
+    
+        # Bypass for the module re-initialization opt-out
+        if exc.msg == "cannot load module more than once per process":
+            raise
+    
+        # Basically always, the problem should be that the C module is wrong/missing...
+        if (
+            isinstance(exc, ModuleNotFoundError)
+            and exc.name == "numpy._core._multiarray_umath"
+        ):
+            import sys
+            candidates = []
+            for path in __path__:
+                candidates.extend(
+                    f for f in os.listdir(path) if f.startswith("_multiarray_umath"))
+            if len(candidates) == 0:
+                bad_c_module_info = (
+                    "We found no compiled module, did NumPy build successfully?\n")
+            else:
+                candidate_str = '\n  * '.join(candidates)
+                # cache_tag is documented to be possibly None, so just use name if it is
+                # this guesses at cache_tag being the same as the extension module scheme
+                tag = sys.implementation.cache_tag or sys.implementation.name
+                bad_c_module_info = (
+                    f"The following compiled module files exist, but seem incompatible\n"
+                    f"with with either python '{tag}' or the "
+                    f"platform '{sys.platform}':\n\n  * {candidate_str}\n"
+                )
+        else:
+            bad_c_module_info = ""
+    
+        major, minor, *_ = sys.version_info
+        msg = f"""
+    
+    IMPORTANT: PLEASE READ THIS FOR ADVICE ON HOW TO SOLVE THIS ISSUE!
+    
+    Importing the numpy C-extensions failed. This error can happen for
+    many reasons, often due to issues with your setup or how NumPy was
+    installed.
+    {bad_c_module_info}
+    We have compiled some common reasons and troubleshooting tips at:
+    
+        https://numpy.org/devdocs/user/troubleshooting-importerror.html
+    
+    Please note and check the following:
+    
+      * The Python version is: Python {major}.{minor} from "{sys.executable}"
+      * The NumPy version is: "{__version__}"
+    
+    and make sure that they are the versions you expect.
+    
+    Please carefully study the information and documentation linked above.
+    This is unlikely to be a NumPy issue but will be caused by a bad install
+    or environment on your machine.
+    
+    Original error was: {exc}
+    """
+    
+>       raise ImportError(msg) from exc
+E       ImportError: 
+E       
+E       IMPORTANT: PLEASE READ THIS FOR ADVICE ON HOW TO SOLVE THIS ISSUE!
+E       
+E       Importing the numpy C-extensions failed. This error can happen for
+E       many reasons, often due to issues with your setup or how NumPy was
+E       installed.
+E       
+E       We have compiled some common reasons and troubleshooting tips at:
+E       
+E           https://numpy.org/devdocs/user/troubleshooting-importerror.html
+E       
+E       Please note and check the following:
+E       
+E         * The Python version is: Python 3.12 from "/nix/store/h097imm3w6dpx10qynrd2sz9fks2wbq8-python3-3.12.11/bin/python3"
+E         * The NumPy version is: "2.4.4"
+E       
+E       and make sure that they are the versions you expect.
+E       
+E       Please carefully study the information and documentation linked above.
+E       This is unlikely to be a NumPy issue but will be caused by a bad install
+E       or environment on your machine.
+E       
+E       Original error was: libstdc++.so.6: cannot open shared object file: No such file or directory
+
+../../../../.pythonlibs/lib/python3.12/site-packages/numpy/_core/__init__.py:85: ImportError
+_________________ test_render_worker_owns_gpu_until_it_returns _________________
+
+    """
+    Contains the core of NumPy: ndarray, ufuncs, dtypes, etc.
+    
+    Please note that this module is private.  All functions and objects
+    are available in the main ``numpy`` namespace - use that instead.
+    
+    """
+    
+    import os
+    
+    from numpy.version import version as __version__
+    
+    # disables OpenBLAS affinity setting of the main thread that limits
+    # python threads or processes to one core
+    env_added = []
+    for envkey in ['OPENBLAS_MAIN_FREE']:
+        if envkey not in os.environ:
+            # Note: using `putenv` (and `unsetenv` further down) instead of updating
+            # `os.environ` on purpose to avoid a race condition, see gh-30627.
+            os.putenv(envkey, '1')
+            env_added.append(envkey)
+    
+    try:
+>       from . import multiarray
+
+../../../../.pythonlibs/lib/python3.12/site-packages/numpy/_core/__init__.py:24: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+    """
+    Create the numpy._core.multiarray namespace for backward compatibility.
+    In v1.16 the multiarray and umath c-extension modules were merged into
+    a single _multiarray_umath extension module. So we replicate the old
+    namespace by importing from the extension module.
+    
+    """
+    
+    import functools
+    
+>   from . import _multiarray_umath, overrides
+E   ImportError: libstdc++.so.6: cannot open shared object file: No such file or directory
+
+../../../../.pythonlibs/lib/python3.12/site-packages/numpy/_core/multiarray.py:11: ImportError
+
+The above exception was the direct cause of the following exception:
+
+job_id = 'job-1'
+worker = <function test_render_worker_owns_gpu_until_it_returns.<locals>.<lambda> at 0x7f15625e5f80>
+
+    def _run_gpu_job(job_id: str, worker) -> None:
+        """Own a render GPU in the worker, never in the submitting HTTP lifetime."""
+        try:
+            from contextlib import ExitStack
+            from dataclasses import replace
+            from ai_model.awareness import Snapshot, bind, AwarenessUnavailable
+>           from ai_model.generation.plan import active_plan, GenerationPlan
+
+server.py:7614: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+ai_model/generation/__init__.py:18: in <module>
+    from .technique import TechniqueProfile, extract_technique
+ai_model/generation/technique.py:31: in <module>
+    import numpy as np
+../../../../.pythonlibs/lib/python3.12/site-packages/numpy/__init__.py:112: in <module>
+    from numpy.__config__ import show_config
+../../../../.pythonlibs/lib/python3.12/site-packages/numpy/__config__.py:4: in <module>
+    from numpy._core._multiarray_umath import (
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+    """
+    Contains the core of NumPy: ndarray, ufuncs, dtypes, etc.
+    
+    Please note that this module is private.  All functions and objects
+    are available in the main ``numpy`` namespace - use that instead.
+    
+    """
+    
+    import os
+    
+    from numpy.version import version as __version__
+    
+    # disables OpenBLAS affinity setting of the main thread that limits
+    # python threads or processes to one core
+    env_added = []
+    for envkey in ['OPENBLAS_MAIN_FREE']:
+        if envkey not in os.environ:
+            # Note: using `putenv` (and `unsetenv` further down) instead of updating
+            # `os.environ` on purpose to avoid a race condition, see gh-30627.
+            os.putenv(envkey, '1')
+            env_added.append(envkey)
+    
+    try:
+        from . import multiarray
+    except ImportError as exc:
+        import sys
+    
+        # Bypass for the module re-initialization opt-out
+        if exc.msg == "cannot load module more than once per process":
+            raise
+    
+        # Basically always, the problem should be that the C module is wrong/missing...
+        if (
+            isinstance(exc, ModuleNotFoundError)
+            and exc.name == "numpy._core._multiarray_umath"
+        ):
+            import sys
+            candidates = []
+            for path in __path__:
+                candidates.extend(
+                    f for f in os.listdir(path) if f.startswith("_multiarray_umath"))
+            if len(candidates) == 0:
+                bad_c_module_info = (
+                    "We found no compiled module, did NumPy build successfully?\n")
+            else:
+                candidate_str = '\n  * '.join(candidates)
+                # cache_tag is documented to be possibly None, so just use name if it is
+                # this guesses at cache_tag being the same as the extension module scheme
+                tag = sys.implementation.cache_tag or sys.implementation.name
+                bad_c_module_info = (
+                    f"The following compiled module files exist, but seem incompatible\n"
+                    f"with with either python '{tag}' or the "
+                    f"platform '{sys.platform}':\n\n  * {candidate_str}\n"
+                )
+        else:
+            bad_c_module_info = ""
+    
+        major, minor, *_ = sys.version_info
+        msg = f"""
+    
+    IMPORTANT: PLEASE READ THIS FOR ADVICE ON HOW TO SOLVE THIS ISSUE!
+    
+    Importing the numpy C-extensions failed. This error can happen for
+    many reasons, often due to issues with your setup or how NumPy was
+    installed.
+    {bad_c_module_info}
+    We have compiled some common reasons and troubleshooting tips at:
+    
+        https://numpy.org/devdocs/user/troubleshooting-importerror.html
+    
+    Please note and check the following:
+    
+      * The Python version is: Python {major}.{minor} from "{sys.executable}"
+      * The NumPy version is: "{__version__}"
+    
+    and make sure that they are the versions you expect.
+    
+    Please carefully study the information and documentation linked above.
+    This is unlikely to be a NumPy issue but will be caused by a bad install
+    or environment on your machine.
+    
+    Original error was: {exc}
+    """
+    
+>       raise ImportError(msg) from exc
+E       ImportError: 
+E       
+E       IMPORTANT: PLEASE READ THIS FOR ADVICE ON HOW TO SOLVE THIS ISSUE!
+E       
+E       Importing the numpy C-extensions failed. This error can happen for
+E       many reasons, often due to issues with your setup or how NumPy was
+E       installed.
+E       
+E       We have compiled some common reasons and troubleshooting tips at:
+E       
+E           https://numpy.org/devdocs/user/troubleshooting-importerror.html
+E       
+E       Please note and check the following:
+E       
+E         * The Python version is: Python 3.12 from "/nix/store/h097imm3w6dpx10qynrd2sz9fks2wbq8-python3-3.12.11/bin/python3"
+E         * The NumPy version is: "2.4.4"
+E       
+E       and make sure that they are the versions you expect.
+E       
+E       Please carefully study the information and documentation linked above.
+E       This is unlikely to be a NumPy issue but will be caused by a bad install
+E       or environment on your machine.
+E       
+E       Original error was: libstdc++.so.6: cannot open shared object file: No such file or directory
+
+../../../../.pythonlibs/lib/python3.12/site-packages/numpy/_core/__init__.py:85: ImportError
+
+During handling of the above exception, another exception occurred:
+
+    def test_render_worker_owns_gpu_until_it_returns():
+        from contextlib import contextmanager
+    
+        events = []
+    
+        class Pool:
+            @contextmanager
+            def spawn_sync(self, digest):
+                events.append(("born", digest))
+                try:
+                    yield object()
+                finally:
+                    events.append(("dead", digest))
+    
+        ns = server_functions(
+            "_run_gpu_job", _get_gpu_pool=lambda: Pool(),
+            _job_update=lambda *a: pytest.fail("unexpected render failure"),
+            _job_read=lambda _: {"generation_plan": {
+                "request": {"topic": "Saved render request"},
+                "modality": "video", "checkpoint": "fixture", "seed": 12,
+            }},
+        )
+>       ns["_run_gpu_job"]("job-1", lambda: events.append(("worker", "job-1")))
+
+tests/test_documented_stack_restore.py:326: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+server.py:7637: in _run_gpu_job
+    _job_update(job_id, {"status": "error", "error": str(exc)})
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+a = ('job-1', {'status': 'error', 'error': '\n\nIMPORTANT: PLEASE READ THIS FOR ADVICE ON HOW TO SOLVE THIS ISSUE!\n\nImpo... on your machine.\n\nOriginal error was: libstdc++.so.6: cannot open shared object file: No such file or directory\n'})
+
+>       _job_update=lambda *a: pytest.fail("unexpected render failure"),
+                               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+        _job_read=lambda _: {"generation_plan": {
+            "request": {"topic": "Saved render request"},
+            "modality": "video", "checkpoint": "fixture", "seed": 12,
+        }},
+    )
+E   Failed: unexpected render failure
+
+tests/test_documented_stack_restore.py:320: Failed
+=========================== short test summary info ============================
+FAILED tests/test_documented_stack_restore.py::test_literal_direction_composes_real_model_without_claiming_raw_provenance
+FAILED tests/test_documented_stack_restore.py::test_awareness_prompt_does_not_invent_checkpoint_special_tokens
+FAILED tests/test_documented_stack_restore.py::test_prompt_keeps_user_words_and_punctuation_without_fabricated_suffixes
+FAILED tests/test_documented_stack_restore.py::test_model_failure_never_runs_awareness_template_substitute
+FAILED tests/test_documented_stack_restore.py::test_render_worker_owns_gpu_until_it_returns
+5 failed, 15 passed in 4.99s

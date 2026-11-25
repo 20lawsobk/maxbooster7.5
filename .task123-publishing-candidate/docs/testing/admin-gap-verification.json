@@ -1,0 +1,56 @@
+{
+  "schema": 1,
+  "productionReady": false,
+  "sourceRevision": "cd4af2452304e8e6238fadd7afa640d5db19814a",
+  "sourceHashes": {
+    "server/middleware/auth.ts": "70993ab2c51c82e99f50e24478059cc98a72369da6b6a9aca1a0917485c4c2b9",
+    "server/middleware/governanceBoundary.ts": "2445221365679a6fb7526417c7eca456db2cd880f7e91f9a333ee872e2c1510b",
+    "server/middleware/requirePremium.ts": "58a44a9df78b73b10244ba5e3f06791c5afe32a7d9a9267db58312e61e67391f",
+    "server/services/governancePolicyService.ts": "26ce7fca0d38ccd621d29d398f96e76f2ec6166b7041a21f665d4323184292f4",
+    "server/routes.ts": "37f53c0271247245151ee8bcd54c5a20596301530e670fbcd9b9cca45c59fb83",
+    "shared/adminAccessPolicy.mjs": "cdcc58328c234bea4a9fc9a32257d4202bcf7f0efb364118070e0f7a14424cea",
+    "client/src/App.tsx": "ad5062daf95f0af3fcba6b63d1732c00e60968c2bab83796ba8d131f63f182a5",
+    "client/src/components/auth/AuthProvider.tsx": "ea27bf29e690c97cd20bbedd339054b486be1e90be65b1d9ae24366aae8ddf1a",
+    "scripts/testing/integration-browser.mjs": "2eb136aa350b54d9efa429a27feae15a6406d8114b660985492d5a3427c83d06",
+    "scripts/testing/python-runtime-env.mjs": "8b57155b855ed7b71ef01666f42c8b6fecd6e5846769a6a699e7a4deb9cddb5c",
+    "vitest.integration.config.ts": "db23a3f3b73d31b906cf671b1b6eb1277464c932cccc31b42d1eb594b47dc859",
+    "tests/private-admin-http.test.ts": "e9922f68976a0d757a48788c7dabdc877433dcf8c6d1d9aee08908148bf324da",
+    "tests/unit/private-admin-boundaries.test.ts": "e8136a06ef45094e7c1f6bef6640e12a4ef77768f87ca74c65079fc7117faabb",
+    "scripts/testing/admin-route-inventory.mjs": "8871d3e662fca62f95303fe0ca9792b2f5353f1b5b8d05d1553233ab2623d606"
+  },
+  "http": {
+    "http-final": {
+      "receipt": "reports/admin-gap-audit/http-final/integration.junit.xml",
+      "cases": 71,
+      "failures": 0,
+      "errors": 0,
+      "skips": 0
+    },
+    "private-http-final": {
+      "receipt": "reports/admin-gap-audit/private-http-final/integration.junit.xml",
+      "cases": 7,
+      "failures": 0,
+      "errors": 0,
+      "skips": 0
+    }
+  },
+  "otherObservedChecks": {
+    "focusedUnit": {
+      "passed": 83,
+      "retries": 0
+    },
+    "inventoryParser": {
+      "passed": 3
+    },
+    "serverAndClientTypecheck": "passed",
+    "changedTypeScriptLint": "passed",
+    "productionBuild": "passed"
+  },
+  "limits": [
+    "Not all twelve domain journeys completed",
+    "No live provider or payment outcome asserted",
+    "No process-restart or deployed rollback acceptance",
+    "Signed-in rendered UI not verified; preview connection refused",
+    "Public-profile regression is separate from private-admin acceptance"
+  ]
+}

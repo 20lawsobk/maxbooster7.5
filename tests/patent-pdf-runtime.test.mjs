@@ -7,6 +7,7 @@ import os from "node:os";
 import path from "node:path";
 import { createRequire } from "node:module";
 import { generatePatentPdf } from "../external/maxcore/scripts/src/generate-patent.ts";
+import { findChromiumExecutable } from "./helpers-chromium.mjs";
 
 test("upstream Puppeteer browser manager no longer requires extract-zip", () => {
   const require = createRequire(new URL("../external/maxcore/scripts/package.json", import.meta.url));
@@ -26,8 +27,8 @@ test("upstream Puppeteer browser manager no longer requires extract-zip", () => 
   assert.equal(fs.readFileSync(new URL("../external/maxcore/pnpm-lock.yaml", import.meta.url), "utf8").includes("extract-zip@"), false);
 });
 test("actual patent generator renders valid Letter PDF using supplied local Chromium", { timeout: 45000 }, async t => {
-  const executable = process.env.REPLIT_PLAYWRIGHT_CHROMIUM_EXECUTABLE;
-  assert.ok(executable && fs.existsSync(executable), "Configured Chromium required; absence is not a pass");
+  const executable = findChromiumExecutable();
+  assert.ok(executable, "Actual Chromium is required; missing browser is not a pass");
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), "patent-pdf-runtime-"));
   t.after(() => fs.rmSync(dir, { recursive: true, force: true }));
   const html = path.join(dir, "patent # fixture.html"), pdf = path.join(dir, "patent.pdf");

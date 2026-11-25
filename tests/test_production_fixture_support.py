@@ -3,7 +3,7 @@ import socket
 import tempfile
 import unittest
 
-from production_fixture_support import native_binary, wait_ports_released
+from production_fixture_support import native_binary, udp_port_bound, wait_ports_released
 
 
 class FixtureContracts(unittest.TestCase):
@@ -31,6 +31,16 @@ class FixtureContracts(unittest.TestCase):
             with self.assertRaisesRegex(RuntimeError, str(port)):
                 wait_ports_released([port], timeout=0)
         wait_ports_released([port], timeout=0)
+
+    def test_udp_listener_is_detected_and_closed_port_passes(self):
+        with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as listener:
+            listener.bind(("127.0.0.1", 0))
+            port = listener.getsockname()[1]
+            self.assertTrue(udp_port_bound(port))
+            with self.assertRaisesRegex(RuntimeError, str(port)):
+                wait_ports_released([], timeout=0, udp_ports=[port])
+        self.assertFalse(udp_port_bound(port))
+        wait_ports_released([], timeout=0, udp_ports=[port])
 
 
 if __name__ == "__main__":

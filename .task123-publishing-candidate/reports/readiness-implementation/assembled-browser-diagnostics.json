@@ -1,0 +1,183 @@
+{
+  "generatedAt": "2026-10-19T20:48:34.729Z",
+  "startedAt": "2026-10-19T20:48:17.432Z",
+  "decision": "FAIL",
+  "command": "env -i PATH=\"$PATH\" HOME=/tmp node scripts/readiness-assembled-acceptance.mjs",
+  "artifactLabel": "sealed non-ML source application acceptance; not full-stack or packed acceptance",
+  "sourceRevision": "5a17a90878a5c05b4d09a9793d1393090f86af53",
+  "sourceFileDigestsSha256": {
+    "scripts/readiness-assembled-acceptance.mjs": "df9ab61e5ef6a2da1878522f8dfe40f531fb185ff8e3d8f67af2c5adfa712a10",
+    "scripts/readiness-egress-guard.mjs": "68df9f32a2526a71fc6c62b4603b3a36c2cf14cb29ad812582a10378d1506693",
+    "scripts/lib/isolated-acceptance-readiness.mjs": "45ca9b377e3104635c665509c2f94e85f9792cc2db2ccdec0117cf1740f85f03",
+    "server/index.ts": "5ebab9c4d78f0b1eefd864b76337433841c8eabbeb27024e0ad6361feed031ff",
+    "server/routes.ts": "9360d559fffc27e02354bcd92ab68e22f97c360dba1b4fe12ad8f03a95c85706",
+    "server/middleware/csrf.ts": "cbd3e78834ba27cf086091017ba03411f998218ab0550b2d66a9d65df731393f",
+    "shared/schema.ts": "8226bfbcc940f6835b0f100a1709d5c178fc02d6e617fe9b35a2144b6da073a8"
+  },
+  "safety": {
+    "inheritedSecretNamesRejected": true,
+    "database": "ephemeral local PostgreSQL containing generated synthetic empty schema only",
+    "network": "child preloader permits loopback TCP/Unix sockets only; rejects wrapper and direct-socket external TCP, UDP, and child processes",
+    "pdim": "local imported PDIM on an ephemeral loopback port with disposable state; no production Redis credential or non-loopback endpoint is available",
+    "maxCore": "not started; loopback port 9 is a closed sentinel and no model is loaded",
+    "providerCredentialsPresent": false,
+    "productionDataPresent": false,
+    "disposableWorkingDirectory": true
+  },
+  "evidence": {
+    "capacityAdmission": "not_run",
+    "schemaGeneration": "pass",
+    "postgres": "pass",
+    "appProcess": "pass",
+    "health": {
+      "status": 200,
+      "contentType": "application/json; charset=utf-8"
+    },
+    "readiness": {
+      "scope": "sealed non-ML authentication, projects, and frontend acceptance",
+      "fullStackReadiness": "NOT_PROVEN: separate real imported MaxCore/model acceptance required",
+      "expectedDegradedReadinessAsserted": true,
+      "unifiedAwarenessReady": false,
+      "status": 503,
+      "aggregate": "degraded",
+      "subsystems": {
+        "database": {
+          "status": "ok"
+        },
+        "redis": {
+          "status": "ok"
+        },
+        "routes": {
+          "status": "ok",
+          "detail": "all route sections registered"
+        },
+        "audit": {
+          "status": "unknown",
+          "detail": "initializing"
+        },
+        "automation": {
+          "status": "ok",
+          "detail": "workflows=0"
+        },
+        "maxcore": {
+          "status": "unknown",
+          "detail": "MaxCore not configured (no URL/key)"
+        }
+      }
+    },
+    "frontend": {
+      "status": 200,
+      "contentType": "text/html; charset=utf-8",
+      "bytes": 16213,
+      "sha256": "6ef1697f9e6d9c14a410d4c673f04751b40beb2915430c6e3a395becb674ba57"
+    },
+    "authHttp": {
+      "csrfCookieHeaderBinding": "pass",
+      "register": "pass",
+      "registrationSession": "pass",
+      "login": "pass",
+      "sessionPersistence": "pass",
+      "logoutInvalidation": "pass",
+      "syntheticUserRemovedWithDatabase": true
+    },
+    "httpLoad": "not_requested",
+    "browser": {
+      "engine": "Chromium CDP",
+      "hydrated": true,
+      "formLogin": true,
+      "sessionPersisted": true,
+      "logout": true,
+      "documentGeneration": 4,
+      "contextTransitionsRecovered": 0,
+      "screenshot": "reports/readiness-implementation/assembled-acceptance-login.png"
+    },
+    "egressGuard": "pass (external net.connect, direct Socket.connect, UDP, and child processes denied in preflight)",
+    "cleanup": "pass",
+    "syntheticEntitlement": "paid entitlement provisioned only in disposable local database; no provider or payment bypass in application",
+    "projectCrud": {
+      "create": true,
+      "read": true,
+      "update": true,
+      "delete": true,
+      "missingVersion428": true,
+      "staleVersion409": true,
+      "crossOwnerReadUpdateDelete404": true,
+      "deletedRead404": true
+    },
+    "pageRoutes": {
+      "authenticated": [
+        {
+          "requestedPath": "/analytics",
+          "finalPath": "/analytics",
+          "hydrated": true,
+          "crashed": true,
+          "permissionOrEmptyState": false,
+          "pass": false,
+          "visibleText": "Something went wrong\nunknown\nSomething unexpected happened. Our team has been notified.\nQuick fixes to try\n•\nTry refreshing the page\n•\nClear your browser cache\n•\nContact support if issue persists\nTechnical details\nTry Again\nGo Home\nReport Issue",
+          "errors": [
+            {
+              "path": "/analytics",
+              "message": "[useOfflineStatus] Failed to load stats: Error: Sign in before accessing private offline storage\n    at jh (http://localhost:43657/assets/studio-BnKY3-NI.js:17:9512)\n    at Ws.init (http://localhost:43657/assets/index-C-_jDVe_.js:2:6764)\n    at Ws.ensureDb (http://localhost:43657/assets/index-C-_jDVe_.js:2:7445)\n    at Ws.getStats (http://localhost:43657/assets/index-C-_jDVe_.js:2:12498)\n    at http://localhost:43657/assets/TopBar-DTt8seA4.js:6:13573\n    at http://localhost:43657/assets/TopBar-DTt8seA4.js:6:13765\n    at fs (http://localhost:43657/assets/vendor-react-NgXmoGGy.js:8:92953)\n    at Zr (http://localhost:43657/assets/vendor-react-NgXmoGGy.js:8:109169)\n    at Zr (http://localhost:43657/assets/vendor-react-NgXmoGGy.js:8:109420)\n    at Zr (http://localhost:43657/assets/vendor-react-NgXmoGGy.js:8:109420)"
+            },
+            {
+              "path": "/analytics",
+              "message": "Error: Minified React error #310; visit https://react.dev/errors/310 for the full message or use the non-minified dev environment for full errors and additional helpful warnings.\n    at kt (http://localhost:43657/assets/vendor-react-NgXmoGGy.js:8:49504)\n    at Object.y2 [as useCallback] (http://localhost:43657/assets/vendor-react-NgXmoGGy.js:8:56941)\n    at je.useCallback (http://localhost:43657/assets/vendor-react-NgXmoGGy.js:1:8275)\n    at Fr (http://localhost:43657/assets/Analytics-BeV-5CBT.js:1:152820)\n    at Mf (http://localhost:43657/assets/vendor-react-NgXmoGGy.js:8:48226)\n    at qf (http://localhost:43657/assets/vendor-react-NgXmoGGy.js:8:71041)\n    at K2 (http://localhost:43657/assets/vendor-react-NgXmoGGy.js:8:81394)\n    at My (http://localhost:43657/assets/vendor-react-NgXmoGGy.js:8:117186)\n    at Qx (http://localhost:43657/assets/vendor-react-NgXmoGGy.js:8:116230)\n    at dd (http://localhost:43657/assets/vendor-react-NgXmoGGy.js:8:116060)"
+            },
+            {
+              "path": "/analytics",
+              "message": "[ErrorService] Object"
+            },
+            {
+              "path": "/analytics",
+              "message": "TypeError: Cannot read properties of undefined (reading 'streams')\n    at Fr (http://localhost:43657/assets/Analytics-BeV-5CBT.js:1:160581)\n    at Mf (http://localhost:43657/assets/vendor-react-NgXmoGGy.js:8:48226)\n    at qf (http://localhost:43657/assets/vendor-react-NgXmoGGy.js:8:71041)\n    at K2 (http://localhost:43657/assets/vendor-react-NgXmoGGy.js:8:81184)\n    at My (http://localhost:43657/assets/vendor-react-NgXmoGGy.js:8:117186)\n    at Qx (http://localhost:43657/assets/vendor-react-NgXmoGGy.js:8:116230)\n    at dd (http://localhost:43657/assets/vendor-react-NgXmoGGy.js:8:116060)\n    at gy (http://localhost:43657/assets/vendor-react-NgXmoGGy.js:8:112843)\n    at Iy (http://localhost:43657/assets/vendor-react-NgXmoGGy.js:8:124787)\n    at gs (http://localhost:43657/assets/vendor-react-NgXmoGGy.js:8:123335)"
+            },
+            {
+              "path": "/analytics",
+              "message": "[ErrorService] Object"
+            }
+          ]
+        },
+        {
+          "requestedPath": "/studio",
+          "finalPath": "/studio",
+          "hydrated": true,
+          "crashed": true,
+          "permissionOrEmptyState": false,
+          "pass": false,
+          "visibleText": "Skip to main content\n(Alt+1)\nMax Booster\nBY B-LAWZ MUSIC\n◇ Free\nOVERVIEW\nDashboard\nCREATOR\nProjects\nStudio\nDesktop App\nGROWTH\nAnalytics\nAI Insights\nSocial Media\nAdvertising\nPlaylist Pitching\nFan Hub\nFan Memberships\nA&R Intelligence\nBUSINESS\nMarketplace\nRoyalties\nDistribution\nPublishing\nSync Licensing\nMerch Store\nInvoices\nMANAGE\nContracts\nShows & Tours\nPress Kit\nOutreach CRM\nCollaborations\nWorkspaces\nRelease Countdown\nCareer Coach\nnavigation.assistant\nWorkflow Automations\nVerification\n🇺🇸English\n\naccept_775aa81984d9454c\n\nacceptance-775aa81984d9454c@example.invalid\n\nStudio\nSettings\nSign Out\nSomething went wrong\nunknown\nSomething unexpected happened. Our team has been notified.\nQuick fixes to try\n•\nTry refreshing the page\n•\nClear your browser cache\n•\nContact support if issue persists\nTechnical details\nTry Again\nGo Home\nReport Issue",
+          "errors": [
+            {
+              "path": "/studio",
+              "message": "TypeError: Cannot read properties of undefined (reading 'recentProjects')\n    at om (http://localhost:43657/assets/studio-BnKY3-NI.js:22:262175)\n    at Mf (http://localhost:43657/assets/vendor-react-NgXmoGGy.js:8:48226)\n    at qf (http://localhost:43657/assets/vendor-react-NgXmoGGy.js:8:71041)\n    at K2 (http://localhost:43657/assets/vendor-react-NgXmoGGy.js:8:81394)\n    at My (http://localhost:43657/assets/vendor-react-NgXmoGGy.js:8:117186)\n    at Qx (http://localhost:43657/assets/vendor-react-NgXmoGGy.js:8:116230)\n    at dd (http://localhost:43657/assets/vendor-react-NgXmoGGy.js:8:116060)\n    at gy (http://localhost:43657/assets/vendor-react-NgXmoGGy.js:8:112843)\n    at Iy (http://localhost:43657/assets/vendor-react-NgXmoGGy.js:8:124787)\n    at gs (http://localhost:43657/assets/vendor-react-NgXmoGGy.js:8:123335)"
+            },
+            {
+              "path": "/studio",
+              "message": "[ErrorService] Object"
+            }
+          ]
+        }
+      ],
+      "public": []
+    },
+    "nativeSignedOutLogin": {
+      "electronBridgePresent": true,
+      "hydratedLoginRemainsAccessible": true
+    }
+  },
+  "failures": [
+    "authenticated browser route acceptance failed; see pageRoutes evidence"
+  ],
+  "observations": [
+    "Real application routes and production static frontend were served from the assembled server process.",
+    "Normal registration/login used the real password hashing, CSRF, session store, and logout paths with a synthetic user; no auth bypass was used.",
+    "A real headless Chromium page hydrated the login UI, submitted the login form, persisted its cookie session, logged out, and captured a pre-credential screenshot."
+  ],
+  "untested": [
+    "authenticated browser journeys beyond the completed login/session/logout path",
+    "provider sandbox delivery, OAuth, webhooks, messaging, push, email, social posting, and DSP contracts",
+    "real-money payment, payout, refund, royalty, and financial reconciliation",
+    "production-source restore/upgrade/rollback and durable backup recovery",
+    "local MaxCore inference/model behavior (the only MaxCore implementation; intentionally not started in this bounded non-ML drill)",
+    "Redis/PDIM loss recovery, load/soak, multi-worker clustering, DNS/TLS, and packed cold-image startup"
+  ]
+}

@@ -1,0 +1,56 @@
+{
+  "recordedAt": "2026-10-28T17:53:43.534296+00:00",
+  "scope": "Read-only diagnostic replay of the current evidence gate; no application startup, new product execution, source/counter modification or PASS transfer",
+  "sourceRevision": "10d192675beefcf1b7beef3ce47c271db0cc17cf",
+  "currentCommonSha256": "cbf794e080119fa4f64ec6ebce2b29b3d78641d606a3059c0c207b2420324418",
+  "commonUnchanged": true,
+  "protectedArtifactsBefore": {
+    "scripts/testing/platform-register.py": "f8c4e518a50cfb66cce48e4b305b1760df6729ffbacbdaccaddb0708ab106257",
+    "scripts/testing/summarize-results.py": "a9e5d062edf1f292b5d26212e430e320db6820c3717272e8226ab6a0ed1a9b30",
+    "scripts/testing/generate-catalog.py": "177fc3778137b5e255b2fd6618ed3f184c9d6a74f7ed2327b2cef927e598ccfe",
+    "reports/test-verification/case-results.json": "b6cf277968c736fce979393a217ff78645aa39ec2da83e973e595f4813724fa8",
+    "reports/test-verification/python/results.json": "35358d62757eec89cfc6a798fd7a9840e1383b726623a4740983087be9ae6c3d",
+    "reports/test-verification/commerce/results.json": "8b0a136474b4007b80e6e43fb09f0a419cde209ae273c5f3736cfa3508b86930",
+    "reports/test-verification/orchestration/results.json": "8f3b63a3fe98e57641b1dbec7a5ccb71b5fb9f8f1b11bc0497f2c3432b8bc145",
+    "reports/test-verification/orchestration/source-inputs.json": "74501da07a78cf6ac65e5ce36b6562b1b6de00dc7b8be41b77403dada4934237",
+    "reports/test-verification/coverage/coverage-final.json": "3a4baa7bdb84c4863c60801782a09aae05a129a71d9e0bb9334a2e7baf7990f8",
+    "reports/test-verification/platform-register.json": "68a06c3ab09afd93260341d4f0e005d00761827e79e9d39773dc5e0bef3d7ba6",
+    "reports/test-verification/completion-plan.json": "c552bc303dbe773a0e4606e1e79a1981c8c846cc97a8dfb5c6c6c2c8243e13ff"
+  },
+  "protectedArtifactsAfter": {
+    "scripts/testing/platform-register.py": "f8c4e518a50cfb66cce48e4b305b1760df6729ffbacbdaccaddb0708ab106257",
+    "scripts/testing/summarize-results.py": "a9e5d062edf1f292b5d26212e430e320db6820c3717272e8226ab6a0ed1a9b30",
+    "scripts/testing/generate-catalog.py": "177fc3778137b5e255b2fd6618ed3f184c9d6a74f7ed2327b2cef927e598ccfe",
+    "reports/test-verification/case-results.json": "b6cf277968c736fce979393a217ff78645aa39ec2da83e973e595f4813724fa8",
+    "reports/test-verification/python/results.json": "35358d62757eec89cfc6a798fd7a9840e1383b726623a4740983087be9ae6c3d",
+    "reports/test-verification/commerce/results.json": "8b0a136474b4007b80e6e43fb09f0a419cde209ae273c5f3736cfa3508b86930",
+    "reports/test-verification/orchestration/results.json": "8f3b63a3fe98e57641b1dbec7a5ccb71b5fb9f8f1b11bc0497f2c3432b8bc145",
+    "reports/test-verification/orchestration/source-inputs.json": "74501da07a78cf6ac65e5ce36b6562b1b6de00dc7b8be41b77403dada4934237",
+    "reports/test-verification/coverage/coverage-final.json": "3a4baa7bdb84c4863c60801782a09aae05a129a71d9e0bb9334a2e7baf7990f8",
+    "reports/test-verification/platform-register.json": "68a06c3ab09afd93260341d4f0e005d00761827e79e9d39773dc5e0bef3d7ba6",
+    "reports/test-verification/completion-plan.json": "c552bc303dbe773a0e4606e1e79a1981c8c846cc97a8dfb5c6c6c2c8243e13ff"
+  },
+  "protectedArtifactsUnchanged": true,
+  "rejectionCounts": {
+    "case-not-passed-in-bound-xml": 90,
+    "unbound-default-file-producer": 14
+  },
+  "classifications": {
+    "duplicate-fully-qualified-raw-identity": 64,
+    "ambiguous-unqualified-identity-distinct-scopes": 26,
+    "other-unbound-producer-metadata": 14
+  },
+  "observedPassingCases": 5173,
+  "actualReplaySeconds": 1.395,
+  "gateState": {
+    "status": "CURRENT",
+    "sourceInputsMatchCurrent": true,
+    "rejectedEvidence": {
+      "case-not-passed-in-bound-xml": 90,
+      "unbound-default-file-producer": 14
+    },
+    "passingCases": 5173
+  },
+  "productionReady": false,
+  "newAcceptedEvidence": 0
+}

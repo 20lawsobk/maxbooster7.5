@@ -1,0 +1,94 @@
+{
+  "artifactIntegrityPassedEveryCycle": true,
+  "buildContractSha256": "8bc10b8510b211b1576ada3157838a4ee512492f7b99792ae1a63820d7d59757",
+  "buildIntegrityGatePreserved": true,
+  "capturedAt": "2026-11-22T15:21:22.313754+00:00",
+  "cycles": [
+    {
+      "cycle": 1,
+      "exitCode": 1,
+      "publicAssetState": {
+        "added": [],
+        "hashMismatches": [],
+        "missing": []
+      },
+      "readiness": {
+        "cycle": 1,
+        "httpStatus": 503,
+        "overallStatus": "degraded",
+        "shutdown": {
+          "forcedKill": false,
+          "portsReleased": true,
+          "processExitCode": 0,
+          "signalRequested": "SIGTERM"
+        },
+        "subsystems": [
+          {
+            "failureClass": null,
+            "name": "database",
+            "status": "ok"
+          },
+          {
+            "failureClass": null,
+            "name": "redis",
+            "status": "ok"
+          },
+          {
+            "failureClass": "other",
+            "name": "routes",
+            "status": "ok"
+          },
+          {
+            "failureClass": "other",
+            "name": "audit",
+            "status": "ok"
+          },
+          {
+            "failureClass": "other",
+            "name": "automation",
+            "status": "ok"
+          },
+          {
+            "failureClass": "other",
+            "name": "maxcore",
+            "status": "degraded"
+          }
+        ],
+        "topLevelFailureClass": null,
+        "unifiedAwareness": {
+          "collectorRunning": false,
+          "configuredSourceCount": null,
+          "failureClass": "fresh_snapshot_missing",
+          "ingestOwner": false,
+          "ready": false,
+          "snapshotPresent": false,
+          "sourceHealthStatusCounts": {},
+          "status": "unavailable"
+        }
+      },
+      "startupFailureClass": null
+    },
+    {
+      "cycle": 2,
+      "exitCode": 1,
+      "publicAssetState": {
+        "added": [],
+        "hashMismatches": [],
+        "missing": []
+      },
+      "readiness": null,
+      "startupFailureClass": null
+    }
+  ],
+  "deploymentAssetPhase": {
+    "exitCode": 0,
+    "passed": true
+  },
+  "networkNamespaceIsolated": true,
+  "readinessGatePreserved": true,
+  "readinessPassedEveryCycle": false,
+  "scope": "Disposable PostgreSQL and production artifact copy; application external TCP/TLS and UDP denied",
+  "shutdownCompletedEveryCycle": false,
+  "sourceRevision": "abc79dad3dfdf936f5669585ee1336785632dab2",
+  "status": "failed"
+}

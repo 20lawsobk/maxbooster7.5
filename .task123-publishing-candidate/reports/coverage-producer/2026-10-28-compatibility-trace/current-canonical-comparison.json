@@ -1,0 +1,124 @@
+{
+  "scope": "Read-only current a160 completed canonical profile map comparison against retained immutable selected baseline; counts not combined",
+  "canonicalCoverageSha256": "b869f5617c61a51182802193ec63ec70899e2bd45ab6e0811b6118120f160434",
+  "canonicalSummarySha256": "8680c977468378ffb65c2fbdf914567749f6f1c938e959fa9d25c72087c385b1",
+  "sourceRevision": "a1603b13b6352a978e3877a2f43f1ccd98a98a18",
+  "files": [
+    {
+      "file": "server/pocket-dimension/fabric/storage/PocketDimensionChunkStore.ts",
+      "canonicalMapEquality": {
+        "statementMap": true,
+        "fnMap": true,
+        "branchMap": true
+      },
+      "nodeCompatibleWithCurrentSerializedMaps": false
+    },
+    {
+      "file": "external/pdim/artifacts/api-server/src/redis/store.ts",
+      "canonicalMapEquality": {
+        "statementMap": true,
+        "fnMap": true,
+        "branchMap": true
+      },
+      "nodeCompatibleWithCurrentSerializedMaps": false
+    },
+    {
+      "file": "server/lib/pdimClient.ts",
+      "canonicalMapEquality": {
+        "statementMap": true,
+        "fnMap": true,
+        "branchMap": true
+      },
+      "nodeCompatibleWithCurrentSerializedMaps": false
+    },
+    {
+      "file": "server/logger.ts",
+      "canonicalMapEquality": {
+        "statementMap": true,
+        "fnMap": true,
+        "branchMap": true
+      },
+      "nodeCompatibleWithCurrentSerializedMaps": false
+    },
+    {
+      "file": "external/pdim/artifacts/api-server/src/workers/lua-pool.ts",
+      "canonicalMapEquality": {
+        "statementMap": true,
+        "fnMap": true,
+        "branchMap": true
+      },
+      "nodeCompatibleWithCurrentSerializedMaps": false
+    },
+    {
+      "file": "server/config/ports.ts",
+      "canonicalMapEquality": {
+        "statementMap": true,
+        "fnMap": true,
+        "branchMap": true
+      },
+      "nodeCompatibleWithCurrentSerializedMaps": false
+    },
+    {
+      "file": "server/lib/luaExecutor.ts",
+      "canonicalMapEquality": {
+        "statementMap": true,
+        "fnMap": true,
+        "branchMap": true
+      },
+      "nodeCompatibleWithCurrentSerializedMaps": false
+    },
+    {
+      "file": "server/lib/pdimCircuitBreaker.ts",
+      "canonicalMapEquality": {
+        "statementMap": true,
+        "fnMap": true,
+        "branchMap": true
+      },
+      "nodeCompatibleWithCurrentSerializedMaps": false
+    },
+    {
+      "file": "server/logSanitizer.ts",
+      "canonicalMapEquality": {
+        "statementMap": true,
+        "fnMap": true,
+        "branchMap": true
+      },
+      "nodeCompatibleWithCurrentSerializedMaps": false
+    }
+  ],
+  "canonicalMetrics": {
+    "lines": {
+      "total": 224013,
+      "covered": 29349,
+      "skipped": 0,
+      "pct": 13.1
+    },
+    "statements": {
+      "total": 240335,
+      "covered": 31250,
+      "skipped": 0,
+      "pct": 13
+    },
+    "functions": {
+      "total": 47857,
+      "covered": 4150,
+      "skipped": 0,
+      "pct": 8.67
+    },
+    "branches": {
+      "total": 158578,
+      "covered": 13917,
+      "skipped": 0,
+      "pct": 8.77
+    }
+  },
+  "packageVersions": {
+    "tsx": "4.23.12",
+    "esbuild": "0.28.2",
+    "vite": "7.3.7",
+    "@vitest/coverage-v8": "4.1.12",
+    "ast-v8-to-istanbul": "1.0.7"
+  },
+  "productionReady": false,
+  "mergedIntoGlobalCoverage": false
+}

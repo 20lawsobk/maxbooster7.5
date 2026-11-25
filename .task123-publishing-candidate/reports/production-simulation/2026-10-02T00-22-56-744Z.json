@@ -1,0 +1,332 @@
+{
+  "runId": "2026-10-02T00-22-56-744Z",
+  "workspace": "/home/runner/workspace/.local/production-simulation/runs/2026-10-02T00-22-56-744Z (disposable isolated copy; remove with --cleanup)",
+  "commands": {
+    "build": "DEPLOY_PACK=1 npm run build",
+    "start": "bash start.sh"
+  },
+  "safety": {
+    "sourceRoot": "/home/runner/workspace",
+    "sourceRootUsedAsBuildCwd": false,
+    "sourceFilesMutated": false,
+    "excluded": [
+      ".replit",
+      ".git",
+      "data",
+      "logs",
+      "attached_assets",
+      "*.env secrets",
+      "dns-node/keys"
+    ],
+    "networkCredentialsProvided": false,
+    "thirdPartyOrLiveDatabaseTargeted": false,
+    "runtimeIsolationPolicy": {
+      "required": true,
+      "transport": "Unprivileged Linux user+network namespace; only namespace-local loopback is reachable by the app and every native/Python descendant",
+      "filesystem": "all build and runtime writes are rooted in the disposable copy; source credentials, data, logs, media, and VCS metadata are excluded",
+      "credentials": "env-i style allowlist; generated simulation-only secrets; ephemeral local PostgreSQL only"
+    },
+    "hostNetworkNamespace": "net:[4026532720]",
+    "runtimeNetworkNamespace": null,
+    "runtimeIsolationEnforced": false,
+    "deployPackOnSourceWorkspace": false,
+    "networkNamespacePreflight": {
+      "available": true,
+      "exitCode": 0,
+      "signal": null,
+      "error": "",
+      "classification": "supported unprivileged user+network namespace with namespace-local loopback"
+    }
+  },
+  "resourceProfile": {
+    "configured": {
+      "cpu": 4,
+      "memoryBytes": 8589934592,
+      "imageHardLimitBytes": 8589934592
+    },
+    "observed": {
+      "cpuQuota": 4,
+      "logicalCpuCount": 4,
+      "memoryLimitBytes": 8589934592,
+      "memoryCurrentBytes": 3714846720,
+      "memoryHeadroomBytes": 4875087872,
+      "diskAvailableBytes": 223750778880,
+      "filesystemUsedUpperBoundBytes": 50140385280
+    },
+    "admission": {
+      "safe": true,
+      "reasons": [],
+      "estimatedScratchBytes": 100280770560
+    }
+  },
+  "sourceSnapshot": {
+    "capturedAt": "2026-10-02T00:23:43.135Z",
+    "note": "All build/start stages use the immutable disposable copy captured at copy stage; source edits after that point are intentionally excluded."
+  },
+  "nodeResolution": {
+    "bundledNodePresentInCopy": false,
+    "pathNodeProbe": null,
+    "startScriptEvidence": null
+  },
+  "copyIntegrity": {
+    "checked": [
+      {
+        "path": "node_modules/@sentry/core/build/esm/logs/public-api.js",
+        "sourcePresent": true,
+        "copyPresent": true,
+        "sourceBytes": 986,
+        "copyBytes": 986,
+        "sourceSha256": "57b34a93897018525bee345657b99ed84bb39c1cbc25fa19e0aaf0787f925c5b",
+        "copySha256": "57b34a93897018525bee345657b99ed84bb39c1cbc25fa19e0aaf0787f925c5b"
+      },
+      {
+        "path": "node_modules/vite/package.json",
+        "sourcePresent": true,
+        "copyPresent": true,
+        "sourceBytes": 5158,
+        "copyBytes": 5158,
+        "sourceSha256": "e5ed0f85215f871fe22a48987dcd77fcfbe14064a53c0c9f7f48186a6b7e2cf0",
+        "copySha256": "e5ed0f85215f871fe22a48987dcd77fcfbe14064a53c0c9f7f48186a6b7e2cf0"
+      },
+      {
+        "path": "node_modules/tsx/package.json",
+        "sourcePresent": true,
+        "copyPresent": true,
+        "sourceBytes": 1601,
+        "copyBytes": 1601,
+        "sourceSha256": "96aee9fd252d0cc31f3c01468250961f5b338c797bc208700d7db926450c7659",
+        "copySha256": "96aee9fd252d0cc31f3c01468250961f5b338c797bc208700d7db926450c7659"
+      },
+      {
+        "path": "python_runtime/bin/python3.12",
+        "sourcePresent": true,
+        "copyPresent": false,
+        "sourceBytes": 100186336,
+        "copyBytes": null,
+        "sourceSha256": "56e774729366f339bc30a8495bf11109a5ba98baf38e3024e109ebbca59fa929",
+        "copySha256": null
+      },
+      {
+        "path": "python_runtime/lib/python3.12/site-packages/pip/_vendor/certifi/cacert.pem",
+        "sourcePresent": true,
+        "copyPresent": false,
+        "sourceBytes": 270954,
+        "copyBytes": null,
+        "sourceSha256": "4f3975ff30abbf35443b486064ae8bcb41dff707ffdf576c76d292fb458aa0a9",
+        "copySha256": null
+      },
+      {
+        "path": ".dockerignore",
+        "sourcePresent": true,
+        "copyPresent": true,
+        "sourceBytes": 6205,
+        "copyBytes": 6205,
+        "sourceSha256": "673f8b07382d14b411fe6c60b67f8b74ee84bb0da4e8c9b490c468c1994028e2",
+        "copySha256": "673f8b07382d14b411fe6c60b67f8b74ee84bb0da4e8c9b490c468c1994028e2"
+      },
+      {
+        "path": "build.sh",
+        "sourcePresent": true,
+        "copyPresent": true,
+        "sourceBytes": 423,
+        "copyBytes": 423,
+        "sourceSha256": "448fdb4b98afcd574beca5d58fb66cf01304d8c6cfb3038d235066813228af0f",
+        "copySha256": "448fdb4b98afcd574beca5d58fb66cf01304d8c6cfb3038d235066813228af0f"
+      },
+      {
+        "path": "package.json",
+        "sourcePresent": true,
+        "copyPresent": true,
+        "sourceBytes": 15190,
+        "copyBytes": 15190,
+        "sourceSha256": "7e7cf1f6a9fc1aa631c7d8d828ab9e58d3315952dd4f9f784f4dd2f6bdbac065",
+        "copySha256": "7e7cf1f6a9fc1aa631c7d8d828ab9e58d3315952dd4f9f784f4dd2f6bdbac065"
+      },
+      {
+        "path": "script/build.ts",
+        "sourcePresent": true,
+        "copyPresent": true,
+        "sourceBytes": 26876,
+        "copyBytes": 26876,
+        "sourceSha256": "a63ed409ceb7a850a517e715024698af43a2859f3199377d14899057ab10b6c6",
+        "copySha256": "a63ed409ceb7a850a517e715024698af43a2859f3199377d14899057ab10b6c6"
+      },
+      {
+        "path": "scripts/boosterstate-toolchain.nix",
+        "sourcePresent": true,
+        "copyPresent": true,
+        "sourceBytes": 326,
+        "copyBytes": 326,
+        "sourceSha256": "c29cc29cb89ba60b0fcdcc5451c09eadbb95fa427e20e50a7dacee2d8eecec02",
+        "copySha256": "c29cc29cb89ba60b0fcdcc5451c09eadbb95fa427e20e50a7dacee2d8eecec02"
+      },
+      {
+        "path": "scripts/build-boosterstate.sh",
+        "sourcePresent": true,
+        "copyPresent": true,
+        "sourceBytes": 2004,
+        "copyBytes": 2004,
+        "sourceSha256": "a888abbd2750adb33435285469e5cd536abe7adb57ee4e19308b449d41983090",
+        "copySha256": "a888abbd2750adb33435285469e5cd536abe7adb57ee4e19308b449d41983090"
+      },
+      {
+        "path": "scripts/lib/productionSimulationPolicy.mjs",
+        "sourcePresent": true,
+        "copyPresent": true,
+        "sourceBytes": 3275,
+        "copyBytes": 3275,
+        "sourceSha256": "f545633995fdb69d4debbd11d25a661117b3ac13544b128b399c248fc12f7cf5",
+        "copySha256": "f545633995fdb69d4debbd11d25a661117b3ac13544b128b399c248fc12f7cf5"
+      },
+      {
+        "path": "scripts/simulate-production.mjs",
+        "sourcePresent": true,
+        "copyPresent": true,
+        "sourceBytes": 99990,
+        "copyBytes": 99990,
+        "sourceSha256": "647858d374811a01fe201c464a5fc50309a4937358ef995bc88dd45c2cf1e1d4",
+        "copySha256": "647858d374811a01fe201c464a5fc50309a4937358ef995bc88dd45c2cf1e1d4"
+      },
+      {
+        "path": "server/routes/distribution.ts",
+        "sourcePresent": true,
+        "copyPresent": true,
+        "sourceBytes": 285871,
+        "copyBytes": 285871,
+        "sourceSha256": "f96f6e35770ed2a83656a4df7f06bddf979a465fc716903fc052e97fac34f1d0",
+        "copySha256": "f96f6e35770ed2a83656a4df7f06bddf979a465fc716903fc052e97fac34f1d0"
+      },
+      {
+        "path": "server/services/toolostRuntimeConfig.ts",
+        "sourcePresent": true,
+        "copyPresent": true,
+        "sourceBytes": 705,
+        "copyBytes": 705,
+        "sourceSha256": "49981a286dbd4c2246ec7927e3c09cb0584ea623e1f3dc109da76ac7ff7f53b7",
+        "copySha256": "49981a286dbd4c2246ec7927e3c09cb0584ea623e1f3dc109da76ac7ff7f53b7"
+      },
+      {
+        "path": "external/maxcore/artifacts/ai-training-server/server.py",
+        "sourcePresent": true,
+        "copyPresent": true,
+        "sourceBytes": 580688,
+        "copyBytes": 580688,
+        "sourceSha256": "7ffd279a3ee04a3db4c9900f3e6bee5525e5a9bda1055a9791381aab4c885f4a",
+        "copySha256": "7ffd279a3ee04a3db4c9900f3e6bee5525e5a9bda1055a9791381aab4c885f4a"
+      },
+      {
+        "path": "external/maxcore/artifacts/ai-training-server/ai_model/weights/model.release.json",
+        "sourcePresent": true,
+        "copyPresent": true,
+        "sourceBytes": 444,
+        "copyBytes": 444,
+        "sourceSha256": "84b2d85f4ba64d97bd1e35bf939bd7faef533c5abaa1edd62d6aff6121dedef3",
+        "copySha256": "84b2d85f4ba64d97bd1e35bf939bd7faef533c5abaa1edd62d6aff6121dedef3"
+      },
+      {
+        "path": "external/maxcore/artifacts/ai-training-server/ai_model/weights/model.corrupt",
+        "sourcePresent": true,
+        "copyPresent": true,
+        "sourceBytes": 109368185,
+        "copyBytes": 109368185,
+        "sourceSha256": "80c19ffc3ec155808f0a2a3ce5b75f09e203d336ebf3e076144dd6e970d3b419",
+        "copySha256": "80c19ffc3ec155808f0a2a3ce5b75f09e203d336ebf3e076144dd6e970d3b419"
+      },
+      {
+        "path": "external/pdim/artifacts/api-server/src/index.ts",
+        "sourcePresent": true,
+        "copyPresent": true,
+        "sourceBytes": 11339,
+        "copyBytes": 11339,
+        "sourceSha256": "c89d46fad1a4c193fb55a625ef1ee29fb2725bef702955bd9f6ec0be0e9ba979",
+        "copySha256": "c89d46fad1a4c193fb55a625ef1ee29fb2725bef702955bd9f6ec0be0e9ba979"
+      },
+      {
+        "path": "tests/fixtures/retained-pdim-source-fixture-worker.ts",
+        "sourcePresent": true,
+        "copyPresent": false,
+        "sourceBytes": 1207,
+        "copyBytes": null,
+        "sourceSha256": "0ef20d8b1d90ddd2fc521d68fcc32fec7f3f9af4c89b06598e531d127f55ad47",
+        "copySha256": null
+      },
+      {
+        "path": "tests/unit/retained-pdim-recovery-simulation.test.ts",
+        "sourcePresent": true,
+        "copyPresent": false,
+        "sourceBytes": 8619,
+        "copyBytes": null,
+        "sourceSha256": "bf2d07167ddcb69538c3da25d77e319579f71e0d43e231724c0cabe0e724214b",
+        "copySha256": null
+      },
+      {
+        "path": "tests/unit/toolost-runtime-config.test.ts",
+        "sourcePresent": true,
+        "copyPresent": false,
+        "sourceBytes": 910,
+        "copyBytes": null,
+        "sourceSha256": "074329442e67447953b6962a47bad522dab306542eb10d9a0d7bd80c36f0d6fd",
+        "copySha256": null
+      }
+    ],
+    "passed": false
+  },
+  "configValidation": {
+    "checked": [],
+    "passed": false
+  },
+  "build": {
+    "exitCode": null,
+    "signal": null,
+    "durationMs": null,
+    "artifacts": {},
+    "outputTail": [],
+    "nixPreflight": null
+  },
+  "pythonCapability": {
+    "status": "not_evaluated",
+    "note": "The production build recreates the pinned portable Python runtime; this has not run yet."
+  },
+  "capsuleRestore": {
+    "buildCapsules": {},
+    "manifestValidation": [],
+    "historicalCompatibility": [],
+    "coldCriticalRestore": null,
+    "coldBackgroundRestore": null,
+    "warmIdempotentRestore": null
+  },
+  "imageSize": null,
+  "productionReadiness": {
+    "publishReady": false,
+    "reason": "Not evaluated yet; a passing run requires current-source MaxCore/PDIM capsules and namespace-isolated runtime evidence."
+  },
+  "startup": {
+    "exitCode": null,
+    "signal": null,
+    "liveness": {
+      "observed": false,
+      "transportOnly": false,
+      "realServer": false,
+      "jsonObserved": false,
+      "earlyAppResponse": false,
+      "startupResponseObserved": false,
+      "samples": []
+    },
+    "readiness": {
+      "observed": false,
+      "fullReady": false,
+      "statusCodes": [],
+      "lastBody": null,
+      "note": null
+    },
+    "attempts": []
+  },
+  "failures": [
+    {
+      "stage": "copy-integrity",
+      "message": "filtered copy is missing or changed required build inputs; build was not attempted"
+    }
+  ],
+  "result": "COPY_FAILED",
+  "completedStages": []
+}

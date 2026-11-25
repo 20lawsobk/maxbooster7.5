@@ -1,0 +1,17 @@
+RTA-1 render-contract tests
+
+test_image_bytes_identical_across_processes:
+  [ok  ] image bytes identical across fresh processes (differing PYTHONHASHSEED) — 885d132a8096 vs 885d132a8096
+
+test_spectral_tail_reconstruction_non_hop_aligned:
+  [ok  ] spectral output length preserved — 7305 vs 7305
+  [ok  ] spectral tail error <= whole-signal error (non-hop-aligned length) — tail=4.35e-08 whole=4.19e-08
+  [ok  ] spectral round-trip is accurate — whole=4.19e-08
+
+test_fabric_self_test_all_mediums_and_gpu:
+  [ok  ] self_test image renders — [48, 48, 3]
+  [ok  ] self_test video renders — [16, 16, 3]
+  [ok  ] self_test audio renders — 4096
+  [ok  ] self_test Digital-GPU GEMM counter incremented — 10
+
+ALL PASSED

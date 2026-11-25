@@ -1,7 +1,8 @@
 {
-  "startedAt": "2026-10-29T23:16:24.626Z",
+  "startedAt": "2026-11-09T17:36:17.581Z",
   "scope": "Disposable PostgreSQL and real source application; all external TCP/TLS and UDP denied",
-  "sourceRevision": "5eb416a04021f66c9bfc8af93997ec9fe8a55e31",
+  "accessProfile": "public",
+  "sourceRevision": "d56e075bfcc2b6ff9e258a691042d8dae8506f16",
   "requestedFiles": [],
   "status": "passed",
   "productionReady": false,
@@ -10,7 +11,10 @@
     "tests/health.test.ts": "a68361e7ba4f9bc39b0a3c6f389bb894683af28c1fb96069372590d0ce0fd570",
     "tests/api-guards.test.ts": "74ab6394eb742fe27365983ebd98a2955bc54c09a90d4ef1255783e25d398bc3",
     "tests/auth-flows.test.ts": "780b02ce0102c1ff016c2682938c4620833df1ec439dac431a7e01bd2b9edb18",
-    "tests/security-hardening.test.ts": "7ec70cba3a3a46fd2c0aabd25fc95d4b70ac4c88f662a682c837789928319ffb",
+    "tests/admin-account-parity.test.ts": "6a276003e7388d3eca6c68783d817eeca30b2956de072d21cf1fa1d511bdbf73",
+    "tests/private-admin-http.test.ts": "067c00dbebacb9ed05c368f9db78841755b5b0dbe98fc832446918ae2e92d8dd",
+    "tests/content-analysis-entitlement.test.ts": "9876fcc3dcc516eb47d40374926460502d2a93130d46d17b00bc3d109ff74bfc",
+    "tests/security-hardening.test.ts": "940d94e94ac8cbbbf66f05d667d2cf29ef034f5f569c01d7f9dfe95b57e61e62",
     "tests/webhook-security.test.ts": "3a7ee49bc10878f8ee9a6be9dc63d7b3eecceac81a84c4a43e30299a529bf570",
     "tests/critical-paths.test.ts": "822daa3fe77125760fafe4c470f2a8e77c85c5cd7207db3576bb6b04ef436815",
     "tests/audit-persistence.test.ts": "47bf5e847deac86a43af68d9b014eb41141176394aee03370fa4fc4402f7edde",
@@ -27,8 +31,8 @@
     "tests/feature-revenue-merch.test.ts": "924f087eb8359799a5cd880087e7cd737eed5caaa86913dc76011b9ed38cc2f7",
     "tests/feature-marketplace-distribution.test.ts": "58f7ffa2e3f04fe4efa912942c9b9b3e328fc5b9fa7a4a046f056b994b4066fd",
     "tests/feature-storefront-dns.test.ts": "2831eb5748f4a2de2098c06881fabaa37c24d09f0078b6aa630cf83d992b645c",
-    "vitest.integration.config.ts": "b13108817eae6a92fef7f1ea9c4a34e1502582d3f1f77a366c7f074b6a2ffca5",
-    "scripts/testing/integration-browser.mjs": "fb481f18f985d6d7e748d4f00dd067e536980ac03a495bdb2149030b9448f4b6"
+    "vitest.integration.config.ts": "db23a3f3b73d31b906cf671b1b6eb1277464c932cccc31b42d1eb594b47dc859",
+    "scripts/testing/integration-browser.mjs": "fad0f6685e1f30e4671cf65dbc8e00f082af72421b7e74e94d1cd0369a12ce8a"
   },
   "ephemeralDatabase": "pass",
   "analyticsFixture": {
@@ -41,16 +45,17 @@
     }
   },
   "applicationRoutes": "pass",
+  "registrationPolicyFixture": "public registration explicitly enabled in disposable PostgreSQL",
   "workerWorkingDirectory": "temporary fixture; source root used only for module/test resolution",
   "trustedProxy": "Exact loopback fixture origin receives TLS forwarding and stable TEST-NET identities per file/client; hostile probes use distinct clients, production blocking and rate limits retained",
   "exitCode": 0,
   "signal": null,
   "testProcessCleanup": {
-    "tracked": 26,
+    "tracked": 30,
     "remaining": []
   },
   "appProcessCleanup": {
-    "tracked": 4,
+    "tracked": 19,
     "remaining": []
   },
   "analyticsProcessCleanup": {
@@ -58,5 +63,5 @@
     "remaining": []
   },
   "postgresCleanup": "pass",
-  "finishedAt": "2026-10-29T23:18:57.124Z"
+  "finishedAt": "2026-11-09T17:39:17.584Z"
 }

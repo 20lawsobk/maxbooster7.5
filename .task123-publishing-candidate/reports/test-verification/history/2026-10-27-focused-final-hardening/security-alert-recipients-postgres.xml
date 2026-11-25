@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<testsuites>
+	<testsuite name="security alerts use real administrator recipients and retain honest delivery outcomes" time="1.097953" disabled="0" errors="0" tests="4" failures="0" skipped="0" hostname="2fc971e77ddd">
+		<testcase name="two actual admins receive FK-valid inbox alerts while an ordinary user does not" time="0.019976" classname="test"/>
+		<testcase name="no-admin installations retain threat and structured-log evidence without claiming an inbox delivery" time="0.007215" classname="test"/>
+		<testcase name="a real notification-write failure is recorded as failed and does not leak database diagnostics" time="0.008037" classname="test"/>
+		<testcase name="an unavailable recipient query cannot create a false delivery acknowledgement" time="0.008639" classname="test"/>
+	</testsuite>
+	<!-- tests 5 -->
+	<!-- suites 0 -->
+	<!-- pass 5 -->
+	<!-- fail 0 -->
+	<!-- cancelled 0 -->
+	<!-- skipped 0 -->
+	<!-- todo 0 -->
+	<!-- duration_ms 1602.807666 -->
+</testsuites>

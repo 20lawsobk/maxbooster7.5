@@ -19,7 +19,7 @@ export function compareSchema(expected, actual) {
 }
 
 export async function checkNeonSchema(connectionString) {
-  if (!connectionString) throw new Error("NEON_DATABASE_URL is required; no alternate database will be used.");
+  if (!connectionString) throw new Error("A Neon database URL is required; no generic database fallback will be used.");
   const [{ is }, { PgTable, getTableConfig }, schema] = await Promise.all([
     import("drizzle-orm"), import("drizzle-orm/pg-core"), import("../shared/schema.ts"),
   ]);
@@ -51,7 +51,9 @@ export async function checkNeonSchema(connectionString) {
 
 if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
   try {
-    const report = await checkNeonSchema(process.env.NEON_DATABASE_URL);
+    const report = await checkNeonSchema(
+      process.env.NEON_PRIMARY_URL || process.env.NEON_DATABASE_URL,
+    );
     console.log(JSON.stringify(report, null, 2));
     process.exitCode = report.drift.length ? 1 : 0;
   } catch (error) {

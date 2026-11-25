@@ -148,7 +148,7 @@ test("simulated beta: actual purchase producer -> registered webhook -> settleme
     "drizzle-orm":"export const eq=()=>{},and=()=>{},sql=()=>{};",
     "./instantPayoutService":"export const instantPayoutService={};",
     "./notificationService.js":"export const notificationService={};",
-    "../logger.js":"export const logger={info(){},warn(){},error(){}};",
+     "../logger.js":"export const logger={info(){},warn(){},error(){}};",
     "../config/defaults.js":"export const getBaseUrl=()=> 'https://app.invalid';",
   });
   const marketplace=service.marketplaceService;

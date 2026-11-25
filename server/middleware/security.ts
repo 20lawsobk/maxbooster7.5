@@ -8,58 +8,78 @@ import { isProductionEnv } from "../lib/envHelpers.js";
 const APP_DOMAIN = process.env.APP_URL || "https://maxbooster.replit.app";
 const isDev = !isProductionEnv();
 
-const helmetMiddleware = helmet({
-  contentSecurityPolicy: {
-    directives: {
-      defaultSrc: ["'self'"],
-      scriptSrc: [
-        "'self'",
-        // 'unsafe-inline' / 'unsafe-eval' only in development (Vite HMR needs them).
-        // In production the compiled bundle has no inline scripts and no eval usage.
-        ...(isDev ? ["'unsafe-inline'", "'unsafe-eval'"] : []),
-        "https://js.stripe.com",
-        "https://www.googletagmanager.com",
-        "https://connect.facebook.net",
-      ],
-      styleSrc: [
-        "'self'",
-        "'unsafe-inline'", // CSS-in-JS libraries require this; scoped to styles only
-        "https://fonts.googleapis.com",
-      ],
-      fontSrc: ["'self'", "https://fonts.gstatic.com", "data:"],
-      imgSrc: ["'self'", "data:", "blob:", "https:"],
-      mediaSrc: ["'self'", "blob:", "data:", "https:"],
-      connectSrc: [
-        "'self'",
-        APP_DOMAIN,
-        "wss:",
-        "ws:",
-        "https://api.stripe.com",
-        "https://api.labelgrid.com",
-        "https://maxbooster.replit.app",
-        "https://o4510378512613376.ingest.us.sentry.io",
-        ...(isDev ? ["ws://localhost:*", "http://localhost:*"] : []),
-      ],
-      frameSrc: ["'self'", "https://js.stripe.com", "https://hooks.stripe.com"],
-      workerSrc: ["'self'", "blob:"],
-      objectSrc: ["'none'"],
-      baseUri: ["'self'"],
-      formAction: ["'self'"],
-      frameAncestors: ["'none'"],
+const createHelmetMiddleware = (
+  frameAncestors: string[],
+  allowReplitPreviewEmbedding = false,
+) =>
+  helmet({
+    contentSecurityPolicy: {
+      directives: {
+        defaultSrc: ["'self'"],
+        scriptSrc: [
+          "'self'",
+          // 'unsafe-inline' / 'unsafe-eval' only in development (Vite HMR needs them).
+          // In production the compiled bundle has no inline scripts and no eval usage.
+          ...(isDev ? ["'unsafe-inline'", "'unsafe-eval'"] : []),
+          "https://js.stripe.com",
+          "https://www.googletagmanager.com",
+          "https://connect.facebook.net",
+        ],
+        styleSrc: [
+          "'self'",
+          "'unsafe-inline'", // CSS-in-JS libraries require this; scoped to styles only
+          "https://fonts.googleapis.com",
+        ],
+        fontSrc: ["'self'", "https://fonts.gstatic.com", "data:"],
+        imgSrc: ["'self'", "data:", "blob:", "https:"],
+        mediaSrc: ["'self'", "blob:", "data:", "https:"],
+        connectSrc: [
+          "'self'",
+          APP_DOMAIN,
+          "wss:",
+          "ws:",
+          "https://api.stripe.com",
+          "https://api.labelgrid.com",
+          "https://maxbooster.replit.app",
+          "https://o4510378512613376.ingest.us.sentry.io",
+          ...(isDev ? ["ws://localhost:*", "http://localhost:*"] : []),
+        ],
+        frameSrc: ["'self'", "https://js.stripe.com", "https://hooks.stripe.com"],
+        workerSrc: ["'self'", "blob:"],
+        objectSrc: ["'none'"],
+        baseUri: ["'self'"],
+        formAction: ["'self'"],
+        frameAncestors,
+      },
     },
-  },
-  crossOriginEmbedderPolicy: false,
-  crossOriginOpenerPolicy: { policy: "same-origin-allow-popups" },
-  crossOriginResourcePolicy: { policy: "cross-origin" },
-  hsts: {
-    maxAge: 31536000,
-    includeSubDomains: true,
-    preload: true,
-  },
-  noSniff: true,
-  referrerPolicy: { policy: "strict-origin-when-cross-origin" },
-  xssFilter: true,
-});
+    // X-Frame-Options cannot express a trusted-origin allowlist. For the
+    // development SPA only, CSP frame-ancestors is the authoritative policy.
+    frameguard: allowReplitPreviewEmbedding ? false : { action: "sameorigin" },
+    crossOriginEmbedderPolicy: false,
+    crossOriginOpenerPolicy: { policy: "same-origin-allow-popups" },
+    crossOriginResourcePolicy: { policy: "cross-origin" },
+    hsts: {
+      maxAge: 31536000,
+      includeSubDomains: true,
+      preload: true,
+    },
+    noSniff: true,
+    referrerPolicy: { policy: "strict-origin-when-cross-origin" },
+    xssFilter: true,
+  });
+
+const helmetMiddleware = createHelmetMiddleware(["'none'"]);
+const replitPreviewHelmetMiddleware = isDev
+  ? createHelmetMiddleware(
+      [
+        "'self'",
+        "https://replit.com",
+        "https://*.replit.com",
+        "https://*.replit.dev",
+      ],
+      true,
+    )
+  : null;
 
 // Permissions-Policy restricts which browser feature APIs this origin may use.
 // Helmet v8 does not expose this as a constructor option; set it as a raw header.
@@ -105,7 +125,17 @@ export function securityMiddleware(
   res: Response,
   next: NextFunction,
 ): void {
-  helmetMiddleware(req, res, (helmetErr?: unknown) => {
+  const isReplitPreviewNavigation =
+    isDev &&
+    req.method === "GET" &&
+    !req.path.startsWith("/api/") &&
+    req.path !== "/api-docs" &&
+    req.headers.accept?.includes("text/html") === true;
+  const activeHelmetMiddleware = isReplitPreviewNavigation
+    ? replitPreviewHelmetMiddleware ?? helmetMiddleware
+    : helmetMiddleware;
+
+  activeHelmetMiddleware(req, res, (helmetErr?: unknown) => {
     if (helmetErr) {
       logger.warn(
         `[Security] Helmet error (non-fatal): ${(helmetErr as Error)?.message ?? "unknown"}`,

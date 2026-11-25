@@ -1,0 +1,1 @@
+Summary guards and diagnostic redaction self-tests: PASS

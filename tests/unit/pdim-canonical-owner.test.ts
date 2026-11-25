@@ -119,7 +119,7 @@ describe("PocketFabric consumer wiring", () => {
     expect((manager as any).rebalancer.chunkStoreFactory).toBe(factory);
     await Promise.all([manager.evaluate(), manager.evaluate()]);
     expect(registry.listAllNodes).toHaveBeenCalledTimes(1);
-    expect(DEFAULT_RULES.maxNodes).toBe(Infinity);
+    expect(DEFAULT_RULES.maxNodes).toBe(5);
   });
 
   it("does not retire or remove a source while durable migration recovery fails", async () => {

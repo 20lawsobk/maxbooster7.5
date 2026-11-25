@@ -98,7 +98,9 @@ RESULT: PASS
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument('--python', default=sys.executable, help='Prepared Python interpreter with NumPy and repository runtime dependencies')
+    packaged_python = ROOT / 'python_runtime' / 'bin' / 'python3'
+    parser.add_argument('--python', default=str(packaged_python if packaged_python.is_file() else sys.executable),
+                        help='Prepared application Python interpreter with NumPy and repository runtime dependencies')
     parser.add_argument('--output', type=Path, default=ROOT / 'reports/test-verification/operations/engine-load')
     parser.add_argument('--repeats', type=int, choices=range(1, 11), default=1,
                         help='Independent disposable runs (default 1; choose 10 to verify repeatability)')

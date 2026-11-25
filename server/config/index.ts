@@ -18,7 +18,13 @@ export {
   isReplitWorkspace,
   getBaseUrl,
 } from "./defaults.js";
-import { runtimePorts } from "./ports.js";
+import { dnsNodeLocalHealthPort, runtimePorts } from "./ports.js";
+import {
+  selectStripePublishableKey,
+  selectStripeSecretKey,
+} from "../../shared/stripeCredentials.js";
+import { isProductionEnv } from "../lib/envHelpers.js";
+import { selectApplicationDatabaseUrl } from "./databaseTarget.js";
 
 // ─── Unified config object (self-confinement spec) ───────────────────────────
 
@@ -52,12 +58,9 @@ export const config = {
   port: runtimePorts.app,
   nodeEnv: (p.NODE_ENV as "development" | "production" | "test") || "development",
 
-  // Database — prefer Neon URL, fall back to DATABASE_URL
-  dbUrl:
-    p.NEON_DATABASE_URL ||
-    p.NEON_PRIMARY_URL ||
-    p.DATABASE_URL ||
-    "",
+  // Database — use the primary Neon URL first; retain app-specific and generic
+  // URLs as fallbacks for older environments.
+  dbUrl: selectApplicationDatabaseUrl(p),
 
   // MaxCore AI — runs as a LOCAL supervised subsystem by default (the imported
   // repo at external/maxcore). Set MAXCORE_LOCAL=0 to point back at a remote
@@ -80,9 +83,16 @@ export const config = {
   // DNS_NODE_LOCAL=1 for internal verification only.
   dnsNodeLocal: {
     enabled: p.DNS_NODE_LOCAL === "1",
-    port: Number(p.DNS_NODE_LOCAL_PORT) || 5353,
-    healthPort: Number(p.DNS_NODE_LOCAL_HEALTH_PORT) || 5380,
+    port: runtimePorts.dnsNodeLocal,
+    healthPort: dnsNodeLocalHealthPort,
     domain: p.DNS_NODE_LOCAL_DOMAIN || "max-booster.com",
+  },
+  // Internal DNS management API. It is supervised by this app, bound to
+  // loopback, and isolated from existing application DNS tables.
+  dnsApi: {
+    host: "127.0.0.1",
+    port: runtimePorts.dnsApi,
+    schema: "dns_os",
   },
   // Keep generation and administrative credentials distinct. A missing
   // generation key may fall back to the admin key for backwards-compatible
@@ -110,9 +120,10 @@ export const config = {
   corsOrigin: p.CORS_ORIGIN || "",
 
   // Stripe
-  stripeSecretKey: p.STRIPE_SECRET_KEY || "",
+  stripeSecretKey: selectStripeSecretKey(p, isProductionEnv()) || "",
   stripeWebhookSecret: p.STRIPE_WEBHOOK_SECRET || "",
-  stripePublishableKey: p.STRIPE_PUBLISHABLE_KEY || p.VITE_STRIPE_PUBLIC_KEY || "",
+  stripePublishableKey:
+    selectStripePublishableKey(p, isProductionEnv()) || "",
 
   // Email
   sendgridApiKey: p.SENDGRID_API_KEY || "",

@@ -1,0 +1,16 @@
+{
+  "commonSourceSha256": "0dc7f121807e1f9973853d60171b94d51911ad5bacae2477c364cc16ae1e27ac",
+  "commonFiles": 4235,
+  "selectedOriginalGuards": {
+    "electron/main.js": "7dfcb67b36f2d3f62b85a6c30310cf5919f3a5dc47046b74da80a382de2c779b",
+    "electron/runtime-policy.cjs": "00584c7e0d272ac6eb44c3cab9d5a487c91def15f27d6343289fec11db5edee2",
+    "package.json": "9206f9d31d7e1701315b7ef7a88dc20f8c14de31d50173867c2941c9d99befb7",
+    "tools/legacy-security-update.json": "b6552fe84796806b2a312c79167e60a13782768772591ffb9441d3520494c3ca",
+    "scripts/testing/electron-asar-module-acceptance.mjs": "6b638eb50c83ee8f8bdc1883cf51ae8951c281e7f5aa6453721dd25ea2cf2f44",
+    "tests/electron-asar-launch-policy.test.mjs": "a31fb2f61335448b273a32eb5df1342f898ad5fa0182d38e14caf7fe4f583d15",
+    "package-lock.json": "5b3367c2823a5ecb18ea8b74d3b2486e24ec180c6287e34c9586e4870787ffad",
+    "external/maxcore/pnpm-lock.yaml": "6dfd669204bf96c65263669b945eab377984a165eb588492667b892d5569249c",
+    "external/pdim/pnpm-lock.yaml": "f7af3577ab6de0159f5cab9f0b61b5da3a6330ecb06d2c0829afa846ea7d3188"
+  },
+  "scope": "Current source snapshot at copy time; unrelated concurrent plan edits are reported separately, never admitted retroactively"
+}

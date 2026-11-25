@@ -14,10 +14,17 @@ import { chainErrorAutoFixer } from "../services/chainErrorAutoFixer.js";
 import { platformAutoFixer } from "../services/platformAutoFixer.js";
 import { permanentFixRegistry } from "../services/permanentFixRegistry.js";
 import { env } from "../config/env.js";
+import { getStripeSecretKey } from "../lib/stripeClient.js";
 import { require2FA } from "../middleware/auth.js";
 import { systemIntelligence } from "../services/systemIntelligence.js";
 import { moderate } from "../services/moderationDecisionService.js";
 import { issueAdminApiToken, revokeAdminApiToken } from "../services/adminApiTokenService.js";
+import { isAdminOnlyMode } from "../services/governancePolicyService.js";
+import {
+  createHostCpuUsageSampler,
+  getDiskUsagePercent,
+  getHttpResponseMetrics,
+} from "../services/adminHealthTelemetry.js";
 
 const adminRouter = Router();
 
@@ -35,19 +42,10 @@ const adminEmailLimiter = rateLimit({
   skip: (req) => !(req.user as Record<string, unknown>)?.id,
 });
 
-const errorCounter = { last24h: 0, last7d: 0 };
+const sampleHostCpuUsage = createHostCpuUsageSampler();
 
-function getRealCpuUsage(): number {
-  const cpus = os?.cpus();
-  if (cpus?.length === 0) return 0;
-  let totalUsage = 0;
-  for (const cpu of cpus) {
-    const { user, nice, sys, idle, irq } = cpu?.times ?? {};
-    const total = user + nice + sys + idle + irq;
-    const used = user + nice + sys + irq;
-    totalUsage += (used / (total || 1)) * 100;
-  }
-  return Math.round(totalUsage / cpus?.length);
+function getRealCpuUsage(): number | null {
+  return sampleHostCpuUsage(os?.cpus() ?? []);
 }
 
 function requireAdmin(req: Request, res: Response, next: NextFunction) {
@@ -455,51 +453,92 @@ adminRouter?.get("/system-health", async (_req, res) => {
       url: string,
       timeoutMs = 5000,
     ): Promise<{
-      status: "connected" | "disconnected" | "unknown";
+      status: "response_received" | "unreachable";
       latency: number | null;
+      httpStatus: number | null;
     }> => {
+      const controller = new AbortController();
+      const timer = setTimeout(() => controller.abort(), timeoutMs);
       try {
         const start = Date.now();
-        const controller = new AbortController();
-        const timer = setTimeout(() => controller?.abort(), timeoutMs);
-        await fetch(url, { method: "HEAD", signal: controller.signal });
-        clearTimeout(timer);
-        return { status: "connected", latency: Date.now() - start };
+        const response = await fetch(url, {
+          method: "HEAD",
+          signal: controller.signal,
+        });
+        return {
+          status: "response_received",
+          latency: Date.now() - start,
+          httpStatus: response.status,
+        };
       } catch {
-        return { status: "disconnected", latency: null };
+        return { status: "unreachable", latency: null, httpStatus: null };
+      } finally {
+        clearTimeout(timer);
       }
     };
 
     const apiChecks = await Promise.allSettled([
-      env?.STRIPE_SECRET_KEY
+      getStripeSecretKey()
         ? pingApi("https://api.stripe.com/v1")
-        : Promise.resolve({ status: "unknown" as const, latency: null }),
+        : Promise.resolve({
+            status: "not_configured" as const,
+            latency: null,
+            httpStatus: null,
+          }),
       // Configuration alone is not evidence of authenticated provider health.
-      Promise.resolve({ status: "unknown" as const, latency: null }),
+      Promise.resolve({
+        status: "not_probed" as const,
+        latency: null,
+        httpStatus: null,
+      }),
       process.env.SPOTIFY_CLIENT_ID
         ? pingApi("https://api.spotify.com/v1")
-        : Promise.resolve({ status: "unknown" as const, latency: null }),
+        : Promise.resolve({
+            status: "not_configured" as const,
+            latency: null,
+            httpStatus: null,
+          }),
       pingApi("https://api.music.apple.com"),
       process.env.YOUTUBE_CLIENT_ID
         ? pingApi("https://www.googleapis.com/youtube/v3")
-        : Promise.resolve({ status: "unknown" as const, latency: null }),
+        : Promise.resolve({
+            status: "not_configured" as const,
+            latency: null,
+            httpStatus: null,
+          }),
       process.env.TWITTER_API_KEY
         ? pingApi("https://api.twitter.com/2")
-        : Promise.resolve({ status: "unknown" as const, latency: null }),
+        : Promise.resolve({
+            status: "not_configured" as const,
+            latency: null,
+            httpStatus: null,
+          }),
       process.env.INSTAGRAM_APP_ID
         ? pingApi("https://graph.instagram.com")
-        : Promise.resolve({ status: "unknown" as const, latency: null }),
+        : Promise.resolve({
+            status: "not_configured" as const,
+            latency: null,
+            httpStatus: null,
+          }),
       process.env.TIKTOK_CLIENT_KEY
         ? pingApi("https://open.tiktokapis.com")
-        : Promise.resolve({ status: "unknown" as const, latency: null }),
+        : Promise.resolve({
+            status: "not_configured" as const,
+            latency: null,
+            httpStatus: null,
+          }),
     ]);
 
     const getResult = (
-      r: PromiseSettledResult<{ status: string; latency: number | null }>,
+      r: PromiseSettledResult<{
+        status: string;
+        latency: number | null;
+        httpStatus: number | null;
+      }>,
     ) =>
       r?.status === "fulfilled"
         ? r?.value
-        : { status: "disconnected" as const, latency: null };
+        : { status: "unreachable" as const, latency: null, httpStatus: null };
 
     const externalApis = {
       stripe: getResult(apiChecks[0]),
@@ -530,30 +569,24 @@ adminRouter?.get("/system-health", async (_req, res) => {
         cpu: cpuUsage,
         disk: (() => {
           try {
-            const stat =
-              (fs as Record<string, unknown>).statfsSync?.("/") ?? null;
-            if (stat) {
-              const total = stat?.bsize * stat?.blocks;
-              const free = stat?.bsize * stat?.bfree;
-              return total > 0 ? Math.round(((total - free) / (total || 1)) * 100) : 0;
-            }
+            const stat = fs.statfsSync?.("/");
+            return getDiskUsagePercent(stat);
           } catch {
-            /* intentional: statfsSync unavailable on this platform → returns 0 */
+            return null;
           }
-          return 0;
         })(),
       },
       database: {
         status: dbStatus,
         latency: dbLatency,
         connectionPool: {
-          active: (pool as unknown as Record<string, unknown>).totalCount ?? 0,
-          idle: (pool as unknown as Record<string, unknown>).idleCount ?? 0,
-          waiting: (pool as unknown as Record<string, unknown>).waitingCount ?? 0,
+          active: (pool as unknown as Record<string, unknown>).totalCount ?? null,
+          idle: (pool as unknown as Record<string, unknown>).idleCount ?? null,
+          waiting: (pool as unknown as Record<string, unknown>).waitingCount ?? null,
           max:
             ((pool as unknown as Record<string, unknown>).options as any)?.max ??
             (pool as unknown as Record<string, unknown>).maxSize ??
-            0,
+            null,
         },
       },
       externalApis,
@@ -563,11 +596,7 @@ adminRouter?.get("/system-health", async (_req, res) => {
         lastAction:
           killSwitchState?.lastKillTime || killSwitchState?.lastResumeTime,
       },
-      errorTracking: {
-        last24h: errorCounter.last24h,
-        last7d: errorCounter.last7d,
-        errorRate: "0.00%",
-      },
+      errorTracking: getHttpResponseMetrics(),
       timestamp: new Date().toISOString(),
     });
   } catch (error) {
@@ -983,17 +1012,11 @@ adminRouter?.get("/metrics", async (_req, res) => {
       .where(eq(users.subscriptionStatus, "active"))
       .limit(1);
 
-    let diskUsagePercent = 0;
+    let diskUsagePercent: number | null = null;
     try {
-      const stat = (fs as Record<string, unknown>).statfsSync?.("/") ?? null;
-      if (stat) {
-        const total = stat?.bsize * stat?.blocks;
-        const free = stat?.bsize * stat?.bfree;
-        diskUsagePercent =
-          total > 0 ? Math.round(((total - free) / (total || 1)) * 100) : 0;
-      }
+      diskUsagePercent = getDiskUsagePercent(fs.statfsSync?.("/"));
     } catch {
-      // statfsSync not available on all Node versions/platforms — disk metric returns 0
+      diskUsagePercent = null;
     }
 
     res.json({
@@ -1020,7 +1043,7 @@ adminRouter?.get("/settings", async (_req, res) => {
     const settingsMap: Record<string, any> = {
       emailNotifications: true,
       maintenanceMode: false,
-      userRegistrationEnabled: true,
+      userRegistrationEnabled: false,
       apiRateLimit: 1000,
       webhookEndpoint: null,
     };
@@ -1034,6 +1057,10 @@ adminRouter?.get("/settings", async (_req, res) => {
       }
     });
 
+    settingsMap.adminOnlyMode = isAdminOnlyMode();
+    settingsMap.effectiveUserRegistrationEnabled =
+      !settingsMap.adminOnlyMode && settingsMap.userRegistrationEnabled === true;
+
     res.json(settingsMap);
   } catch (error) {
     logger.warn({ err: error }, "Error fetching settings:");
@@ -1041,7 +1068,7 @@ adminRouter?.get("/settings", async (_req, res) => {
   }
 });
 
-async function updateSetting(key: string, value: Record<string, unknown>) {
+async function updateSetting(key: string, value: unknown) {
   const fullKey = `platform.${key}`;
   const stringValue = JSON.stringify(value);
 
@@ -1063,9 +1090,74 @@ async function updateSetting(key: string, value: Record<string, unknown>) {
   }
 }
 
+adminRouter?.put("/settings", async (req, res) => {
+  const body = req.body;
+  if (!body || typeof body !== "object" || Array.isArray(body)) {
+    return res.status(400).json({ error: "Request body must be an object" });
+  }
+
+  const allowed = new Set([
+    "emailNotifications",
+    "maintenanceMode",
+    "userRegistrationEnabled",
+  ]);
+  const entries = Object.entries(body);
+  if (entries.length === 0) {
+    return res.status(400).json({ error: "At least one setting is required" });
+  }
+  const unknownKeys = entries
+    .map(([key]) => key)
+    .filter((key) => !allowed.has(key));
+  if (unknownKeys.length > 0) {
+    return res.status(400).json({
+      error: "Unknown setting keys",
+      keys: unknownKeys,
+    });
+  }
+  for (const [key, value] of entries) {
+    if (typeof value !== "boolean") {
+      return res.status(400).json({ error: `${key} must be boolean` });
+    }
+  }
+
+  try {
+    await db.transaction(async (transaction) => {
+      for (const [key, value] of entries) {
+        const fullKey = `platform.${key}`;
+        const serializedValue = JSON.stringify(value);
+        await transaction
+          .insert(systemSettings)
+          .values({
+            key: fullKey,
+            value: serializedValue,
+            updatedBy: req.user!.id,
+          })
+          .onConflictDoUpdate({
+            target: systemSettings.key,
+            set: {
+              value: serializedValue,
+              updatedBy: req.user!.id,
+              updatedAt: new Date(),
+            },
+          });
+      }
+    });
+    return res.json({
+      success: true,
+      updated: entries.map(([key]) => key),
+    });
+  } catch (error) {
+    logger.warn({ err: error }, "Error updating admin settings");
+    return res.status(500).json({ error: "Failed to update settings" });
+  }
+});
+
 adminRouter?.post("/settings/notifications", async (req, res) => {
   try {
     const { enabled } = req.body;
+    if (typeof enabled !== "boolean") {
+      return res.status(400).json({ error: "enabled must be boolean" });
+    }
     await updateSetting("emailNotifications", enabled);
     res.json({ success: true, enabled });
   } catch (error) {

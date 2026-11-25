@@ -68,6 +68,10 @@ const EXCLUDED_TOP_LEVEL = new Set([
 const MAXCORE_EXCLUDED_SUBTREES = [
   // Generated/customer runtime media belongs in persistent serving storage,
   // never in a source snapshot, disposable simulation or publishing capsule.
+  // This workspace-only venv resolves its interpreter through the Nix store;
+  // the portable Python runtime is built separately for releases.
+  "artifacts/ai-training-server/.venv",
+  "artifacts/ai-training-server/.pytest_cache",
   "artifacts/ai-training-server/uploads",
   "artifacts/ai-training-server/ai_model/training_data",
   "artifacts/ai-training-server/ai_model/training/candidate_runs",
@@ -113,6 +117,12 @@ function toPosix(relativePath) {
   return relativePath.split(path.sep).join("/");
 }
 
+function isEnvironmentFile(basename) {
+  return basename === ".env" ||
+    basename.startsWith(".env.") ||
+    basename.endsWith(".env");
+}
+
 /**
  * Returns whether a workspace-relative path belongs in the disposable
  * production-build copy. Sensitive paths are rejected before lstat/copy;
@@ -124,6 +134,7 @@ export function shouldCopyProductionSimulationPath(relativePath) {
 
   const parts = normalized.split("/");
   const basename = parts[parts.length - 1];
+  if (isEnvironmentFile(basename)) return false;
   if (PRODUCTION_SCRATCH_DIRECTORY_PREFIXES.some(prefix => parts[0].startsWith(prefix))) return false;
   if (parts[0] === "tests") {
     return REQUIRED_SIMULATION_TEST_PATHS.some(
@@ -150,17 +161,13 @@ export function shouldCopyProductionSimulationPath(relativePath) {
       basename.endsWith(".manifest.json") ||
       basename === ".npmrc" ||
       basename === "cookies.txt" ||
-      basename === ".cloudflared" ||
-      basename === ".env" ||
-      basename.startsWith(".env."))
+      basename === ".cloudflared")
   ) {
     return false;
   }
 
   if (parts[0] !== "node_modules" && parts[0] !== "external" &&
-    (basename === ".npmrc" ||
-      basename === ".env" ||
-      basename.startsWith(".env."))) {
+    (basename === ".npmrc" || basename === "cookies.txt")) {
     return false;
   }
 
@@ -175,9 +182,7 @@ export function shouldCopyProductionSimulationPath(relativePath) {
   const subsystemPath = parts.slice(2).join("/");
   if (
     parts.length === 3 &&
-    (EXCLUDED_CAPSULE_ROOT_CONFIG_NAMES.has(basename) ||
-      basename === ".env" ||
-      basename.startsWith(".env."))
+    EXCLUDED_CAPSULE_ROOT_CONFIG_NAMES.has(basename)
   ) {
     return false;
   }

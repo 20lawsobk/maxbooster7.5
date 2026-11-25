@@ -1,6 +1,14 @@
 import type { RequestHandler } from "express";
 import path from "node:path";
 import { enforceMaintenance } from "../services/governancePolicyService.js";
+import { enforceAssurance } from "./authAssurance.js";
+import { isRegularE2eRegistration } from "../services/regularE2eAccountPolicy.js";
+import { hasBearerSecret } from "../lib/internalServiceAuth.js";
+import {
+  ensureDnsSyncSecret,
+  hasValidDnsSyncSecret,
+  isDnsZoneSyncRequest,
+} from "../lib/dnsSyncAuth.js";
 
 export function isDevDependencyResource(urlPath: string): boolean {
   if (process.env.NODE_ENV === "production") return false;
@@ -11,10 +19,22 @@ export function isDevDependencyResource(urlPath: string): boolean {
     /\.(?:[cm]?js|css|map|woff2?|ttf)$/.test(relative);
 }
 
+/** Only the client-imported shared policy module may use Vite's @fs route. */
+export function isDevSharedPolicyResource(urlPath: string): boolean {
+  if (process.env.NODE_ENV === "production") return false;
+  return urlPath === `/@fs${path.resolve("shared/adminAccessPolicy.mjs")}`;
+}
+
+/** Vite emits this exact virtual module for dynamic imports in development. */
+export function isDevViteDynamicImportHelper(urlPath: string): boolean {
+  return process.env.NODE_ENV !== "production" &&
+    urlPath === "/@id/__x00__vite/dynamic-import-helper.js";
+}
+
 const recovery = new Set([
   "GET /", "GET /login", "GET /forgot-password", "GET /reset-password", "GET /favicon.ico",
   "GET /health", "GET /ready", "GET /healthz", "GET /api/health", "GET /api/ready",
-  "GET /api/csrf-token", "GET /api/auth/me", "GET /api/auth/google",
+  "GET /api/csrf-token", "GET /api/auth/me", "GET /api/auth/public-policy", "GET /api/auth/google",
   "GET /api/auth/google/callback", "GET /api/auth/2fa/challenge", "GET /api/auth/2fa/status",
   "POST /api/auth/login", "POST /api/auth/logout", "POST /api/auth/forgot-password",
   "POST /api/auth/reset-password", "POST /api/auth/2fa/challenge", "POST /api/auth/2fa/validate",
@@ -28,8 +48,41 @@ export const governanceBoundary: RequestHandler = async (req, res, next) => {
   try {
   const path = req.path;
   const method = req.method === "HEAD" ? "GET" : req.method;
+  if (isDnsZoneSyncRequest(method, path) && ensureDnsSyncSecret()) {
+    if (!hasValidDnsSyncSecret(req.get("x-dns-sync-secret"))) {
+      return res.status(401).json({ error: "Authenticated DNS zone sync required" });
+    }
+    return next();
+  }
+  // The diffusion gateway uses a dedicated service credential for this exact
+  // callback. Authenticate it before the private-launch admin-only gate; the
+  // route repeats this check before triggering the privileged weight sync.
+  if (method === "POST" && path === "/api/training/internal/session-complete") {
+    const secret = process.env.BOOSTERSTATE_SECRET;
+    if (!secret) {
+      return res.status(503).json({ error: "Internal training sync authentication is not configured" });
+    }
+    if (!hasBearerSecret(req.get("authorization"), secret)) {
+      return res.status(401).json({ error: "Authenticated internal training sync required" });
+    }
+    return next();
+  }
+  // Public signup remains fail-closed. Only the exact owner-configured E2E
+  // identity may reach the registration handler, which independently applies
+  // the same check before bypassing the global registration policy.
+  if (
+    method === "POST" &&
+    path === "/api/auth/register" &&
+    isRegularE2eRegistration(req.body)
+  ) {
+    return next();
+  }
   if (recovery.has(`${method} ${path}`)) return next();
-  if (method === "GET" && isDevDependencyResource(path)) return next();
+  if (method === "GET" && (
+    isDevDependencyResource(path) ||
+    isDevSharedPolicyResource(path) ||
+    isDevViteDynamicImportHelper(path)
+  )) return next();
   // Static app-shell resources carry no application data/auth authority.
   if (method === "GET" && ["/assets/", "/js/", "/src/", "/node_modules/.vite/", "/@vite/", "/@react-refresh"]
     .some(prefix => path.startsWith(prefix))) return next();
@@ -72,6 +125,13 @@ export const governanceBoundary: RequestHandler = async (req, res, next) => {
     }
     return next();
   }
+  // Session hydration occurs before this boundary; bearer hydration otherwise
+  // happens only inside route guards, too late for private-launch admission.
+  if (req.headers?.authorization?.startsWith("Bearer ")) {
+    const { resolveJwtUser } = await import("./auth.js");
+    await resolveJwtUser(req);
+  }
+  if (req.user && !enforceAssurance(req, res)) return;
   return enforceMaintenance(req, res, next);
   } catch {
     return res.status(503).json({ error: "Governance verification unavailable" });

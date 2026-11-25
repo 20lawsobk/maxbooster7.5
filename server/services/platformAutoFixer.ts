@@ -150,6 +150,17 @@ interface TrendSnapshot {
   degradedCount: number;
 }
 
+export function summarizeActiveResourceTypes(resourceTypes: readonly string[]): {
+  count: number;
+  countsByType: Record<string, number>;
+} {
+  const countsByType: Record<string, number> = {};
+  for (const type of resourceTypes) {
+    countsByType[type] = (countsByType[type] ?? 0) + 1;
+  }
+  return { count: resourceTypes.length, countsByType };
+}
+
 export class PlatformAutoFixer extends EventEmitter {
   private probeResults = new Map<SubsystemName, ProbeResult>();
   private patches = new Map<string, ActivePatch>();
@@ -933,14 +944,17 @@ export class PlatformAutoFixer extends EventEmitter {
     let details: Record<string, unknown> = {};
 
     try {
-      // Ping the session store via a direct DB query (the session store uses the same pool).
+      // Ping the authoritative session store via the same pool.
       // Timeout raised 3s → 5s: Neon cold-starts on the first post-boot probe routinely
       // exceed 3s, triggering a false "sessions degraded" alert and escalating the probe
       // interval to 5s for the rest of the boot window.
       const { pool } = await import("../db.js");
       const start = Date?.now();
       (await Promise?.race([
-        pool?.query("SELECT 1 FROM session WHERE expire > NOW() LIMIT 1"),
+        pool?.query(
+          "SELECT 1 FROM pg_sessions WHERE expire > $1 LIMIT 1",
+          [Date.now()],
+        ),
         // Increased from 5 000ms → 8 000ms: Neon serverless connections go cold
         // between probe cycles (every 30s) and can take 5–7s to warm up.  The
         // old 5s limit caused false "sessions degraded" alerts during normal
@@ -959,13 +973,13 @@ export class PlatformAutoFixer extends EventEmitter {
       }
     } catch (err) {
       const msg = (err as Error).message ?? "";
-      // 'session' table may not exist (no sessions yet) — not a real failure.
+      // The session table is provisioned by reviewed migration 0090.
       if (
         msg?.includes("does not exist") ||
-        msg?.includes('relation "session"')
+        msg?.includes('relation "pg_sessions"')
       ) {
         status = "unknown";
-        message = "Session table not yet created (no sessions)";
+        message = "Authoritative session table not yet provisioned";
       } else if (msg?.includes("session ping timeout")) {
         // Neon serverless databases go cold between requests and take 5-8s to
         // reconnect.  This affects both startup and runtime probes.  Treat all
@@ -1012,23 +1026,32 @@ export class PlatformAutoFixer extends EventEmitter {
         /* non-Linux or /proc unavailable */
       }
 
-      // 3. Check EventEmitter listener leak (too many listeners = probable leak)
-      // Threshold is set high because this app runs many autonomous systems, BullMQ workers,
-      // DB keep-alive intervals, autopilot schedulers, and realtime servers that each hold handles.
-      // A baseline of 1200 handles is normal at runtime. Alarm at 3000 (genuine leak territory).
-      const listenerCount =
-        (
-          process as unknown as {
-            _getActiveHandles?: () => unknown[];
-          }
-        )._getActiveHandles?.().length ?? 0;
-      details.activeHandles = listenerCount;
-      if (listenerCount > 3000) {
-        status = status === "healthy" ? "degraded" : status;
-        message =
-          message === "OK"
-            ? `High active handle count: ${listenerCount}`
-            : message;
+      // 3. Use Node's supported resource diagnostic instead of the private
+      // _getActiveHandles() API, which can report inflated/duplicate handles.
+      // File descriptors and RSS above remain independent leak indicators.
+      const getActiveResourcesInfo = (
+        process as NodeJS.Process & { getActiveResourcesInfo?: () => string[] }
+      ).getActiveResourcesInfo;
+      if (typeof getActiveResourcesInfo === "function") {
+        const resourceSummary = summarizeActiveResourceTypes(
+          getActiveResourcesInfo.call(process),
+        );
+        details.activeResourceCount = resourceSummary.count;
+        details.activeResourceTypes = resourceSummary.countsByType;
+        if (resourceSummary.count > 3000) {
+          status = status === "healthy" ? "degraded" : status;
+          const largestTypes = Object.entries(resourceSummary.countsByType)
+            .sort((left, right) => right[1] - left[1])
+            .slice(0, 3)
+            .map(([type, count]) => `${type}:${count}`)
+            .join(", ");
+          message =
+            message === "OK"
+              ? `High active resource count: ${resourceSummary.count} (${largestTypes})`
+              : message;
+        }
+      } else {
+        details.activeResourceCount = "unsupported";
       }
 
       // 4. RSS growth check — if RSS > 2× heap limit, we have external memory pressure

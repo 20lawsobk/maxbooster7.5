@@ -1,617 +1,509 @@
-import { useState, useEffect, useRef } from "react";
-import { motion } from "framer-motion";
-import { Users, UserPlus, Send, Copy, Check, MousePointer2, Eye, Crown } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { Card } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Switch } from "@/components/ui/switch";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { ScrollArea } from "@/components/ui/scroll-area";
+import { useEffect, useRef, useState } from "react";
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+  AlertTriangle,
+  Loader2,
+  MessageSquare,
+  Send,
+  Users,
+  Wifi,
+  WifiOff,
+} from "lucide-react";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
+import { getCsrfTokenFromCookie } from "@/lib/queryClient";
+import { CollaborationCallControls } from "@/components/studio/CollaborationCallControls";
+import {
+  useCollaborationDocument,
+  type CollaborationRoomMessage,
+} from "@/hooks/useCollaborationDocument";
 import { cn } from "@/lib/utils";
 
-interface Collaborator {
+interface CollaborationRoom {
   id: string;
-  name: string;
-  email: string;
-  avatar?: string;
-  role: "owner" | "editor" | "viewer";
-  status: "active" | "idle" | "away" | "offline";
-  cursor?: { x: number; y: number; trackId?: string };
-  color: string;
-  isRecording?: boolean;
-  lastActive: Date;
-}
-
-interface ChatMessage {
-  id: string;
-  userId: string;
-  userName: string;
-  userColor: string;
-  content: string;
-  timestamp: Date;
-  type: "message" | "system" | "action";
+  projectId: string;
+  state: "active" | "closed";
+  generation: number;
+  mediaState: "unavailable" | "available" | "degraded";
+  mediaRegion: string | null;
+  participantLimit: number | null;
+  canManage: boolean;
+  createdAt: string;
+  updatedAt: string;
 }
 
 interface FlowStateCollaborationProps {
-  projectId?: string;
-  currentUserId?: string;
+  projectId: string;
+  projectName: string;
+  currentUserId: string;
   className?: string;
 }
 
-const COLORS = [
-  "#ef4444",
-  "#f97316",
-  "#eab308",
-  "#22c55e",
-  "#14b8a6",
-  "#3b82f6",
-  "#8b5cf6",
-  "#ec4899",
-  "#f43f5e",
-  "#06b6d4",
-];
+async function readError(response: Response): Promise<string> {
+  try {
+    const body = (await response.json()) as { error?: unknown };
+    if (typeof body.error === "string") return body.error;
+  } catch {
+    // The caller receives a stable status-specific error below.
+  }
+  return `Request failed (${response.status})`;
+}
 
 export function FlowStateCollaboration({
-  projectId = "project-123",
-  currentUserId = "user-1",
+  projectId,
+  projectName,
+  currentUserId,
   className,
 }: FlowStateCollaborationProps) {
   const { toast } = useToast();
-  const [collaborators, setCollaborators] = useState<Collaborator[]>([
-    {
-      id: "user-1",
-      name: "You",
-      email: "you@example.com",
-      role: "owner",
-      status: "active",
-      color: COLORS[0],
-      cursor: { x: 450, y: 200 },
-      lastActive: new Date(),
-    },
-    {
-      id: "user-2",
-      name: "Alex Producer",
-      email: "alex@example.com",
-      avatar: "",
-      role: "editor",
-      status: "active",
-      color: COLORS[1],
-      cursor: { x: 650, y: 180, trackId: "track-2" },
-      isRecording: true,
-      lastActive: new Date(),
-    },
-    {
-      id: "user-3",
-      name: "Sam Mixer",
-      email: "sam@example.com",
-      role: "editor",
-      status: "idle",
-      color: COLORS[2],
-      cursor: { x: 300, y: 250, trackId: "track-4" },
-      lastActive: new Date(Date.now() - 300000),
-    },
-    {
-      id: "user-4",
-      name: "Jordan Artist",
-      email: "jordan@example.com",
-      role: "viewer",
-      status: "away",
-      color: COLORS[3],
-      lastActive: new Date(Date.now() - 900000),
-    },
-  ]);
-
-  const [messages, setMessages] = useState<ChatMessage[]>([
-    {
-      id: "m1",
-      userId: "user-2",
-      userName: "Alex Producer",
-      userColor: COLORS[1],
-      content: "Hey, I think the kick needs more punch around 60Hz",
-      timestamp: new Date(Date.now() - 120000),
-      type: "message",
-    },
-    {
-      id: "m2",
-      userId: "system",
-      userName: "System",
-      userColor: "#666",
-      content: "Sam Mixer joined the session",
-      timestamp: new Date(Date.now() - 60000),
-      type: "system",
-    },
-    {
-      id: "m3",
-      userId: "user-3",
-      userName: "Sam Mixer",
-      userColor: COLORS[2],
-      content: "On it! Also checking the sidechain compression",
-      timestamp: new Date(Date.now() - 30000),
-      type: "message",
-    },
-  ]);
-
-  const [newMessage, setNewMessage] = useState("");
-  const [showCursors, setShowCursors] = useState(true);
-  const [showChat, setShowChat] = useState(true);
-  const [inviteEmail, setInviteEmail] = useState("");
-  const [inviteRole, setInviteRole] = useState<"editor" | "viewer">("editor");
-  const [_isVideoOn, _setIsVideoOn] = useState(false);
-  const [_isAudioOn, _setIsAudioOn] = useState(true);
-  const [shareLink, _setShareLink] = useState(
-    `${window.location.origin}/collab/${projectId}`,
-  );
-  const [linkCopied, setLinkCopied] = useState(false);
-
-  const chatScrollRef = useRef<HTMLDivElement>(null);
-
-  const sendMessage = () => {
-    if (!newMessage.trim()) return;
-
-    const message: ChatMessage = {
-      id: `m${Date.now()}`,
-      userId: currentUserId,
-      userName: "You",
-      userColor: COLORS[0],
-      content: newMessage,
-      timestamp: new Date(),
-      type: "message",
-    };
-
-    setMessages((prev) => [...prev, message]);
-    setNewMessage("");
-  };
-
-  const inviteCollaborator = () => {
-    if (!inviteEmail.trim()) return;
-
-    toast({
-      title: "Invitation sent",
-      description: `${inviteEmail} has been invited as ${inviteRole}`,
-    });
-    setInviteEmail("");
-  };
-
-  const copyShareLink = () => {
-    navigator.clipboard.writeText(shareLink);
-    setLinkCopied(true);
-    toast({ title: "Link copied to clipboard" });
-    setTimeout(() => setLinkCopied(false), 2000);
-  };
-
-  const changeRole = (userId: string, newRole: Collaborator["role"]) => {
-    setCollaborators((prev) =>
-      prev.map((c) => (c.id === userId ? { ...c, role: newRole } : c)),
-    );
-    const user = collaborators.find((c) => c.id === userId);
-    toast({ title: `${user?.name}'s role changed to ${newRole}` });
-  };
-
-  const removeCollaborator = (userId: string) => {
-    const user = collaborators.find((c) => c.id === userId);
-    setCollaborators((prev) => prev.filter((c) => c.id !== userId));
-
-    const systemMessage: ChatMessage = {
-      id: `m${Date.now()}`,
-      userId: "system",
-      userName: "System",
-      userColor: "#666",
-      content: `${user?.name} was removed from the session`,
-      timestamp: new Date(),
-      type: "system",
-    };
-    setMessages((prev) => [...prev, systemMessage]);
-  };
-
-  const getStatusColor = (status: Collaborator["status"]): string => {
-    switch (status) {
-      case "active":
-        return "bg-green-500";
-      case "idle":
-        return "bg-yellow-500";
-      case "away":
-        return "bg-orange-500";
-      case "offline":
-        return "bg-zinc-500";
-    }
-  };
-
-  const getRoleIcon = (role: Collaborator["role"]) => {
-    switch (role) {
-      case "owner":
-        return <Crown className="w-3 h-3 text-yellow-400" />;
-      case "editor":
-        return <MousePointer2 className="w-3 h-3 text-blue-400" />;
-      case "viewer":
-        return <Eye className="w-3 h-3 text-zinc-400" />;
-    }
-  };
+  const [room, setRoom] = useState<CollaborationRoom | null>(null);
+  const [roomError, setRoomError] = useState<string | null>(null);
+  const [opening, setOpening] = useState(true);
 
   useEffect(() => {
-    if (chatScrollRef.current) {
-      chatScrollRef.current.scrollTop = chatScrollRef.current.scrollHeight;
-    }
-  }, [messages]);
+    let cancelled = false;
+    const openRoom = async () => {
+      setOpening(true);
+      setRoomError(null);
+      try {
+        let response = await fetch(
+          `/api/collaboration/rooms/${encodeURIComponent(projectId)}`,
+          { credentials: "include" },
+        );
+        if (response.status === 404) {
+          const csrfToken = getCsrfTokenFromCookie();
+          response = await fetch(
+            `/api/collaboration/rooms/${encodeURIComponent(projectId)}/open`,
+            {
+              method: "POST",
+              credentials: "include",
+              headers: {
+                "Content-Type": "application/json",
+                ...(csrfToken ? { "x-csrf-token": csrfToken } : {}),
+              },
+              body: JSON.stringify({}),
+            },
+          );
+        }
+        if (!response.ok) throw new Error(await readError(response));
+        const result = (await response.json()) as {
+          room?: Omit<CollaborationRoom, "canManage">;
+          canManage?: boolean;
+        };
+        if (!result.room?.id || result.room.projectId !== projectId) {
+          throw new Error("The server returned an invalid collaboration room");
+        }
+        if (!cancelled) {
+          setRoom({ ...result.room, canManage: result.canManage === true });
+        }
+      } catch (error) {
+        if (!cancelled) {
+          setRoomError(
+            error instanceof Error ? error.message : "Room could not be opened",
+          );
+        }
+      } finally {
+        if (!cancelled) setOpening(false);
+      }
+    };
 
-  const activeCollaborators = collaborators.filter(
-    (c) => c.status !== "offline",
-  );
+    void openRoom();
+    return () => {
+      cancelled = true;
+    };
+  }, [projectId]);
 
-  return (
-    <div
-      className={cn("flex flex-col h-full bg-zinc-950 text-white", className)}
-    >
-      {/* Header */}
-      <div className="flex items-center justify-between px-4 py-3 border-b border-zinc-800">
-        <div className="flex items-center gap-3">
-          <div className="p-2 bg-gradient-to-br from-violet-500/20 to-purple-500/20 rounded-lg">
-            <Users className="w-5 h-5 text-violet-400" />
-          </div>
-          <div>
-            <h2 className="font-semibold">Real-Time Collaboration</h2>
-            <p className="text-xs text-zinc-500">
-              {activeCollaborators.length} active collaborators
-            </p>
-          </div>
-        </div>
-        <div className="flex items-center gap-2">
-          {/* Presence Avatars */}
-          <div className="flex -space-x-2 mr-2">
-            {activeCollaborators.slice(0, 4).map((collab) => (
-              <div key={collab.id} className="relative">
-                <Avatar className="w-8 h-8 border-2 border-zinc-950">
-                  <AvatarImage src={collab.avatar} />
-                  <AvatarFallback style={{ backgroundColor: collab.color }}>
-                    {collab.name.charAt(0)}
-                  </AvatarFallback>
-                </Avatar>
-                <div
-                  className={cn(
-                    "absolute bottom-0 right-0 w-2.5 h-2.5 rounded-full border-2 border-zinc-950",
-                    getStatusColor(collab.status),
-                  )}
-                />
-              </div>
-            ))}
-            {activeCollaborators.length > 4 && (
-              <div className="w-8 h-8 rounded-full bg-zinc-700 flex items-center justify-center text-xs border-2 border-zinc-950">
-                +{activeCollaborators.length - 4}
-              </div>
-            )}
-          </div>
-          <Badge
-            variant="outline"
-            className="text-violet-400 border-violet-400/30"
-          >
-            Live Session
-          </Badge>
+  if (opening) {
+    return (
+      <div className={cn("flex h-full items-center justify-center", className)}>
+        <div role="status" className="flex items-center gap-2 text-sm text-muted-foreground">
+          <Loader2 className="h-4 w-4 animate-spin" />
+          Opening the shared room…
         </div>
       </div>
+    );
+  }
 
-      <div className="flex flex-1 overflow-hidden">
-        {/* Left Panel - Collaborators */}
-        <div className="w-72 border-r border-zinc-800 flex flex-col">
-          <Tabs defaultValue="people" className="flex-1 flex flex-col">
-            <TabsList className="m-2 bg-zinc-900">
-              <TabsTrigger value="people" className="flex-1">
-                <Users className="w-4 h-4 mr-1" />
-                People
-              </TabsTrigger>
-              <TabsTrigger value="invite" className="flex-1">
-                <UserPlus className="w-4 h-4 mr-1" />
-                Invite
-              </TabsTrigger>
-            </TabsList>
+  if (!room) {
+    return (
+      <div className={cn("p-6", className)}>
+        <Card role="alert" className="border-destructive/40">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2 text-base">
+              <AlertTriangle className="h-4 w-4 text-destructive" />
+              Collaboration room unavailable
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="text-sm text-muted-foreground">
+            {roomError || "The room could not be opened."}
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
 
-            <TabsContent
-              value="people"
-              className="flex-1 overflow-auto m-0 p-2"
-            >
-              <div className="space-y-2">
-                {collaborators.map((collab) => (
-                  <Card
-                    key={collab.id}
-                    className="bg-zinc-900 border-zinc-800 p-3"
-                  >
-                    <div className="flex items-start gap-3">
-                      <div className="relative">
-                        <Avatar className="w-10 h-10">
-                          <AvatarImage src={collab.avatar} />
-                          <AvatarFallback
-                            style={{ backgroundColor: collab.color }}
-                          >
-                            {collab.name.charAt(0)}
-                          </AvatarFallback>
-                        </Avatar>
-                        <div
-                          className={cn(
-                            "absolute bottom-0 right-0 w-3 h-3 rounded-full border-2 border-zinc-900",
-                            getStatusColor(collab.status),
-                          )}
-                        />
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-2">
-                          <span className="font-medium text-sm truncate">
-                            {collab.name}
-                            {collab.id === currentUserId && " (You)"}
-                          </span>
-                          {getRoleIcon(collab.role)}
-                        </div>
-                        <div className="flex items-center gap-2 mt-1">
-                          <Badge variant="secondary" className="text-xs">
-                            {collab.role}
-                          </Badge>
-                          {collab.isRecording && (
-                            <Badge className="bg-red-500/20 text-red-400 text-xs animate-pulse">
-                              Recording
-                            </Badge>
-                          )}
-                        </div>
-                        {collab.cursor?.trackId && (
-                          <p className="text-xs text-zinc-500 mt-1">
-                            Working on: {collab.cursor.trackId}
-                          </p>
-                        )}
-                      </div>
-                    </div>
+  return (
+    <ActiveCollaborationRoom
+      room={room}
+      projectName={projectName}
+      projectId={projectId}
+      currentUserId={currentUserId}
+      className={className}
+      toast={toast}
+    />
+  );
+}
 
-                    {collab.id !== currentUserId && collab.role !== "owner" && (
-                      <div className="flex gap-1 mt-2 pt-2 border-t border-zinc-800">
-                        <Select
-                          value={collab.role}
-                          onValueChange={(v) =>
-                            changeRole(collab.id, v as Collaborator["role"])
-                          }
-                        >
-                          <SelectTrigger className="h-7 text-xs bg-zinc-800 border-zinc-700">
-                            <SelectValue />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="editor">Editor</SelectItem>
-                            <SelectItem value="viewer">Viewer</SelectItem>
-                          </SelectContent>
-                        </Select>
-                        <Button
-                          size="sm"
-                          variant="ghost"
-                          className="h-7 text-xs text-red-400"
-                          onClick={() => removeCollaborator(collab.id)}
-                        >
-                          Remove
-                        </Button>
-                      </div>
-                    )}
-                  </Card>
-                ))}
-              </div>
-            </TabsContent>
+function ActiveCollaborationRoom({
+  room,
+  projectName,
+  projectId,
+  currentUserId,
+  className,
+  toast,
+}: {
+  room: CollaborationRoom;
+  projectName: string;
+  projectId: string;
+  currentUserId: string;
+  className?: string;
+  toast: ReturnType<typeof useToast>["toast"];
+}) {
+  const {
+    sharedText,
+    setSharedText,
+    connectionState,
+    canWrite,
+    roomMessages,
+    connectionEpoch,
+    replaceRoomMessages,
+    addRoomMessage,
+    mediaAvailability,
+    callEvents,
+    clearCallEvents,
+    requestCall,
+  } = useCollaborationDocument(projectId, room.id, room.generation);
+  const [draft, setDraft] = useState("");
+  const [sending, setSending] = useState(false);
+  const [closing, setClosing] = useState(false);
+  const [roomEnded, setRoomEnded] = useState(false);
+  const chatEndRef = useRef<HTMLDivElement>(null);
 
-            <TabsContent value="invite" className="m-0 p-4 space-y-4">
-              {/* Invite by Email */}
-              <div className="space-y-2">
-                <Label className="text-sm">Invite by Email</Label>
-                <Input
-                  type="email"
-                  placeholder="collaborator@email.com"
-                  value={inviteEmail}
-                  onChange={(e) => setInviteEmail(e.target.value)}
-                  className="bg-zinc-900 border-zinc-700"
-                />
-                <div className="flex gap-2">
-                  <Select
-                    value={inviteRole}
-                    onValueChange={(v) =>
-                      setInviteRole(v as "editor" | "viewer")
-                    }
-                  >
-                    <SelectTrigger className="bg-zinc-900 border-zinc-700">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="editor">Can Edit</SelectItem>
-                      <SelectItem value="viewer">View Only</SelectItem>
-                    </SelectContent>
-                  </Select>
-                  <Button
-                    onClick={inviteCollaborator}
-                    disabled={!inviteEmail.trim()}
-                  >
-                    <Send className="w-4 h-4 mr-1" />
-                    Invite
-                  </Button>
-                </div>
-              </div>
+  useEffect(() => {
+    let cancelled = false;
+    const loadMessages = async () => {
+      try {
+        const response = await fetch(
+          `/api/collaboration/rooms/${encodeURIComponent(projectId)}/messages?limit=100`,
+          { credentials: "include" },
+        );
+        if (!response.ok) throw new Error(await readError(response));
+        const result = (await response.json()) as {
+          messages?: CollaborationRoomMessage[];
+        };
+        if (!Array.isArray(result.messages)) {
+          throw new Error("The server returned invalid room messages");
+        }
+        if (!cancelled) replaceRoomMessages(result.messages);
+      } catch (error) {
+        if (!cancelled) {
+          toast({
+            title: "Room messages unavailable",
+            description:
+              error instanceof Error ? error.message : "Could not load messages",
+            variant: "destructive",
+          });
+        }
+      }
+    };
+    void loadMessages();
+    return () => {
+      cancelled = true;
+    };
+  }, [connectionEpoch, projectId, replaceRoomMessages, toast]);
 
-              {/* Share Link */}
-              <div className="space-y-2 pt-4 border-t border-zinc-800">
-                <Label className="text-sm">Share Link</Label>
-                <div className="flex gap-2">
-                  <Input
-                    value={shareLink}
-                    readOnly
-                    className="bg-zinc-900 border-zinc-700 text-sm"
-                  />
-                  <Button variant="outline" onClick={copyShareLink}>
-                    {linkCopied ? (
-                      <Check className="w-4 h-4" />
-                    ) : (
-                      <Copy className="w-4 h-4" />
-                    )}
-                  </Button>
-                </div>
-                <p className="text-xs text-zinc-500">
-                  Anyone with this link can join as viewer
-                </p>
-              </div>
-            </TabsContent>
-          </Tabs>
+  useEffect(() => {
+    chatEndRef.current?.scrollIntoView({ behavior: "smooth", block: "end" });
+  }, [roomMessages]);
 
-          {/* Settings */}
-          <div className="p-3 border-t border-zinc-800 space-y-3">
-            <div className="flex items-center justify-between">
-              <Label className="text-sm text-zinc-400">Show Cursors</Label>
-              <Switch checked={showCursors} onCheckedChange={setShowCursors} />
-            </div>
-            <div className="flex items-center justify-between">
-              <Label className="text-sm text-zinc-400">Show Chat</Label>
-              <Switch checked={showChat} onCheckedChange={setShowChat} />
-            </div>
+  const sendMessage = async (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    const content = draft.trim();
+    if (!content || !canWrite || sending) return;
+    setSending(true);
+    const clientMessageId = crypto.randomUUID();
+    try {
+      const csrfToken = getCsrfTokenFromCookie();
+      const response = await fetch(
+        `/api/collaboration/rooms/${encodeURIComponent(projectId)}/messages`,
+        {
+          method: "POST",
+          credentials: "include",
+          headers: {
+            "Content-Type": "application/json",
+            ...(csrfToken ? { "x-csrf-token": csrfToken } : {}),
+          },
+          body: JSON.stringify({ clientMessageId, content }),
+        },
+      );
+      const result = (await response.json()) as {
+        message?: CollaborationRoomMessage;
+        error?: string;
+        persisted?: boolean;
+      };
+      if (result.message) addRoomMessage(result.message);
+      if (!response.ok) {
+        if (result.persisted) setDraft("");
+        throw new Error(result.error || `Message send failed (${response.status})`);
+      }
+      setDraft("");
+    } catch (error) {
+      toast({
+        title: "Could not send message",
+        description: error instanceof Error ? error.message : "Please retry",
+        variant: "destructive",
+      });
+    } finally {
+      setSending(false);
+    }
+  };
+
+  const endRoom = async () => {
+    if (!room.canManage || closing) return;
+    setClosing(true);
+    try {
+      const csrfToken = getCsrfTokenFromCookie();
+      const response = await fetch(
+        `/api/collaboration/rooms/${encodeURIComponent(projectId)}/close`,
+        {
+          method: "POST",
+          credentials: "include",
+          headers: csrfToken ? { "x-csrf-token": csrfToken } : {},
+        },
+      );
+      const result = (await response.json()) as {
+        error?: string;
+        persisted?: boolean;
+      };
+      if (!response.ok && !result.persisted) {
+        throw new Error(result.error || `Close failed (${response.status})`);
+      }
+      setRoomEnded(true);
+      toast({
+        title: "Session ended",
+        description: result.persisted
+          ? "The room is closed. Connected participants will be removed as room state refreshes."
+          : "The room is closed and participants have been notified.",
+      });
+    } catch (error) {
+      toast({
+        title: "Could not end session",
+        description: error instanceof Error ? error.message : "Please retry",
+        variant: "destructive",
+      });
+    } finally {
+      setClosing(false);
+    }
+  };
+
+  const connectionLabel = {
+    connecting: "Connecting",
+    syncing: "Syncing",
+    connected: "Live",
+    reconnecting: "Reconnecting",
+    denied: "Access ended",
+    ended: "Session ended",
+  }[connectionState];
+  const visibleConnectionLabel = roomEnded ? "Session ended" : connectionLabel;
+
+  return (
+    <div className={cn("flex h-full min-h-[36rem] flex-col bg-background", className)}>
+      <header className="flex flex-wrap items-center justify-between gap-3 border-b px-4 py-3">
+        <div className="flex min-w-0 items-center gap-3">
+          <Users className="h-5 w-5 shrink-0 text-primary" />
+          <div className="min-w-0">
+            <h2 className="truncate font-semibold">{projectName}</h2>
+            <p className="text-xs text-muted-foreground">Shared collaboration room</p>
           </div>
         </div>
-
-        {/* Main Area - Workspace Preview + Chat */}
-        <div className="flex-1 flex flex-col">
-          {/* Workspace Preview with Cursors */}
-          <div className="flex-1 relative bg-zinc-900 m-4 rounded-lg overflow-hidden">
-            <div className="absolute inset-0 bg-[linear-gradient(rgba(255,255,255,0.02)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.02)_1px,transparent_1px)] bg-[size:20px_20px]" />
-
-            {/* Mock timeline tracks */}
-            <div className="absolute inset-4 space-y-2">
-              {["Vocals", "Drums", "Bass", "Keys", "Guitar"].map(
-                (name, idx) => (
-                  <div
-                    key={name}
-                    className="h-12 bg-zinc-800/50 rounded flex items-center px-3 gap-2"
-                  >
-                    <div
-                      className={cn(
-                        "w-3 h-3 rounded-full",
-                        [
-                          "bg-pink-500",
-                          "bg-orange-500",
-                          "bg-purple-500",
-                          "bg-blue-500",
-                          "bg-amber-500",
-                        ][idx],
-                      )}
-                    />
-                    <span className="text-xs text-zinc-400">{name}</span>
-                    <div className="flex-1 mx-4 h-6 bg-zinc-700/50 rounded" />
-                  </div>
-                ),
-              )}
-            </div>
-
-            {/* Collaborator Cursors */}
-            {showCursors &&
-              collaborators
-                .filter(
-                  (c) =>
-                    c.cursor && c.id !== currentUserId && c.status === "active",
-                )
-                .map((collab) => (
-                  <motion.div
-                    key={collab.id}
-                    className="absolute pointer-events-none z-10"
-                    animate={{
-                      x: collab.cursor?.x || 0,
-                      y: collab.cursor?.y || 0,
-                    }}
-                    transition={{ type: "spring", damping: 30, stiffness: 300 }}
-                  >
-                    <div className="relative">
-                      <MousePointer2
-                        className="w-5 h-5 -rotate-12"
-                        style={{ color: collab.color, fill: collab.color }}
-                      />
-                      <div
-                        className="absolute top-5 left-3 px-2 py-1 rounded text-xs font-medium whitespace-nowrap"
-                        style={{ backgroundColor: collab.color }}
-                      >
-                        {collab.name}
-                        {collab.isRecording && (
-                          <span className="ml-1 inline-block w-2 h-2 bg-white rounded-full animate-pulse" />
-                        )}
-                      </div>
-                    </div>
-                  </motion.div>
-                ))}
-
-            <div className="absolute bottom-4 left-4 text-xs text-zinc-500">
-              Live collaboration workspace preview
-            </div>
-          </div>
-
-          {/* Chat Panel */}
-          {showChat && (
-            <div className="h-64 border-t border-zinc-800 flex flex-col">
-              <div className="flex items-center justify-between px-4 py-2 border-b border-zinc-800">
-                <h4 className="text-sm font-medium">Session Chat</h4>
-                <Badge variant="secondary" className="text-xs">
-                  {messages.length} messages
-                </Badge>
-              </div>
-
-              <ScrollArea className="flex-1 p-4" ref={chatScrollRef}>
-                <div className="space-y-3">
-                  {messages.map((msg) => (
-                    <div
-                      key={msg.id}
-                      className={cn(
-                        msg.type === "system" &&
-                          "text-center text-xs text-zinc-500",
-                      )}
-                    >
-                      {msg.type === "message" ? (
-                        <div className="flex items-start gap-2">
-                          <div
-                            className="w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold shrink-0"
-                            style={{ backgroundColor: msg.userColor }}
-                          >
-                            {msg.userName.charAt(0)}
-                          </div>
-                          <div className="flex-1 min-w-0">
-                            <div className="flex items-center gap-2">
-                              <span className="text-sm font-medium">
-                                {msg.userName}
-                              </span>
-                              <span className="text-xs text-zinc-500">
-                                {msg.timestamp.toLocaleTimeString([], {
-                                  hour: "2-digit",
-                                  minute: "2-digit",
-                                })}
-                              </span>
-                            </div>
-                            <p className="text-sm text-zinc-300">
-                              {msg.content}
-                            </p>
-                          </div>
-                        </div>
-                      ) : (
-                        <p>{msg.content}</p>
-                      )}
-                    </div>
-                  ))}
-                </div>
-              </ScrollArea>
-
-              <div className="p-3 border-t border-zinc-800 flex gap-2">
-                <Input
-                  placeholder="Type a message..."
-                  value={newMessage}
-                  onChange={(e) => setNewMessage(e.target.value)}
-                  onKeyDown={(e) => e.key === "Enter" && sendMessage()}
-                  className="bg-zinc-900 border-zinc-700"
-                />
-                <Button onClick={sendMessage} disabled={!newMessage.trim()}>
-                  <Send className="w-4 h-4" />
-                </Button>
-              </div>
-            </div>
+        <Badge
+          variant={
+            connectionState === "connected" && !roomEnded ? "default" : "secondary"
+          }
+          className="gap-1"
+          role="status"
+        >
+          {connectionState === "connected" && !roomEnded ? (
+            <Wifi className="h-3 w-3" />
+          ) : (
+            <WifiOff className="h-3 w-3" />
           )}
-        </div>
+          {visibleConnectionLabel}
+        </Badge>
+        {room.canManage && !roomEnded && (
+          <AlertDialog>
+            <AlertDialogTrigger asChild>
+              <Button variant="destructive" size="sm">
+                End session
+              </Button>
+            </AlertDialogTrigger>
+            <AlertDialogContent>
+              <AlertDialogHeader>
+                <AlertDialogTitle>End this collaboration session?</AlertDialogTitle>
+                <AlertDialogDescription>
+                  Everyone currently connected to this project room will be
+                  disconnected. The room can be reopened later by an authorized
+                  project member.
+                </AlertDialogDescription>
+              </AlertDialogHeader>
+              <AlertDialogFooter>
+                <AlertDialogCancel>Keep session open</AlertDialogCancel>
+                <AlertDialogAction
+                  onClick={(event) => {
+                    event.preventDefault();
+                    void endRoom();
+                  }}
+                  disabled={closing}
+                >
+                  {closing ? "Ending…" : "End session"}
+                </AlertDialogAction>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
+        )}
+      </header>
+
+      <div className="grid min-h-0 flex-1 gap-4 p-4 lg:grid-cols-[minmax(0,1fr)_minmax(18rem,0.75fr)]">
+        <section className="flex min-h-0 flex-col gap-2">
+          <div className="flex items-center justify-between">
+            <h3 className="font-medium">Shared notes</h3>
+            <span className="text-xs text-muted-foreground">
+              {canWrite ? "Edits sync as you type" : "Read-only access"}
+            </span>
+          </div>
+          <Textarea
+            aria-label="Shared collaboration notes"
+            value={sharedText}
+            onChange={(event) => setSharedText(event.target.value)}
+            disabled={
+              roomEnded || !canWrite || connectionState !== "connected"
+            }
+            placeholder="Write lyrics or notes for this project…"
+            className="min-h-[18rem] flex-1 resize-none"
+          />
+          <p className="text-xs text-muted-foreground">
+              Changes are synchronized through the project&apos;s persisted Yjs document.
+          </p>
+
+          <Card className="mt-2">
+            <CardHeader className="pb-2">
+              <CardTitle className="flex items-center gap-2 text-sm">
+                <AlertTriangle className="h-4 w-4 text-amber-500" />
+                Audio and video
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="text-sm text-muted-foreground">
+              <CollaborationCallControls
+                availability={mediaAvailability}
+                callEvents={callEvents}
+                clearCallEvents={clearCallEvents}
+                connectionState={connectionState}
+                currentUserId={currentUserId}
+                requestCall={requestCall}
+              />
+            </CardContent>
+          </Card>
+        </section>
+
+        <section className="flex min-h-0 flex-col rounded-lg border">
+          <div className="flex items-center justify-between border-b px-3 py-2">
+            <h3 className="flex items-center gap-2 text-sm font-medium">
+              <MessageSquare className="h-4 w-4" />
+              Room messages
+            </h3>
+            <span className="text-xs text-muted-foreground">
+              {roomMessages.length}
+            </span>
+          </div>
+          <ScrollArea className="min-h-[16rem] flex-1 p-3">
+            <div className="space-y-3">
+              {roomMessages.map((message) => (
+                <article key={message.id} className="break-words">
+                  <div className="flex items-baseline justify-between gap-2">
+                    <span className="text-sm font-medium">
+                      {message.sender.id === currentUserId
+                        ? "You"
+                        : message.sender.name}
+                    </span>
+                    <time
+                      className="shrink-0 text-xs text-muted-foreground"
+                      dateTime={message.createdAt}
+                    >
+                      {new Date(message.createdAt).toLocaleTimeString([], {
+                        hour: "2-digit",
+                        minute: "2-digit",
+                      })}
+                    </time>
+                  </div>
+                  <p className="whitespace-pre-wrap text-sm text-muted-foreground">
+                    {message.content}
+                  </p>
+                </article>
+              ))}
+              {roomMessages.length === 0 && (
+                <p className="py-8 text-center text-sm text-muted-foreground">
+                  No messages yet.
+                </p>
+              )}
+              <div ref={chatEndRef} />
+            </div>
+          </ScrollArea>
+          <form onSubmit={sendMessage} className="flex gap-2 border-t p-3">
+            <Input
+              value={draft}
+              onChange={(event) => setDraft(event.target.value)}
+              maxLength={4_000}
+              disabled={
+                roomEnded || !canWrite || connectionState !== "connected" || sending
+              }
+              placeholder={canWrite ? "Write a room message…" : "Read-only access"}
+              aria-label="Room message"
+            />
+            <Button
+              type="submit"
+              size="icon"
+              disabled={
+                !draft.trim() ||
+                roomEnded ||
+                !canWrite ||
+                connectionState !== "connected" ||
+                sending
+              }
+              aria-label="Send room message"
+            >
+              {sending ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : (
+                <Send className="h-4 w-4" />
+              )}
+            </Button>
+          </form>
+        </section>
       </div>
     </div>
   );

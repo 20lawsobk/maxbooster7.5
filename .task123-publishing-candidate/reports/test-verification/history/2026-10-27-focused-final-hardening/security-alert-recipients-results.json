@@ -1,0 +1,41 @@
+{
+  "runs": [
+    {
+      "command": [
+        "node",
+        "--test",
+        "--test-reporter=junit",
+        "tests/security-alert-recipients-postgres.test.mjs"
+      ],
+      "cwd": ".",
+      "startedAt": "2026-10-27T04:56:00.036725+00:00",
+      "durationSeconds": 1.679,
+      "exitCode": 0,
+      "timedOut": false,
+      "status": "passed",
+      "log": "/workspace/onboarding-results/security-alert-recipients-postgres.xml",
+      "logSha256": "8842cd180d17efef5975d442f5e61a7818f5f984fdbc203f3297172633ff4b09"
+    },
+    {
+      "command": [
+        "node",
+        "node_modules/vitest/vitest.mjs",
+        "run",
+        "--config",
+        "vitest.config.ts",
+        "tests/unit/selfHealingSecurityEngine.test.ts",
+        "--reporter=junit",
+        "--outputFile=/workspace/onboarding-results/security-alert-existing-unit.xml"
+      ],
+      "cwd": ".",
+      "startedAt": "2026-10-27T04:56:00.037083+00:00",
+      "durationSeconds": 1.725,
+      "exitCode": 0,
+      "timedOut": false,
+      "status": "passed",
+      "log": "/workspace/onboarding-results/security-alert-existing-unit.txt",
+      "logSha256": "7179a4caf5fc4e52ca498d64ca7691d4d6859912635b765d84019985ad1114da"
+    }
+  ],
+  "productionDataTouched": false
+}

@@ -1,0 +1,95 @@
+TAP version 13
+# Subtest: Shared navigation exposes named controls and keeps closed mobile navigation out of keyboard focus
+    # Subtest: 390px actual accessibility name: Open navigation menu
+    ok 1 - 390px actual accessibility name: Open navigation menu
+      ---
+      duration_ms: 5.784214
+      type: 'test'
+      ...
+    # Subtest: 390px actual accessibility name: Settings
+    ok 2 - 390px actual accessibility name: Settings
+      ---
+      duration_ms: 15.45431
+      type: 'test'
+      ...
+    # Subtest: 390px actual accessibility name: Sign Out
+    ok 3 - 390px actual accessibility name: Sign Out
+      ---
+      duration_ms: 4.89978
+      type: 'test'
+      ...
+    # Subtest: Settings is one link without nested button or link descendants
+    ok 4 - Settings is one link without nested button or link descendants
+      ---
+      duration_ms: 2.275412
+      type: 'test'
+      ...
+    # Subtest: Closed mobile drawer cannot receive sequential keyboard focus
+    ok 5 - Closed mobile drawer cannot receive sequential keyboard focus
+      ---
+      duration_ms: 39.404742
+      type: 'test'
+      ...
+    # Subtest: Menu control references existing drawer and exposes closed state
+    ok 6 - Menu control references existing drawer and exposes closed state
+      ---
+      duration_ms: 2.181912
+      type: 'test'
+      ...
+    # Subtest: Opening with Enter moves focus into named mobile drawer
+    not ok 7 - Opening with Enter moves focus into named mobile drawer
+      ---
+      duration_ms: 2.782337
+      type: 'test'
+      location: '/workspace/maxbooster7.5/tests/layout-navigation-accessibility-browser.test.mjs:109:13'
+      failureType: 'testCodeFailure'
+      error: |-
+        Expected values to be strictly equal:
+        + actual - expected
+        
+        + 'mobile-menu-button'
+        - 'sidebar-close'
+        
+      code: 'ERR_ASSERTION'
+      name: 'AssertionError'
+      expected: 'sidebar-close'
+      actual: 'mobile-menu-button'
+      operator: 'strictEqual'
+      stack: |-
+        TestContext.<anonymous> (file:///workspace/maxbooster7.5/tests/layout-navigation-accessibility-browser.test.mjs:110:14)
+        async Test.run (node:internal/test_runner/test:1054:7)
+        async TestContext.<anonymous> (file:///workspace/maxbooster7.5/tests/layout-navigation-accessibility-browser.test.mjs:109:5)
+        async Test.run (node:internal/test_runner/test:1054:7)
+        async startSubtestAfterBootstrap (node:internal/test_runner/harness:296:3)
+      ...
+    # Subtest: Escape closes drawer and restores opener focus and body scrolling
+    ok 8 - Escape closes drawer and restores opener focus and body scrolling
+      ---
+      duration_ms: 3.69344
+      type: 'test'
+      ...
+    # Subtest: Desktop resize exposes real navigation and releases mobile inert state
+    ok 9 - Desktop resize exposes real navigation and releases mobile inert state
+      ---
+      duration_ms: 21.509591
+      type: 'test'
+      ...
+    1..9
+not ok 1 - Shared navigation exposes named controls and keeps closed mobile navigation out of keyboard focus
+  ---
+  duration_ms: 1256.060657
+  type: 'test'
+  location: '/workspace/maxbooster7.5/tests/layout-navigation-accessibility-browser.test.mjs:15:1'
+  failureType: 'subtestsFailed'
+  error: '1 subtest failed'
+  code: 'ERR_TEST_FAILURE'
+  ...
+1..1
+# tests 10
+# suites 0
+# pass 8
+# fail 2
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 1367.085972

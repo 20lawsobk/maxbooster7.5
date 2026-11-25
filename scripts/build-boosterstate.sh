@@ -20,6 +20,13 @@ _PINNED_NIXPKGS="https://github.com/NixOS/nixpkgs/archive/650e572363c091045cdbc5
   exit 1
 }
 
+# Rust 1.93.1's compiler driver needs more optional static TLS than glibc's
+# default reserve when Replit's LD_AUDIT loader is active. Increase only this
+# build process's reserve; preserve LD_AUDIT and every unrelated tunable.
+export GLIBC_TUNABLES="$(
+  python3 "${_SCRIPT_DIR}/rust-glibc-tunables.py" "${GLIBC_TUNABLES:-}"
+)"
+
 # Dependency installation clears workspace caches concurrently with this phase.
 # Give every invocation private scratch paths outside that cleanup domain.
 # Explicit paths remain supported for the isolated release-preparation workspace.

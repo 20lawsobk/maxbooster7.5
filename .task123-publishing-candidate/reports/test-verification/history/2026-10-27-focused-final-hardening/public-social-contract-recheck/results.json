@@ -1,0 +1,305 @@
+{
+  "schema": 1,
+  "startedAt": "2026-10-27T04:54:27.815822+00:00",
+  "finishedAt": "2026-10-27T04:54:33.085834+00:00",
+  "sourceRevision": "4c72114a55a9425d4af743a72a71e4c58a532d2f",
+  "interpreter": "/workspace/.cloud-python/bin/python",
+  "summary": {
+    "passed": 2,
+    "failed": 0,
+    "timeout": 0,
+    "skipped": 0,
+    "blocked": 0,
+    "empty": 0
+  },
+  "counts": {
+    "tests": 55,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 0
+  },
+  "coverage": {
+    "enabled": false,
+    "status": "not_requested"
+  },
+  "isolation": "Fresh interpreter and disposable HOME/state per file; no application credentials; only ephemeral loopback networking; child process group cleanup",
+  "limits": "Blocked/skip/timeout are not passes; fixture training does not establish generation quality or production readiness",
+  "duplicateSnapshots": [
+    ".pdim-scratch-external_maxcore-989/external/maxcore/artifacts/ai-training-server/ai_model/audio/test_audio_analysis.py",
+    ".pdim-scratch-external_maxcore-989/external/maxcore/artifacts/ai-training-server/ai_model/generation/test_campaign.py",
+    ".pdim-scratch-external_maxcore-989/external/maxcore/artifacts/ai-training-server/ai_model/gpu/native/tests/test_native_kernels.py",
+    ".pdim-scratch-external_maxcore-989/external/maxcore/artifacts/ai-training-server/ai_model/gpu/tests/test_digital_backend_bridge.py",
+    ".pdim-scratch-external_maxcore-989/external/maxcore/artifacts/ai-training-server/ai_model/gpu/tests/test_digital_gpu_comprehensive.py",
+    ".pdim-scratch-external_maxcore-989/external/maxcore/artifacts/ai-training-server/ai_model/gpu/tests/test_kernels.py",
+    ".pdim-scratch-external_maxcore-989/external/maxcore/artifacts/ai-training-server/ai_model/gpu/tests/test_silicon_model.py",
+    ".pdim-scratch-external_maxcore-989/external/maxcore/artifacts/ai-training-server/ai_model/maxcore/backend/tests/test_select_backend.py",
+    ".pdim-scratch-external_maxcore-989/external/maxcore/artifacts/ai-training-server/ai_model/maxcore/tests/test_gpu_native_orchestration.py",
+    ".pdim-scratch-external_maxcore-989/external/maxcore/artifacts/ai-training-server/ai_model/maxcore/tests/test_hardware.py",
+    ".pdim-scratch-external_maxcore-989/external/maxcore/artifacts/ai-training-server/ai_model/maxcore/tests/test_maxcore.py",
+    ".pdim-scratch-external_maxcore-989/external/maxcore/artifacts/ai-training-server/ai_model/maxcore/tests/test_precision.py",
+    ".pdim-scratch-external_maxcore-989/external/maxcore/artifacts/ai-training-server/ai_model/maxcore/tests/test_resource_plan.py",
+    ".pdim-scratch-external_maxcore-989/external/maxcore/artifacts/ai-training-server/ai_model/maxcore/tests/test_silicon_simt_backend.py",
+    ".pdim-scratch-external_maxcore-989/external/maxcore/artifacts/ai-training-server/ai_model/native_analysis/test_text.py",
+    ".pdim-scratch-external_maxcore-989/external/maxcore/artifacts/ai-training-server/ai_model/native_analysis/test_website.py",
+    ".pdim-scratch-external_maxcore-989/external/maxcore/artifacts/ai-training-server/ai_model/retrieval/test_phase4.py",
+    ".pdim-scratch-external_maxcore-989/external/maxcore/artifacts/ai-training-server/ai_model/retrieval/test_pipeline.py",
+    ".pdim-scratch-external_maxcore-989/external/maxcore/artifacts/ai-training-server/ai_model/retrieval/test_rcgs.py",
+    ".pdim-scratch-external_maxcore-989/external/maxcore/artifacts/ai-training-server/ai_model/retrieval/test_retrieval.py",
+    ".pdim-scratch-external_maxcore-989/external/maxcore/artifacts/ai-training-server/ai_model/rta/test_render_contracts.py",
+    ".pdim-scratch-external_maxcore-989/external/maxcore/artifacts/ai-training-server/ai_model/test_quality_awareness.py",
+    ".pdim-scratch-external_maxcore-989/external/maxcore/artifacts/ai-training-server/tests/test_all_endpoints.py",
+    ".pdim-scratch-external_maxcore-989/external/maxcore/artifacts/ai-training-server/tests/test_audio_auto_growth.py",
+    ".pdim-scratch-external_maxcore-989/external/maxcore/artifacts/ai-training-server/tests/test_audio_bpm_key_match.py",
+    ".pdim-scratch-external_maxcore-989/external/maxcore/artifacts/ai-training-server/tests/test_audio_seeding_guard.py",
+    ".pdim-scratch-external_maxcore-989/external/maxcore/artifacts/ai-training-server/tests/test_awareness_and_quality.py",
+    ".pdim-scratch-external_maxcore-989/external/maxcore/artifacts/ai-training-server/tests/test_awareness_conditioner.py",
+    ".pdim-scratch-external_maxcore-989/external/maxcore/artifacts/ai-training-server/tests/test_beat_context.py",
+    ".pdim-scratch-external_maxcore-989/external/maxcore/artifacts/ai-training-server/tests/test_content_endpoints.py",
+    ".pdim-scratch-external_maxcore-989/external/maxcore/artifacts/ai-training-server/tests/test_diffusion_frame_resolution.py",
+    ".pdim-scratch-external_maxcore-989/external/maxcore/artifacts/ai-training-server/tests/test_intent_url_reader_safe_http.py",
+    ".pdim-scratch-external_maxcore-989/external/maxcore/artifacts/ai-training-server/tests/test_isolated_audio.py",
+    ".pdim-scratch-external_maxcore-989/external/maxcore/artifacts/ai-training-server/tests/test_media_delivery_contract.py",
+    ".pdim-scratch-external_maxcore-989/external/maxcore/artifacts/ai-training-server/tests/test_native_analysis_api.py",
+    ".pdim-scratch-external_maxcore-989/external/maxcore/artifacts/ai-training-server/tests/test_native_analysis_safe_http.py",
+    ".pdim-scratch-external_maxcore-989/external/maxcore/artifacts/ai-training-server/tests/test_native_awareness_cascade.py",
+    ".pdim-scratch-external_maxcore-989/external/maxcore/artifacts/ai-training-server/tests/test_native_media_analysis.py",
+    ".pdim-scratch-external_maxcore-989/external/maxcore/artifacts/ai-training-server/tests/test_platform_awareness_wiring.py",
+    ".pdim-scratch-external_maxcore-989/external/maxcore/artifacts/ai-training-server/tests/test_sast_runtime_remediation.py",
+    ".pdim-scratch-external_maxcore-989/external/maxcore/artifacts/ai-training-server/tests/test_smoke_load.py",
+    ".pdim-scratch-external_maxcore-989/external/maxcore/artifacts/ai-training-server/tests/test_social_ad_beacon.py",
+    ".pdim-scratch-external_maxcore-989/external/maxcore/artifacts/ai-training-server/tests/test_social_generation_controls.py",
+    ".pdim-scratch-external_maxcore-989/external/maxcore/artifacts/ai-training-server/tests/test_trusted_http.py",
+    ".pdim-scratch-external_maxcore-989/external/maxcore/artifacts/ai-training-server/tests/test_unavailable_inference_contracts.py",
+    ".pdim-scratch-external_maxcore-989/external/maxcore/artifacts/ai-training-server/tests/test_url_label_garble_guard.py",
+    ".pdim-scratch-external_maxcore-989/external/maxcore/artifacts/ai-training-server/tests/test_veo_parity.py",
+    ".pdim-scratch-external_maxcore-989/external/maxcore/artifacts/ai-training-server/tests/test_voiceover.py",
+    ".pdim-scratch-external_maxcore-989/external/maxcore/artifacts/ai-training-server/tests/test_voiceover_api.py",
+    ".pdim-scratch-external_maxcore-989/external/maxcore/artifacts/ai-training-server/tests/test_w6_90m.py"
+  ],
+  "suites": [
+    {
+      "file": "external/maxcore/artifacts/ai-training-server/ai_model/awareness/test_engine.py",
+      "description": "Isolated fixtures only; never accesses production PDIM or live network.",
+      "cases": [
+        {
+          "name": "AwarenessTests.test_source_observation_writes_are_fenced_by_ingest_ownership",
+          "description": "source observation writes are fenced by ingest ownership"
+        },
+        {
+          "name": "AwarenessTests.test_partial_source_observations_survive_incomplete_snapshot",
+          "description": "partial source observations survive incomplete snapshot"
+        },
+        {
+          "name": "AwarenessTests.test_invalid_snapshot_reports_safe_failure_category",
+          "description": "invalid snapshot reports safe failure category"
+        },
+        {
+          "name": "AwarenessTests.test_clean_is_idempotent_after_nested_html_entity_decoding",
+          "description": "clean is idempotent after nested html entity decoding"
+        },
+        {
+          "name": "AwarenessTests.test_clean_reaches_a_fixed_point_after_all_sanitization_steps",
+          "description": "clean reaches a fixed point after all sanitization steps"
+        },
+        {
+          "name": "AwarenessTests.test_all_domains_provenance_hash_and_immutable_copy",
+          "description": "all domains provenance hash and immutable copy"
+        },
+        {
+          "name": "AwarenessTests.test_hash_and_pointer_validation_on_restart",
+          "description": "hash and pointer validation on restart"
+        },
+        {
+          "name": "AwarenessTests.test_incomplete_keeps_previous_only_until_ttl",
+          "description": "incomplete keeps previous only until ttl"
+        },
+        {
+          "name": "AwarenessTests.test_optional_facade_context_and_bound_snapshot_revalidation",
+          "description": "optional facade context and bound snapshot revalidation"
+        },
+        {
+          "name": "AwarenessTests.test_no_empty_or_all_failed_rehashed_snapshot",
+          "description": "no empty or all failed rehashed snapshot"
+        },
+        {
+          "name": "AwarenessTests.test_actual_kernel_numeric_ranking",
+          "description": "actual kernel numeric ranking"
+        },
+        {
+          "name": "AwarenessTests.test_untrusted_content",
+          "description": "untrusted content"
+        },
+        {
+          "name": "AwarenessTests.test_lifecycle_idempotent_and_stops",
+          "description": "lifecycle idempotent and stops"
+        },
+        {
+          "name": "AwarenessTests.test_missing_domain_never_published",
+          "description": "missing domain never published"
+        },
+        {
+          "name": "AwarenessTests.test_publication_failure_keeps_last_acknowledged_snapshot",
+          "description": "publication failure keeps last acknowledged snapshot"
+        },
+        {
+          "name": "AwarenessTests.test_fenced_publication_error_is_safely_classified",
+          "description": "fenced publication error is safely classified"
+        },
+        {
+          "name": "AwarenessTests.test_secondary_phrase_storage_failure_has_safe_operation_category",
+          "description": "secondary phrase storage failure has safe operation category"
+        },
+        {
+          "name": "AwarenessTests.test_malformed_optional_legacy_source_metadata_is_ignored",
+          "description": "malformed optional legacy source metadata is ignored"
+        },
+        {
+          "name": "AwarenessTests.test_publication_command_error_does_not_expose_exception_text",
+          "description": "publication command error does not expose exception text"
+        },
+        {
+          "name": "AwarenessTests.test_timeout_is_not_knowledge_and_retry_backs_off",
+          "description": "timeout is not knowledge and retry backs off"
+        },
+        {
+          "name": "AwarenessTests.test_nested_bind_restores_and_invalid_hash_is_rejected",
+          "description": "nested bind restores and invalid hash is rejected"
+        },
+        {
+          "name": "PeakObservationSelectionTests.test_contextual_headlines_and_unsupported_sources_do_not_become_peak_examples",
+          "description": "contextual headlines and unsupported sources do not become peak examples"
+        },
+        {
+          "name": "PeakObservationSelectionTests.test_full_content_top_engagement_within_source_domain_balance_and_policy_hash",
+          "description": "full content top engagement within source domain balance and policy hash"
+        },
+        {
+          "name": "PeakObservationSelectionTests.test_ledger_full_body_preserved_and_stale_observations_excluded",
+          "description": "ledger full body preserved and stale observations excluded"
+        },
+        {
+          "name": "PeakObservationSelectionTests.test_peak_selection_excludes_fake_origin_zero_and_irrelevant",
+          "description": "peak selection excludes fake origin zero and irrelevant"
+        },
+        {
+          "name": "PeakObservationSelectionTests.test_duplicate_full_content_does_not_amplify_training_weight",
+          "description": "duplicate full content does not amplify training weight"
+        }
+      ],
+      "blockedReason": null,
+      "sourceSha256": "171733f213ae364b6e1fce0aa43085cc46b36c3bb02d8934e1e93ca09ff5bf4a",
+      "command": "/workspace/.cloud-python/bin/python scripts/testing/run-python-suites.py --file external/maxcore/artifacts/ai-training-server/ai_model/awareness/test_engine.py --output /workspace/onboarding-results/public-social-contract-recheck",
+      "status": "passed",
+      "exitCode": 0,
+      "durationSeconds": 5.268,
+      "counts": {
+        "tests": 26,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      "junit": "external__maxcore__artifacts__ai-training-server__ai_model__awareness__test_engine.xml",
+      "log": "external__maxcore__artifacts__ai-training-server__ai_model__awareness__test_engine.txt"
+    },
+    {
+      "file": "external/maxcore/artifacts/ai-training-server/ai_model/awareness/test_sources.py",
+      "description": "test sources",
+      "cases": [
+        {
+          "name": "SourceCoverageTests.test_youtube_feed_uses_safe_parser_and_real_view_count",
+          "description": "youtube feed uses safe parser and real view count"
+        },
+        {
+          "name": "SourceCoverageTests.test_youtube_feed_rejects_entity_declarations",
+          "description": "youtube feed rejects entity declarations"
+        },
+        {
+          "name": "SourceCoverageTests.test_all_ten_original_feeds_are_retained_without_keys",
+          "description": "all ten original feeds are retained without keys"
+        },
+        {
+          "name": "SourceCoverageTests.test_inherited_search_credentials_enable_both_providers",
+          "description": "inherited search credentials enable both providers"
+        },
+        {
+          "name": "SourceCoverageTests.test_atom_editorial_feed_is_not_invented_engagement",
+          "description": "atom editorial feed is not invented engagement"
+        },
+        {
+          "name": "LandscapeSourceTests.test_landscape_feed_empty_without_endpoint",
+          "description": "landscape feed empty without endpoint"
+        },
+        {
+          "name": "LandscapeSourceTests.test_landscape_feed_rejects_unknown_kind",
+          "description": "landscape feed rejects unknown kind"
+        },
+        {
+          "name": "LandscapeSourceTests.test_landscape_feed_parses_fixture",
+          "description": "landscape feed parses fixture"
+        },
+        {
+          "name": "LandscapeSourceTests.test_landscape_feed_degrades_on_bad_payloads",
+          "description": "landscape feed degrades on bad payloads"
+        },
+        {
+          "name": "LandscapeSourceTests.test_configured_sources_registers_landscape",
+          "description": "configured sources registers landscape"
+        },
+        {
+          "name": "LandscapeSourceTests.test_configured_sources_omits_landscape_without_config",
+          "description": "configured sources omits landscape without config"
+        },
+        {
+          "name": "LandscapeSourceTests.test_trends_lines_format",
+          "description": "trends lines format"
+        },
+        {
+          "name": "PeakSourceTests.test_complete_public_content_actual_counts_and_canonical_citation",
+          "description": "complete public content actual counts and canonical citation"
+        },
+        {
+          "name": "PeakSourceTests.test_no_missing_fabricated_negative_boolean_or_nonfinite_counts",
+          "description": "no missing fabricated negative boolean or nonfinite counts"
+        },
+        {
+          "name": "PeakSourceTests.test_old_future_irrelevant_short_instructions_and_oversized_posts_excluded",
+          "description": "old future irrelevant short instructions and oversized posts excluded"
+        },
+        {
+          "name": "PeakSourceTests.test_flagged_and_noncanonical_public_record_addresses_excluded",
+          "description": "flagged and noncanonical public record addresses excluded"
+        },
+        {
+          "name": "PeakSourceTests.test_mastodon_only_public_recent_complete_measured_posts_are_peak",
+          "description": "mastodon only public recent complete measured posts are peak"
+        },
+        {
+          "name": "PeakSourceTests.test_mastodon_context_omits_empty_unsafe_or_unresolvable_observations",
+          "description": "mastodon context omits empty unsafe or unresolvable observations"
+        },
+        {
+          "name": "PeakSourceTests.test_mastodon_short_zero_counter_context_is_canonical_not_a_peak_example",
+          "description": "mastodon short zero counter context is canonical not a peak example"
+        },
+        {
+          "name": "PeakSourceTests.test_mastodon_peak_combines_actual_trending_and_topic_counters_deduplicated",
+          "description": "mastodon peak combines actual trending and topic counters deduplicated"
+        }
+      ],
+      "blockedReason": null,
+      "sourceSha256": "0ae884972b2c7f1368818caa171110f699dbfc14ee80eebeeae2670c00d53e03",
+      "command": "/workspace/.cloud-python/bin/python scripts/testing/run-python-suites.py --file external/maxcore/artifacts/ai-training-server/ai_model/awareness/test_sources.py --output /workspace/onboarding-results/public-social-contract-recheck",
+      "status": "passed",
+      "exitCode": 0,
+      "durationSeconds": 0.432,
+      "counts": {
+        "tests": 29,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      "junit": "external__maxcore__artifacts__ai-training-server__ai_model__awareness__test_sources.xml",
+      "log": "external__maxcore__artifacts__ai-training-server__ai_model__awareness__test_sources.txt"
+    }
+  ]
+}

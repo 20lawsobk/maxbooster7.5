@@ -1,0 +1,1360 @@
+import { Router, Request, Response } from "express";
+import { ChunkUploadSessions, ChunkUploadError } from "../lib/chunkUploadSessions.js";
+import { createHardenedUpload } from "../middleware/uploadHandler.js";
+import { randomUUID } from "crypto";
+import { storageService } from "../services/storageService.js";
+import { hybridStorageService } from "../services/hybridStorageService.js";
+import { requireAuth } from "../middleware/auth.js";
+import { logger } from "../logger.js";
+import path from "path";
+import { homedir } from "node:os";
+import { db, pool } from "../db.js";
+import { userStorageFiles, userStorage, users } from "../../shared/schema.js";
+import { eq, and, isNull, lt, isNotNull, sql, sum } from "drizzle-orm";
+import { notificationService } from "../services/notificationService.js";
+
+const router = Router();
+
+/**
+ * Normalize an Express-5 wildcard param into a canonical storage key.
+ * Express has ALREADY percent-decoded params — do NOT decode again (double
+ * decoding enables %252e%252e traversal). Rejects traversal, NUL bytes,
+ * absolute paths, and empty keys.
+ */
+function normalizeStorageKey(raw: string | string[] | undefined): string | null {
+  const key = Array.isArray(raw) ? raw.join("/") : (raw ?? "");
+  if (!key || key.includes("\0") || key.includes("\\")) return null;
+  if (key.startsWith("/") || key.includes("..")) return null;
+  return key;
+}
+
+// Cleanup soft-deleted files older than 30 days (permanent deletion)
+const PERMANENT_DELETE_DAYS = 30;
+
+async function cleanupOldDeletedFiles() {
+  try {
+    const cutoffDate = new Date();
+    cutoffDate?.setDate(cutoffDate?.getDate() - PERMANENT_DELETE_DAYS);
+
+    const oldDeletedFiles = await db
+      .select()
+      .from(userStorageFiles)
+      .where(
+        and(
+          isNotNull(userStorageFiles.deletedAt),
+          lt(userStorageFiles.deletedAt, cutoffDate),
+        ),
+      )
+      .orderBy(userStorageFiles.deletedAt)
+      .limit(500);
+
+    for (const file of oldDeletedFiles) {
+      try {
+        await storageService?.deleteFile(file?.fileKey);
+        await db
+          .delete(userStorageFiles)
+          .where(eq(userStorageFiles.id, file?.id));
+        logger.info(
+          `[SoftDelete] Permanently deleted expired file: ${file?.fileKey}`,
+        );
+      } catch (err) {
+        logger.warn(
+          { err: err },
+          `[SoftDelete] Failed to permanently delete file ${file?.fileKey}:`,
+        );
+      }
+    }
+
+    if (oldDeletedFiles?.length > 0) {
+      logger.info(
+        `[SoftDelete] Cleanup completed: ${oldDeletedFiles?.length} files permanently deleted`,
+      );
+    }
+  } catch (error) {
+    logger.warn({ err: error }, "[SoftDelete] Cleanup job failed:");
+  }
+}
+
+// Run cleanup job every hour
+setInterval(cleanupOldDeletedFiles, 60 * 60 * 1000);
+
+// Run cleanup on startup
+cleanupOldDeletedFiles();
+
+const ALLOWED_AUDIO_TYPES = [
+  "audio/wav",
+  "audio/x-wav",
+  "audio/wave",
+  "audio/mp3",
+  "audio/mpeg",
+  "audio/flac",
+  "audio/x-flac",
+  "audio/aiff",
+  "audio/x-aiff",
+  "audio/ogg",
+  "audio/webm",
+  "audio/aac",
+  "audio/mp4",
+];
+
+const ALLOWED_IMAGE_TYPES = [
+  "image/jpeg",
+  "image/png",
+  "image/gif",
+  "image/webp",
+  "image/svg+xml",
+];
+
+const ALLOWED_VIDEO_TYPES = [
+  "video/mp4",
+  "video/webm",
+  "video/ogg",
+  "video/quicktime",
+];
+
+const MAX_FILE_SIZE = 500 * 1024 * 1024;
+const MAX_CHUNK_SIZE = 10 * 1024 * 1024;
+
+const ALLOWED_CATEGORIES = new Set([
+  "audio",
+  "tracks",
+  "beats",
+  "images",
+  "covers",
+  "avatars",
+  "videos",
+  "files",
+  "documents",
+  "stems",
+  "projects",
+]);
+
+function sanitizeCategory(raw: unknown): string {
+  const cat = typeof raw === "string" ? raw?.toLowerCase() : "files";
+  return ALLOWED_CATEGORIES?.has(cat) ? cat : "files";
+}
+
+function sanitizeFileName(raw: unknown): string {
+  const name = typeof raw === "string" ? raw : "upload";
+  return (
+    path
+      .basename(name)
+      .replace(/[^a-zA-Z0-9?._\- ]/g, "_")
+      .slice(0, 255) || "upload"
+  );
+}
+
+// This directory is shared by workers on this VM, never served as user media.
+// Multi-host deployments must mount the same private filesystem at this path.
+const chunkUploads = new ChunkUploadSessions({
+  directory: process.env.STORAGE_CHUNK_STAGING_DIR || path.join(homedir(), ".local/state/maxbooster/chunk-uploads"),
+  connect: async () => {
+    const client = await pool.connect();
+    return { query: async (text, values) => { await client.query(text, values); }, release: () => client.release() };
+  },
+});
+setInterval(() => { void chunkUploads.prune().catch(err => logger.warn({ err }, "Chunk staging cleanup failed")); }, 60 * 60 * 1000);
+
+const upload = createHardenedUpload({
+  maxFileSize: MAX_FILE_SIZE,
+  maxFiles: 1,
+  allowedMimes: [
+    ...ALLOWED_AUDIO_TYPES,
+    ...ALLOWED_IMAGE_TYPES,
+    ...ALLOWED_VIDEO_TYPES,
+  ],
+  label: "storage upload",
+});
+
+const chunkUpload = createHardenedUpload({
+  maxFileSize: MAX_CHUNK_SIZE,
+  maxFiles: 1,
+  label: "storage chunk",
+});
+
+router.post(
+  "/upload",
+  requireAuth,
+  upload?.single("file"),
+  async (req: Request, res: Response) => {
+    try {
+      if (!req.file) {
+        return res.status(400).json({ error: "No file provided" });
+      }
+
+      const { fileId } = req.body;
+      const category = sanitizeCategory(req.body.category);
+      const safeFileName = sanitizeFileName(req.file.originalname);
+      const userId = req.user!.id;
+
+      if (!userId) {
+        return res.status(401).json({ error: "User not authenticated" });
+      }
+
+      const key = await storageService?.uploadFile(
+        req.file.buffer,
+        `users/${userId}/${category}`,
+        safeFileName,
+        req.file.mimetype,
+      );
+
+      logger.info(`File uploaded: ${key} by user ${userId}`);
+
+      // Track the file in user_storage_files — without this row the file is
+      // invisible to quota accounting and can never be deleted or restored.
+      try {
+        let [storageRow] = await db
+          .select({ id: userStorage.id })
+          .from(userStorage)
+          .where(eq(userStorage.userId, userId))
+          .limit(1);
+        if (!storageRow) {
+          [storageRow] = await db
+            .insert(userStorage)
+            .values({ userId, storagePrefix: `users/${userId}` })
+            .onConflictDoNothing()
+            .returning({ id: userStorage.id });
+          if (!storageRow) {
+            [storageRow] = await db
+              .select({ id: userStorage.id })
+              .from(userStorage)
+              .where(eq(userStorage.userId, userId))
+              .limit(1);
+          }
+        }
+        if (storageRow) {
+          await db
+            .insert(userStorageFiles)
+            .values({
+              userId,
+              storageId: storageRow.id,
+              fileName: safeFileName,
+              fileKey: key,
+              mimeType: req.file.mimetype,
+              sizeBytes: req.file.size,
+              folder: category,
+              metadata: { category, uploadedVia: "storage/upload" },
+            })
+            .onConflictDoNothing();
+        }
+      } catch (trackErr) {
+        // Tracking is mandatory: an untracked object is invisible to quota
+        // accounting and can never be deleted. Compensate by removing the
+        // just-uploaded object and failing the request.
+        logger.error({ err: trackErr }, "[Storage] Failed to track uploaded file — rolling back upload:");
+        try {
+          await storageService?.deleteFile(key);
+        } catch (cleanupErr) {
+          logger.error({ err: cleanupErr }, "[Storage] Rollback delete failed for untracked upload:");
+        }
+        return res.status(500).json({ error: "Upload could not be recorded" });
+      }
+
+      const responseFile = {
+        id: fileId || randomUUID(),
+        key,
+        name: safeFileName,
+        size: req.file.size,
+        type: req.file.mimetype,
+        url: await storageService?.getDownloadUrl(key),
+      };
+
+      res.json({ success: true, file: responseFile });
+
+      setImmediate(async () => {
+        try {
+          const category = req.file!.mimetype?.startsWith("audio/")
+            ? "track"
+            : "file";
+          await notificationService?.sendUploadCompleteNotification(
+            userId,
+            req.file!.originalname,
+            category,
+          );
+
+          const PLATFORM_QUOTA_GB = 1000;
+          const usageResult = await db
+            .select({ totalBytes: sum(userStorageFiles.sizeBytes) })
+            .from(userStorageFiles)
+            .where(
+              and(
+                eq(userStorageFiles.userId, userId),
+                isNull(userStorageFiles.deletedAt),
+              ),
+            );
+          const usedBytes = Number(usageResult[0]?.totalBytes ?? 0);
+          const usedGB = usedBytes / 1024 ** 3;
+          const usedPercent = Math.round((usedGB / PLATFORM_QUOTA_GB) * 100);
+          if (usedPercent >= 75) {
+            await notificationService?.sendStorageQuotaNotification(
+              userId,
+              usedPercent,
+            );
+          }
+          if (usedPercent >= 85) {
+            await notificationService?.sendAdminStorageCriticalNotification(
+              usedPercent,
+              usedGB,
+              PLATFORM_QUOTA_GB,
+            );
+          }
+        } catch (err) {
+          logger.warn({ err: err }, "Post-upload notification error:");
+        }
+      });
+    } catch (error) {
+      logger.warn({ err: error }, "File upload failed:");
+      res.status(500).json({
+        error: error instanceof Error ? error?.message : "Upload failed",
+      });
+    }
+  },
+);
+
+router.post(
+  "/upload/chunk",
+  requireAuth,
+  chunkUpload?.single("chunk"),
+  async (req: Request, res: Response) => {
+    try {
+      if (!req.file) {
+        return res.status(400).json({ error: "No chunk provided" });
+      }
+
+      const accepted = await chunkUploads.accept({
+        ...req.body,
+        userId: req.user!.id,
+        fileName: sanitizeFileName(req.body.fileName),
+        category: sanitizeCategory(req.body.category),
+      }, req.file.buffer);
+      const { fileId, fileName, fileSize: fileSizeNum, mimeType, category, userId } = accepted.metadata;
+      const totalChunksNum = accepted.total;
+
+      logger.info(`Chunk ${Number(req.body.chunkIndex) + 1}/${totalChunksNum} uploaded for file ${fileId}`);
+
+      if (accepted.completed || accepted.pending) {
+        // A worker may die after SQL committed but before sealing its receipt.
+        // Only a matching live owner-tracked object can resolve that uncertainty.
+        const [tracked] = await db.select().from(userStorageFiles).where(and(
+          eq(userStorageFiles.fileKey, accepted.key), eq(userStorageFiles.userId, userId),
+          isNull(userStorageFiles.deletedAt),
+        )).limit(1);
+        if (!tracked || tracked.sizeBytes !== fileSizeNum || tracked.mimeType !== mimeType ||
+            (tracked.metadata as Record<string, unknown> | null)?.sha256 !== accepted.digest ||
+            (tracked.metadata as Record<string, unknown> | null)?.uploadSessionId !== fileId) {
+          throw new ChunkUploadError(409, "Upload completion is pending or the stored file is unavailable; check your files before retrying");
+        }
+        if (accepted.pending) await chunkUploads.finishCompletion(fileId, userId, accepted.token!);
+        return res.json({ success: true, complete: true, file: { id: fileId, key: accepted.key,
+          name: fileName, size: fileSizeNum, type: mimeType,
+          url: await storageService.getDownloadUrl(accepted.key) } });
+      }
+      if (accepted.complete) {
+        const completion = await chunkUploads.beginCompletion(fileId, userId);
+        const key = completion.key;
+        try {
+          await storageService.uploadFileAtKey(completion.bytes, key, mimeType);
+
+          logger.info(`Chunked upload complete: ${key} by user ${userId}`);
+
+          // Track the assembled file — same mandatory tracking as single-shot
+          // uploads: an untracked object can never be deleted or quota-counted.
+          let trackingAttempted = false;
+          try {
+            let [storageRow] = await db
+              .select({ id: userStorage.id })
+              .from(userStorage)
+              .where(eq(userStorage.userId, userId))
+              .limit(1);
+            if (!storageRow) {
+              [storageRow] = await db
+                .insert(userStorage)
+                .values({ userId, storagePrefix: `users/${userId}` })
+                .onConflictDoNothing()
+                .returning({ id: userStorage.id });
+              if (!storageRow) {
+                [storageRow] = await db
+                  .select({ id: userStorage.id })
+                  .from(userStorage)
+                  .where(eq(userStorage.userId, userId))
+                  .limit(1);
+              }
+            }
+            if (!storageRow) throw new Error("Upload storage record is unavailable");
+            if (storageRow) {
+              trackingAttempted = true;
+              await db
+                .insert(userStorageFiles)
+                .values({
+                  userId,
+                  storageId: storageRow.id,
+                  fileName,
+                  fileKey: key,
+                  mimeType,
+                  sizeBytes: fileSizeNum,
+                  folder: category,
+                  metadata: { category, uploadedVia: "storage/upload/chunk", uploadSessionId: fileId, sha256: completion.digest },
+                })
+                .onConflictDoNothing();
+              const [tracked] = await db.select().from(userStorageFiles)
+                .where(eq(userStorageFiles.fileKey, key)).limit(1);
+              if (!tracked || tracked.userId !== userId || tracked.deletedAt || tracked.sizeBytes !== fileSizeNum ||
+                  tracked.mimeType !== mimeType || (tracked.metadata as Record<string, unknown> | null)?.sha256 !== completion.digest ||
+                  (tracked.metadata as Record<string, unknown> | null)?.uploadSessionId !== fileId) {
+                throw new Error("Upload tracking verification failed");
+              }
+            }
+          } catch (trackErr) {
+            logger.error({ err: trackErr }, "[Storage] Failed to track chunked upload — rolling back:");
+            try {
+              // A failed INSERT response can still mean a committed row.
+              // Read its outcome before deleting a possibly tracked object.
+              const rows = trackingAttempted ? await db.select().from(userStorageFiles)
+                .where(eq(userStorageFiles.fileKey, key)).limit(1) : [];
+              if (rows.length) throw new Error("Tracking outcome requires receipt reconciliation");
+              await storageService.deleteFile(key);
+              await chunkUploads.release(fileId, userId, completion.token);
+            } catch (cleanupErr) {
+              logger.error({ err: cleanupErr }, "[Storage] Rollback delete failed for untracked chunked upload:");
+            }
+            return res.status(500).json({ error: "Upload could not be recorded" });
+          }
+
+          await chunkUploads.finishCompletion(fileId, userId, completion.token);
+          const chunkResponseFile = {
+            id: fileId,
+            key,
+            name: fileName,
+            size: fileSizeNum,
+            type: mimeType,
+            url: await storageService?.getDownloadUrl(key),
+          };
+
+          res.json({ success: true, complete: true, file: chunkResponseFile });
+
+          setImmediate(async () => {
+            try {
+              const fileCategory = (mimeType as string).startsWith("audio/")
+                ? "track"
+                : "file";
+              await notificationService?.sendUploadCompleteNotification(
+                userId,
+                fileName,
+                fileCategory,
+              );
+
+              const PLATFORM_QUOTA_GB = 1000;
+              const chunkUsageResult = await db
+                .select({ totalBytes: sum(userStorageFiles.sizeBytes) })
+                .from(userStorageFiles)
+                .where(
+                  and(
+                    eq(userStorageFiles.userId, userId),
+                    isNull(userStorageFiles.deletedAt),
+                  ),
+                );
+              const chunkUsedBytes = Number(chunkUsageResult[0]?.totalBytes ?? 0);
+              const usedGB = chunkUsedBytes / 1024 ** 3;
+              const usedPercent = Math.round((usedGB / PLATFORM_QUOTA_GB) * 100);
+              if (usedPercent >= 75) {
+                await notificationService?.sendStorageQuotaNotification(
+                  userId,
+                  usedPercent,
+                );
+              }
+              if (usedPercent >= 85) {
+                await notificationService?.sendAdminStorageCriticalNotification(
+                  usedPercent,
+                  usedGB,
+                  PLATFORM_QUOTA_GB,
+                );
+              }
+            } catch (err) {
+              logger.warn(
+                { err: err },
+                "Post-chunked-upload notification error:",
+              );
+            }
+          });
+
+          return;
+        } catch (error) {
+          // The deterministic object may have committed despite a lost response.
+          // Preserve the claim for reconciliation; never replay a random write.
+          logger.warn({ err: error, fileId }, "Chunk completion outcome requires reconciliation");
+          throw error;
+        }
+      }
+
+      res.json({
+        success: true,
+        complete: false,
+        uploaded: accepted.uploaded,
+        total: totalChunksNum,
+      });
+    } catch (error) {
+      logger.warn({ err: error }, "Chunk upload failed:");
+      res.status(error instanceof ChunkUploadError ? error.statusCode : 500).json({
+        error: error instanceof Error ? error?.message : "Chunk upload failed",
+      });
+    }
+  },
+);
+
+router.delete(
+  "/upload/chunk/:fileId",
+  requireAuth,
+  async (req: Request, res: Response) => {
+    try {
+      const { fileId } = req.params as Record<string, string>;
+      const userId = req.user!.id;
+
+      await chunkUploads.cancel(fileId, userId);
+
+      logger.info(`Chunked upload cancelled: ${fileId} by user ${userId}`);
+
+      res.json({ success: true });
+    } catch (error) {
+      logger.warn({ err: error }, "Chunk cleanup failed:");
+      res.status(error instanceof ChunkUploadError ? error.statusCode : 500).json({
+        error: error instanceof Error ? error?.message : "Cleanup failed",
+      });
+    }
+  },
+);
+
+// NOTE: GET "/file/*key" used to be registered here too, but server/routes.ts
+// registers the same "/api/storage/file/*key" path earlier (Express dispatches
+// to the first match), so this copy was permanently dead code. The live
+// routes.ts handler now carries this handler's two essential protections
+// (requireAuth + the users/<ownerId> ownership check) plus hybrid-storage
+// cold-tier reads and a soft-delete check that this copy did not have, so it
+// has been removed rather than kept as an unreachable, feature-incomplete
+// duplicate. Range-request support (seeking) present here but absent from the
+// live handler is a follow-up enhancement, not a bug fix.
+
+router.get("/public/*key", async (req: Request, res: Response) => {
+  try {
+    const _rawKey = (req.params as Record<string, string | string[]>).key;
+    const key = normalizeStorageKey(_rawKey);
+    if (key === null) {
+      return res.status(400).json({ error: "Invalid file key" });
+    }
+
+    if (
+      !key?.startsWith("storefronts/") ||
+      key?.includes("..") ||
+      key?.includes("\0")
+    ) {
+      return res
+        .status(403)
+        .json({ error: "Only storefront assets are publicly accessible" });
+    }
+
+    const { stemAssetAccess } = await import("../services/marketplaceStemAccess");
+    const stemAccess = await stemAssetAccess(key, req.user?.id);
+    if (stemAccess === false) {
+      return res.status(req.user ? 403 : 401).json({ error: "Purchase required to access stems" });
+    }
+    const ext = path?.extname(key).toLowerCase();
+    const allowedImageExts: Record<string, string> = {
+      ".jpg": "image/jpeg",
+      ".jpeg": "image/jpeg",
+      ".png": "image/png",
+      ".gif": "image/gif",
+      ".webp": "image/webp",
+    };
+
+    if (!allowedImageExts[ext]) {
+      return res
+        .status(403)
+        .json({ error: "Only image files are publicly accessible" });
+    }
+
+    const buffer = await storageService?.downloadFile(key);
+    const contentType = allowedImageExts[ext];
+    res.setHeader("Content-Type", contentType);
+    res.setHeader("Cache-Control", stemAccess === true ? "private, no-store" : "public, max-age=86400");
+    res.setHeader("Content-Length", buffer?.length);
+    res.send(buffer);
+  } catch (error) {
+    logger.warn({ err: error }, "Public file download failed:");
+    res.status(404).json({ error: "File not found" });
+  }
+});
+
+router.delete(
+  "/file/*key",
+  requireAuth,
+  async (req: Request, res: Response) => {
+    try {
+      const _rawKey = (req.params as Record<string, string | string[]>).key;
+    const key = normalizeStorageKey(_rawKey);
+    if (key === null) {
+      return res.status(400).json({ error: "Invalid file key" });
+    }
+      const userId = req.user!.id;
+      const { permanent } = req.query;
+
+      if (!key?.includes(`users/${userId}/`)) {
+        return res
+          .status(403)
+          .json({ error: "Not authorized to delete this file" });
+      }
+
+      // Find the file in database
+      const [file] = await db
+        .select()
+        .from(userStorageFiles)
+        .where(
+          and(
+            eq(userStorageFiles.fileKey, key),
+            eq(userStorageFiles.userId, userId),
+            isNull(userStorageFiles.deletedAt),
+          ),
+        )
+        .limit(1);
+
+      if (!file) {
+        return res.status(404).json({ error: "File not found" });
+      }
+
+      if (permanent === "true") {
+        // Permanent delete: remove from storage and database
+        await storageService?.deleteFile(key);
+        await db
+          .delete(userStorageFiles)
+          .where(eq(userStorageFiles.id, file?.id));
+        logger.info(
+          `[SoftDelete] File permanently deleted: ${key} by user ${userId}`,
+        );
+        res.json({ success: true, restorable: false });
+      } else {
+        // Soft delete: mark as deleted in database, keep the storage object
+        await db
+          .update(userStorageFiles)
+          .set({ deletedAt: new Date() })
+          .where(eq(userStorageFiles.id, file?.id));
+
+        logger.info(`[SoftDelete] File soft deleted: ${key} by user ${userId}`);
+        res.json({
+          success: true,
+          restorable: true,
+          restoreKey: key,
+          restoreExpiresIn: PERMANENT_DELETE_DAYS * 24 * 60 * 60 * 1000,
+        });
+      }
+    } catch (error) {
+      logger.warn({ err: error }, "File deletion failed:");
+      res.status(500).json({
+        error: error instanceof Error ? error?.message : "Deletion failed",
+      });
+    }
+  },
+);
+
+// Restore a deleted file (undo delete)
+router.post(
+  "/restore/*key",
+  requireAuth,
+  async (req: Request, res: Response) => {
+    try {
+      const _rawKey = (req.params as Record<string, string | string[]>).key;
+    const key = normalizeStorageKey(_rawKey);
+    if (key === null) {
+      return res.status(400).json({ error: "Invalid file key" });
+    }
+      const userId = req.user!.id;
+
+      // Find the soft-deleted file in database
+      const [deletedFile] = await db
+        .select()
+        .from(userStorageFiles)
+        .where(
+          and(
+            eq(userStorageFiles.fileKey, key),
+            eq(userStorageFiles.userId, userId),
+            isNotNull(userStorageFiles.deletedAt),
+          ),
+        )
+        .limit(1);
+
+      if (!deletedFile) {
+        return res.status(404).json({
+          error: "File not found or has already been permanently deleted.",
+        });
+      }
+
+      // Check if the file is older than 30 days (should have been cleaned up)
+      const cutoffDate = new Date();
+      cutoffDate?.setDate(cutoffDate?.getDate() - PERMANENT_DELETE_DAYS);
+      if (deletedFile?.deletedAt && deletedFile?.deletedAt < cutoffDate) {
+        return res.status(410).json({
+          error:
+            "Restoration window has expired. The file can no longer be recovered.",
+        });
+      }
+
+      // Restore: simply clear the deleted_at flag
+      await db
+        .update(userStorageFiles)
+        .set({ deletedAt: null })
+        .where(eq(userStorageFiles.id, deletedFile?.id));
+
+      logger.info(`[SoftDelete] File restored: ${key} by user ${userId}`);
+
+      res.json({
+        success: true,
+        message: "File restored successfully",
+        file: {
+          key,
+          name: deletedFile.fileName,
+          size: deletedFile.sizeBytes,
+          type: deletedFile.mimeType,
+        },
+      });
+    } catch (error) {
+      logger.warn({ err: error }, "File restoration failed:");
+      res.status(500).json({
+        error: error instanceof Error ? error?.message : "Restoration failed",
+      });
+    }
+  },
+);
+
+router.get("/quota", requireAuth, async (req: Request, res: Response) => {
+  try {
+    const userId = req.user!.id;
+
+    // Get user's subscription tier for quota limit
+    const [userRow] = await db
+      .select({ subscriptionTier: users.subscriptionTier })
+      .from(users)
+      .where(eq(users.id, userId))
+      .limit(1);
+
+    const rawTier = userRow?.subscriptionTier || "free";
+    const quotaLimits: Record<string, number> = {
+      free: 5 * 1024 * 1024 * 1024,
+      pro: 50 * 1024 * 1024 * 1024,
+      studio: 200 * 1024 * 1024 * 1024,
+      enterprise: 1024 * 1024 * 1024 * 1024,
+    };
+    const userTier = quotaLimits[rawTier] ? rawTier : "free";
+    const limit = quotaLimits[userTier];
+
+    // Get actual storage usage from the database, grouped by mime type
+    const usageRows = await db
+      .select({
+        mimeType: userStorageFiles.mimeType,
+        totalBytes: sql<number>`COALESCE(SUM(${userStorageFiles.sizeBytes}), 0)`,
+      })
+      .from(userStorageFiles)
+      .where(
+        and(
+          eq(userStorageFiles.userId, userId),
+          isNull(userStorageFiles.deletedAt),
+        ),
+      )
+      .groupBy(userStorageFiles.mimeType);
+
+    let audioBytes = 0,
+      imageBytes = 0,
+      videoBytes = 0,
+      otherBytes = 0;
+    for (const row of usageRows) {
+      const bytes = Number(row?.totalBytes) || 0;
+      const mime = row?.mimeType || "";
+      if (mime.startsWith("audio/")) audioBytes += bytes;
+      else if (mime.startsWith("image/")) imageBytes += bytes;
+      else if (mime.startsWith("video/")) videoBytes += bytes;
+      else otherBytes += bytes;
+    }
+
+    const used = audioBytes + imageBytes + videoBytes + otherBytes;
+
+    const categories = [
+      { name: "Audio", used: audioBytes, icon: "audio", color: "bg-blue-500" },
+      {
+        name: "Images",
+        used: imageBytes,
+        icon: "image",
+        color: "bg-green-500",
+      },
+      {
+        name: "Videos",
+        used: videoBytes,
+        icon: "video",
+        color: "bg-purple-500",
+      },
+      { name: "Other", used: otherBytes, icon: "file", color: "bg-gray-500" },
+    ];
+
+    res.json({
+      used,
+      limit,
+      available: Math.max(0, limit - used),
+      percentage: limit > 0 ? Math.min(100, (used / limit) * 100) : 0,
+      tier: userTier,
+      categories,
+    });
+  } catch (error) {
+    logger.warn({ err: error }, "Failed to get storage quota:");
+    res.status(500).json({
+      error: error instanceof Error ? error?.message : "Failed to get quota",
+    });
+  }
+});
+
+router.post("/rename", requireAuth, async (req: Request, res: Response) => {
+  try {
+    const { fileId, newName } = req.body;
+    const userId = req.user!.id;
+
+    if (!fileId || !newName) {
+      return res.status(400).json({ error: "fileId and newName are required" });
+    }
+
+    logger.info(`File renamed: ${fileId} to ${newName} by user ${userId}`);
+
+    res.json({
+      success: true,
+      file: {
+        id: fileId,
+        name: newName,
+      },
+    });
+  } catch (error) {
+    logger.warn({ err: error }, "File rename failed:");
+    res.status(500).json({
+      error: error instanceof Error ? error?.message : "Rename failed",
+    });
+  }
+});
+
+router.post("/move", requireAuth, async (req: Request, res: Response) => {
+  try {
+    const { fileId, folderId } = req.body;
+    const userId = req.user!.id;
+
+    if (!fileId || !folderId) {
+      return res
+        .status(400)
+        .json({ error: "fileId and folderId are required" });
+    }
+
+    logger.info(
+      `File moved: ${fileId} to folder ${folderId} by user ${userId}`,
+    );
+
+    res.json({
+      success: true,
+      file: {
+        id: fileId,
+        folderId,
+      },
+    });
+  } catch (error) {
+    logger.warn({ err: error }, "File move failed:");
+    res.status(500).json({
+      error: error instanceof Error ? error?.message : "Move failed",
+    });
+  }
+});
+
+router.post("/duplicate", requireAuth, async (req: Request, res: Response) => {
+  try {
+    const { fileId } = req.body;
+    const userId = req.user!.id;
+
+    if (!fileId) {
+      return res.status(400).json({ error: "fileId is required" });
+    }
+
+    const newFileId = randomUUID();
+
+    logger.info(`File duplicated: ${fileId} to ${newFileId} by user ${userId}`);
+
+    res.json({
+      success: true,
+      file: {
+        id: newFileId,
+        originalId: fileId,
+      },
+    });
+  } catch (error) {
+    logger.warn({ err: error }, "File duplicate failed:");
+    res.status(500).json({
+      error: error instanceof Error ? error?.message : "Duplicate failed",
+    });
+  }
+});
+
+router.post("/validate", async (req: Request, res: Response) => {
+  try {
+    const {  fileSize, mimeType, options = {} } = req.body;
+
+    const errors: string[] = [];
+    const warnings: string[] = [];
+    const details: {
+      check: string;
+      status: string;
+      message: string;
+      value?: string;
+    }[] = [];
+
+    const maxSize = options?.maxSize || MAX_FILE_SIZE;
+    if (fileSize > maxSize) {
+      errors?.push(
+        `File size (${formatBytes(fileSize)}) exceeds maximum (${formatBytes(maxSize)})`,
+      );
+      details?.push({
+        check: "File Size",
+        status: "fail",
+        message: "File is too large",
+        value: `${formatBytes(fileSize)} / ${formatBytes(maxSize)} max`,
+      });
+    } else {
+      details?.push({
+        check: "File Size",
+        status: "pass",
+        message: "Within size limits",
+        value: formatBytes(fileSize),
+      });
+    }
+
+    const allowedTypes = [
+      ...ALLOWED_AUDIO_TYPES,
+      ...ALLOWED_IMAGE_TYPES,
+      ...ALLOWED_VIDEO_TYPES,
+    ];
+    if (!allowedTypes?.includes(mimeType)) {
+      errors?.push(`File type "${mimeType}" is not supported`);
+      details?.push({
+        check: "File Type",
+        status: "fail",
+        message: "Unsupported file type",
+        value: mimeType,
+      });
+    } else {
+      details?.push({
+        check: "File Type",
+        status: "pass",
+        message: "Supported file format",
+        value: mimeType,
+      });
+    }
+
+    res.json({
+      valid: errors.length === 0,
+      errors,
+      warnings,
+      details,
+    });
+  } catch (error) {
+    logger.warn({ err: error }, "File validation failed:");
+    res.status(500).json({
+      error: error instanceof Error ? error?.message : "Validation failed",
+    });
+  }
+});
+
+router.post("/scan", requireAuth, async (req: Request, res: Response) => {
+  try {
+    const { fileId } = req.body;
+
+    await new Promise((resolve) => setTimeout(resolve, 500));
+
+    res.json({
+      success: true,
+      fileId,
+      scanResult: {
+        clean: true,
+        threats: [],
+        scannedAt: new Date().toISOString(),
+      },
+    });
+  } catch (error) {
+    logger.warn({ err: error }, "File scan failed:");
+    res.status(500).json({
+      error: error instanceof Error ? error?.message : "Scan failed",
+    });
+  }
+});
+
+function formatBytes(bytes: number): string {
+  if (bytes === 0) return "0 B";
+  const k = 1024;
+  const sizes = ["B", "KB", "MB", "GB"];
+  const i = Math.floor(Math.log(bytes) / Math.log(k));
+  return parseFloat((bytes / Math.pow(k, i)).toFixed(1)) + " " + sizes[i];
+}
+
+router.post(
+  "/hybrid/upload",
+  requireAuth,
+  upload?.single("file"),
+  async (req: Request, res: Response) => {
+    try {
+      if (!req.file) {
+        return res.status(400).json({ error: "No file provided" });
+      }
+
+      const { folder, forceTier, isPublic } = req.body;
+      const userId = req.user!.id;
+
+      const result = await hybridStorageService?.upload(
+        userId,
+        req.file.originalname,
+        req.file.buffer,
+        req.file.mimetype,
+        {
+          folder,
+          forceTier: forceTier as "hot" | "cold" | undefined,
+          isPublic: isPublic === "true",
+          metadata: req.body.metadata
+            ? (() => {
+                try {
+                  return JSON.parse(req.body.metadata);
+                } catch {
+                  return undefined;
+                }
+              })()
+            : undefined,
+        },
+      );
+
+      logger.info(
+        `[HybridStorage] Uploaded: ${result?.key} (${result?.tier} tier)`,
+      );
+
+      res.json({
+        success: true,
+        file: {
+          key: result.key,
+          tier: result.tier,
+          size: result.sizeBytes,
+          compressedSize: result.compressedSize,
+          contentHash: result.contentHash,
+          isDeduplicated: result.isDeduplicated,
+          compressionRatio: result.compressionRatio,
+          url: `/api/storage/hybrid/file/${encodeURIComponent(result?.key)}`,
+        },
+      });
+    } catch (error) {
+      logger.warn({ err: error }, "[HybridStorage] Upload failed:");
+      res.status(500).json({
+        error: error instanceof Error ? error?.message : "Upload failed",
+      });
+    }
+  },
+);
+
+router.get(
+  "/hybrid/file/*key",
+  requireAuth,
+  async (req: Request, res: Response) => {
+    try {
+      const _rawKey = (req.params as Record<string, string | string[]>).key;
+    const key = normalizeStorageKey(_rawKey);
+    if (key === null) {
+      return res.status(400).json({ error: "Invalid file key" });
+    }
+      const userId = req.user!.id;
+
+      const buffer = await hybridStorageService?.read(userId, key);
+      const metadata = await hybridStorageService?.getMetadata(key);
+
+      const ext = path?.extname(key).toLowerCase();
+      const mimeTypes: Record<string, string> = {
+        ".wav": "audio/wav",
+        ".mp3": "audio/mpeg",
+        ".flac": "audio/flac",
+        ".ogg": "audio/ogg",
+        ".jpg": "image/jpeg",
+        ".jpeg": "image/jpeg",
+        ".png": "image/png",
+        ".gif": "image/gif",
+        ".webp": "image/webp",
+        ".mp4": "video/mp4",
+        ".webm": "video/webm",
+        ".mov": "video/quicktime",
+      };
+
+      const contentType =
+        metadata?.mimeType || mimeTypes[ext] || "application/octet-stream";
+      const totalLength = buffer.length;
+      const range = req.headers.range;
+      res.setHeader("Content-Type", contentType);
+      res.setHeader("X-Storage-Tier", metadata?.tier || "unknown");
+      res.setHeader("Accept-Ranges", "bytes");
+
+      if (range) {
+        const match = /^bytes=(\d*)-(\d*)$/.exec(range);
+        if (!match) {
+          res.setHeader("Content-Range", `bytes */${totalLength}`);
+          return res.status(416).end();
+        }
+        const start = match[1] ? Number(match[1]) : 0;
+        const end = match[2] ? Number(match[2]) : totalLength - 1;
+        if (
+          !Number.isSafeInteger(start) ||
+          !Number.isSafeInteger(end) ||
+          start < 0 ||
+          end < start ||
+          start >= totalLength
+        ) {
+          res.setHeader("Content-Range", `bytes */${totalLength}`);
+          return res.status(416).end();
+        }
+        const boundedEnd = Math.min(end, totalLength - 1);
+        const chunk = buffer.subarray(start, boundedEnd + 1);
+        res.status(206);
+        res.setHeader("Content-Range", `bytes ${start}-${boundedEnd}/${totalLength}`);
+        res.setHeader("Content-Length", chunk.length);
+        return res.end(chunk);
+      }
+
+      res.setHeader("Content-Length", totalLength);
+      res.send(buffer);
+    } catch (error) {
+      logger.warn({ err: error }, "[HybridStorage] Download failed:");
+      res.status(404).json({ error: "File not found" });
+    }
+  },
+);
+
+router.delete(
+  "/hybrid/file/*key",
+  requireAuth,
+  async (req: Request, res: Response) => {
+    try {
+      const _rawKey = (req.params as Record<string, string | string[]>).key;
+    const key = normalizeStorageKey(_rawKey);
+    if (key === null) {
+      return res.status(400).json({ error: "Invalid file key" });
+    }
+      const userId = req.user!.id;
+
+      const success = await hybridStorageService?.delete(userId, key);
+
+      if (success) {
+        logger.info(`[HybridStorage] Deleted: ${key}`);
+        res.json({ success: true });
+      } else {
+        res.status(404).json({ error: "File not found" });
+      }
+    } catch (error) {
+      logger.warn({ err: error }, "[HybridStorage] Delete failed:");
+      res.status(500).json({
+        error: error instanceof Error ? error?.message : "Delete failed",
+      });
+    }
+  },
+);
+
+router.get("/hybrid/list", requireAuth, async (req: Request, res: Response) => {
+  try {
+    const userId = req.user!.id;
+    const { tier, folder, includePublic } = req.query;
+
+    const files = await hybridStorageService?.listFiles(userId, {
+      tier: tier as "hot" | "cold" | undefined,
+      folder: folder as string | undefined,
+      includePublic: includePublic === "true",
+    });
+
+    res.json({
+      success: true,
+      files: files.map((f) => ({
+        key: f.key,
+        name: f.originalName,
+        tier: f.tier,
+        size: f.sizeBytes,
+        compressedSize: f.compressedSize,
+        mimeType: f.mimeType,
+        accessCount: f.accessCount,
+        lastAccessed: f.lastAccessed,
+        createdAt: f.createdAt,
+        isDeduplicated: f.isDeduplicated,
+        isPublic: f.isPublic,
+      })),
+    });
+  } catch (error) {
+    logger.warn({ err: error }, "[HybridStorage] List failed:");
+    res.status(500).json({
+      error: error instanceof Error ? error?.message : "List failed",
+    });
+  }
+});
+
+router.get(
+  "/hybrid/analytics",
+  requireAuth,
+  async (req: Request, res: Response) => {
+    try {
+      const userId = req.user!.id;
+      const analytics = await hybridStorageService?.getAnalytics(userId);
+
+      res.json(analytics);
+    } catch (error) {
+      logger.warn({ err: error }, "[HybridStorage] Analytics failed:");
+      res.status(500).json({
+        error: error instanceof Error ? error?.message : "Analytics failed",
+      });
+    }
+  },
+);
+
+router.get(
+  "/hybrid/tier-breakdown",
+  requireAuth,
+  async (req: Request, res: Response) => {
+    try {
+      const userId = req.user!.id;
+      const breakdown = await hybridStorageService?.getTierBreakdown(userId);
+
+      res.json(breakdown);
+    } catch (error) {
+      logger.warn({ err: error }, "[HybridStorage] Tier breakdown failed:");
+      res.status(500).json({
+        error:
+          error instanceof Error
+            ? error?.message
+            : "Failed to get tier breakdown",
+      });
+    }
+  },
+);
+
+router.get(
+  "/hybrid/deduplication",
+  requireAuth,
+  async (req: Request, res: Response) => {
+    try {
+      const userId = req.user!.id;
+      const stats = await hybridStorageService?.getDeduplicationStats(userId);
+
+      res.json(stats);
+    } catch (error) {
+      logger.warn(
+        { err: error },
+        "[HybridStorage] Deduplication stats failed:",
+      );
+      res.status(500).json({
+        error:
+          error instanceof Error
+            ? error?.message
+            : "Failed to get deduplication stats",
+      });
+    }
+  },
+);
+
+router.post(
+  "/hybrid/tier-down/*key",
+  requireAuth,
+  async (req: Request, res: Response) => {
+    try {
+      const _rawKey = (req.params as Record<string, string | string[]>).key;
+    const key = normalizeStorageKey(_rawKey);
+    if (key === null) {
+      return res.status(400).json({ error: "Invalid file key" });
+    }
+      const userId = req.user!.id;
+
+      const metadata = await hybridStorageService?.getMetadata(key);
+      if (!metadata || metadata?.userId !== userId) {
+        return res.status(403).json({ error: "Access denied" });
+      }
+
+      const success = await hybridStorageService?.tierDown(key);
+
+      if (success) {
+        logger.info(`[HybridStorage] Tiered down: ${key}`);
+        res.json({ success: true, message: "File moved to cold storage" });
+      } else {
+        res.status(400).json({ error: "Unable to tier down file" });
+      }
+    } catch (error) {
+      logger.warn({ err: error }, "[HybridStorage] Tier down failed:");
+      res.status(500).json({
+        error: error instanceof Error ? error?.message : "Tier down failed",
+      });
+    }
+  },
+);
+
+router.post(
+  "/hybrid/auto-tier",
+  requireAuth,
+  async (_req: Request, res: Response) => {
+    try {
+      const result = await hybridStorageService?.runAutoTiering();
+
+      logger.info(
+        `[HybridStorage] Auto-tiering: ${result?.tieredDown} down, ${result?.tieredUp} up`,
+      );
+
+      res.json({
+        success: true,
+        tieredDown: result.tieredDown,
+        tieredUp: result.tieredUp,
+        message: `Moved ${result?.tieredDown} files to cold storage, ${result?.tieredUp} files to hot storage`,
+      });
+    } catch (error) {
+      logger.warn({ err: error }, "[HybridStorage] Auto-tier failed:");
+      res.status(500).json({
+        error: error instanceof Error ? error?.message : "Auto-tiering failed",
+      });
+    }
+  },
+);
+
+router.get(
+  "/hybrid/metadata/*key",
+  requireAuth,
+  async (req: Request, res: Response) => {
+    try {
+      const _rawKey = (req.params as Record<string, string | string[]>).key;
+    const key = normalizeStorageKey(_rawKey);
+    if (key === null) {
+      return res.status(400).json({ error: "Invalid file key" });
+    }
+      const userId = req.user!.id;
+
+      const metadata = await hybridStorageService?.getMetadata(key);
+      if (!metadata) {
+        return res.status(404).json({ error: "File not found" });
+      }
+
+      if (metadata?.userId !== userId && !metadata?.isPublic) {
+        return res.status(403).json({ error: "Access denied" });
+      }
+
+      res.json({
+        key: metadata.key,
+        name: metadata.originalName,
+        tier: metadata.tier,
+        size: metadata.sizeBytes,
+        compressedSize: metadata.compressedSize,
+        mimeType: metadata.mimeType,
+        contentHash: metadata.contentHash,
+        accessCount: metadata.accessCount,
+        lastAccessed: metadata.lastAccessed,
+        createdAt: metadata.createdAt,
+        isDeduplicated: metadata.isDeduplicated,
+        isPublic: metadata.isPublic,
+        compressionRatio: metadata.sizeBytes / metadata?.compressedSize,
+      });
+    } catch (error) {
+      logger.warn({ err: error }, "[HybridStorage] Metadata fetch failed:");
+      res.status(500).json({
+        error:
+          error instanceof Error ? error?.message : "Failed to get metadata",
+      });
+    }
+  },
+);
+
+export default router;

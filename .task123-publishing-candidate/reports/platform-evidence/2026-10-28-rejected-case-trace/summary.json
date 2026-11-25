@@ -1,0 +1,31 @@
+{
+  "recordedAt": "2026-10-28T18:01:08.579533+00:00",
+  "scope": "All104 current rejected case occurrences plus one historical catalog classification debt; not104 production bugs or new test runs",
+  "sourceRevision": "10d192675beefcf1b7beef3ce47c271db0cc17cf",
+  "currentCommonSha256": "cbf794e080119fa4f64ec6ebce2b29b3d78641d606a3059c0c207b2420324418",
+  "cases": 104,
+  "distinctUnqualifiedIdentities": 41,
+  "classifications": {
+    "parameterized-title-collision": 64,
+    "python-class-scope-loss": 26,
+    "commerce-adapter-subject-binding": 14
+  },
+  "rawXmlCasesFailed": 0,
+  "rawXmlCasesSkipped": 0,
+  "caseProofsTransferred": 0,
+  "catalogDebts": 1,
+  "rowsIncludingCatalogDebt": 105,
+  "productionReady": false,
+  "pageDeclarations": 80,
+  "businessSections": 2162,
+  "businessDimensionSteps": 12972,
+  "retainedWorkItems": 53020,
+  "requiredChecks": 33549,
+  "unverifiedChecks": 33543,
+  "unknownMappings": 170,
+  "invalidEvidenceLinks": 0,
+  "currentSourceInputsUnchanged": true,
+  "protectedArtifactsUnchanged": true,
+  "actualMetadataReplaySeconds": 1.395,
+  "newExecution": "None; source and retained metadata inspection only"
+}

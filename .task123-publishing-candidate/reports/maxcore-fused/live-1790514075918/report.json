@@ -1,0 +1,371 @@
+{
+  "version": 2,
+  "execution": "COMPLETE",
+  "quality": "NOT_ESTABLISHED",
+  "veoComparison": "NOT_ESTABLISHED",
+  "cases": [
+    {
+      "id": "social-facebook",
+      "kind": "text",
+      "platform": "facebook",
+      "prompt": "Moss Compass is the fictional title of a mellow piano instrumental releasing November 9; its artist, venue, URL, and audience metrics are unknown. Write a warm 80–120-word Facebook feed post for music fans. Include 2–5 relevant music hashtags and invite a reaction or share. Do not invent any missing facts.",
+      "criteria": [
+        "80–120 words",
+        "Moss Compass and November 9 are preserved",
+        "2–5 relevant music hashtags",
+        "community-oriented reaction/share invitation",
+        "no invented artist, venue, URL, or metrics"
+      ],
+      "requestHash": "86d937041e240a2196f60732f1d577cdefce865cc3a60303dbc6818c2203cd65",
+      "attempts": [
+        {
+          "status": "EXPLICIT_REJECTION",
+          "httpStatus": 503,
+          "errorDigest": "0fc0f1e64ae3dc2dab231f597c0f0c25cd11586fb0247f4c78de2280c728de1d",
+          "noFallback": true
+        },
+        {
+          "status": "EXPLICIT_REJECTION",
+          "httpStatus": 503,
+          "errorDigest": "0fc0f1e64ae3dc2dab231f597c0f0c25cd11586fb0247f4c78de2280c728de1d",
+          "noFallback": true
+        }
+      ],
+      "replay": {
+        "sameFrozenInputs": "NOT_ESTABLISHED",
+        "exactTextReplay": "NOT_ESTABLISHED",
+        "uncachedReplay": "NOT_ESTABLISHED"
+      }
+    },
+    {
+      "id": "social-instagram",
+      "kind": "text",
+      "platform": "instagram",
+      "prompt": "Moss Compass is the fictional title of a mellow piano instrumental releasing November 9; its artist and performance metrics are unknown. Write a 300–1200-character Instagram caption with 3–5 precise topical hashtags and a clear link-in-bio action. Do not include a URL or invent missing facts.",
+      "criteria": [
+        "300–1200 characters",
+        "title and release date are correct",
+        "3–5 precise topical hashtags",
+        "clear link-in-bio action and no direct URL",
+        "no invented artist or metrics"
+      ],
+      "requestHash": "b52a723f654b7aba00049c9f89b7b282f25504ebceb91b6f51bd5780e924c09b",
+      "attempts": [
+        {
+          "status": "EXPLICIT_REJECTION",
+          "httpStatus": 503,
+          "errorDigest": "299172b6340187eeb7ef19e80d4d2b6a67ad2c8a0cb8a37464abb3b81ded361e",
+          "noFallback": true
+        },
+        {
+          "status": "EXPLICIT_REJECTION",
+          "httpStatus": 503,
+          "errorDigest": "299172b6340187eeb7ef19e80d4d2b6a67ad2c8a0cb8a37464abb3b81ded361e",
+          "noFallback": true
+        }
+      ],
+      "replay": {
+        "sameFrozenInputs": "NOT_ESTABLISHED",
+        "exactTextReplay": "NOT_ESTABLISHED",
+        "uncachedReplay": "NOT_ESTABLISHED"
+      }
+    },
+    {
+      "id": "social-x",
+      "kind": "text",
+      "platform": "x",
+      "prompt": "Moss Compass is the fictional title of a mellow piano instrumental releasing November 9; artist and performance metrics are unknown. Write an X post of 40–280 characters, lead with natural searchable terms, use 0–2 precise hashtags, and invite a reply. Do not include a URL or invent missing facts.",
+      "criteria": [
+        "40–280 characters",
+        "title and release date are correct",
+        "0–2 precise hashtags",
+        "clear reply invitation",
+        "no invented artist, URL, or metrics"
+      ],
+      "requestHash": "74da4a66ce9844a2194ed91dfb3f9b90094e3a8b4736246584333a3538a64c44",
+      "attempts": [
+        {
+          "status": "EXPLICIT_REJECTION",
+          "httpStatus": 503,
+          "errorDigest": "57fd6d29e552e9d8cf9c99d3e637174e8f7a73d3aa842cf1032f849ac413967c",
+          "noFallback": true
+        },
+        {
+          "status": "EXPLICIT_REJECTION",
+          "httpStatus": 503,
+          "errorDigest": "57fd6d29e552e9d8cf9c99d3e637174e8f7a73d3aa842cf1032f849ac413967c",
+          "noFallback": true
+        }
+      ],
+      "replay": {
+        "sameFrozenInputs": "NOT_ESTABLISHED",
+        "exactTextReplay": "NOT_ESTABLISHED",
+        "uncachedReplay": "NOT_ESTABLISHED"
+      }
+    },
+    {
+      "id": "social-youtube",
+      "kind": "text",
+      "platform": "youtube",
+      "prompt": "Moss Compass is the fictional title of a mellow piano instrumental releasing November 9; no video, premiere, artist, or audience metrics have been supplied. Write a 1–3-sentence YouTube Community post that announces the release accurately and invites a comment or listening on release day. Do not claim an unsupplied video or link exists.",
+      "criteria": [
+        "1–3 sentences in Community-post style",
+        "title and release date are correct",
+        "clear comment or release-day listening invitation",
+        "no fabricated video, premiere, artist, link, or metrics"
+      ],
+      "requestHash": "ea4658a8675e4fe5c34023104c69a54dfdca8cf663533aee099a292417f4a938",
+      "attempts": [
+        {
+          "status": "EXPLICIT_REJECTION",
+          "httpStatus": 503,
+          "errorDigest": "f1b22bab81d8140e00f0848d77daa430a9fc388edd93d36ce619d60963f98e2a",
+          "noFallback": true
+        },
+        {
+          "status": "EXPLICIT_REJECTION",
+          "httpStatus": 503,
+          "errorDigest": "f1b22bab81d8140e00f0848d77daa430a9fc388edd93d36ce619d60963f98e2a",
+          "noFallback": true
+        }
+      ],
+      "replay": {
+        "sameFrozenInputs": "NOT_ESTABLISHED",
+        "exactTextReplay": "NOT_ESTABLISHED",
+        "uncachedReplay": "NOT_ESTABLISHED"
+      }
+    },
+    {
+      "id": "social-tiktok",
+      "kind": "text",
+      "platform": "tiktok",
+      "prompt": "A fictional 9-second vertical teaser uses a mellow piano excerpt for Moss Compass, the fictional instrumental title releasing November 9; artist and engagement results are unknown. Write a TikTok caption with an immediate hook, 3–5 descriptive music hashtags, and an invitation to comment or replay. Do not claim a trend, result, URL, or other unsupplied fact.",
+      "criteria": [
+        "immediate, relevant hook",
+        "Moss Compass and November 9 are correct",
+        "3–5 descriptive hashtags",
+        "comment or replay invitation",
+        "no fabricated trend, artist, URL, or metrics"
+      ],
+      "requestHash": "62ae80590c62f8222863e2ee18147afd324cb0e6d073bf185057da09a373f4c3",
+      "attempts": [
+        {
+          "status": "EXPLICIT_REJECTION",
+          "httpStatus": 503,
+          "errorDigest": "02689e6b14a7b0e02aa9b23d889936defc1404583b39999a37b66c630faa0f3b",
+          "noFallback": true
+        },
+        {
+          "status": "EXPLICIT_REJECTION",
+          "httpStatus": 503,
+          "errorDigest": "02689e6b14a7b0e02aa9b23d889936defc1404583b39999a37b66c630faa0f3b",
+          "noFallback": true
+        }
+      ],
+      "replay": {
+        "sameFrozenInputs": "NOT_ESTABLISHED",
+        "exactTextReplay": "NOT_ESTABLISHED",
+        "uncachedReplay": "NOT_ESTABLISHED"
+      }
+    },
+    {
+      "id": "social-linkedin",
+      "kind": "text",
+      "platform": "linkedin",
+      "prompt": "Moss Compass is the fictional title of a mellow piano instrumental releasing November 9; no collaborators, production story, business outcome, URL, or audience metrics are known. Write a professional 400–1500-character LinkedIn announcement using only those facts, include 2–4 relevant professional hashtags, and close with a genuine question inviting perspective.",
+      "criteria": [
+        "400–1500 characters",
+        "title and release date are correct",
+        "2–4 relevant professional hashtags",
+        "professional tone and genuine closing question",
+        "no invented collaborators, production details, URL, or metrics"
+      ],
+      "requestHash": "fbed55b4b227f393204ad1d2bab738e072e01a1b506f522cf27155b0643d615a",
+      "attempts": [
+        {
+          "status": "EXPLICIT_REJECTION",
+          "httpStatus": 503,
+          "errorDigest": "f0d08f82cba7b9e8f639cfc3bb205e369deb8690f7c29e2d37180d21a246034c",
+          "noFallback": true
+        },
+        {
+          "status": "EXPLICIT_REJECTION",
+          "httpStatus": 503,
+          "errorDigest": "f0d08f82cba7b9e8f639cfc3bb205e369deb8690f7c29e2d37180d21a246034c",
+          "noFallback": true
+        }
+      ],
+      "replay": {
+        "sameFrozenInputs": "NOT_ESTABLISHED",
+        "exactTextReplay": "NOT_ESTABLISHED",
+        "uncachedReplay": "NOT_ESTABLISHED"
+      }
+    },
+    {
+      "id": "social-threads",
+      "kind": "text",
+      "platform": "threads",
+      "prompt": "Moss Compass is the fictional title of a mellow piano instrumental releasing November 9; artist and audience metrics are unknown. Write a conversational Threads post of 40–500 characters that invites an honest reply, uses at most one topical hashtag, and invents no missing facts or URL.",
+      "criteria": [
+        "40–500 characters",
+        "title and release date are correct",
+        "conversational voice and honest reply invitation",
+        "zero or one topical hashtag",
+        "no invented artist, URL, or metrics"
+      ],
+      "requestHash": "63ebd32cd11452490815fd719ea8b104fb23fed8f6b97adf05304eb471a01549",
+      "attempts": [
+        {
+          "status": "EXPLICIT_REJECTION",
+          "httpStatus": 503,
+          "errorDigest": "2b71728761e225f3628b9f18b67e2b9df530f98bebae253d9df1302b190dc797",
+          "noFallback": true
+        },
+        {
+          "status": "EXPLICIT_REJECTION",
+          "httpStatus": 503,
+          "errorDigest": "2b71728761e225f3628b9f18b67e2b9df530f98bebae253d9df1302b190dc797",
+          "noFallback": true
+        }
+      ],
+      "replay": {
+        "sameFrozenInputs": "NOT_ESTABLISHED",
+        "exactTextReplay": "NOT_ESTABLISHED",
+        "uncachedReplay": "NOT_ESTABLISHED"
+      }
+    },
+    {
+      "id": "social-google-business",
+      "kind": "text",
+      "platform": "google_business",
+      "prompt": "Moss Compass is the fictional title of a mellow piano instrumental releasing November 9. The fictional Moss Compass Studio is located in fictional Lantern Quay; no street address, hours, price, review, rating, URL, or audience metrics are known. Write an 80–1500-character Google Business Profile update with natural local/community wording and a clear Learn more action. Do not invent missing facts or use hashtags.",
+      "criteria": [
+        "80–1500 characters",
+        "Moss Compass, November 9, and Lantern Quay are accurate",
+        "clear local/community relevance and Learn more action",
+        "no hashtags",
+        "no invented address, hours, price, review, rating, URL, or metrics"
+      ],
+      "requestHash": "bf3ede9c6b18d20bb652899c422367cc4111ea1743019f060990d55e7483ad6a",
+      "attempts": [
+        {
+          "status": "EXPLICIT_REJECTION",
+          "httpStatus": 503,
+          "errorDigest": "90dcd891b41ceb45ce5700464dd4341636cf9e12075624aae694bbfd8c5684c1",
+          "noFallback": true
+        },
+        {
+          "status": "EXPLICIT_REJECTION",
+          "httpStatus": 503,
+          "errorDigest": "90dcd891b41ceb45ce5700464dd4341636cf9e12075624aae694bbfd8c5684c1",
+          "noFallback": true
+        }
+      ],
+      "replay": {
+        "sameFrozenInputs": "NOT_ESTABLISHED",
+        "exactTextReplay": "NOT_ESTABLISHED",
+        "uncachedReplay": "NOT_ESTABLISHED"
+      }
+    },
+    {
+      "id": "music",
+      "kind": "audio",
+      "platform": null,
+      "prompt": "Create four seconds of original mellow instrumental music for the fictional Moss Compass release: soft piano and restrained percussion, no vocals.",
+      "criteria": [
+        "audible piano and percussion",
+        "no vocals",
+        "musically coherent original phrase"
+      ],
+      "requestHash": "5f0b84ff5075299d69e4667ebadd090da5ce32f8304bd579062d7a407088d46c",
+      "attempts": [
+        {
+          "status": "EXPLICIT_REJECTION",
+          "httpStatus": 503,
+          "errorDigest": "8a29014d679ae2c0638c30ff73281a2b7ec84b9cdbe0612fb92871038838d048",
+          "noFallback": true
+        }
+      ]
+    },
+    {
+      "id": "video-spec",
+      "kind": "scene-spec",
+      "platform": "youtube",
+      "prompt": "Write a YouTube Shorts scene specification, not a rendered clip: four seconds for the fictional Moss Compass instrumental, with one copper lantern remaining on the left while a slow camera pan reveals calm water; warm dusk light, no cuts or text.",
+      "criteria": [
+        "explicit scene specification",
+        "four-second timing",
+        "stable lantern identity",
+        "not described as completed media"
+      ],
+      "requestHash": "28ef238c2b4373d422e2083f083857a33392f759ff2b90d4b4a075d7731fc045",
+      "attempts": [
+        {
+          "status": "EXPLICIT_REJECTION",
+          "httpStatus": 503,
+          "errorDigest": "885d7e37d543d58422caaf24db9d23656bdb6f82878d9fa0d57d359fb68299b2",
+          "noFallback": true
+        },
+        {
+          "status": "EXPLICIT_REJECTION",
+          "httpStatus": 503,
+          "errorDigest": "885d7e37d543d58422caaf24db9d23656bdb6f82878d9fa0d57d359fb68299b2",
+          "noFallback": true
+        }
+      ],
+      "replay": {
+        "sameFrozenInputs": "NOT_ESTABLISHED",
+        "exactTextReplay": "NOT_ESTABLISHED",
+        "uncachedReplay": "NOT_ESTABLISHED"
+      }
+    },
+    {
+      "id": "video-clip",
+      "kind": "video",
+      "platform": "tiktok",
+      "prompt": "Render a four-second video for the fictional Moss Compass instrumental: one copper lantern remains on the left while a slow camera pan reveals calm water; warm dusk light, no cuts or text.",
+      "criteria": [
+        "actual decodable clip",
+        "stable lantern identity and position",
+        "continuous camera motion",
+        "no cuts or text"
+      ],
+      "requestHash": "e17936730755b5bc2bb55d1a3ffc75d04727f5f1d65b73d18d7723e22de09d35",
+      "attempts": [
+        {
+          "status": "EXPLICIT_REJECTION",
+          "httpStatus": 503,
+          "errorDigest": "8a29014d679ae2c0638c30ff73281a2b7ec84b9cdbe0612fb92871038838d048",
+          "noFallback": true
+        }
+      ]
+    }
+  ],
+  "readinessHttpStatus": 200,
+  "snapshotDigest": "c834d3e32b6065f0eda43538e58091148ecf165d4903244cab7ef8f201ef3c45",
+  "awarenessBefore": {
+    "snapshotId": "d19611d2d9d36082c9040c00cae000f1d1027096a0c0548965e1300eb199801c",
+    "gpu": {
+      "backend": "digital_gpu_awareness_software",
+      "completed": 23,
+      "operations": {
+        "sum_counts": 1,
+        "rank": 22
+      }
+    }
+  },
+  "awarenessAfter": {
+    "snapshotId": "d19611d2d9d36082c9040c00cae000f1d1027096a0c0548965e1300eb199801c",
+    "gpu": {
+      "backend": "digital_gpu_awareness_software",
+      "completed": 23,
+      "operations": {
+        "sum_counts": 1,
+        "rank": 22
+      }
+    }
+  },
+  "awarenessDispatchDelta": 0,
+  "dispatchAttribution": "PROCESS_WIDE_ONLY_NOT_REQUEST_ATTRIBUTED",
+  "httpRequests": 28
+}

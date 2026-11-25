@@ -16,7 +16,7 @@
  *   await royaltySplitsDispatcher.dispatch({ beatId, orderId, grossAmountCents, currency });
  */
 
-import { createStripeClient } from "../lib/stripeClient";
+import { createStripeClient, getStripeSecretKey } from "../lib/stripeClient";
 import { db } from "../db.js";
 import {
   royaltySplits,
@@ -30,8 +30,9 @@ import { checkPayoutRisk } from "./suspiciousPayoutDetector.js";
 
 // ─── Stripe client (optional — gracefully degraded when key absent) ───────────
 
-const stripe: Stripe | null = process.env.STRIPE_SECRET_KEY
-  ? createStripeClient(process.env.STRIPE_SECRET_KEY, {
+const stripeSecretKey = getStripeSecretKey();
+const stripe: Stripe | null = stripeSecretKey
+  ? createStripeClient(stripeSecretKey, {
       apiVersion: "2026-02-25.clover",
     })
   : null;

@@ -1,0 +1,27 @@
+{
+  "scope": "Correctly serialized focused framework rerun; prior concurrency failure retained",
+  "beforeSha256": "1b29bd30b6a713e76d698732076c26aa206a4bc4cda0732dc8092bc6acdf716e",
+  "afterSha256": "1b29bd30b6a713e76d698732076c26aa206a4bc4cda0732dc8092bc6acdf716e",
+  "unchanged": true,
+  "result": {
+    "command": [
+      "/workspace/.cloud-python/bin/python",
+      "-m",
+      "pytest",
+      "-q",
+      "tests/testing/test_launch_readiness_audit.py",
+      "tests/testing/test_report_progress.py",
+      "tests/testing/test_catalog_snapshot_ownership.py",
+      "tests/testing/test_commerce_subject_selector.py",
+      "--junitxml=reports/platform-evidence/2026-10-29-integration-rechecks/framework-sequential.xml"
+    ],
+    "cwd": ".",
+    "startedAt": "2026-10-29T08:54:01.679458+00:00",
+    "durationSeconds": 13.987,
+    "exitCode": 0,
+    "timedOut": false,
+    "status": "passed",
+    "log": "reports/platform-evidence/2026-10-29-integration-rechecks/framework-sequential.txt",
+    "logSha256": "9ed05c15bc305b29b9e73cdcde7b66163a874fecdf87d1485e14c7b5983908d1"
+  }
+}

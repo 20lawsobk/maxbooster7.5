@@ -252,14 +252,17 @@ describe("real self-healing engine detect/respond/recover", () => {
     const { engine } = await newEngine();
     send(engine, SQL_IP, "first benign request");
     await vi.advanceTimersByTimeAsync(20);
-    await vi.advanceTimersByTimeAsync(10_001);
+    vi.setSystemTime(new Date(BASE_TIME.getTime() + 10_021));
     send(engine, SQL_IP, "new request window");
-    await vi.advanceTimersByTimeAsync(20);
+    await vi.advanceTimersByTimeAsync(10);
     expect(engine.isIpRateLimited(SQL_IP)).toBe(false);
     expect(engine.getMetrics().threatsDetected).toBe(0);
-    await vi.advanceTimersByTimeAsync(3_605_001);
+    // Move the wall clock directly instead of running the 10 ms detection
+    // interval 360,000 times merely to exercise the hourly stale-state branch.
+    vi.setSystemTime(new Date(BASE_TIME.getTime() + 3_605_001));
+    await vi.advanceTimersByTimeAsync(10);
     send(engine, SQL_IP, "new request after stale history cleanup");
-    await vi.advanceTimersByTimeAsync(20);
+    await vi.advanceTimersByTimeAsync(10);
     expect(engine.getMetrics().threatsDetected).toBe(0);
     engine.stop();
   });

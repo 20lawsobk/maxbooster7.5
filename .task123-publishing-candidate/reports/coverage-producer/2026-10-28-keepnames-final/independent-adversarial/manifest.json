@@ -1,0 +1,38 @@
+{
+  "schemaVersion": 1,
+  "scope": "Independent outside-checkout C5 review",
+  "artifacts": {
+    "README.md": {
+      "bytes": 1491,
+      "sha256": "34cf13f6d03efb1c1aed84feaffe800ba303423fe93d8679178442c43ed70ada"
+    },
+    "compiler-controls.json": {
+      "bytes": 4152,
+      "sha256": "9835c672e117494e667d05077808cafda927f5c02fdeb23ee81d4fa9ea47b33c"
+    },
+    "compiler-controls.mjs": {
+      "bytes": 3390,
+      "sha256": "5c264edff7602c8372a215852192d3f47201596b6908de66316d673e3bac09b3"
+    },
+    "compiler-controls.txt": {
+      "bytes": 86,
+      "sha256": "e15669f308cc4f5dcba6c989ca05a8dc19fa94b5cf1fc58092b596dcefba095b"
+    },
+    "review.json": {
+      "bytes": 2380,
+      "sha256": "021931e987c73d75b64708f8f62c4d34c83a415c888d73f016a30f5772834443"
+    },
+    "reviewed-tests.mjs": {
+      "bytes": 12248,
+      "sha256": "f84b0eccb12da96b973e23521ae34f9d6f79c44e39980dca318affa87d735176"
+    },
+    "synthetic-runtime-proof.json": {
+      "bytes": 10305,
+      "sha256": "0ab45be633712436fd009991084a7bce07538d70959b1a196144d5f95a845c83"
+    },
+    "tests.txt": {
+      "bytes": 2179,
+      "sha256": "685dbce259b2033593d1f68331a4d40459217bffcd6d50736d3175bf9322dcf0"
+    }
+  }
+}

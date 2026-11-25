@@ -1,0 +1,1 @@
+Integration readiness: isolated policy, scanner, email, encryption, submission, posting, SMS and LabelGrid status tests passed

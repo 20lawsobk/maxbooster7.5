@@ -2,11 +2,11 @@
 import * as Y from "yjs";
 import { storage } from "../storage";
 import crypto from "crypto";
-import { config } from "../config/defaults.js";
 import {
   getRedisClient,
   createRedisClient,
 } from "../lib/redisConnectionFactory.js";
+import { isPdimConfigured } from "../lib/pdimClient.js";
 import { logger } from "../logger.js";
 
 // Yjs document structure:
@@ -21,6 +21,10 @@ function generateHash(data: Uint8Array): string {
   return crypto?.createHash("sha256").update(data).digest("hex");
 }
 
+export const REMOTE_YJS_UPDATE_ORIGIN = Symbol.for(
+  "maxbooster.yjs.remote-pubsub",
+);
+
 export class YjsCollaborationService {
   private saveTimers: Map<string, NodeJS.Timeout> = new Map();
   private readonly SAVE_DEBOUNCE_MS = 2000; // Save snapshots every 2 seconds max
@@ -28,57 +32,114 @@ export class YjsCollaborationService {
   private readonly REDIS_TTL = 3600; // 1 hour cache TTL
 
   private subClient: Record<string, unknown> | null = null;
-  private readonly YJS_PUBSUB_ENABLED = !!config?.redis.url;
+  private readonly YJS_PUBSUB_ENABLED = isPdimConfigured();
+  private pubSubInitPromise: Promise<void> = Promise.resolve();
   private pubSubCallbacks: Map<string, Set<(update: Uint8Array) => void>> =
     new Map();
+  private projectSubscriptions: Map<string, Promise<void>> = new Map();
+  private subscribedProjects: Set<string> = new Set();
 
   constructor() {
     if (this.YJS_PUBSUB_ENABLED) {
-      this.initPubSub().catch((err) =>
-        logger.warn({ err: err }, "Failed to init YJS PubSub:"),
+      this.pubSubInitPromise = this.initPubSub();
+      void this.pubSubInitPromise.catch((err) =>
+        logger.warn({ err }, "Failed to init YJS PubSub:"),
       );
     }
   }
 
   private async initPubSub() {
-    try {
-      this.subClient = await createRedisClient();
-      if (this.subClient && typeof this.subClient.on === "function") {
-        this.subClient.on("message", (channel: string, message: string) => {
-          if (channel?.startsWith("yjs:updates:")) {
-            const projectId = channel?.split(":").pop();
-            if (projectId) {
-              const callbacks = this.pubSubCallbacks.get(projectId);
-              if (callbacks) {
-                const update = new Uint8Array(Buffer?.from(message, "base64"));
-                callbacks?.forEach((cb) => cb(update));
-              }
+    const subscriber = await createRedisClient();
+    if (
+      !subscriber ||
+      typeof (subscriber as any).on !== "function" ||
+      typeof (subscriber as any).subscribe !== "function"
+    ) {
+      throw new Error("PDIM Pub/Sub subscriber is unavailable");
+    }
+
+    this.subClient = subscriber as Record<string, unknown>;
+    (this.subClient as any).on(
+      "message",
+      (channel: string, message: string) => {
+        if (!channel?.startsWith("yjs:updates:")) return;
+        const projectId = channel.slice("yjs:updates:".length);
+        if (!projectId) return;
+
+        const callbacks = this.pubSubCallbacks.get(projectId);
+        if (!callbacks?.size) return;
+
+        try {
+          const update = new Uint8Array(Buffer.from(message, "base64"));
+          for (const callback of callbacks) {
+            try {
+              callback(update);
+            } catch (error) {
+              logger.warn(
+                { err: error, projectId },
+                "Failed to apply cross-instance Yjs update:",
+              );
             }
           }
-        });
-      }
-    } catch (error) {
-      logger.warn({ err: error }, "YJS PubSub init error:");
-    }
+        } catch (error) {
+          logger.warn(
+            { err: error, projectId },
+            "Failed to decode cross-instance Yjs update:",
+          );
+        }
+      },
+    );
   }
 
   async subscribeToProjectUpdates(
     projectId: string,
     callback: (update: Uint8Array) => void,
   ) {
-    if (!this.YJS_PUBSUB_ENABLED || !this.subClient) return;
+    if (!this.YJS_PUBSUB_ENABLED) {
+      throw new Error("PDIM is required for cross-instance collaboration");
+    }
 
-    if (!this.pubSubCallbacks.has(projectId)) {
-      this.pubSubCallbacks.set(projectId, new Set());
+    await this.pubSubInitPromise;
+    if (!this.subClient) {
+      throw new Error("PDIM Pub/Sub is not ready for collaboration");
+    }
+
+    let callbacks = this.pubSubCallbacks.get(projectId);
+    if (!callbacks) {
+      callbacks = new Set();
+      this.pubSubCallbacks.set(projectId, callbacks);
+    }
+    callbacks.add(callback);
+
+    if (this.subscribedProjects.has(projectId)) return;
+
+    let subscription = this.projectSubscriptions.get(projectId);
+    if (!subscription) {
       const channel = `yjs:updates:${projectId}`;
-      try {
-        await (this as any).subClient.subscribe(channel);
-        logger.info(`Subscribed to YJS updates for project: ${projectId}`);
-      } catch (error) {
-        logger.warn({ err: error }, `Failed to subscribe to ${channel}:`);
+      subscription = Promise.resolve()
+        .then(() => (this.subClient as any).subscribe(channel))
+        .then(() => {
+          this.subscribedProjects.add(projectId);
+          logger.info(`Subscribed to YJS updates for project: ${projectId}`);
+        });
+      this.projectSubscriptions.set(projectId, subscription);
+    }
+
+    try {
+      await subscription;
+    } catch (error) {
+      callbacks.delete(callback);
+      if (callbacks.size === 0) this.pubSubCallbacks.delete(projectId);
+      logger.warn(
+        { err: error, projectId },
+        "Failed to subscribe to cross-instance Yjs updates:",
+      );
+      throw error;
+    } finally {
+      if (this.projectSubscriptions.get(projectId) === subscription) {
+        this.projectSubscriptions.delete(projectId);
       }
     }
-    this.pubSubCallbacks.get(projectId)?.add(callback);
   }
 
   // Load Yjs document for project
@@ -152,10 +213,14 @@ export class YjsCollaborationService {
     }
 
     // Auto-save on changes (debounced)
-    doc?.on("update", async (update: Uint8Array) => {
+    doc?.on("update", async (update: Uint8Array, origin: unknown) => {
       // PUBLISH the update to other nodes
-      if (this.YJS_PUBSUB_ENABLED) {
+      if (
+        this.YJS_PUBSUB_ENABLED &&
+        origin !== REMOTE_YJS_UPDATE_ORIGIN
+      ) {
         try {
+          await this.pubSubInitPromise;
           const redis = await getRedisClient();
           if (redis) {
             const base64Update = Buffer?.from(update).toString("base64");
@@ -260,11 +325,21 @@ export class YjsCollaborationService {
       }
     }
 
-    // Unsubscribe from pub/sub
+    // Unsubscribe only after any in-flight subscribe has settled.
+    const subscription = this.projectSubscriptions.get(projectId);
+    if (subscription) await subscription.catch(() => undefined);
+
     if (this.YJS_PUBSUB_ENABLED && this.subClient) {
       try {
-        await (this as any).subClient.unsubscribe(`yjs:updates:${projectId}`);
+        const callbacks = this.pubSubCallbacks.get(projectId);
         this.pubSubCallbacks.delete(projectId);
+        if (callbacks || this.subscribedProjects.has(projectId)) {
+          await (this.subClient as any).unsubscribe(
+            `yjs:updates:${projectId}`,
+          );
+        }
+        this.subscribedProjects.delete(projectId);
+        this.projectSubscriptions.delete(projectId);
       } catch (error) {
         logger.warn(
           { err: error },

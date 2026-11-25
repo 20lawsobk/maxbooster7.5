@@ -7,12 +7,11 @@
  */
 
 import Stripe from "stripe";
-import { createStripeClient } from "../lib/stripeClient";
+import { createStripeClient, getStripeSecretKey } from "../lib/stripeClient";
 import { registerCommerceCompensationHandlers, reconcileCharge, initiateCommerceRefund } from "../services/commerce/compensation";
 import { commerceRepository } from "../services/commerce/runtime";
 import { db } from "../db";
 import { sql } from "drizzle-orm";
-import { env } from "../config/env.js";
 import { logger } from "../logger.js";
 import { registerWebhookHandler } from "./stripeWebhookSecurity";
 
@@ -59,7 +58,7 @@ const chargebackRecords = new Map<string, ChargebackRecord>();
  * Initialize Stripe instance
  */
 function getStripe(): Stripe {
-  const secretKey = env?.STRIPE_SECRET_KEY;
+  const secretKey = getStripeSecretKey();
   if (!secretKey) {
     throw new Error("STRIPE_SECRET_KEY is not configured");
   }

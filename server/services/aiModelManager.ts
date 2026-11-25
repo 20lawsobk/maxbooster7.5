@@ -99,7 +99,7 @@ class MaxCoreSocialAutopilot {
     multimodalFeatures?: unknown,
   ): Promise<Array<Record<string, unknown>>> {
     const response = await maxCorePost<SocialGenerateResponse>(
-      "/platform/social/generate",
+      "/api/platform/social/generate",
       {
         user_id: this.userId,
         platform: "instagram",
@@ -197,7 +197,7 @@ class MaxCoreAdvertisingAutopilot {
               throw new Error("Unsupported MaxCore advertising media type");
             })();
     const response = await maxCorePost<AdsGenerateResponse>(
-      "/platform/ads/generate",
+      "/api/platform/ads/generate",
       {
         user_id: this.userId,
         platform,

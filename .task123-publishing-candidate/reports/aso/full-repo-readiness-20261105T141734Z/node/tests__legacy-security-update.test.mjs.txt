@@ -1,0 +1,52 @@
+TAP version 13
+# Subtest: replay is opt-in, idempotent, and preserves unrelated files
+ok 1 - replay is opt-in, idempotent, and preserves unrelated files
+  ---
+  duration_ms: 4.081586
+  type: 'test'
+  ...
+# Subtest: successive updates accept original and verified predecessors, never custom edits
+ok 2 - successive updates accept original and verified predecessors, never custom edits
+  ---
+  duration_ms: 3.315087
+  type: 'test'
+  ...
+# Subtest: invalid predecessor lists and predecessors on additions are rejected
+ok 3 - invalid predecessor lists and predecessors on additions are rejected
+  ---
+  duration_ms: 0.970995
+  type: 'test'
+  ...
+# Subtest: guarded additions create only absent files and replay idempotently
+ok 4 - guarded additions create only absent files and replay idempotently
+  ---
+  duration_ms: 1.458555
+  type: 'test'
+  ...
+# Subtest: guarded additions refuse existing custom files and symlinks
+ok 5 - guarded additions refuse existing custom files and symlinks
+  ---
+  duration_ms: 1.29073
+  type: 'test'
+  ...
+# Subtest: preflight rejects custom edits before changing another file
+ok 6 - preflight rejects custom edits before changing another file
+  ---
+  duration_ms: 1.024232
+  type: 'test'
+  ...
+# Subtest: invalid hashes, traversal, duplicates, and symlinks fail closed
+ok 7 - invalid hashes, traversal, duplicates, and symlinks fail closed
+  ---
+  duration_ms: 1.354324
+  type: 'test'
+  ...
+1..7
+# tests 7
+# suites 0
+# pass 7
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 140.221304

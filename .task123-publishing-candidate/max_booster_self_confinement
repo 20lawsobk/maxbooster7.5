@@ -1,0 +1,453 @@
+
+### `server/config/index.ts`
+
+```ts
+import dotenv from 'dotenv';
+dotenv.config();
+
+export const config = {
+  port: Number(process.env.PORT) || 3000,
+  dbUrl: process.env.DB_URL || '',
+  maxcoreUrl: process.env.MAXCORE_URL || '',
+  pdimUrl: process.env.PDIM_URL || '',
+  jwtSecret: process.env.JWT_SECRET || '',
+};
+```
+
+---
+
+### `server/app.ts`
+
+```ts
+import express from 'express';
+import path from 'path';
+import routes from './routes';
+import { health } from './health/health';
+import { readiness } from './health/readiness';
+
+const app = express();
+
+app.use(express.json());
+
+// API routes
+app.use('/api', routes);
+
+// Health endpoints
+app.get('/health', health);
+app.get('/ready', readiness);
+
+// Serve React build
+app.use(express.static(path.join(__dirname, '../build')));
+app.get('*', (req, res) => {
+  res.sendFile(path.join(__dirname, '../build/index.html'));
+});
+
+export default app;
+```
+
+---
+
+### `server/index.ts`
+
+```ts
+import { config } from './config';
+import app from './app';
+
+app.listen(config.port, () => {
+  console.log(`Max Booster main running on port ${config.port}`);
+});
+```
+
+---
+
+### `server/routes/index.ts`
+
+```ts
+import { Router } from 'express';
+import authRoutes from './auth';
+import userRoutes from './users';
+import projectRoutes from './projects';
+
+const router = Router();
+
+router.use('/auth', authRoutes);
+router.use('/users', userRoutes);
+router.use('/projects', projectRoutes);
+
+export default router;
+```
+
+---
+
+### `server/routes/auth.ts`
+
+```ts
+import { Router } from 'express';
+import { login, register } from '../controllers/authController';
+
+const router = Router();
+
+router.post('/login', login);
+router.post('/register', register);
+
+export default router;
+```
+
+---
+
+### `server/routes/users.ts`
+
+```ts
+import { Router } from 'express';
+import { getUsers } from '../controllers/userController';
+
+const router = Router();
+
+router.get('/', getUsers);
+
+export default router;
+```
+
+---
+
+### `server/routes/projects.ts`
+
+```ts
+import { Router } from 'express';
+import { getProjects } from '../controllers/projectController';
+
+const router = Router();
+
+router.get('/', getProjects);
+
+export default router;
+```
+
+---
+
+### `server/controllers/authController.ts`
+
+```ts
+import { Request, Response } from 'express';
+import jwt from 'jsonwebtoken';
+import { config } from '../config';
+
+export const login = async (req: Request, res: Response) => {
+  const { email } = req.body;
+
+  const token = jwt.sign({ email }, config.jwtSecret, { expiresIn: '7d' });
+
+  res.json({ token });
+};
+
+export const register = async (req: Request, res: Response) => {
+  const { email } = req.body;
+
+  // TODO: Add DB logic
+  res.json({ message: `User ${email} registered` });
+};
+```
+
+---
+
+### `server/controllers/userController.ts`
+
+```ts
+import { Request, Response } from 'express';
+
+export const getUsers = async (req: Request, res: Response) => {
+  // TODO: Replace with DB logic
+  res.json([{ id: 1, email: 'test@example.com' }]);
+};
+```
+
+---
+
+### `server/controllers/projectController.ts`
+
+```ts
+import { Request, Response } from 'express';
+
+export const getProjects = async (req: Request, res: Response) => {
+  // TODO: Replace with DB logic
+  res.json([{ id: 1, name: 'Demo Project' }]);
+};
+```
+
+---
+
+### `server/services/maxcore.ts`
+
+```ts
+import axios from 'axios';
+import { config } from '../config';
+
+export async function callMaxcore(endpoint: string, payload: any) {
+  const url = `${config.maxcoreUrl}${endpoint}`;
+  return axios.post(url, payload);
+}
+```
+
+---
+
+### `server/services/pdim.ts`
+
+```ts
+import axios from 'axios';
+import { config } from '../config';
+
+export async function callPdim(endpoint: string, payload: any) {
+  const url = `${config.pdimUrl}${endpoint}`;
+  return axios.post(url, payload);
+}
+```
+
+---
+
+### `server/health/health.ts`
+
+```ts
+import { Request, Response } from 'express';
+
+export const health = (req: Request, res: Response) => {
+  res.json({
+    status: 'ok',
+    uptime: process.uptime(),
+    version: process.env.APP_VERSION || 'dev',
+  });
+};
+```
+
+---
+
+### `server/health/readiness.ts`
+
+```ts
+import { Request, Response } from 'express';
+import axios from 'axios';
+import { config } from '../config';
+
+export const readiness = async (req: Request, res: Response) => {
+  try {
+    await axios.get(config.maxcoreUrl + '/health');
+    await axios.get(config.pdimUrl + '/health');
+
+    res.json({ ready: true });
+  } catch {
+    res.status(503).json({ ready: false });
+  }
+};
+```
+
+---
+
+### `client/src/App.tsx`
+
+```tsx
+import React from 'react';
+
+function App() {
+  return (
+    <div>
+      <h1>Max Booster Main Platform</h1>
+    </div>
+  );
+}
+
+export default App;
+```
+
+---
+
+### `client/public/index.html`
+
+```html
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Max Booster</title>
+  </head>
+  <body>
+    <div id="root"></div>
+  </body>
+</html>
+```
+
+---
+
+### `client/package.json`
+
+```json
+{
+  "name": "max-booster-client",
+  "private": true,
+  "scripts": {
+    "start": "react-scripts start",
+    "build": "react-scripts build"
+  },
+  "dependencies": {
+    "react": "^18.0.0",
+    "react-dom": "^18.0.0"
+  },
+  "devDependencies": {
+    "@types/react": "^18.0.0",
+    "@types/react-dom": "^18.0.0"
+  }
+}
+```
+
+---
+
+### Root `package.json`
+
+```json
+{
+  "name": "max-booster-main",
+  "private": true,
+  "workspaces": ["server", "client"],
+  "scripts": {
+    "dev": "ts-node server/index.ts",
+    "build": "npm run build --prefix client",
+    "start": "node dist/server/index.js"
+  },
+  "dependencies": {
+    "axios": "^1.7.0",
+    "express": "^4.19.0",
+    "jsonwebtoken": "^9.0.0",
+    "dotenv": "^16.4.0"
+  },
+  "devDependencies": {
+    "ts-node": "^10.9.2",
+    "typescript": "^5.5.0"
+  }
+}
+```
+
+---
+
+### `tsconfig.json`
+
+```json
+{
+  "compilerOptions": {
+    "target": "ES2020",
+    "module": "commonjs",
+    "rootDir": "./server",
+    "outDir": "./dist/server",
+    "strict": true,
+    "esModuleInterop": true,
+    "resolveJsonModule": true
+  },
+  "include": ["server/**/*.ts"]
+}
+```
+
+---
+
+### `.env` (template)
+
+```env
+PORT=3000
+DB_URL=
+MAXCORE_URL=
+PDIM_URL=
+JWT_SECRET=supersecret
+APP_VERSION=0.1.0
+```
+
+---
+
+### `Dockerfile`
+
+```dockerfile
+FROM node:22-alpine
+
+WORKDIR /app
+
+COPY package*.json ./
+RUN npm install --production
+
+COPY . .
+
+RUN npm run build --prefix client
+
+ENV NODE_ENV=production
+ENV PORT=3000
+
+EXPOSE 3000
+
+CMD ["node", "server/index.js"]
+```
+
+---
+
+### `scripts/build.sh`
+
+```sh
+#!/bin/sh
+npm run build --prefix client
+```
+
+---
+
+### `scripts/start.sh`
+
+```sh
+#!/bin/sh
+node dist/server/index.js
+```
+
+---
+
+### `workers/python/audio_processor.py`
+
+```python
+import sys
+
+def process_audio(path):
+    print(f"Processing audio at {path}")
+    # TODO: Add DSP logic
+
+if __name__ == "__main__":
+    process_audio(sys.argv[1])
+```
+
+---
+
+### `workers/python/beat_analyzer.py`
+
+```python
+import sys
+
+def analyze(path):
+    print(f"Analyzing beat at {path}")
+    # TODO: Add beat detection logic
+
+if __name__ == "__main__":
+    analyze(sys.argv[1])
+```
+
+---
+
+### `rust/Cargo.toml`
+
+```toml
+[package]
+name = "max_booster_rust"
+version = "0.1.0"
+edition = "2021"
+
+[lib]
+crate-type = ["cdylib"]
+```
+
+---
+
+### `rust/src/lib.rs`
+
+```rust
+#[no_mangle]
+pub extern "C" fn add_numbers(a: i32, b: i32) -> i32 {
+    a + b
+}

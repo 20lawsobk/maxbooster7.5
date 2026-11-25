@@ -1,0 +1,11 @@
+file:///workspace/onboarding-results/c5-shared-producer/collect-node-coverage.mjs:6
+if(target!=='tests/fabric-replica-generation.test.mjs'||!requested||args.length>3)throw Error('P1 supports only tests/fabric-replica-generation.test.mjs and a new owned output');
+                                                                                        ^
+
+Error: P1 supports only tests/fabric-replica-generation.test.mjs and a new owned output
+    at file:///workspace/onboarding-results/c5-shared-producer/collect-node-coverage.mjs:6:89
+    at ModuleJob.run (node:internal/modules/esm/module_job:343:25)
+    at async onImport.tracePromise.__proto__ (node:internal/modules/esm/loader:681:26)
+    at async asyncRunEntryPointWithESMLoader (node:internal/modules/run_main:117:5)
+
+Node.js v22.23.3

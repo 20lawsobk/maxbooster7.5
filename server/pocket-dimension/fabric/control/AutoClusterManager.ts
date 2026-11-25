@@ -24,15 +24,61 @@ export interface ClusterRules {
   emaAlpha: number;
 }
 
-// Storage scale for 90 million users:
-//   90M users × 10 MB average stored data = ~900 TB
-//   Each PDIM node capacity: 100 GB  →  need ~9 000 nodes for full scale.
-//   There is intentionally no artificial node-count ceiling: the pocket
-//   dimension owns compressed node state, while the rules below still control
-//   spawn rate, health replacement, utilization, and scale-down.
+// The admin-first default is finite: five nodes at the current nominal
+// 100-GiB/node capacity. Larger deployments must explicitly configure a
+// provisioned finite ceiling; 9,000 nodes is the existing long-term scale
+// target, not an implicit permission to grow without bounds.
+export const DEFAULT_MAX_NODES = 5;
+export const MAX_CONFIGURED_NODES = 9_000;
+
+export function validateNodeLimits(minNodes: number, maxNodes: number): void {
+  if (
+    !Number.isSafeInteger(minNodes) ||
+    minNodes < 0 ||
+    !Number.isSafeInteger(maxNodes) ||
+    maxNodes < minNodes ||
+    maxNodes > MAX_CONFIGURED_NODES
+  ) {
+    throw new Error(
+      `PocketFabric node limits must be safe integers with 0 <= minNodes <= maxNodes <= ${MAX_CONFIGURED_NODES}`,
+    );
+  }
+}
+
+export function resolveMaxNodes(
+  raw: string | undefined,
+  minNodes = 3,
+): number {
+  if (!Number.isSafeInteger(minNodes) || minNodes < 1 || minNodes > MAX_CONFIGURED_NODES) {
+    throw new Error(`PocketFabric minNodes must be between 1 and ${MAX_CONFIGURED_NODES}`);
+  }
+  if (raw === undefined || raw.trim() === "") {
+    const defaultMax = Math.max(DEFAULT_MAX_NODES, minNodes);
+    validateNodeLimits(minNodes, defaultMax);
+    return defaultMax;
+  }
+  const value = raw.trim();
+  if (!/^\d+$/.test(value)) {
+    throw new Error(
+      `POCKET_FABRIC_MAX_NODES must be an integer between ${minNodes} and ${MAX_CONFIGURED_NODES}`,
+    );
+  }
+  const maxNodes = Number(value);
+  if (
+    !Number.isSafeInteger(maxNodes) ||
+    maxNodes < minNodes ||
+    maxNodes > MAX_CONFIGURED_NODES
+  ) {
+    throw new Error(
+      `POCKET_FABRIC_MAX_NODES must be an integer between ${minNodes} and ${MAX_CONFIGURED_NODES}`,
+    );
+  }
+  return maxNodes;
+}
+
 export const DEFAULT_RULES: ClusterRules = {
   minNodes: 3,
-  maxNodes: Number.POSITIVE_INFINITY,
+  maxNodes: DEFAULT_MAX_NODES,
   utilizationHighWatermark: 0.7,
   utilizationLowWatermark: 0.4,
   utilizationPerNodeHighWatermark: 0.8,
@@ -103,6 +149,7 @@ export class AutoClusterManager {
     ) => void,
     private rules: ClusterRules = DEFAULT_RULES,
   ) {
+    validateNodeLimits(this.rules.minNodes, this.rules.maxNodes);
     this.rebalancer = new Rebalancer(
       nodeRegistry,
       this.chunkIndex,
@@ -481,6 +528,7 @@ export class AutoClusterManager {
     projectedBytes: number,
   ): number {
     const headroom = this.rules.maxNodes - currentNodeCount;
+    if (!Number.isSafeInteger(headroom) || headroom <= 0) return 0;
 
     if (
       reason === "below_min_nodes" ||

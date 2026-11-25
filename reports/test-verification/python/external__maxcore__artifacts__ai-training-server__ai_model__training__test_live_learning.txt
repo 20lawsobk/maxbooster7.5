@@ -1,9 +1,15 @@
-.............                                                    [100%]
+/tmp/maxbooster-python312-test-tools/coverage/core.py:108: CoverageWarning: Couldn't import C tracer: No module named 'coverage.tracer' (no-ctracer); see https://coverage.readthedocs.io/en/7.17.2/messages.html#warning-no-ctracer
+  warn(f"Couldn't import C tracer: {IMPORT_ERROR}", slug="no-ctracer", once=True)
+..............                                                 [100%]
 =============================== warnings summary ===============================
+ai_model/training/test_live_learning.py:30
+  <repo>/external/maxcore/artifacts/ai-training-server/ai_model/training/test_live_learning.py:30: PytestCollectionWarning: cannot collect test class 'TestClient' because it has a __init__ constructor (from: ai_model/training/test_live_learning.py)
+    class TestClient:
+
 ai_model/training/test_live_learning.py::LiveLearningTests::test_actual_router_auth_and_validation
 ai_model/training/test_live_learning.py::LiveLearningTests::test_interrupted_worker_never_passes_registry_and_list_reconciles
 ai_model/training/test_live_learning.py::LiveLearningTests::test_status_endpoint_is_authorized_and_does_not_expose_text
-  <repo>/external/maxcore/artifacts/ai-training-server/ai_model/training/live_learning.py:531: DeprecationWarning: 
+  <repo>/external/maxcore/artifacts/ai-training-server/ai_model/training/live_learning.py:536: DeprecationWarning: 
           on_event is deprecated, use lifespan event handlers instead.
   
           Read more about it in the
@@ -12,4 +18,4 @@ ai_model/training/test_live_learning.py::LiveLearningTests::test_status_endpoint
     @router.on_event("startup")
 
 -- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
-13 passed, 3 warnings, 8 subtests passed in 7.05s
+14 passed, 4 warnings, 10 subtests passed in 8.45s

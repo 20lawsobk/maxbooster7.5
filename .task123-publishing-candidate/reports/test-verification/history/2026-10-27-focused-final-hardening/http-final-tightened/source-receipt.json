@@ -1,0 +1,24 @@
+{
+  "scope": "Both owned suites against disposable PostgreSQL and actual source application; authenticated positive analytics/fanbase/advertising requests require200, with concrete shapes. Negative401/admin403/unsupportedprediction503 remain explicit. No runtime source changes.",
+  "sourceSha256": {
+    "tests/ai-analytics-integration.test.ts": "9cfcbc14247c7b2a5bc358105069192d6c6421df1e6b589e7b7f1727fe7e8ded",
+    "tests/critical-paths.test.ts": "822daa3fe77125760fafe4c470f2a8e77c85c5cd7207db3576bb6b04ef436815"
+  },
+  "counts": {
+    "cases": 64,
+    "passed": 61,
+    "failed": 0,
+    "skipped": 3
+  },
+  "junitSha256": "db45bcc62999881d014a4029bcb100eb363871542f3c2092290aa599e47cd092",
+  "checks": {
+    "eslint": "passed",
+    "diffWhitespace": "passed"
+  },
+  "productionDataTouched": false,
+  "canonicalRoutesCorrected": [
+    "/api/analytics/music/release-strategy",
+    "/api/analytics/music/milestones"
+  ],
+  "timeRangeQueryNameCorrected": true
+}

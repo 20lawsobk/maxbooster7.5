@@ -1,0 +1,246 @@
+{
+  "sourceRevision": "253b69cca4c57068494de0d8a6d1b950feb19ec9",
+  "startedAt": "2026-11-07T00:17:38.119772+00:00",
+  "scope": "Isolated groups; live provider, destructive, long-running and hardware checks remain explicit in the catalog",
+  "testScope": {
+    "policy": "scripts/testing/repo-test-scope.json",
+    "policySha256": "e65fbd7cb154e5fb1130240df53159c8ddbf9c1a2181db1e6dcdcc9fbd93294b",
+    "standaloneAppVariantFilesExcluded": [
+      {
+        "path": ".github/workflows/build-desktop.yml",
+        "variant": "desktop",
+        "reason": "Desktop packaging workflow is not an acceptance target for the web release."
+      },
+      {
+        "path": ".github/workflows/build-mobile.yml",
+        "variant": "mobile",
+        "reason": "Standalone mobile packaging workflow is not an acceptance target for the web release."
+      },
+      {
+        "path": "capacitor.config.json",
+        "variant": "mobile",
+        "reason": "Capacitor packaging configuration is excluded; responsive mobile web behavior remains in scope."
+      },
+      {
+        "path": "capacitor.config.ts",
+        "variant": "mobile",
+        "reason": "Capacitor packaging configuration is excluded; responsive mobile web behavior remains in scope."
+      },
+      {
+        "path": "electron-builder.config.cjs",
+        "variant": "desktop",
+        "reason": "Standalone Electron packaging configuration is not part of the web production-readiness run."
+      },
+      {
+        "path": "electron/assets/entitlements.mac.plist",
+        "variant": "desktop",
+        "reason": "Standalone Electron application packaging/runtime is excluded; the web application and shared backend remain in scope."
+      },
+      {
+        "path": "electron/assets/icon.png",
+        "variant": "desktop",
+        "reason": "Standalone Electron application packaging/runtime is excluded; the web application and shared backend remain in scope."
+      },
+      {
+        "path": "electron/main.js",
+        "variant": "desktop",
+        "reason": "Standalone Electron application packaging/runtime is excluded; the web application and shared backend remain in scope."
+      },
+      {
+        "path": "electron/package.json",
+        "variant": "desktop",
+        "reason": "Standalone Electron application packaging/runtime is excluded; the web application and shared backend remain in scope."
+      },
+      {
+        "path": "electron/preload.js",
+        "variant": "desktop",
+        "reason": "Standalone Electron application packaging/runtime is excluded; the web application and shared backend remain in scope."
+      },
+      {
+        "path": "electron/runtime-policy.cjs",
+        "variant": "desktop",
+        "reason": "Standalone Electron application packaging/runtime is excluded; the web application and shared backend remain in scope."
+      },
+      {
+        "path": "packages/electron-download-transport/index.cjs",
+        "variant": "desktop",
+        "reason": "Electron-only packaging transport is excluded; shared web download and export services remain in scope."
+      },
+      {
+        "path": "packages/electron-download-transport/package.json",
+        "variant": "desktop",
+        "reason": "Electron-only packaging transport is excluded; shared web download and export services remain in scope."
+      },
+      {
+        "path": "scripts/patch-electron-builder-transport.mjs",
+        "variant": "desktop",
+        "reason": "Desktop packaging patch/setup is not run by the web repository readiness suite."
+      },
+      {
+        "path": "scripts/testing/electron-asar-module-acceptance.mjs",
+        "variant": "desktop",
+        "reason": "Standalone Electron archive acceptance is excluded from the default web readiness run."
+      },
+      {
+        "path": "tests/desktop-runtime-policy.test.mjs",
+        "variant": "desktop",
+        "reason": "Standalone desktop runtime policy test is not required when the desktop app follows the web release."
+      },
+      {
+        "path": "tests/electron-asar-launch-policy.test.mjs",
+        "variant": "desktop",
+        "reason": "Standalone Electron archive-launch test is not required when the desktop app follows the web release."
+      }
+    ],
+    "retainedWebScope": [
+      {
+        "path": "client/src/**",
+        "reason": "All browser routes and responsive desktop/mobile web interfaces remain in scope, including pages named DesktopApp."
+      },
+      {
+        "path": "server/**",
+        "reason": "Shared APIs and backend services remain in scope regardless of which client consumes them."
+      },
+      {
+        "path": "shared/**",
+        "reason": "Shared runtime code remains in scope."
+      }
+    ],
+    "generatedPathPolicy": {
+      "segments": [
+        "reports",
+        "dist",
+        "node_modules",
+        "__pycache__",
+        ".snapshots",
+        "archive-capsules",
+        ".cache",
+        "target"
+      ],
+      "prefixes": [
+        ".pdim-"
+      ],
+      "nonRuntimeSegments": [
+        "docs"
+      ],
+      "reason": "Generated outputs, reports and retained snapshots do not count as active source or execution inputs."
+    }
+  },
+  "requestedGroups": [
+    "root",
+    "http"
+  ],
+  "selectedGroups": [
+    "http",
+    "root"
+  ],
+  "targetedValidation": true,
+  "productionReady": false,
+  "allTestsPassed": false,
+  "status": "failed",
+  "runs": [
+    {
+      "command": [
+        "npm",
+        "run",
+        "build"
+      ],
+      "cwd": ".",
+      "startedAt": "2026-11-07T00:17:39.848266+00:00",
+      "durationSeconds": 32.533,
+      "exitCode": 0,
+      "timedOut": false,
+      "status": "passed",
+      "log": "reports/aso/isolated-full-20261106T233139Z/rechecks/admin-entitlement-regression/orchestration/frontend-build.txt",
+      "logSha256": "cb2a041e1bd6c64331fdba07504f2f999996f65976d489759d3b555366a17b03",
+      "group": "http",
+      "id": "frontend-build"
+    },
+    {
+      "command": [
+        "npm",
+        "run",
+        "test:ci"
+      ],
+      "cwd": ".",
+      "startedAt": "2026-11-07T00:18:12.381504+00:00",
+      "durationSeconds": 194.467,
+      "exitCode": 0,
+      "timedOut": false,
+      "status": "passed",
+      "log": "reports/aso/isolated-full-20261106T233139Z/rechecks/admin-entitlement-regression/orchestration/ci.txt",
+      "logSha256": "3ea1ab6031f7efec5d4b25c105c1fab77d02439c6857f078038775525e02204a",
+      "group": "root",
+      "id": "ci",
+      "unitReportFresh": true
+    },
+    {
+      "command": [
+        "node",
+        "node_modules/vitest/vitest.mjs",
+        "run",
+        "--config",
+        "vitest.additional.config.ts",
+        "--reporter=verbose",
+        "--reporter=junit",
+        "--outputFile=/home/runner/workspace/reports/aso/isolated-full-20261106T233139Z/rechecks/admin-entitlement-regression/root/additional.junit.xml"
+      ],
+      "cwd": ".",
+      "startedAt": "2026-11-07T00:21:26.852664+00:00",
+      "durationSeconds": 1.225,
+      "exitCode": 0,
+      "timedOut": false,
+      "status": "passed",
+      "log": "reports/aso/isolated-full-20261106T233139Z/rechecks/admin-entitlement-regression/orchestration/additional.txt",
+      "logSha256": "0424b6713f4a2c5bef928e8d01991538be1b082eaef72bfde4fe6d09acc91edc",
+      "group": "root",
+      "id": "additional"
+    },
+    {
+      "command": [
+        "node",
+        "scripts/testing/integration-browser.mjs"
+      ],
+      "cwd": ".",
+      "startedAt": "2026-11-07T00:21:28.078219+00:00",
+      "durationSeconds": 178.928,
+      "exitCode": 0,
+      "timedOut": false,
+      "status": "passed",
+      "log": "reports/aso/isolated-full-20261106T233139Z/rechecks/admin-entitlement-regression/orchestration/http.txt",
+      "logSha256": "c9f61cd71f451aeb4a27598145eb841373531502be5c7849bcfabcd516d71e51",
+      "group": "http",
+      "id": "http"
+    }
+  ],
+  "postprocessing": [],
+  "sourceInputsSha256": "4d4c4b5fd328e2396bd66e9055640fdcd97cb71ffb2366bea1c82e4e9810a6f2",
+  "catalog": {
+    "status": "skipped",
+    "exitCode": 0,
+    "reason": "Targeted validation does not produce a platform inventory."
+  },
+  "sourceInputsUnchanged": false,
+  "changedSourceInputs": [
+    "agros/VALIDATION.json",
+    "agros/admin_release.json",
+    "agros/admin_release.py",
+    "agros/policy.json",
+    "agros/repair.py",
+    "agros/team.py",
+    "agros/team_catalog.json",
+    "agros/test_admin_release.py",
+    "agros/test_agros.py",
+    "agros/test_team.py",
+    "agros/verify.py",
+    "server/middleware/auth.ts",
+    "server/routes.ts",
+    "server/routes/content-analysis.ts",
+    "tests/admin-account-parity.test.ts",
+    "tests/content-analysis-entitlement.test.ts",
+    "tests/helpers-http-fixture.ts",
+    "tests/unit/paid-entitlement-expiry.test.ts",
+    "vitest.integration.config.ts"
+  ],
+  "finishedAt": "2026-11-07T00:24:33.287736+00:00"
+}

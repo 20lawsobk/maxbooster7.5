@@ -3,103 +3,103 @@ TAP version 13
     # Subtest: discovers existing monthly/yearly catalog prices using actual amount, currency and interval policy
     ok 1 - discovers existing monthly/yearly catalog prices using actual amount, currency and interval policy
       ---
-      duration_ms: 1.524459
+      duration_ms: 2.211861
       type: 'test'
       ...
     # Subtest: monthly catalog identity overrides stale event and contradictory provider metadata
     ok 2 - monthly catalog identity overrides stale event and contradictory provider metadata
       ---
-      duration_ms: 7.8558
+      duration_ms: 10.644133
       type: 'test'
       ...
     # Subtest: yearly catalog identity overrides stale event and contradictory provider metadata
     ok 3 - yearly catalog identity overrides stale event and contradictory provider metadata
       ---
-      duration_ms: 3.292201
+      duration_ms: 7.612363
       type: 'test'
       ...
     # Subtest: valid legacy inline monthly/yearly metadata remains supported
     ok 4 - valid legacy inline monthly/yearly metadata remains supported
       ---
-      duration_ms: 5.224516
+      duration_ms: 5.427586
       type: 'test'
       ...
     # Subtest: a delayed older event cannot supersede the current newer subscription
     ok 5 - a delayed older event cannot supersede the current newer subscription
       ---
-      duration_ms: 2.265247
+      duration_ms: 3.280137
       type: 'test'
       ...
     # Subtest: a newer inactive subscription cannot replace an existing paid subscription
     ok 6 - a newer inactive subscription cannot replace an existing paid subscription
       ---
-      duration_ms: 2.211445
+      duration_ms: 3.771481
       type: 'test'
       ...
     # Subtest: a validated newer active subscription atomically advances only the observed pointer
     ok 7 - a validated newer active subscription atomically advances only the observed pointer
       ---
-      duration_ms: 1.904924
+      duration_ms: 3.701658
       type: 'test'
       ...
     # Subtest: lifetime entitlement is never downgraded by a recurring event
     ok 8 - lifetime entitlement is never downgraded by a recurring event
       ---
-      duration_ms: 1.804722
+      duration_ms: 3.305508
       type: 'test'
       ...
     # Subtest: unknown and ambiguously linked customers fail without changing SQL
     ok 9 - unknown and ambiguously linked customers fail without changing SQL
       ---
-      duration_ms: 3.134889
+      duration_ms: 6.018423
       type: 'test'
       ...
     # Subtest: provider retrieval failure for sub_incoming preserves pointer and entitlement
     ok 10 - provider retrieval failure for sub_incoming preserves pointer and entitlement
       ---
-      duration_ms: 3.446899
+      duration_ms: 3.490558
       type: 'test'
       ...
     # Subtest: provider retrieval failure for sub_current preserves pointer and entitlement
     ok 11 - provider retrieval failure for sub_current preserves pointer and entitlement
       ---
-      duration_ms: 1.420212
+      duration_ms: 3.545108
       type: 'test'
       ...
     # Subtest: invalid newer recurring plan unsupported is rejected before pointer mutation
     ok 12 - invalid newer recurring plan unsupported is rejected before pointer mutation
       ---
-      duration_ms: 3.223532
+      duration_ms: 3.264474
       type: 'test'
       ...
     # Subtest: invalid newer recurring plan lifetime is rejected before pointer mutation
     ok 13 - invalid newer recurring plan lifetime is rejected before pointer mutation
       ---
-      duration_ms: 1.467784
+      duration_ms: 3.079917
       type: 'test'
       ...
     # Subtest: mismatched provider subscription or customer identity is rejected before SQL mutation
     ok 14 - mismatched provider subscription or customer identity is rejected before SQL mutation
       ---
-      duration_ms: 1.698301
+      duration_ms: 4.078553
       type: 'test'
       ...
     # Subtest: concurrent newer pointer during provider refresh wins over a stale admission
     ok 15 - concurrent newer pointer during provider refresh wins over a stale admission
       ---
-      duration_ms: 5.665906
+      duration_ms: 7.313373
       type: 'test'
       ...
     # Subtest: concurrent lifetime upgrade during provider refresh wins over a stale admission
     ok 16 - concurrent lifetime upgrade during provider refresh wins over a stale admission
       ---
-      duration_ms: 4.32882
+      duration_ms: 3.837986
       type: 'test'
       ...
     1..16
 ok 1 - subscription authority validates provider state before real SQL admission
   ---
-  duration_ms: 726.258969
+  duration_ms: 1085.78161
   type: 'test'
   ...
 1..1
@@ -110,4 +110,4 @@ ok 1 - subscription authority validates provider state before real SQL admission
 # cancelled 0
 # skipped 0
 # todo 0
-# duration_ms 806.610019
+# duration_ms 1159.011633

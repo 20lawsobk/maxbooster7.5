@@ -15,11 +15,11 @@
  *   1. Every internal service port is distinct (delegates to
  *      server/config/ports.ts, which throws on collision).
  *   2. The public app port (PORT) does not collide with any internal port.
- *   3. `.replit`'s [[ports]] table maps exactly one `localPort` to the
- *      Replit-default external port (80) — the app's public HTTP port — and
- *      that mapping points at `runtimePorts.app`, not an internal service.
- *   4. No internal service port has any `externalPort`. A `[[ports]]` entry
- *      with only `localPort` is explicitly private and is permitted.
+ *   3. `.replit`'s [[ports]] table has exactly one external mapping:
+ *      `runtimePorts.app` to Replit's public HTTP port (80).
+ *   4. Every other port entry omits `externalPort`, keeping the listener
+ *      private. This is stricter than checking only known app-side services:
+ *      an unknown/system port must not become public by accident.
  *   5. `.replit`'s [[ports]] table itself has no duplicate `localPort` or
  *      duplicate `externalPort` entries.
  *
@@ -43,8 +43,9 @@ function fail(message: string): never {
 // (throws on any collision, including invalid non-numeric values) using the
 // real process.env, so we get that validation for free by importing it.
 let runtimePorts: Record<string, number>;
+let dnsNodeLocalHealthPort: number;
 try {
-  ({ runtimePorts } = await import("../server/config/ports.js"));
+  ({ runtimePorts, dnsNodeLocalHealthPort } = await import("../server/config/ports.js"));
 } catch (err) {
   fail(
     `runtime port contract failed to load: ${
@@ -60,14 +61,16 @@ console.log(
     .join(", ")}`,
 );
 
-// ── 3, 4 & 5. Cross-check against .replit's [[ports]] table ────────────────
-const workspaceMapping = resolve(process.cwd(), ".replit");
-// The packed image excludes platform/editor configuration. Build emits only
-// its public/private port tables as a dependency-free runtime contract.
-const replitPath = existsSync(workspaceMapping) ? workspaceMapping :
-  resolve(process.cwd(), "dist/deployment/ports.replit");
+// ── 3, 4 & 5. Cross-check against the selected runtime [[ports]] table ─────
+const developmentMapping = resolve(process.cwd(), ".replit");
+const productionMapping = resolve(process.cwd(), "dist/deployment/ports.replit");
+// The packed image uses a dedicated production map because DNS binds to
+// privileged port 53 there, while the unprivileged development workflow uses
+// port 1053. Never let an included workspace config override the runtime mode.
+const isDevelopment = process.env.MAXBOOSTER_DEV_PORTS === "1";
+const replitPath = isDevelopment ? developmentMapping : productionMapping;
 if (!existsSync(replitPath)) {
-  fail(`${replitPath} does not exist; cannot verify the public port mapping`);
+  fail(`${replitPath} does not exist; cannot verify the ${isDevelopment ? "development" : "production"} port mapping`);
 }
 
 const replitText = readFileSync(replitPath, "utf8");
@@ -77,7 +80,7 @@ const replitText = readFileSync(replitPath, "utf8");
 //   localPort = 5000
 //   externalPort = 80
 // Parse them without a full TOML parser by scanning line-by-line for
-// `[[ports]]` blocks and pulling the two integer keys out of each.
+// `[[ports]]` blocks and extracting their integer keys.
 interface PortMapping {
   localPort: number;
   externalPort?: number;
@@ -115,14 +118,28 @@ for (let i = 0; i < lines.length; i++) {
 
   if (localPort === undefined) {
     fail(
-      `.replit [[ports]] block starting at line ${blockLine} is missing localPort`,
+      `Port table block starting at line ${blockLine} is missing localPort`,
     );
   }
   mappings.push({ localPort, externalPort, exposeLocalhost, line: blockLine });
 }
 
 if (mappings.length === 0) {
-  fail(`.replit has no [[ports]] entries; expected a mapping for the app port`);
+  fail(`Port table has no [[ports]] entries; expected a mapping for the app port`);
+}
+
+if (process.env.PORT_CONTRACT_REQUIRE_ALL === "1") {
+  const required = new Set(Object.values(runtimePorts));
+  const allowed = new Set([...required, dnsNodeLocalHealthPort]);
+  const configured = new Set(mappings.map((mapping) => mapping.localPort));
+  const missing = [...required].filter((port) => !configured.has(port));
+  const unexpected = [...configured].filter((port) => !allowed.has(port));
+  if (missing.length || unexpected.length) {
+    fail(
+      `strict port contract mismatch; missing mappings: ${missing.join(", ") || "none"}; ` +
+        `unexpected mappings: ${unexpected.join(", ") || "none"}`,
+    );
+  }
 }
 
 // 5a. No duplicate localPort entries.
@@ -131,7 +148,7 @@ for (const m of mappings) {
   const existingLine = localOwners.get(m.localPort);
   if (existingLine !== undefined) {
     fail(
-      `.replit maps localPort ${m.localPort} more than once (line ${existingLine} and line ${m.line}); ` +
+      `Port table maps localPort ${m.localPort} more than once (line ${existingLine} and line ${m.line}); ` +
         "each local service must appear at most once in [[ports]]",
     );
   }
@@ -145,29 +162,51 @@ for (const m of mappings) {
   const existingLine = externalOwners.get(m.externalPort);
   if (existingLine !== undefined) {
     fail(
-      `.replit maps externalPort ${m.externalPort} more than once (line ${existingLine} and line ${m.line}); ` +
+      `Port table maps externalPort ${m.externalPort} more than once (line ${existingLine} and line ${m.line}); ` +
         "two local ports cannot share one public external port",
     );
   }
   externalOwners.set(m.externalPort, m.line);
 }
 
-// 3 & 4. Exactly one mapping to the Replit-default external port (80), and it
-// must be the app's listener — not an internal service.
+// 3 & 4. Every external mapping must be the app listener on port 80.
+const unexpectedExternal = mappings.find(
+  (m) =>
+    m.externalPort !== undefined &&
+    (m.localPort !== runtimePorts.app ||
+      m.externalPort !== REPLIT_DEFAULT_EXTERNAL_PORT),
+);
+if (unexpectedExternal) {
+  fail(
+    `Port table exposes localPort ${unexpectedExternal.localPort} on externalPort ` +
+      `${unexpectedExternal.externalPort} (line ${unexpectedExternal.line}); only ` +
+      `localPort ${runtimePorts.app} on externalPort ${REPLIT_DEFAULT_EXTERNAL_PORT} is allowed. ` +
+      "All other ports must omit externalPort.",
+  );
+}
+
+const externalMappings = mappings.filter((m) => m.externalPort !== undefined);
+if (externalMappings.length > 1) {
+  fail(
+    `Port table contains ${externalMappings.length} external port mappings; only the app listener ` +
+      `(localPort ${runtimePorts.app} → externalPort ${REPLIT_DEFAULT_EXTERNAL_PORT}) may be public`,
+  );
+}
+
 const publicMappings = mappings.filter(
   (m) => m.externalPort === REPLIT_DEFAULT_EXTERNAL_PORT,
 );
 
 if (publicMappings.length === 0) {
   fail(
-    `.replit has no [[ports]] entry mapping to externalPort ${REPLIT_DEFAULT_EXTERNAL_PORT}; ` +
+    `Port table has no [[ports]] entry mapping to externalPort ${REPLIT_DEFAULT_EXTERNAL_PORT}; ` +
       `the app (localPort ${runtimePorts.app}) must be reachable on Replit's default public port`,
   );
 }
 
 if (publicMappings.length > 1) {
   fail(
-    `.replit maps externalPort ${REPLIT_DEFAULT_EXTERNAL_PORT} from multiple local ports ` +
+    `Port table maps externalPort ${REPLIT_DEFAULT_EXTERNAL_PORT} from multiple local ports ` +
       `(${publicMappings.map((m) => `localPort ${m.localPort} at line ${m.line}`).join(", ")}); ` +
       "only the app listener may be exposed there",
   );
@@ -176,7 +215,7 @@ if (publicMappings.length > 1) {
 const [publicMapping] = publicMappings;
 if (publicMapping.localPort !== runtimePorts.app) {
   fail(
-    `.replit exposes localPort ${publicMapping.localPort} on the public default port ` +
+    `Port table exposes localPort ${publicMapping.localPort} on the public default port ` +
       `${REPLIT_DEFAULT_EXTERNAL_PORT} (line ${publicMapping.line}), but the app listens on ` +
       `${runtimePorts.app} (PORT). The Replit public mapping must point at the app, not an ` +
       "internal service.",
@@ -188,6 +227,7 @@ const internalPortSet = new Set(
     .filter(([name]) => name !== "app")
     .map(([, port]) => port),
 );
+internalPortSet.add(dnsNodeLocalHealthPort);
 // Redis/BullMQ is also an internal-only dependency even though it is selected
 // by URL rather than server/config/ports.ts. Protect both its conventional
 // local port and the effective configured loopback port from being moved to a
@@ -214,7 +254,7 @@ const leakedInternal = mappings.find(
 );
 if (leakedInternal) {
   fail(
-    `.replit exposes internal-only localPort ${leakedInternal.localPort} on externalPort ` +
+    `Port table exposes internal-only localPort ${leakedInternal.localPort} on externalPort ` +
       `${leakedInternal.externalPort} (line ${leakedInternal.line}); internal services must ` +
       "remain private and omit externalPort",
   );
@@ -223,15 +263,15 @@ const discoverableInternal = mappings.find(
   (m) => internalPortSet.has(m.localPort) && m.exposeLocalhost === true,
 );
 if (discoverableInternal) {
-  fail(`.replit enables exposeLocalhost for internal-only localPort ${discoverableInternal.localPort}; set exposeLocalhost = false`);
+  fail(`Port table enables exposeLocalhost for internal-only localPort ${discoverableInternal.localPort}; set exposeLocalhost = false`);
 }
 
 console.log(
-  `[PortContract] ✅ .replit public mapping exposes only the app listener ` +
+  `[PortContract] ✅ port table exposes only the app listener ` +
     `(localPort ${publicMapping.localPort} → externalPort ${REPLIT_DEFAULT_EXTERNAL_PORT})`,
 );
 console.log(
-  `[PortContract] ✅ .replit [[ports]] table has ${mappings.length} entries with no duplicate local/external ports; ` +
+  `[PortContract] ✅ port table has ${mappings.length} entries with no duplicate local/external ports; ` +
     `${mappings.filter((m) => m.externalPort === undefined).length} private`,
 );
 console.log("[PortContract] port contract OK");

@@ -14,6 +14,7 @@ import {
   index,
   unique,
   check,
+  foreignKey,
   primaryKey,
 } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
@@ -6100,6 +6101,92 @@ export const insertCollabSnapshotSchema = createInsertSchema(
 export type InsertCollabSnapshot = z.infer<typeof insertCollabSnapshotSchema>;
 
 // ============================================================================
+// COLLABORATION ROOMS - Durable project-bound live sessions
+// ============================================================================
+export const collaborationRooms = pgTable("collaboration_rooms", {
+  id: varchar("id")
+    .primaryKey()
+    .default(sql`gen_random_uuid()::text`),
+  projectId: varchar("project_id").notNull().unique(),
+  state: text("state").notNull().default("active"),
+  generation: integer("generation").notNull().default(1),
+  mediaState: text("media_state").notNull().default("unavailable"),
+  mediaRegion: varchar("media_region"),
+  participantLimit: integer("participant_limit"),
+  createdBy: varchar("created_by").references(() => users.id, {
+    onDelete: "set null",
+  }),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+  updatedAt: timestamp("updated_at").notNull().defaultNow(),
+  endedAt: timestamp("ended_at"),
+}, (table) => ({
+  stateCheck: check(
+    "collaboration_rooms_state_check",
+    sql`${table.state} IN ('active', 'closed')`,
+  ),
+  generationCheck: check(
+    "collaboration_rooms_generation_check",
+    sql`${table.generation} > 0`,
+  ),
+  mediaStateCheck: check(
+    "collaboration_rooms_media_state_check",
+    sql`${table.mediaState} IN ('unavailable', 'available', 'degraded')`,
+  ),
+  participantLimitCheck: check(
+    "collaboration_rooms_participant_limit_check",
+    sql`${table.participantLimit} IS NULL OR ${table.participantLimit} > 0`,
+  ),
+}));
+
+export type CollaborationRoom = typeof collaborationRooms.$inferSelect;
+export const insertCollaborationRoomSchema = createInsertSchema(
+  collaborationRooms,
+).omit({ id: true, createdAt: true, updatedAt: true });
+export type InsertCollaborationRoom = z.infer<
+  typeof insertCollaborationRoomSchema
+>;
+
+// ============================================================================
+// COLLABORATION ROOM MESSAGES - Durable, idempotent session chat
+// ============================================================================
+export const collaborationRoomMessages = pgTable(
+  "collaboration_room_messages",
+  {
+    id: varchar("id")
+      .primaryKey()
+      .default(sql`gen_random_uuid()::text`),
+    roomId: varchar("room_id")
+      .notNull()
+      .references(() => collaborationRooms.id, { onDelete: "cascade" }),
+    senderId: varchar("sender_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    clientMessageId: varchar("client_message_id", { length: 36 }).notNull(),
+    content: text("content").notNull(),
+    createdAt: timestamp("created_at").notNull().defaultNow(),
+  },
+  (table) => ({
+    roomCreatedAtIdx: index("collaboration_room_messages_room_created_idx")
+      .on(table.roomId, table.createdAt),
+    idempotencyKey: unique("collaboration_room_messages_idempotency_unique")
+      .on(table.roomId, table.senderId, table.clientMessageId),
+    contentCheck: check(
+      "collaboration_room_messages_content_check",
+      sql`length(btrim(${table.content})) BETWEEN 1 AND 4000`,
+    ),
+  }),
+);
+
+export type CollaborationRoomMessage =
+  typeof collaborationRoomMessages.$inferSelect;
+export const insertCollaborationRoomMessageSchema = createInsertSchema(
+  collaborationRoomMessages,
+).omit({ id: true, createdAt: true });
+export type InsertCollaborationRoomMessage = z.infer<
+  typeof insertCollaborationRoomMessageSchema
+>;
+
+// ============================================================================
 // RELEASE COUNTDOWNS - Pre-release campaign tracking
 // ============================================================================
 export const releaseCountdowns = pgTable("release_countdowns", {
@@ -8663,4 +8750,121 @@ export const socialMediaJobs = pgTable(
     byLease: index("social_media_jobs_lease_idx").on(table.status, table.leaseExpiresAt),
     byUpdated: index("social_media_jobs_updated_idx").on(table.updatedAt),
   }),
+);
+
+// MaxCore's durable cognitive registry. Product-owned projects, releases, and
+// billing records remain authoritative in their existing domain tables.
+export const maxcoreCognitiveEntities = pgTable(
+  "maxcore_cognitive_entities",
+  {
+    id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+    ownerId: varchar("owner_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    entityType: text("entity_type").notNull(),
+    payload: jsonb("payload")
+      .$type<Record<string, unknown>>()
+      .notNull(),
+    metadata: jsonb("metadata")
+      .$type<Record<string, unknown>>()
+      .notNull()
+      .default(sql`'{}'::jsonb`),
+    tags: jsonb("tags")
+      .$type<string[]>()
+      .notNull()
+      .default(sql`'[]'::jsonb`),
+    searchText: text("search_text").notNull().default(""),
+    schemaVersion: integer("schema_version").notNull().default(1),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+    updatedAt: timestamp("updated_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+  },
+  (table) => [
+    check(
+      "maxcore_cognitive_entity_type_check",
+      sql`${table.entityType} IN ('project','goal','task','agent','department','memory','tool','workflow','document','knowledge_node','event')`,
+    ),
+    check(
+      "maxcore_cognitive_schema_version_check",
+      sql`${table.schemaVersion} > 0`,
+    ),
+    index("maxcore_cognitive_owner_type_updated_idx").on(
+      table.ownerId,
+      table.entityType,
+      table.updatedAt,
+    ),
+    unique("maxcore_cognitive_owner_id_id_unique").on(
+      table.ownerId,
+      table.id,
+    ),
+    index("maxcore_cognitive_search_idx").using(
+      "gin",
+      sql`to_tsvector('simple', ${table.searchText})`,
+    ),
+  ],
+);
+
+export const maxcoreCognitiveRelationships = pgTable(
+  "maxcore_cognitive_relationships",
+  {
+    id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+    ownerId: varchar("owner_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    sourceId: varchar("source_id").notNull(),
+    targetId: varchar("target_id").notNull(),
+    relationType: text("relation_type").notNull(),
+    metadata: jsonb("metadata")
+      .$type<Record<string, unknown>>()
+      .notNull()
+      .default(sql`'{}'::jsonb`),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+  },
+  (table) => [
+    foreignKey({
+      name: "maxcore_cognitive_relationship_source_owner_fk",
+      columns: [table.ownerId, table.sourceId],
+      foreignColumns: [
+        maxcoreCognitiveEntities.ownerId,
+        maxcoreCognitiveEntities.id,
+      ],
+    }).onDelete("cascade"),
+    foreignKey({
+      name: "maxcore_cognitive_relationship_target_owner_fk",
+      columns: [table.ownerId, table.targetId],
+      foreignColumns: [
+        maxcoreCognitiveEntities.ownerId,
+        maxcoreCognitiveEntities.id,
+      ],
+    }).onDelete("cascade"),
+    check(
+      "maxcore_cognitive_relationship_type_check",
+      sql`${table.relationType} IN ('depends_on','created_by','assigned_to','related_to','improves','blocks','supports','owns','contains')`,
+    ),
+    check(
+      "maxcore_cognitive_relationship_no_self_edge",
+      sql`${table.sourceId} <> ${table.targetId}`,
+    ),
+    unique("maxcore_cognitive_relationship_unique_edge").on(
+      table.ownerId,
+      table.sourceId,
+      table.targetId,
+      table.relationType,
+    ),
+    index("maxcore_cognitive_relationship_source_idx").on(
+      table.ownerId,
+      table.sourceId,
+      table.relationType,
+    ),
+    index("maxcore_cognitive_relationship_target_idx").on(
+      table.ownerId,
+      table.targetId,
+      table.relationType,
+    ),
+  ],
 );

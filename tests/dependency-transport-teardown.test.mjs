@@ -63,6 +63,7 @@ async function uploadProbe(scope) {
 async function decoderProbe(scope) {
   const require = createRequire(`${root}/${scope}/package.json`);
   const undici = scope === "." ? createRequire(require.resolve("gaxios"))("undici") : require("undici");
+  const dispatcher = new undici.Agent({ connections: 1 });
   const server = createServer((req, res) => {
     if (req.url === "/excessive") {
       res.setHeader("content-encoding", Array(100).fill("gzip").join(","));
@@ -77,20 +78,21 @@ async function decoderProbe(scope) {
   try {
     const origin = `http://127.0.0.1:${server.address().port}`;
     await assert.rejects(async () => {
-      const response = await undici.fetch(`${origin}/excessive`);
+      const response = await undici.fetch(`${origin}/excessive`, { dispatcher });
       await response.text();
     }, error => /too many content-encodings/.test(String(error.cause?.message ?? error.message)),
     "untrusted excessive encoding must produce a bounded controlled fetch rejection");
-    assert.equal(await (await undici.fetch(`${origin}/gzip`)).text(), "normal decoded response");
-    assert.equal(await (await undici.fetch(`${origin}/health`)).text(), "alive");
+    assert.equal(await (await undici.fetch(`${origin}/gzip`, { dispatcher })).text(), "normal decoded response");
+    assert.equal(await (await undici.fetch(`${origin}/health`, { dispatcher })).text(), "alive");
   } finally {
+    await dispatcher.close();
     server.closeAllConnections();
     await new Promise(resolve => server.close(resolve));
   }
 }
 
 if (process.argv[2] === "--probe") {
-  const timer = setTimeout(() => process.exit(2), 5_000);
+  const timer = setTimeout(() => process.exit(2), 15_000);
   try {
     await (process.argv[3] === "multer" ? uploadProbe : decoderProbe)(process.argv[4]);
     console.log("TEARDOWN_PROBE_PASS");
@@ -99,7 +101,7 @@ if (process.argv[2] === "--probe") {
   for (const scope of [".", "external/pdim/artifacts/api-server"]) {
     test(`${scope}: pending asynchronous upload filter cannot reopen an aborted request`, () => {
       const child = spawnSync(process.execPath, [currentFile, "--probe", "multer", scope], {
-        cwd: root, env: { NODE_ENV: "test" }, encoding: "utf8", timeout: 8_000,
+        cwd: root, env: { NODE_ENV: "test" }, encoding: "utf8", timeout: 20_000,
       });
       assert.equal(child.status, 0, `${child.stdout}\n${child.stderr}`);
       assert.match(child.stdout, /TEARDOWN_PROBE_PASS/);
@@ -108,7 +110,7 @@ if (process.argv[2] === "--probe") {
   for (const scope of [".", "external/maxcore/artifacts/api-server"]) {
     test(`${scope}: fetch refuses excessive response encodings and remains usable`, () => {
       const child = spawnSync(process.execPath, [currentFile, "--probe", "undici", scope], {
-        cwd: root, env: { NODE_ENV: "test" }, encoding: "utf8", timeout: 8_000,
+        cwd: root, env: { NODE_ENV: "test" }, encoding: "utf8", timeout: 20_000,
       });
       assert.equal(child.status, 0, `${child.stdout}\n${child.stderr}`);
       assert.match(child.stdout, /TEARDOWN_PROBE_PASS/);

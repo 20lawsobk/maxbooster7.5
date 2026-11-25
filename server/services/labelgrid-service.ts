@@ -441,13 +441,8 @@ class LabelGridService {
     });
 
     if (!this.apiToken) {
-      logger.warn(
-        "⚠️  LabelGrid API token not configured. Distribution features will use simulated mode.",
-      );
-      logger.warn(
-        process.env.NODE_ENV === "production"
-          ? "   Set LABELGRID_API_TOKEN1 (production-scoped token) in your environment to enable real distribution."
-          : "   Set LABELGRID_API_TOKEN (dev-scoped token) in your environment to enable real distribution.",
+      logger.info(
+        "Legacy LabelGrid connector is unavailable; Too Lost handles current distribution and legacy calls will fail explicitly.",
       );
     } else {
       this.isConfigured = true;
@@ -676,6 +671,18 @@ class LabelGridService {
    */
   isApiConfigured(): boolean {
     return !!this.apiToken;
+  }
+
+  private requireLegacyProvider(operation: string): void {
+    if (this.isConfigured) return;
+    const error = new Error(
+      `Legacy LabelGrid ${operation} is unavailable because no authorized LabelGrid account is configured; current distribution uses Too Lost.`,
+    );
+    Object.assign(error, {
+      code: "LEGACY_LABELGRID_UNAVAILABLE",
+      statusCode: 503,
+    });
+    throw error;
   }
 
   /**
@@ -1570,13 +1577,7 @@ class LabelGridService {
 
   async getReleaseAnalytics(releaseId: string): Promise<LabelGridAnalytics> {
     await this.loadConfig();
-
-    if (!this.isConfigured) {
-      logger.warn(
-        "⚠️  LabelGrid not configured - returning simulated analytics",
-      );
-      return this.simulateGetReleaseAnalytics(releaseId);
-    }
+    this.requireLegacyProvider("release analytics");
 
     const numericId = Number(releaseId);
     const filter = Number.isFinite(numericId)
@@ -1593,13 +1594,7 @@ class LabelGridService {
     updates: Partial<LabelGridRelease>,
   ): Promise<LabelGridReleaseResponse> {
     await this.loadConfig();
-
-    if (!this.isConfigured) {
-      logger.warn(
-        "⚠️  LabelGrid not configured - returning simulated response",
-      );
-      return this.simulateUpdateRelease(releaseId, updates);
-    }
+    this.requireLegacyProvider("release updates");
 
     const endpoint = `${ENTITIES.release.path}/${encodeURIComponent(releaseId)}`;
     this.logApiCall("PATCH", endpoint, updates);
@@ -1648,13 +1643,7 @@ class LabelGridService {
 
   async takedownRelease(releaseId: string): Promise<{ success: boolean }> {
     await this.loadConfig();
-
-    if (!this.isConfigured) {
-      logger.warn(
-        "⚠️  LabelGrid not configured - returning simulated response",
-      );
-      return { success: true };
-    }
+    this.requireLegacyProvider("release takedown");
 
     const endpoint = `${ENTITIES.release.path}/${encodeURIComponent(releaseId)}/takedown-all`;
     this.logApiCall("POST", endpoint);
@@ -1679,13 +1668,7 @@ class LabelGridService {
    */
   async getArtistAnalytics(artistId: string): Promise<LabelGridAnalytics> {
     await this.loadConfig();
-
-    if (!this.isConfigured) {
-      logger.warn(
-        "⚠️  LabelGrid not configured - returning simulated analytics",
-      );
-      return this.simulateGetArtistAnalytics(artistId);
-    }
+    this.requireLegacyProvider("artist analytics");
 
     this.logApiCall("GET", "/analytics/summary", { artistId });
     const data = await this.fetchLabelGridAnalytics(
@@ -1795,13 +1778,7 @@ class LabelGridService {
     options?: { customSlug?: string; platforms?: string[] },
   ): Promise<LabelGridSmartLink> {
     await this.loadConfig();
-
-    if (!this.isConfigured) {
-      logger.warn(
-        "⚠️  LabelGrid not configured - returning simulated response",
-      );
-      return this.simulateCreateSmartLink(releaseId, options);
-    }
+    this.requireLegacyProvider("smart-link creation");
 
     if (options?.customSlug) {
       throw new Error(
@@ -1849,13 +1826,7 @@ class LabelGridService {
 
   async getSmartLink(releaseId: string): Promise<LabelGridSmartLink> {
     await this.loadConfig();
-
-    if (!this.isConfigured) {
-      logger.warn(
-        "⚠️  LabelGrid not configured - returning simulated response",
-      );
-      return this.simulateGetSmartLink(releaseId);
-    }
+    this.requireLegacyProvider("smart-link lookup");
 
     const numericId = Number(releaseId);
     if (!Number.isFinite(numericId)) {
@@ -1947,13 +1918,7 @@ class LabelGridService {
 
   async getRoyaltySummary(): Promise<LabelGridRoyaltySummary> {
     await this.loadConfig();
-
-    if (!this.isConfigured) {
-      logger.warn(
-        "⚠️  LabelGrid not configured - returning simulated response",
-      );
-      return this.simulateGetRoyaltySummary();
-    }
+    this.requireLegacyProvider("royalty summary");
 
     const endpoint = "/account";
     this.logApiCall("GET", endpoint);
@@ -1986,13 +1951,7 @@ class LabelGridService {
     year?: number,
   ): Promise<LabelGridRoyaltyStatement[]> {
     await this.loadConfig();
-
-    if (!this.isConfigured) {
-      logger.warn(
-        "⚠️  LabelGrid not configured - returning simulated response",
-      );
-      return this.simulateGetRoyaltyStatements(year);
-    }
+    this.requireLegacyProvider("royalty statements");
 
     const endpoint = "/statements";
     const filter = year
@@ -2037,17 +1996,11 @@ class LabelGridService {
    * a request was submitted.
    */
   async requestPayout(
-    amount: number,
-    method?: "paypal" | "bank",
+    _amount: number,
+    _method?: "paypal" | "bank",
   ): Promise<LabelGridPayoutRequest> {
     await this.loadConfig();
-
-    if (!this.isConfigured) {
-      logger.warn(
-        "⚠️  LabelGrid not configured - returning simulated response",
-      );
-      return this.simulateRequestPayout(amount, method);
-    }
+    this.requireLegacyProvider("payout request");
 
     throw new Error(
       "LABELGRID payout requests are not configured: LabelGrid's API has no payout-request endpoint — " +
@@ -2179,78 +2132,6 @@ class LabelGridService {
     return [];
   }
 
-  private simulateGetReleaseAnalytics(releaseId: string): LabelGridAnalytics {
-    return {
-      releaseId,
-      totalStreams: 0,
-      totalRevenue: 0,
-      platforms: {},
-      timeline: [],
-    };
-  }
-
-  private simulateGetArtistAnalytics(artistId: string): LabelGridAnalytics {
-    return {
-      releaseId: artistId,
-      totalStreams: 0,
-      totalRevenue: 0,
-      platforms: {},
-      timeline: [],
-    };
-  }
-
-  private simulateUpdateRelease(
-    releaseId: string,
-    _updates: Partial<LabelGridRelease>,
-  ): LabelGridReleaseResponse {
-    return {
-      releaseId,
-      status: "processing",
-      submittedAt: new Date().toISOString(),
-      platforms: [],
-    };
-  }
-
-  private simulateCreateSmartLink(
-    _releaseId: string,
-    _options?: { customSlug?: string; platforms?: string[] },
-  ): never {
-    throw new Error(
-      "LabelGrid not configured — smart link creation requires a connected distributor account. " +
-        "Set LABELGRID_API_TOKEN to enable real smart links.",
-    );
-  }
-
-  private simulateGetSmartLink(_linkId: string): never {
-    throw new Error(
-      "LabelGrid not configured — smart link lookup requires a connected distributor account.",
-    );
-  }
-
-  private simulateGetRoyaltySummary(): LabelGridRoyaltySummary {
-    return {
-      pending: 0,
-      available: 0,
-      lifetime: 0,
-      currency: "USD",
-    };
-  }
-
-  private simulateGetRoyaltyStatements(
-    _year?: number,
-  ): LabelGridRoyaltyStatement[] {
-    return [];
-  }
-
-  private simulateRequestPayout(
-    _amount: number,
-    _method?: "paypal" | "bank",
-  ): never {
-    throw new Error(
-      "LabelGrid payout execution requires the authorized account holder's dashboard workflow. " +
-        "An API token does not enable payout requests; this API has no supported payout execution endpoint.",
-    );
-  }
 }
 
 export const labelGridService = new LabelGridService();

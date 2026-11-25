@@ -1,0 +1,40 @@
+{
+  "command": [
+    "python_runtime/bin/python3",
+    "-I",
+    "-B",
+    "tests/awareness-public-read-smoke.py"
+  ],
+  "exitCode": 1,
+  "durationSeconds": 2.238,
+  "scope": "Read-only public source adapters, inherited approved HTTP proxy and TLS trust only; no app credentials",
+  "result": {
+    "check": "public-read-only-ingestion",
+    "sources": [
+      {
+        "source": "apple_charts",
+        "domain": "music",
+        "rows": 50,
+        "passed": true
+      },
+      {
+        "source": "mastodon_trending",
+        "domain": "social",
+        "rows": 20,
+        "passed": false
+      },
+      {
+        "source": "marketing_dive",
+        "domain": "advertising",
+        "rows": 10,
+        "passed": true
+      },
+      {
+        "source": "guardian_culture",
+        "domain": "culture",
+        "rows": 26,
+        "passed": true
+      }
+    ]
+  }
+}

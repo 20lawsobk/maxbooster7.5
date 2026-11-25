@@ -49,7 +49,7 @@ function fixture() {
 
 describe("disposable publishing payload cleanup", () => {
   for (const cacheInitiallyPresent of [true, false]) {
-    it(`removes invalidating inputs before the platform cache (initial cache: ${cacheInitiallyPresent})`, () => {
+    it(`preserves the Replit root cache while removing invalidating inputs (initial cache: ${cacheInitiallyPresent})`, () => {
       const { root, write } = fixture();
       write(".replit", "fixture config");
       write(".config/settings", "fixture settings");
@@ -69,76 +69,77 @@ describe("disposable publishing payload cleanup", () => {
       const result = cleanPublishingPayload({
         root, env: publishing(root), dockerignore: policy, requiredPaths: ["start.sh"],
       });
-      expect(removals).toEqual([".config", ".replit", ".cache"]);
+      expect(removals).toEqual([".config", ".replit"]);
       expect(result.removedPaths).toEqual(removals);
       expect(result.measurement.byTopDir.has(".cache")).toBe(false);
-      expect(fs.existsSync(path.join(root, ".cache"))).toBe(false);
+      expect(fs.existsSync(path.join(root, ".cache"))).toBe(true);
+      expect(fs.readFileSync(path.join(root, ".cache/replit/env/fixture"), "utf8"))
+        .toBe("regenerated platform cache");
       expect(fs.readFileSync(path.join(root, "start.sh"), "utf8")).toBe("bootstrap bytes");
       assertPublishingPayloadClean(root, policy);
     });
   }
 
-  it("does not delete a non-excluded cache created by input removal", () => {
+  it("fails rather than deleting or shipping a root cache created by input removal", () => {
     const { root, write } = fixture();
     write(".replit", "fixture config");
     afterRemoval(target => {
       if (String(target) === path.join(root, ".replit")) write(".cache/keep", "retained bytes");
     });
-    const result = cleanPublishingPayload({
+    expect(() => cleanPublishingPayload({
       root, env: publishing(root), dockerignore: ".replit\n", requiredPaths: [],
-    });
-    expect(result.removedPaths).toEqual([".replit"]);
-    expect(result.measurement.byTopDir.has(".cache")).toBe(true);
+    })).toThrow(/Replit-managed root \.cache must be excluded/);
+    expect(fs.existsSync(path.join(root, ".replit"))).toBe(false);
     expect(fs.readFileSync(path.join(root, ".cache/keep"), "utf8")).toBe("retained bytes");
   });
 
-  it("final read-only assertion rejects a late cache writer without deleting evidence", () => {
+  it("refuses to finalize a root cache that the image policy would include", () => {
+    const { root, write } = fixture();
+    write(".cache/keep", "platform state");
+    write(".replit", "configuration");
+    expect(() => cleanPublishingPayload({
+      root, env: publishing(root), dockerignore: ".replit\n", requiredPaths: [],
+    })).toThrow(/Replit-managed root \.cache must be excluded/);
+    expect(fs.existsSync(path.join(root, ".replit"))).toBe(true);
+    expect(fs.readFileSync(path.join(root, ".cache/keep"), "utf8")).toBe("platform state");
+  });
+
+  it("allows active writes to the excluded Replit root cache without deleting evidence", () => {
     const { root, write } = fixture();
     write("start.sh", "bootstrap");
     const policy = ".cache/\n";
     cleanPublishingPayload({ root, env: publishing(root), dockerignore: policy, requiredPaths: ["start.sh"] });
     assertPublishingPayloadClean(root, policy);
     write(".cache/late-writer", "evidence");
-    expect(() => assertPublishingPayloadClean(root, policy)).toThrow(/appeared after finalization: .cache/);
+    expect(() => assertPublishingPayloadClean(root, policy)).not.toThrow();
     expect(fs.readFileSync(path.join(root, ".cache/late-writer"), "utf8")).toBe("evidence");
+    expect(fs.existsSync(path.join(root, ".cache/late-writer"))).toBe(true);
     expect(fs.readFileSync(path.join(root, "start.sh"), "utf8")).toBe("bootstrap");
   });
-  it("reports a cache recreated during cleanup without reading its contents or bypassing the failure", () => {
+  it("preserves a platform cache without reading its contents or treating it as a payload failure", () => {
     const { root, write } = fixture();
     write(".cache/old-build-cache");
-    afterRemoval(target => {
-      if (String(target) === path.join(root, ".cache")) {
-        write(".cache/replit/private-cache", "sensitive fixture content must not be logged");
-      }
+    const result = cleanPublishingPayload({
+      root, env: publishing(root), dockerignore: ".cache/\n", requiredPaths: [],
     });
-    let error: Error | undefined;
-    try {
-      cleanPublishingPayload({
-        root, env: publishing(root), dockerignore: ".cache/\n", requiredPaths: [],
-      });
-    } catch (cause) {
-      error = cause as Error;
-    }
-    expect(error?.message).toContain("Excluded publishing entries survived cleanup: .cache");
-    expect(error?.message).toContain("was scheduled for removal");
-    expect(error?.message).toContain('"replit"/');
-    expect(error?.message).not.toContain("sensitive fixture content");
-    expect(error?.message).not.toContain("private-cache");
-    expect(fs.existsSync(path.join(root, ".cache/replit/private-cache"))).toBe(true);
+    expect(result.removedPaths).toEqual([]);
+    expect(result.measurement.byTopDir.has(".cache")).toBe(false);
+    expect(fs.readFileSync(path.join(root, ".cache/old-build-cache"), "utf8"))
+      .toBe("fixture .cache/old-build-cache\n");
   });
 
-  it("does not inspect a surviving excluded symlink target", () => {
+  it("preserves an excluded root-cache symlink without inspecting its target", () => {
     const { base, root, write } = fixture();
     write(".cache/original");
     const external = path.join(base, "external");
     fs.mkdirSync(external);
     fs.writeFileSync(path.join(external, "private-name"), "external bytes");
-    afterRemoval(target => {
-      if (String(target) === path.join(root, ".cache")) fs.symlinkSync(external, target);
-    });
+    fs.rmSync(path.join(root, ".cache"), { recursive: true, force: true });
+    fs.symlinkSync(external, path.join(root, ".cache"));
     expect(() => cleanPublishingPayload({
       root, env: publishing(root), dockerignore: ".cache\n", requiredPaths: [],
-    })).toThrow(/symlink; was scheduled for removal; target not inspected/);
+    })).not.toThrow();
+    expect(fs.readlinkSync(path.join(root, ".cache"))).toBe(external);
     expect(fs.readFileSync(path.join(external, "private-name"), "utf8")).toBe("external bytes");
   });
 

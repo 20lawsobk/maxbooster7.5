@@ -35,6 +35,15 @@ test("release gate excludes legacy only with image exclusion; workspace audit st
   fs.unlinkSync(path.join(root, ".dockerignore"));
   assert.throws(() => inspectDeploymentDependencies(root), /ENOENT/);
 });
+test("empty optional legacy directories do not fail installed-tree verification", t => {
+  const root = fixture(t);
+  for (const scope of [".", "external/maxcore", "external/pdim", "dns-os", "tls-proxy"]) {
+    write(root, `${scope}/package.json`, "{}");
+    write(root, `${scope}/node_modules/qs/package.json`, '{"name":"qs","version":"6.16.1"}');
+  }
+  fs.mkdirSync(path.join(root, "maxbooster7.5"), { recursive: true });
+  assert.equal(inspectDependencies(root).ready, true);
+});
 test("installed stale nested copy fails despite patched top-level package and lock", t => {
   const root = fixture(t);
   write(root, "package.json", '{"dependencies":{"qs":"6.16.1"}}');

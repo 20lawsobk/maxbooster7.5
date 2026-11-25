@@ -266,3 +266,125 @@ export async function submitToolostRelease({
   );
   return { providerPlatforms, payload, result };
 }
+
+type ToolostSubmissionPersistence = {
+  getDSPProviderBySlug(slug: string): Promise<{ id: string; name: string } | undefined>;
+  createDistroDispatch(data: Record<string, unknown>): Promise<unknown>;
+  updateDistroRelease(
+    id: string,
+    data: Record<string, unknown>,
+  ): Promise<unknown>;
+};
+
+/** Persist the real Too Lost receipt and per-store outcomes for any submit path. */
+export async function persistToolostSubmission({
+  storage,
+  releaseId,
+  metadata,
+  selectedPlatforms,
+  selectedStores,
+  result,
+}: {
+  storage: ToolostSubmissionPersistence;
+  releaseId: string;
+  metadata: Record<string, unknown>;
+  selectedPlatforms: string[];
+  selectedStores: string[];
+  result: ToolostReleaseResponse;
+}) {
+  const normalizeStore = (value: string) =>
+    value.toLowerCase().replace(/[^a-z0-9]+/g, "");
+  const dispatchResults = await Promise.allSettled(
+    selectedPlatforms.map(async (platformSlug, index) => {
+      const provider = await storage.getDSPProviderBySlug(platformSlug);
+      const requestedStore = selectedStores[index];
+      const providerPlatformStatus = result.platforms.find(
+        (platform) =>
+          normalizeStore(platform.platform) ===
+          normalizeStore(requestedStore || platformSlug),
+      );
+      const gatewayStatus = providerPlatformStatus?.status?.toLowerCase();
+      const { status, accepted, indeterminate } =
+        mapToolostDispatchStatus(gatewayStatus);
+      const errorMessage = indeterminate
+        ? undefined
+        : status === "not_supported"
+          ? "Not supported by distributor."
+          : status === "rejected"
+            ? "Rejected by distributor."
+            : "Too Lost did not accept this platform submission.";
+      await storage.createDistroDispatch({
+        releaseId,
+        providerId: provider?.id || platformSlug,
+        providerName: provider?.name || platformSlug,
+        platform: platformSlug,
+        status,
+        logs: JSON.stringify({
+          gatewayStatus: providerPlatformStatus?.status || "not_reported",
+          indeterminate: indeterminate || undefined,
+          errorMessage: accepted || indeterminate ? undefined : errorMessage,
+          deliveredAt:
+            ["live", "delivered"].includes(gatewayStatus || "")
+              ? (providerPlatformStatus?.liveDate || new Date().toISOString())
+              : undefined,
+          externalId: result.releaseId,
+        }),
+      });
+      return {
+        platform: platformSlug,
+        status,
+        accepted,
+        indeterminate,
+        errorMessage,
+      };
+    }),
+  );
+  const submissionPersistence = deriveToolostSubmissionPersistence(
+    dispatchResults.map((entry) =>
+      entry.status === "fulfilled"
+        ? {
+            status: "fulfilled" as const,
+            value: {
+              status: entry.value.status,
+              accepted: entry.value.accepted,
+              indeterminate: entry.value.indeterminate,
+            },
+          }
+        : entry,
+    ),
+    result.status,
+  );
+  await storage.updateDistroRelease(releaseId, {
+    status: submissionPersistence.status,
+    metadata: {
+      ...metadata,
+      status: submissionPersistence.status,
+      toolostReleaseId: result.releaseId,
+      toolostSubmittedAt: new Date().toISOString(),
+      toolostEstimatedLiveDate: result.estimatedLiveDate,
+      dispatchedPlatformCount: dispatchResults.filter(
+        (entry) => entry.status === "fulfilled" && entry.value.accepted,
+      ).length,
+    },
+  });
+  return {
+    accepted: submissionPersistence.accepted,
+    indeterminate: submissionPersistence.indeterminate,
+    status: submissionPersistence.status,
+    acceptedPlatformCount: dispatchResults.filter(
+      (entry) => entry.status === "fulfilled" && entry.value.accepted,
+    ).length,
+    platforms: dispatchResults.map((entry, index) =>
+      entry.status === "fulfilled"
+        ? entry.value
+        : {
+            platform: selectedPlatforms[index],
+            status: "pending",
+            accepted: false,
+            indeterminate: true,
+            errorMessage:
+              "The provider accepted the submission, but its local dispatch record could not be saved. Reconcile by remote release ID before retrying.",
+          },
+    ),
+  };
+}

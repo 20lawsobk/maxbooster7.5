@@ -1,0 +1,200 @@
+{
+  "manifestPayloadCount": 112,
+  "manifestPayloadHashMismatches": [],
+  "receiptLogChecks": [
+    {
+      "receipt": "critical-coverage-node-final.json",
+      "log": "critical-coverage-node-final.txt",
+      "matches": true
+    },
+    {
+      "receipt": "critical-coverage-source-receipt.json",
+      "log": "critical-coverage-lint.txt",
+      "matches": true
+    },
+    {
+      "receipt": "critical-coverage-vitest-final.json",
+      "log": "critical-coverage-vitest-final.txt",
+      "matches": true
+    },
+    {
+      "receipt": "fabric-migration-final/receipt.json",
+      "log": "fabric-migration-final/node.xml",
+      "matches": true
+    },
+    {
+      "receipt": "fabric-migration-final/receipt.json",
+      "log": "fabric-migration-final/lint.txt",
+      "matches": true
+    },
+    {
+      "receipt": "fabric-migration-final/receipt.json",
+      "log": "fabric-migration-final/types.txt",
+      "matches": true
+    },
+    {
+      "receipt": "fabric-migration-rotation-final/receipt.json",
+      "log": "fabric-migration-rotation-final/node.xml",
+      "matches": true
+    },
+    {
+      "receipt": "fabric-migration-rotation-final/receipt.json",
+      "log": "fabric-migration-rotation-final/lint.txt",
+      "matches": true
+    },
+    {
+      "receipt": "fabric-migration-rotation-final/receipt.json",
+      "log": "fabric-migration-rotation-final/types.txt",
+      "matches": true
+    },
+    {
+      "receipt": "fabric-migration-rotation-final/receipt.json",
+      "log": "fabric-migration-rotation-final/unit.txt",
+      "matches": true
+    },
+    {
+      "receipt": "hybrid-coverage-closure-final/lint-receipt.json",
+      "log": "hybrid-coverage-closure-final/lint.txt",
+      "matches": true
+    },
+    {
+      "receipt": "hybrid-coverage-closure-final/node-receipt.json",
+      "log": "hybrid-coverage-closure-final/node.xml",
+      "matches": true
+    },
+    {
+      "receipt": "hybrid-coverage-closure-final/vitest-receipt.json",
+      "log": "hybrid-coverage-closure-final/vitest.txt",
+      "matches": true
+    },
+    {
+      "receipt": "master-integrity-recheck/receipt.json",
+      "log": "master-integrity-recheck/results.txt",
+      "matches": true
+    },
+    {
+      "receipt": "media-coverage-reviewed/receipt.json",
+      "log": "media-coverage-reviewed/node.txt",
+      "matches": true
+    },
+    {
+      "receipt": "media-coverage-reviewed/receipt.json",
+      "log": "media-coverage-reviewed/vitest.txt",
+      "matches": true
+    },
+    {
+      "receipt": "media-coverage-reviewed/receipt.json",
+      "log": "media-coverage-reviewed/lint.txt",
+      "matches": true
+    },
+    {
+      "receipt": "release-scratch-filter/results.json",
+      "log": "release-scratch-filter/unit.txt",
+      "matches": true
+    },
+    {
+      "receipt": "release-scratch-filter/results.json",
+      "log": "release-scratch-filter/node.xml",
+      "matches": true
+    },
+    {
+      "receipt": "release-scratch-filter/results.json",
+      "log": "release-scratch-filter/lint.txt",
+      "matches": true
+    },
+    {
+      "receipt": "security-alert-recipients-results.json",
+      "log": "security-alert-recipients-postgres.xml",
+      "matches": true
+    },
+    {
+      "receipt": "security-alert-recipients-results.json",
+      "log": "security-alert-existing-unit.txt",
+      "matches": true
+    },
+    {
+      "receipt": "security-coverage-closure-receipt.json",
+      "log": "security-coverage-closure.txt",
+      "matches": true
+    },
+    {
+      "receipt": "security-coverage-closure-receipt.json",
+      "log": "security-coverage-closure-lint.txt",
+      "matches": true
+    },
+    {
+      "receipt": "security-coverage-closure-receipt.json",
+      "log": "security-coverage-closure-diff.txt",
+      "matches": true
+    },
+    {
+      "receipt": "security-history-before-receipt.json",
+      "log": "security-history-before.txt",
+      "matches": true
+    },
+    {
+      "receipt": "security-history-regression-receipt.json",
+      "log": "security-history-before.txt",
+      "matches": true
+    },
+    {
+      "receipt": "security-history-regression-receipt.json",
+      "log": "security-history-after.txt",
+      "matches": true
+    },
+    {
+      "receipt": "security-history-regression-receipt.json",
+      "log": "security-history-lint.txt",
+      "matches": true
+    },
+    {
+      "receipt": "security-history-regression-receipt.json",
+      "log": "security-history-diff.txt",
+      "matches": true
+    }
+  ],
+  "unmappedReceiptLogs": [],
+  "studioProducerArtifactChecks": [
+    {
+      "path": "studio-loader-node22-final.xml",
+      "matches": true
+    },
+    {
+      "path": "studio-loader-node22-final.txt",
+      "matches": true
+    },
+    {
+      "path": "studio-loader-lint.txt",
+      "matches": true
+    },
+    {
+      "path": "studio-loader-diff-check.txt",
+      "matches": true
+    },
+    {
+      "path": "studio-loader-browser-coverage/browser-script.js",
+      "matches": true
+    },
+    {
+      "path": "studio-loader-browser-coverage/browser-script.js.map",
+      "matches": true
+    },
+    {
+      "path": "studio-loader-browser-coverage/browser-v8.json",
+      "matches": true
+    },
+    {
+      "path": "studio-loader-browser-coverage/coverage-final.json",
+      "matches": true
+    },
+    {
+      "path": "studio-loader-browser-coverage/coverage-summary.json",
+      "matches": true
+    },
+    {
+      "path": "studio-loader-browser-coverage/provenance.json",
+      "matches": true
+    }
+  ],
+  "missingReadmeLinks": []
+}

@@ -1,0 +1,47 @@
+{
+  "scope": "Actual alert service/route and bounded owned HTTP transport; controlled admission/unrelated-service boundaries; no external delivery claim",
+  "productionReady": false,
+  "baselineCommit": "c06fbecdb32a5c3b76662f631604bfd9abac386b",
+  "results": {
+    "before": {
+      "total": 7,
+      "failed": 3,
+      "skipped": 0
+    },
+    "after": {
+      "total": 7,
+      "failed": 0,
+      "skipped": 0
+    },
+    "before-final": {
+      "total": 8,
+      "failed": 4,
+      "skipped": 0
+    },
+    "after-final": {
+      "total": 8,
+      "failed": 0,
+      "skipped": 0
+    },
+    "before-route": {
+      "total": 11,
+      "failed": 7,
+      "skipped": 0
+    },
+    "after-route": {
+      "total": 11,
+      "failed": 0,
+      "skipped": 0
+    }
+  },
+  "sourceFilesSha256": {
+    "server/lib/sendgridAlertTransport.ts": "bc2e412164e1bd13400210eba71422c7476c27e7294f45dc47d06759e6369bc6",
+    "server/monitoring/alertingService.ts": "b7aefd988b825b138264d2bc14c37a3c486b4021e7cdbf9c659397b4348cb0b8",
+    "server/monitoring/emailMonitor.ts": "17cdb56f917deeaa17c4895100f7340de11dbf9be39a9bebf2010a21297965cf",
+    "server/workers/index.ts": "67588805b1be3d7a40fca8abbea759aef8e67eb5d32c6abe8360cd4738b5d291",
+    "server/routes/monitoring.ts": "ff6b2d4b9976f591bff66a7e0daca3666abbf271700308fcccf9824397296099",
+    "tests/sendgrid-alert-transport.test.mjs": "f59307c5a14ebd9a5cc2bf16e4c84bc37804153db1e8efca47e5f3c6c81ab6bc"
+  },
+  "canonicalCommand": "node --import tsx --test --test-concurrency=1 tests/sendgrid-alert-transport.test.mjs",
+  "remaining": "Actual deployed SendGrid acceptance/delivery and cross-instance deduplication are not established."
+}

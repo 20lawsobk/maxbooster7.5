@@ -435,8 +435,8 @@ async function checkPackedCrossWorkerRecovery({
       body: JSON.stringify({
         email: `packed-recovery-${suffix}@example.invalid`,
         username: `packed_recovery_${suffix}`,
-        password: "Packed!Simulation9aAcceptance",
-        confirmPassword: "Packed!Simulation9aAcceptance",
+        password: process.env.PASSWORD,
+        confirmPassword: process.env.CONFIRM_PASSWORD,
         firstName: "Packed", lastName: "Recovery",
       }),
     });
@@ -1626,7 +1626,7 @@ async function main() {
       VIDEO_DIFFUSION_PORT: String(gatewayPort), MAXCORE_LOCAL_PORT: String(maxcorePort),
       BOOSTERSTATE_SIDECAR_PORT: String(boosterPort), MODEL_API_PORT: String(modelPort),
       MODEL_API_HEALTH_PORT: String(modelHealthPort), PYTHON_AI_PORT: String(pythonPort),
-      SESSION_SECRET: "production-simulation-session-secret-0123456789",
+      SESSION_SECRET: process.env.SESSION_SECRET,
       ADMIN_KEY: "production-simulation-maxcore-admin-key-0123456789",
       DATABASE_URL: databaseUrl,
       READINESS_ISOLATED_PG: "1", READINESS_EGRESS_GUARD: "1",
@@ -1868,8 +1868,8 @@ async function main() {
           body: JSON.stringify({
             email: `packed-load-${suffix}@example.invalid`,
             username: `packed_load_${usernameSuffix}`,
-            password: "Packed!Simulation9aAcceptance",
-            confirmPassword: "Packed!Simulation9aAcceptance",
+            password: process.env.PASSWORD,
+            confirmPassword: process.env.CONFIRM_PASSWORD,
             firstName: "Packed",
             lastName: "Load",
           }),

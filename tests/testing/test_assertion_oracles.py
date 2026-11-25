@@ -16,6 +16,7 @@ import pytest
 
 ROOT = Path(__file__).resolve().parents[2]
 MAXCORE = "external/maxcore/artifacts/ai-training-server/ai_model/"
+TEST_PYTHON = os.environ.get("MAXBOOSTER_TEST_PYTHON", sys.executable)
 HELPERS = (
     MAXCORE + "retrieval/test_pipeline.py",
     MAXCORE + "retrieval/test_phase4.py",
@@ -54,11 +55,12 @@ def run_exact_helper(tmp_path, relative, condition):
     environment = {
         "PATH": os.environ.get("PATH", "/usr/bin:/bin"),
         "HOME": str(tmp_path), "TMPDIR": str(tmp_path), "LANG": "C.UTF-8",
+        "PYTHONPATH": os.environ.get("PYTHONPATH", ""),
         "PYTHONDONTWRITEBYTECODE": "1", "PYTEST_DISABLE_PLUGIN_AUTOLOAD": "1",
     }
     if os.environ.get("LD_LIBRARY_PATH"):
         environment["LD_LIBRARY_PATH"] = os.environ["LD_LIBRARY_PATH"]
-    command = [sys.executable, "-m", "pytest", "-q", "-s", "-p", "no:cacheprovider",
+    command = [TEST_PYTHON, "-m", "pytest", "-q", "-s", "-p", "no:cacheprovider",
                str(probe), "--junitxml=" + str(report)]
     result = subprocess.run(command, cwd=tmp_path, env=environment,
                             stdout=subprocess.PIPE, stderr=subprocess.STDOUT,

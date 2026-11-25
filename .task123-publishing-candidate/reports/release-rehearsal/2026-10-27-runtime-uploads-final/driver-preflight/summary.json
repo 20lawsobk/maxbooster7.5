@@ -1,0 +1,59 @@
+{
+  "schemaVersion": 1,
+  "scope": "Synthetic driver failure-control-flow review only; no product/release acceptance claimed",
+  "createdAt": "2026-10-28T08:56:02.573788+00:00",
+  "driverSha256": "f2eb6d2a0ed71daf5ddf2d9775cd13abf00deb2241dcd7fc85569629ff1244c7",
+  "cases": [
+    {
+      "scenario": "prepare_status",
+      "assertions": "passed",
+      "observedDriverExit": 17,
+      "status": "failed",
+      "calls": {
+        "source": 2,
+        "inventory": 2,
+        "prepare": 1
+      },
+      "actualPreparationOrColdExecuted": false
+    },
+    {
+      "scenario": "prepare_exception",
+      "assertions": "passed",
+      "observedDriverExit": 1,
+      "status": "failed_driver_exception",
+      "calls": {
+        "source": 2,
+        "inventory": 2,
+        "prepare": 1
+      },
+      "actualPreparationOrColdExecuted": false
+    },
+    {
+      "scenario": "before_inventory_error",
+      "assertions": "passed",
+      "observedDriverExit": 1,
+      "status": "failed_admitted_observation",
+      "calls": {
+        "source": 2,
+        "inventory": 2,
+        "prepare": 0
+      },
+      "actualPreparationOrColdExecuted": false
+    },
+    {
+      "scenario": "before_code_error",
+      "assertions": "passed",
+      "observedDriverExit": 1,
+      "status": "failed_source_observation",
+      "calls": {
+        "source": 2,
+        "inventory": 1,
+        "prepare": 0
+      },
+      "actualPreparationOrColdExecuted": false
+    }
+  ],
+  "passed": 4,
+  "failed": 0,
+  "realPreparationOrColdExecuted": false
+}

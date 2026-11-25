@@ -11,15 +11,15 @@ Postgres** as the database.
 
 ## Stack
 
-- **Runtime:** Node.js 22 (pinned; `start.sh` locates or provisions the right
+- **Runtime:** Node.js 24 (pinned; `start.sh` locates or provisions the right
   binary — it verifies Node by executing it, not by stat-ing paths, because
   the deployment container lazy-loads filesystem layers)
 - **Server:** Express + Drizzle ORM, session auth, early `/api/health`
   fast-path registered before session/PDIM middleware so health checks answer
   instantly regardless of load
 - **Client:** React + Vite, React Query, Tailwind
-- **Database:** Neon Postgres (`DATABASE_URL`); schema in `shared/schema.ts`,
-  pushed with `npm run db:push`
+- **Database:** Primary Neon Postgres (`NEON_PRIMARY_URL`); schema in
+  `shared/schema.ts`, pushed with `npm run db:push`
 - **Cache / state:** Redis-compatible layer (`REDIS_URL`); the Pocket
   Dimension (PDIM) subsystem implements Redis-level behavior internally —
   Redis-level semantics are PDIM's domain, not the app server's
@@ -46,7 +46,9 @@ The server binds `0.0.0.0:$PORT`. `GET /api/health` returns service health.
 fill in values. Variables marked **REQUIRED** make the server refuse to start
 when missing; everything else degrades gracefully. Core requirements:
 
-- `DATABASE_URL` — Neon Postgres connection string
+- `NEON_PRIMARY_URL` — primary Neon Postgres connection string
+- `NEON_DATABASE_URL` — Neon compatibility fallback
+- `DATABASE_URL` — legacy compatibility fallback
 - `PORT` — listen port (platform-provided on Replit)
 - Stripe keys for billing/payouts; `REDIS_URL` for the cache layer
 
@@ -83,6 +85,8 @@ another copy matching the release manifest. Live-awareness mode does not load it
 | `npm run dev` | Development server |
 | `npm run build` | Production build (client + server) |
 | `npm run start` | Production start via `start.sh` |
+| `npm run deployment:build` | Replit capsule-aware publishing build |
+| `npm run deployment:start` | Replit capsule-restoring production start |
 | `npm run check` | TypeScript check (server + client configs) |
 | `npm test` | Unit test suite (Vitest) |
 | `npm run lint` | ESLint (errors only) |
@@ -115,9 +119,10 @@ another copy matching the release manifest. Live-awareness mode does not load it
 ## Deployment
 
 Deploy path is **Dev → production-fidelity simulations in Dev → production**
-on Replit (VM). There is no separate staging environment. The production run
-command is `bash start.sh`; the build produces `dist/` and prunes dev
-dependencies. `replit.nix` provides zstd, redis, postgresql_17, and ffmpeg.
+on Replit (VM). There is no separate staging environment. Replit runs
+`npm run deployment:build`, then `npm run deployment:start`; these npm scripts
+delegate to the capsule-aware `build.sh` and `start.sh` lifecycle.
+`replit.nix` provides zstd, redis, postgresql_17, and ffmpeg.
 
 Deployment is operated from Replit; do not deploy from a local checkout.
 

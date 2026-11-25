@@ -100,7 +100,7 @@ AD_REC   = {"user_id": UID, "platform": "instagram", "ad_type": "video",
 # Feedback / training
 SAFETY   = {"text": "great track with real emotion and energy"}
 TRAIN_FB = {"content": "great hook", "platform": "tiktok", "rating": 5}      # /api/train/feedback (server.py)
-API_FB   = {"source": "autopilot", "trigger": "high_engagement",               # /api/train/feedback (ApiTrainFeedbackRequest)
+API_FB   = {"user_id": UID, "feedback_id": "endpoint-test-feedback", "source": "autopilot", "trigger": "high_engagement",  # /api/train/feedback (ApiTrainFeedbackRequest)
             "engagement_rate": 0.08, "platform": "tiktok",
             "content_type": "post", "hook_type": "question", "media_type": "video"}
 STOR_FB  = {"user_id": UID, "platform": "tiktok", "engagement_rate": 5.5}    # CurriculumFeedback

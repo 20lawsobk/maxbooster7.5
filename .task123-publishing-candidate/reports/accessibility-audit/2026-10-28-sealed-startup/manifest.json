@@ -1,0 +1,96 @@
+{
+  "schemaVersion": 1,
+  "scope": "Exact master-nested navigation browser fixture correction; not production approval",
+  "artifacts": [
+    {
+      "path": "README.md",
+      "bytes": 3785,
+      "sha256": "9e360fdccc5bb4665168d0c372fd8fddb28dacf142e44013616862aa31d7b03e"
+    },
+    {
+      "path": "before/results.json",
+      "bytes": 1192,
+      "sha256": "be999efa360eaf693d93b73c45beda7d139b3cd7c60d7f19342f4ee89d8315ec"
+    },
+    {
+      "path": "before/tests__layout-navigation-accessibility-browser.test.mjs.txt",
+      "bytes": 2281,
+      "sha256": "45494e16e87fc1807b7975aad2e5e9ba6eb2667218da04b392f5617e8eb121ae"
+    },
+    {
+      "path": "chromium-master-nested-stderr.txt",
+      "bytes": 587,
+      "sha256": "a020216fb0133afb22d21a8f529d5f4ba12704eb46e9e8d9fd02f927d1b56bdd"
+    },
+    {
+      "path": "chromium-master-nested.json",
+      "bytes": 493,
+      "sha256": "150f086711f889f4b8e321c40b9145d94498b967356db6706d4363d8561dc953"
+    },
+    {
+      "path": "chromium-nested-profile-stderr.txt",
+      "bytes": 6130,
+      "sha256": "aaaa28397bfaf97ec7d747061bc760cf4615be29c8cd630d6df51bb8ecb25797"
+    },
+    {
+      "path": "chromium-nested-profile.json",
+      "bytes": 465,
+      "sha256": "e64d72b2f68775d85a6b2c2ccc12d02cf494a3980a6378bce730fa86d33059d5"
+    },
+    {
+      "path": "master-nested-after/results.json",
+      "bytes": 1205,
+      "sha256": "943042a710b67d8026c6822c9bfb5fe09e813136ea482e46151951462ed0212e"
+    },
+    {
+      "path": "master-nested-after/tests__layout-navigation-accessibility-browser.test.mjs.txt",
+      "bytes": 2698,
+      "sha256": "88143e60af85ab03eabc6fcf227d70a5e36ba2fd51abc2943dbd02fe0b008c04"
+    },
+    {
+      "path": "master-nested-after-receipt.json",
+      "bytes": 669,
+      "sha256": "2eb143279d2855a62f9ca8913ca3a8450ab83bc3268ae604e54c9dbf1ee1fb3f"
+    },
+    {
+      "path": "master-nested-after.txt",
+      "bytes": 63,
+      "sha256": "dd7dd24cd529a4efb594c47a66984e09f4918b8c94ce58b0046ade40ae4e5a47"
+    },
+    {
+      "path": "master-nested-before/results.json",
+      "bytes": 1203,
+      "sha256": "815559615924672480efb8bb029ccbb9fc1e41b47f03ad9435b352646285617e"
+    },
+    {
+      "path": "master-nested-before/tests__layout-navigation-accessibility-browser.test.mjs.txt",
+      "bytes": 821,
+      "sha256": "652d5d58709a6e1a044539ab762041d42665c28779e165e72c8751d3542b4ab6"
+    },
+    {
+      "path": "master-nested-before-receipt.json",
+      "bytes": 672,
+      "sha256": "2cdc56a66be226db7604f8acf735295b31e1ea93195507dfbf382c000264eba8"
+    },
+    {
+      "path": "master-nested-before.txt",
+      "bytes": 63,
+      "sha256": "8fb512a9c7f830a259a20ea590fe6295a5168fbb6b3a85241f5affe678450faf"
+    },
+    {
+      "path": "original-master-failure.txt",
+      "bytes": 822,
+      "sha256": "c7158636dadb7ab4f087f94c68c406477ec985fbb3739e883a248851b8bd2a8f"
+    },
+    {
+      "path": "summary.json",
+      "bytes": 2961,
+      "sha256": "376a1fb9076bb157891d942cd53de4cd3cfe065dcb201d4d401031de0c0d1285"
+    },
+    {
+      "path": "test-before.mjs",
+      "bytes": 11588,
+      "sha256": "70c93c2e05c31fb4c46aebaa37a2c7e0dd2dcfa5320e0a9922023c9d96617226"
+    }
+  ]
+}

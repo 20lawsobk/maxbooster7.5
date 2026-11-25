@@ -1,0 +1,256 @@
+{
+  "scope": "SendGrid SDK consumer removal with final accepted/failed/suppressed outcomes, actual coherent guarded legacy replay and targeted security regressions; no global launch approval",
+  "secretMatchFiles": 0,
+  "artifacts": [
+    {
+      "path": "README.md",
+      "bytes": 9060,
+      "sha256": "0851ac737285b76172c0ccc1392cf8dff1143b114997de2c60961c20e2efd7cc"
+    },
+    {
+      "path": "actual-installed-absence-final.json",
+      "bytes": 330,
+      "sha256": "c2869e13dac378ca341309bf09d8eb59b50afd64a2d647292944740c32ba8a12"
+    },
+    {
+      "path": "actual-installed-absence.json",
+      "bytes": 451,
+      "sha256": "89b7ac2b67c5387fc00544a2935e851b095bc25378c29177f7d50c329515aa37"
+    },
+    {
+      "path": "after-regressions-final.json",
+      "bytes": 859,
+      "sha256": "629d1a6941ffd328eaeb80d544ac28415e9791853b7abc25c6375e57bea1e8fd"
+    },
+    {
+      "path": "after-regressions-final.xml",
+      "bytes": 10878,
+      "sha256": "bd52aaa8893a52f167638d9457d2e4ab0974c69eb86f728eeefd5625eb80bf63"
+    },
+    {
+      "path": "after-regressions.json",
+      "bytes": 853,
+      "sha256": "0be0450d2e9d74dbd66f8dd28e1799e3b1bba7f33c0ea9d3f95dbaedbe935c1e"
+    },
+    {
+      "path": "after-regressions.xml",
+      "bytes": 10934,
+      "sha256": "e1a0b402e8cb0c1fc21bd6747c24ed147334963f3407c3a3b329d72566463d18"
+    },
+    {
+      "path": "audit-dns-all.json",
+      "bytes": 542,
+      "sha256": "975ba9771bba96efa1bebb5c0f79cc43c9873f50cf15482257fcd331dd1627ec"
+    },
+    {
+      "path": "audit-dns-all.txt",
+      "bytes": 362,
+      "sha256": "7ec265aca9e7448a03341ca2baf5ea370ab7da018d41427e82a51486bd0a6e52"
+    },
+    {
+      "path": "audit-dns-prod.json",
+      "bytes": 560,
+      "sha256": "ff7e6a2ce6c2bbb1d10e764c4cf08f8d1acc8bfea0cc99e1e0032a421fa02473"
+    },
+    {
+      "path": "audit-dns-prod.txt",
+      "bytes": 362,
+      "sha256": "7ec265aca9e7448a03341ca2baf5ea370ab7da018d41427e82a51486bd0a6e52"
+    },
+    {
+      "path": "audit-maxcore-all.json",
+      "bytes": 541,
+      "sha256": "a7ba419907e880cece267279603e4f9882506bd1bac7a972243218ab053afef5"
+    },
+    {
+      "path": "audit-maxcore-all.txt",
+      "bytes": 310,
+      "sha256": "66dcca153459e738e173076461c836d1e0a94f969d67ccc6c07b208a0536b67c"
+    },
+    {
+      "path": "audit-maxcore-prod.json",
+      "bytes": 556,
+      "sha256": "e11b6239df219af0babfc6b68ba6df9b1c660549b9c83be80c04ccdf703e16e0"
+    },
+    {
+      "path": "audit-maxcore-prod.txt",
+      "bytes": 310,
+      "sha256": "9a124a414606bbd13737c0360f708dfc78df8cce7a070e36660faf22cf7c0c85"
+    },
+    {
+      "path": "audit-pdim-all.json",
+      "bytes": 535,
+      "sha256": "c3e486dba22da0b2ddabdf20ed019d1a55e461dea1e44e86b4695004a6cd736d"
+    },
+    {
+      "path": "audit-pdim-all.txt",
+      "bytes": 310,
+      "sha256": "c8e959ba0e2f755af9a2c4bd7b8412ff1a844817e76ff08de0bad15ae2736f20"
+    },
+    {
+      "path": "audit-pdim-prod.json",
+      "bytes": 550,
+      "sha256": "076c17994734649bb9f23320d8603129d34b38458d1489d589000b86aacb86eb"
+    },
+    {
+      "path": "audit-pdim-prod.txt",
+      "bytes": 310,
+      "sha256": "d9816e1980e8a322b1ad380a33ef7b51fb541db6f5085a0432f7bf42d2dca130"
+    },
+    {
+      "path": "audit-root-all.json",
+      "bytes": 538,
+      "sha256": "05d50523a09cdd2558d57ddda5825518022c6ae41f334dc7f0dedba01b002e31"
+    },
+    {
+      "path": "audit-root-all.txt",
+      "bytes": 368,
+      "sha256": "7747caf3fd124cefaf3022a5be83f36e73c0e0b8c0ab951d263cbcb931728855"
+    },
+    {
+      "path": "audit-root-prod.json",
+      "bytes": 557,
+      "sha256": "64141241a0223c454819c057b9b363f152f29903b657ffec4e35d322ef8074a1"
+    },
+    {
+      "path": "audit-root-prod.txt",
+      "bytes": 368,
+      "sha256": "7747caf3fd124cefaf3022a5be83f36e73c0e0b8c0ab951d263cbcb931728855"
+    },
+    {
+      "path": "audit-tls-all.json",
+      "bytes": 545,
+      "sha256": "a412ed710258286d6872b9ebff7e1c88c3482fcbc694c2607f9e739d6c70a58a"
+    },
+    {
+      "path": "audit-tls-all.txt",
+      "bytes": 362,
+      "sha256": "5cbaa0d2bb5c6d7336b4bdd38b17c22cb1eeea55ff4cce416e68a69bac3ed8c2"
+    },
+    {
+      "path": "audit-tls-prod.json",
+      "bytes": 564,
+      "sha256": "5561ec2a0e4fc2e86a38b5a64b11c13a6e88fd80bd324c73519cd445173fb938"
+    },
+    {
+      "path": "audit-tls-prod.txt",
+      "bytes": 362,
+      "sha256": "5cbaa0d2bb5c6d7336b4bdd38b17c22cb1eeea55ff4cce416e68a69bac3ed8c2"
+    },
+    {
+      "path": "before-source-hashes.json",
+      "bytes": 587,
+      "sha256": "03322c8e2cd4ffcf46142ab77edff3852809cf593694a335d7f1c9e3457c9d69"
+    },
+    {
+      "path": "diff-check.json",
+      "bytes": 384,
+      "sha256": "c2611c6f33460cfe99d4dd1c1ad75179f1d4b052c390c842e2ed37b166a018f6"
+    },
+    {
+      "path": "diff-check.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "frozen-lock-validation.json",
+      "bytes": 901,
+      "sha256": "952c988215cdec2a16e909cf8dbcee6e3054aa02de81bffa322ec03c288a86b4"
+    },
+    {
+      "path": "frozen-lock-validation.txt",
+      "bytes": 4058,
+      "sha256": "8c947e0a3b6531576f7e1ed2588345afb7d2220f17a4c8c08b0c9e790099e956"
+    },
+    {
+      "path": "guarded-replay.json",
+      "bytes": 448,
+      "sha256": "6b463dc19411a94b7fd95cff9a5977388e8b4937431842cf250de2e400c4ff20"
+    },
+    {
+      "path": "guarded-replay.txt",
+      "bytes": 1548,
+      "sha256": "1c856a8feabe2a7bf527fb03f9c8cf31961fa41b7ab06ce8bd1ed6043d2ca3de"
+    },
+    {
+      "path": "install-pdim-recreate.json",
+      "bytes": 971,
+      "sha256": "0ab118f94088d623a8791f577b0e5468cd46dc128cc54516642facdf673ed43c"
+    },
+    {
+      "path": "install-pdim-recreate.txt",
+      "bytes": 1112,
+      "sha256": "712263ff1a76ebc6a2681b64e54a7b91f7d1dc53f40ed481844537c42b0eda2a"
+    },
+    {
+      "path": "install-root.json",
+      "bytes": 902,
+      "sha256": "da8519ff7721e352537f49759f83215a09149bf724627325f09344469e09008e"
+    },
+    {
+      "path": "install-root.txt",
+      "bytes": 26,
+      "sha256": "c448f51aba445fd08daff6567ab16ac4a2eeee244003834cf7ccfbeca1df024a"
+    },
+    {
+      "path": "legacy-1-actual-alert-route.json",
+      "bytes": 492,
+      "sha256": "2c826e8e1cefad01d9a5682610cfedac22656f5e900a68dfc836ed860a2a494f"
+    },
+    {
+      "path": "legacy-1-actual-alert-route.xml",
+      "bytes": 1679,
+      "sha256": "fe8d3d80bb35dc05b67833e69000ac8bb7e410c4b6e6e9d31ff80467e25c00ce"
+    },
+    {
+      "path": "legacy-2-actual-alert-route.json",
+      "bytes": 492,
+      "sha256": "35443083050e8002e1d936a78dd20cf543c399dcf114f8eacfe59d00c1b0c721"
+    },
+    {
+      "path": "legacy-2-actual-alert-route.xml",
+      "bytes": 1679,
+      "sha256": "cfcfafb0852e472391e95ccf4cced31dab0d5427cebdef66a6b83b582138aa7e"
+    },
+    {
+      "path": "legacy-known-original-diff.patch",
+      "bytes": 9867,
+      "sha256": "55dba2d404b23b4cf55d58aaf9dbd3dd39b792279f706fc4948d5049418008da"
+    },
+    {
+      "path": "legacy-patch-provenance.json",
+      "bytes": 9389,
+      "sha256": "04cf86069707659c5bdd1096f4b589a4ee122fcd6e93f1eb4f8917cea8cd0c62"
+    },
+    {
+      "path": "lint.json",
+      "bytes": 554,
+      "sha256": "aea74f73d31b6a4ece884bee60dfca1e977b2e446926c56cde4e6916a60c17ef"
+    },
+    {
+      "path": "lint.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "lock-update-root.json",
+      "bytes": 488,
+      "sha256": "a116c6c69f69b28298cfe2a39e8470b8d390334341c44306e58d0af8fad57154"
+    },
+    {
+      "path": "lock-update-root.txt",
+      "bytes": 18,
+      "sha256": "b125771fda8addd462adfe7f7b03299feb35e28badbb2d16ae8589e371216f8f"
+    },
+    {
+      "path": "summary.json",
+      "bytes": 11689,
+      "sha256": "2150270d0333981c3e5234a65fd677519e4dfeff2038d163715f0695c2565cbf"
+    },
+    {
+      "path": "verify-replay.mjs",
+      "bytes": 4966,
+      "sha256": "74ac3ed6dc6499f00b8fec95adab7097e15d4e79d4c9f8dca10f6bc456761ad8"
+    }
+  ]
+}

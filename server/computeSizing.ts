@@ -11,7 +11,10 @@
 // each caller apply its own constraints (memory ceiling, a hard cap for a
 // single-caller loopback service, an env override for debugging).
 import os from "os";
-import { effectiveCapacity } from "../script/deployment/capacity.mjs";
+import {
+  clampDeploymentCapacity,
+  effectiveCapacity,
+} from "../script/deployment/capacity.mjs";
 export { effectiveCapacity } from "../script/deployment/capacity.mjs";
 
 export interface ComputeSizingOptions {
@@ -61,7 +64,7 @@ function positiveConfig(name: string, defaultValue: number): number {
 export function computeWorkerSizing(
   opts: ComputeSizingOptions = {},
 ): ComputeSizingResult {
-  const capacity = effectiveCapacity();
+  const capacity = clampDeploymentCapacity(effectiveCapacity());
   const numCPUs = capacity.cpus;
   // Minimum-first allocation, not the old 4.5/6 GiB compiler/heap tiers.
   // Defaults are conservative configurable runtime reservations, not measured

@@ -42,6 +42,22 @@ let zone: ZoneData = { domain: "", serial: 0, records: [] };
 let compiled: Map<string, DnsRecord[]> = new Map(); // "name|type" → records
 let zoneLoaded = false;
 
+export function writeZoneCacheAtomically(filePath: string, contents: string): void {
+  fs.mkdirSync(path.dirname(filePath), { recursive: true });
+  const temporaryPath = `${filePath}.${process.pid}.${Date.now()}.tmp`;
+  try {
+    fs.writeFileSync(temporaryPath, contents, { encoding: "utf8", flag: "wx", mode: 0o600 });
+    fs.renameSync(temporaryPath, filePath);
+  } catch (error) {
+    try {
+      fs.unlinkSync(temporaryPath);
+    } catch {
+      // Preserve the original cache-write error; a missing temp file is expected.
+    }
+    throw error;
+  }
+}
+
 // ── Load ───────────────────────────────────────────────────────────────────
 
 function typeCode(typeName: string): number {
@@ -101,6 +117,10 @@ function compile(data: ZoneData): Map<string, DnsRecord[]> {
 }
 
 export function loadZoneFromFile(): void {
+  if (!fs.existsSync(ZONE_FILE)) {
+    console.info("[zone] No cached zone file; waiting for the configured primary sync");
+    return;
+  }
   try {
     const raw = fs.readFileSync(ZONE_FILE, "utf8");
     const data: ZoneData = JSON.parse(raw);
@@ -145,7 +165,15 @@ async function fetchZoneFromPrimary(): Promise<void> {
               compiled = compile(data);
               zoneLoaded = true;
               console.log(`[zone] Synced from primary: serial=${data.serial}`);
-              fs.writeFileSync(ZONE_FILE, raw, "utf8"); // cache locally
+              try {
+                writeZoneCacheAtomically(ZONE_FILE, raw);
+              } catch (error) {
+                console.warn(
+                  `[zone] Primary data is active in memory, but local cache persistence failed: ${
+                    error instanceof Error ? error.message : "unknown filesystem error"
+                  }`,
+                );
+              }
             }
           } catch (err: any) {
             console.error(`[zone] Sync parse error: ${err.message}`);
@@ -154,7 +182,9 @@ async function fetchZoneFromPrimary(): Promise<void> {
         });
         res.on("error", () => resolve());
       })
-      .on("timeout", function () { this.destroy(new Error("Zone sync timed out")); })
+      .on("timeout", function (this: http.ClientRequest) {
+        this.destroy(new Error("Zone sync timed out"));
+      })
       .on("error", (error) => {
         console.error(`[zone] Sync failed: ${error.message}`);
         resolve();

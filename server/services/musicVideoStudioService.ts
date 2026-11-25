@@ -321,7 +321,10 @@ export async function generateFullMusicVideo(
     typeof opts.artistStyle === "string" ? opts.artistStyle.trim() : "";
   const platform =
     typeof opts.platform === "string" ? opts.platform.trim() : "";
-  const aspectRatio = opts.aspectRatio || "9:16";
+  const aspectRatio =
+    typeof opts.aspectRatio === "string"
+      ? opts.aspectRatio.trim() || "9:16"
+      : "9:16";
   const hook = typeof opts.hook === "string" ? opts.hook.trim() : "";
   const bodyText =
     typeof opts.bodyText === "string" ? opts.bodyText.trim() : "";

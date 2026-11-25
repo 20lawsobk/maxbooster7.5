@@ -1,0 +1,31 @@
+# Shared runtime integration — source integrated, release blocked
+
+No application start, workflows, live database/provider calls, migrations, installs, or full TypeScript check were performed.
+
+## Implemented consumers
+
+- `server/index.ts` now configures application containment exactly once with `selfHealingEngine` and authoritative `revokeUserSessions` (current source returns `{confirmed:true}` after durable epoch mutation). Security owner has now mounted its guard immediately after `attachUser`, before endpoints, followed by `governanceBoundary`. No synthetic blanket principal was introduced.
+- Before route readiness is published, boot performs read-only schema probes for catalog jobs and enabled backup/fan capabilities. Missing schema fails startup instead of scheduling broken work. These probes are capability checks, **not** evidence of approved/applied migration provenance or constraint/index correctness.
+- Actual backup `initialize()` is invoked for production/deployment or `ENABLE_BACKUPS=true`; its existing leased daily cron/catch-up scheduler owns execution. Shutdown invokes `stop()`.
+- Actual `runCatalogDiscoveryJobs()` consumer is scheduled every 30 seconds through a tracked single-flight scheduler rather than its non-draining interval wrapper. Stop clears future ticks and awaits current work before database closure. Errors are logged, not discarded. Existing database claims/leases remain authoritative across processes.
+- Fan delivery scheduling is opt-in with `ENABLE_FAN_DELIVERY_WORKER=true`. Boot requires HTTPS APP_URL/PUBLIC_APP_URL, configured Resend key and sender, and fan tables before enabling the real `drainPendingFanDeliveries(10)` consumer every minute. Per-recipient transaction/row locking commits `sending` before provider attempts; the scheduler never resets sending/unknown outcomes. It is single-flight per process and drains at shutdown. Sender configuration presence does not establish provider verification/delivery.
+- Non-auth `/api/create-subscription` now resolves only configured canonical price/plan IDs, rejects unknown legacy prices, emits canonical `planId`, and requires customer linkage persistence before payment creation.
+- Post-payment registration no longer authenticates an existing account by checkout email: it explicitly returns LOGIN_REQUIRED and requires normal login/MFA. New-account cookie issuance carries authoritative auth generation and recent-auth identity, strips sensitive fields, and checks registration policy before creation.
+- Security owner retains token-alias implementation and all first-slice governance/auth integrations; confirmed guard/maintenance mounts exist in current source.
+
+## Exact remaining integration/release prerequisites
+
+1. **Backup active-run drain is unresolved in the service-owned lifecycle.** `databaseBackupService.stop()` currently stops cron only; its asynchronous catch-up/cron backup promise and lease heartbeat are not exposed for draining. Data owner must track all scheduled in-flight work, prevent overlaps, and make `stop(): Promise<void>` stop scheduling and await the active backup. Index's stop callback already supports awaiting that future return. Do not claim clean in-flight backup shutdown today. The existing global 25-second shutdown deadline can terminate long catalog/fan/backup work; durable claim recovery/reconciliation is still required.
+2. Apply only operator-approved, provenance-reconciled migrations to the correct target: `0020_security_authority.sql` (plus current MFA migration requirements from security report), `0021_integrations_catalog_jobs.sql`, `0090_data_runtime.sql` (including pg_sessions/catalog/run leases), and opt-in `0092_growth_fan_delivery.sql`. Validate actual indexes, constraints, privileges and target identity; `LIMIT 0` does not establish them. Deployment migration journal collisions/provenance remain blockers per data/deployment/migration-rehearsal reports.
+3. Backup provider storage and `pg_dump`/`psql` compatibility, verified backup/isolated restore, scheduler lease isolation, RPO/RTO remain untested. Schema readiness is not provider readiness.
+4. Fan authenticated provider webhook consumer remains absent: `applyVerifiedFanMailEvent` is exported but no verified dispatcher calls it. Notification owner must verify signature/account and call it with authentic provider IDs/timestamps; unmatched callbacks and ambiguous outcomes require reconciliation. No helper-only completion claim.
+5. Native merch adapter/verified payment integration remains absent at this inspection: no consumer calls `installMerchPaymentAdapter` or `applyVerifiedMerchPayment`. Commerce owner must implement actual checkout, shipping/tax policy, metadata/account verification, paid/expired/refunded dispatcher and coupled seller ledger before enabling checkout. Do not replace this with an unsafe generic Stripe adapter.
+6. Commerce worker is still editing financial settlement consumers. Monolith metadata/customer linkage does not fix settlement/refund/payout/ledger semantics or registration-after-payment entitlement replay. Checkout registration still requires disposable-DB/provider proof and canonical entitlement ownership review before money release.
+7. Governance boundary and auth token aliases are security-owned. Early index routes mounted before registerRoutes must be separately reviewed for intended recovery/public access versus maintenance bypass; this integration does not claim all existing early routes now pass maintenance. Distributed API policy enforcement remains domain work.
+8. Sessions cutover, cross-worker revocation/MFA, real worker claim concurrency, shutdown during provider acceptance, and browser/payment replay regression tests remain required.
+
+## Isolated evidence
+
+- `env -i PATH="$PATH" node --test tests/readiness-worker-composition.cjs`: 3 passed. Tests actual scheduler serialization/draining, rejected-work reporting, and read-only schema failure propagation.
+- esbuild syntax transforms passed for index.ts, routes.ts and readinessWorkerLifecycle.ts. No full typecheck or runtime certification.
+- Source inspection confirms post-hydration containment/governance mounts and confirmed revoke callback. No screenshot: application start was prohibited and this is server composition work.

@@ -1,0 +1,33 @@
+{
+  "recordedAt": "2026-10-29T22:53:47.783155-04:00",
+  "instruction": "Pause all work and push everything to main regardless of completion",
+  "workStatus": "PAUSED_BY_USER",
+  "baseCommit": "f8999794af0cdfa528c1c3bc885ce9dbaa4ca305",
+  "productionReady": false,
+  "launchApproval": "NOT_GRANTED",
+  "lastFullMasterSource": "5eb416a04021f66c9bfc8af93997ec9fe8a55e31",
+  "lastFullMaster": {
+    "ordinaryCommandsPassed": 16,
+    "ordinaryCommandsTotal": 17,
+    "coverageGate": "FAIL",
+    "platformGate": "FAIL",
+    "remediationGate": "FAIL",
+    "greenPages": 0,
+    "totalPages": 80,
+    "acceptedRequiredChecks": 9,
+    "requiredChecks": 33549,
+    "acceptedPlanItems": 9,
+    "planItems": 53034
+  },
+  "appliedPendingChanges": "Coverage producer foundation, frontend deadlines/cancellation/project isolation, finite generation proxy policy and shared plan-version metadata; full validation pending",
+  "completedFocusedFoundationExits": {
+    "reporterExit": 0,
+    "bindingExit": 0
+  },
+  "newTestsExecutedForPush": false,
+  "outsideDrafts": "Archived only; multimodal transport/plan-validation drafts and identity lineage are not integrated; actual browser integration unfinished",
+  "deployedOriginObservation": "Source-advertised maxbooster.replit.app returned404HTML for both unauthenticated health probes; targetdeploymentidentity remainsunverified",
+  "database": "Configured Neon read-only metadata observation312tables/10driftentries; no production migration performed",
+  "remoteMainBeforePush": "f227ce74c31848b34183e2256fca3cef304be148",
+  "readinessCaveat": "Existing current-named reports describe older5eb source. Pending changes invalidate current-source acceptance until a new completed verification. This push is explicitly independent of production readiness."
+}

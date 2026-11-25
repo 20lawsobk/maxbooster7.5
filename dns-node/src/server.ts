@@ -394,7 +394,11 @@ function startTCP(): net.Server {
     let rxBuf = Buffer.alloc(0);
 
     socket.on("data", (chunk) => {
-      rxBuf = Buffer.concat([rxBuf, chunk]);
+      // Node's Socket data overload also permits strings when an encoding is
+      // configured. This server never sets one, but normalize explicitly so
+      // the TCP frame parser remains byte-oriented under every type overload.
+      const bytes = Buffer.isBuffer(chunk) ? chunk : Buffer.from(chunk);
+      rxBuf = Buffer.concat([rxBuf, bytes]);
 
       while (rxBuf.length >= 2) {
         const msgLen = rxBuf.readUInt16BE(0);

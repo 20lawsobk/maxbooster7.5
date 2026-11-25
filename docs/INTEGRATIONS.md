@@ -179,7 +179,7 @@ Each queue has a corresponding Worker in `server/workers/`. Workers must have cr
 
 The app is deployed on Replit Autoscale. Key platform details:
 
-- **Database:** `DATABASE_URL` (Replit-managed PostgreSQL) is a different DB from `NEON_DATABASE_URL` (app DB). All schema/query work targets `NEON_DATABASE_URL`.
+- **Database:** `DATABASE_URL` (Replit-managed PostgreSQL) is separate from Neon. The app uses `NEON_PRIMARY_URL` first, `NEON_DATABASE_URL` second, and `DATABASE_URL` only as a compatibility fallback.
 - **Secrets:** All API keys/tokens stored as Replit Secrets (shared environment).
 - **Domain:** Dev URL via `$REPLIT_DEV_DOMAIN`; never hardcode `localhost` in app code.
 - **Preview proxy:** mTLS proxied iframe — use relative URLs in app code.

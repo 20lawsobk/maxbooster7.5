@@ -1,0 +1,319 @@
+
+<!doctype html>
+<html lang="en">
+
+<head>
+    <title>Code coverage report for server/middleware/governanceBoundary.ts</title>
+    <meta charset="utf-8" />
+    <link rel="stylesheet" href="../../prettify.css" />
+    <link rel="stylesheet" href="../../base.css" />
+    <link rel="shortcut icon" type="image/x-icon" href="../../favicon.png" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <style type='text/css'>
+        .coverage-summary .sorter {
+            background-image: url(../../sort-arrow-sprite.png);
+        }
+    </style>
+</head>
+    
+<body>
+<div class='wrapper'>
+    <div class='pad1'>
+        <h1><a href="../../index.html">All files</a> / <a href="index.html">server/middleware</a> governanceBoundary.ts</h1>
+        <div class='clearfix'>
+            
+            <div class='fl pad1y space-right2'>
+                <span class="strong">30.76% </span>
+                <span class="quiet">Statements</span>
+                <span class='fraction'>16/52</span>
+            </div>
+        
+            
+            <div class='fl pad1y space-right2'>
+                <span class="strong">24.61% </span>
+                <span class="quiet">Branches</span>
+                <span class='fraction'>16/65</span>
+            </div>
+        
+            
+            <div class='fl pad1y space-right2'>
+                <span class="strong">75% </span>
+                <span class="quiet">Functions</span>
+                <span class='fraction'>3/4</span>
+            </div>
+        
+            
+            <div class='fl pad1y space-right2'>
+                <span class="strong">27.27% </span>
+                <span class="quiet">Lines</span>
+                <span class='fraction'>12/44</span>
+            </div>
+        
+            
+        </div>
+        <p class="quiet">
+            Press <em>n</em> or <em>j</em> to go to the next uncovered block, <em>b</em>, <em>p</em> or <em>k</em> for the previous block.
+        </p>
+        <template id="filterTemplate">
+            <div class="quiet">
+                Filter:
+                <input type="search" id="fileSearch">
+            </div>
+        </template>
+    </div>
+    <div class='status-line low'></div>
+    <pre><table class="coverage">
+<tr><td class="line-count quiet"><a name='L1'></a><a href='#L1'>1</a>
+<a name='L2'></a><a href='#L2'>2</a>
+<a name='L3'></a><a href='#L3'>3</a>
+<a name='L4'></a><a href='#L4'>4</a>
+<a name='L5'></a><a href='#L5'>5</a>
+<a name='L6'></a><a href='#L6'>6</a>
+<a name='L7'></a><a href='#L7'>7</a>
+<a name='L8'></a><a href='#L8'>8</a>
+<a name='L9'></a><a href='#L9'>9</a>
+<a name='L10'></a><a href='#L10'>10</a>
+<a name='L11'></a><a href='#L11'>11</a>
+<a name='L12'></a><a href='#L12'>12</a>
+<a name='L13'></a><a href='#L13'>13</a>
+<a name='L14'></a><a href='#L14'>14</a>
+<a name='L15'></a><a href='#L15'>15</a>
+<a name='L16'></a><a href='#L16'>16</a>
+<a name='L17'></a><a href='#L17'>17</a>
+<a name='L18'></a><a href='#L18'>18</a>
+<a name='L19'></a><a href='#L19'>19</a>
+<a name='L20'></a><a href='#L20'>20</a>
+<a name='L21'></a><a href='#L21'>21</a>
+<a name='L22'></a><a href='#L22'>22</a>
+<a name='L23'></a><a href='#L23'>23</a>
+<a name='L24'></a><a href='#L24'>24</a>
+<a name='L25'></a><a href='#L25'>25</a>
+<a name='L26'></a><a href='#L26'>26</a>
+<a name='L27'></a><a href='#L27'>27</a>
+<a name='L28'></a><a href='#L28'>28</a>
+<a name='L29'></a><a href='#L29'>29</a>
+<a name='L30'></a><a href='#L30'>30</a>
+<a name='L31'></a><a href='#L31'>31</a>
+<a name='L32'></a><a href='#L32'>32</a>
+<a name='L33'></a><a href='#L33'>33</a>
+<a name='L34'></a><a href='#L34'>34</a>
+<a name='L35'></a><a href='#L35'>35</a>
+<a name='L36'></a><a href='#L36'>36</a>
+<a name='L37'></a><a href='#L37'>37</a>
+<a name='L38'></a><a href='#L38'>38</a>
+<a name='L39'></a><a href='#L39'>39</a>
+<a name='L40'></a><a href='#L40'>40</a>
+<a name='L41'></a><a href='#L41'>41</a>
+<a name='L42'></a><a href='#L42'>42</a>
+<a name='L43'></a><a href='#L43'>43</a>
+<a name='L44'></a><a href='#L44'>44</a>
+<a name='L45'></a><a href='#L45'>45</a>
+<a name='L46'></a><a href='#L46'>46</a>
+<a name='L47'></a><a href='#L47'>47</a>
+<a name='L48'></a><a href='#L48'>48</a>
+<a name='L49'></a><a href='#L49'>49</a>
+<a name='L50'></a><a href='#L50'>50</a>
+<a name='L51'></a><a href='#L51'>51</a>
+<a name='L52'></a><a href='#L52'>52</a>
+<a name='L53'></a><a href='#L53'>53</a>
+<a name='L54'></a><a href='#L54'>54</a>
+<a name='L55'></a><a href='#L55'>55</a>
+<a name='L56'></a><a href='#L56'>56</a>
+<a name='L57'></a><a href='#L57'>57</a>
+<a name='L58'></a><a href='#L58'>58</a>
+<a name='L59'></a><a href='#L59'>59</a>
+<a name='L60'></a><a href='#L60'>60</a>
+<a name='L61'></a><a href='#L61'>61</a>
+<a name='L62'></a><a href='#L62'>62</a>
+<a name='L63'></a><a href='#L63'>63</a>
+<a name='L64'></a><a href='#L64'>64</a>
+<a name='L65'></a><a href='#L65'>65</a>
+<a name='L66'></a><a href='#L66'>66</a>
+<a name='L67'></a><a href='#L67'>67</a>
+<a name='L68'></a><a href='#L68'>68</a>
+<a name='L69'></a><a href='#L69'>69</a>
+<a name='L70'></a><a href='#L70'>70</a>
+<a name='L71'></a><a href='#L71'>71</a>
+<a name='L72'></a><a href='#L72'>72</a>
+<a name='L73'></a><a href='#L73'>73</a>
+<a name='L74'></a><a href='#L74'>74</a>
+<a name='L75'></a><a href='#L75'>75</a>
+<a name='L76'></a><a href='#L76'>76</a>
+<a name='L77'></a><a href='#L77'>77</a>
+<a name='L78'></a><a href='#L78'>78</a>
+<a name='L79'></a><a href='#L79'>79</a></td><td class="line-coverage quiet"><span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">10x</span>
+<span class="cline-any cline-yes">9x</span>
+<span class="cline-any cline-yes">9x</span>
+<span class="cline-any cline-yes">6x</span>
+<span class="cline-any cline-yes">14x</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">1x</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">1x</span>
+<span class="cline-any cline-yes">1x</span>
+<span class="cline-any cline-yes">1x</span>
+<span class="cline-any cline-yes">1x</span>
+<span class="cline-any cline-yes">1x</span>
+<span class="cline-any cline-yes">1x</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span></td><td class="text"><pre class="prettyprint lang-js">import type { RequestHandler } from "express";
+import path from "node:path";
+import { enforceMaintenance } from "../services/governancePolicyService.js";
+&nbsp;
+export function isDevDependencyResource(urlPath: string): boolean {
+  if (process.env.NODE_ENV === "production") return false;
+  const prefix = `/@fs${path.resolve("node_modules")}/`;
+  if (!urlPath.startsWith(prefix) || urlPath.includes("%") || urlPath.includes("\\")) return false;
+  const relative = urlPath.slice(prefix.length);
+  return !relative.split("/").some(part =&gt; part === "." || part === "..") &amp;&amp;
+    /\.(?:[cm]?js|css|map|woff2?|ttf)$/.test(relative);
+}
+&nbsp;
+const recovery = new Set([
+  "GET /", "GET /login", "GET /forgot-password", "GET /reset-password", "GET /favicon.ico",
+  "GET /health", "GET /ready", "GET /healthz", "GET /api/health", "GET /api/ready",
+  "GET /api/csrf-token", "GET /api/auth/me", "GET /api/auth/google",
+  "GET /api/auth/google/callback", "GET /api/auth/2fa/challenge", "GET /api/auth/2fa/status",
+  "POST /api/auth/login", "POST /api/auth/logout", "POST /api/auth/forgot-password",
+  "POST /api/auth/reset-password", "POST /api/auth/2fa/challenge", "POST /api/auth/2fa/validate",
+  "POST /api/auth/2fa/setup", "POST /api/auth/2fa/verify", "POST /api/auth/2fa/disable",
+  "POST /api/auth/heartbeat", "POST /api/auth/refresh-token",
+]);
+&nbsp;
+/** Exact server-owned routes only. Provider exemptions require cryptographic
+ * verification before bypass; neither a header nor a path is proof on its own. */
+export const governanceBoundary: RequestHandler = async (req, res, next) =&gt; {
+  try {
+  const path = req.path;
+  const method = req.method === "HEAD" ? <span class="branch-0 cbranch-no" title="branch not covered" >"GET" : r</span>eq.method;
+  <span class="missing-if-branch" title="if path not taken" >I</span>if (recovery.has(`${method} ${path}`)) <span class="cstat-no" title="statement not covered" >return next();</span>
+  <span class="missing-if-branch" title="else path not taken" >E</span>if (method === "GET" &amp;&amp; isDevDependencyResource(path)) return next();
+  // Static app-shell resources carry no application data/auth authority.
+<span class="cstat-no" title="statement not covered" >  if (method === "GET" &amp;&amp; ["/assets/", "/js/", "/src/", "/node_modules/.vite/", "/@vite/", "/@react-refresh"]</span>
+    .some(<span class="fstat-no" title="function not covered" >prefix =&gt; <span class="cstat-no" title="statement not covered" >p</span>ath.startsWith(prefix))</span>) <span class="cstat-no" title="statement not covered" >return next();</span>
+<span class="cstat-no" title="statement not covered" >  if (req.method === "POST" &amp;&amp; path === "/api/webhooks/stripe") {</span>
+    const { stripeWebhookMiddleware } = <span class="cstat-no" title="statement not covered" >await import("../safety/stripeWebhookSecurity.js");</span>
+<span class="cstat-no" title="statement not covered" >    return stripeWebhookMiddleware(req, res, next);</span>
+  }
+<span class="cstat-no" title="statement not covered" >  if (req.method === "POST" &amp;&amp; path === "/webhooks/sendgrid") {</span>
+    const signature = <span class="cstat-no" title="statement not covered" >req.get("x-twilio-email-event-webhook-signature");</span>
+    const timestamp = <span class="cstat-no" title="statement not covered" >req.get("x-twilio-email-event-webhook-timestamp");</span>
+    const raw = (<span class="cstat-no" title="statement not covered" >req as unknown as { rawBody?: Buffer }).rawBody;</span>
+    const seconds = <span class="cstat-no" title="statement not covered" >Number(timestamp);</span>
+<span class="cstat-no" title="statement not covered" >    if (!signature || !timestamp || !Buffer.isBuffer(raw) || !Number.isFinite(seconds) ||</span>
+        Math.abs(Date.now() / 1000 - seconds) &gt; 300) {
+<span class="cstat-no" title="statement not covered" >      return res.status(401).json({ error: "Signed webhook with current timestamp required" });</span>
+    }
+    const { emailTrackingService } = <span class="cstat-no" title="statement not covered" >await import("../services/emailTrackingService.js");</span>
+<span class="cstat-no" title="statement not covered" >    if (!emailTrackingService.verifySendGridSignature(raw, signature, timestamp)) {</span>
+<span class="cstat-no" title="statement not covered" >      return res.status(401).json({ error: "Webhook signature invalid" });</span>
+    }
+<span class="cstat-no" title="statement not covered" >    return next();</span>
+  }
+<span class="cstat-no" title="statement not covered" >  if (req.method === "POST" &amp;&amp; path === "/api/webhooks/resend") {</span>
+    const secret = <span class="cstat-no" title="statement not covered" >process.env.RESEND_WEBHOOK_SECRET;</span>
+<span class="cstat-no" title="statement not covered" >    if (!secret) <span class="cstat-no" title="statement not covered" >return res.status(503).json({ error: "Resend webhook verification is not configured" });</span></span>
+    const raw = (<span class="cstat-no" title="statement not covered" >req as unknown as { rawBody?: unknown }).rawBody;</span>
+<span class="cstat-no" title="statement not covered" >    if (!Buffer.isBuffer(raw)) <span class="cstat-no" title="statement not covered" >return res.status(400).json({ error: "Exact webhook body bytes are required" });</span></span>
+    const { verifyResendEvent } = <span class="cstat-no" title="statement not covered" >await import("../services/emailWebhookVerification.js");</span>
+<span class="cstat-no" title="statement not covered" >    if (!verifyResendEvent(raw, req.get("svix-id") || "", req.get("svix-timestamp") || "",</span>
+      req.get("svix-signature") || "", secret)) {
+<span class="cstat-no" title="statement not covered" >      return res.status(401).json({ error: "Invalid Resend webhook signature" });</span>
+    }
+<span class="cstat-no" title="statement not covered" >    return next();</span>
+  }
+<span class="cstat-no" title="statement not covered" >  if (req.method === "POST" &amp;&amp;</span>
+      (path === "/api/notifications/sms/status" || path === "/api/notifications/sms/incoming")) {
+    const { verifySmsWebhook } = <span class="cstat-no" title="statement not covered" >await import("../services/smsWebhookVerification.js");</span>
+<span class="cstat-no" title="statement not covered" >    if (!verifySmsWebhook(req, path.endsWith("/status") ? "status" : "incoming")) {</span>
+<span class="cstat-no" title="statement not covered" >      return res.status(403).json({ error: "Invalid SMS webhook signature" });</span>
+    }
+<span class="cstat-no" title="statement not covered" >    return next();</span>
+  }
+<span class="cstat-no" title="statement not covered" >  return enforceMaintenance(req, res, next);</span>
+  } catch {
+<span class="cstat-no" title="statement not covered" >    return res.status(503).json({ error: "Governance verification unavailable" });</span>
+  }
+};</pre></td></tr></table></pre>
+
+                <div class='push'></div><!-- for sticky footer -->
+            </div><!-- /wrapper -->
+            <div class='footer quiet pad2 space-top1 center small'>
+                Code coverage generated by
+                <a href="https://istanbul.js.org/" target="_blank" rel="noopener noreferrer">istanbul</a>
+                at 2026-11-06T23:45:15.697Z
+            </div>
+        <script src="../../prettify.js"></script>
+        <script>
+            window.onload = function () {
+                prettyPrint();
+            };
+        </script>
+        <script src="../../sorter.js"></script>
+        <script src="../../block-navigation.js"></script>
+    </body>
+</html>
+    

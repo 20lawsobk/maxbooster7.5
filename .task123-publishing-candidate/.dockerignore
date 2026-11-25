@@ -1,0 +1,218 @@
+# Version control
+.git
+.github
+.github/
+
+# IDEs and editors
+.vscode
+.idea
+
+# Workspace credentials and local-only network configuration
+**/.npmrc
+**/.env
+**/.env.*
+.cloudflared/
+dns-node/keys/
+
+# Caches and runtime environments
+.cache
+node_modules/.cache
+.next
+.pythonlibs
+.venv
+# Workspace-only Nix-backed Python environment; do not match nested dependencies.
+/venv/
+__pycache__
+.config/
+.replit
+
+# Agent / Replit platform state — .local/state alone can exceed 15 GB.
+# Listed with multiple patterns for belt-and-suspenders compatibility across
+# Docker versions and Replit's own repl-layer packaging tool.
+.local
+.local/
+.local/**
+.local/state
+.local/state/**
+
+# All npm packages — excluded entirely to keep the deployment layer small.
+# The build command installs only production dependencies fresh in the
+# deployment container. Pre-built dist/ artifacts skip the compile step.
+node_modules/
+.prepared-release/
+
+# Large desktop/mobile app binary artifacts (not needed in web server deployment)
+electron/
+electron-out/
+out/
+release/
+dist-installers/
+dist-portable/
+android/
+ios/
+
+# Rust build artifacts — exclude the entire target directory including the
+# compiled boosterstate binary. Replit's deployment layer push rejects ANY
+# binary (non-UTF-8) file with "invalid UTF-8". The binary cannot be committed
+# to git for the same reason, and compiling it during build only to have it
+# rejected at layer-push time wastes ~60s for nothing. The app runs gracefully
+# without the sidecar (start.sh has a built-in fallback).
+boosterstate/target/
+
+# Old/legacy project copies and documentation
+maxbooster7.5/
+maxbooster_veo_music/
+Max-Booster/
+Max Booster final documentation/
+AI training server/
+pocket dimension storage tech/
+built-in plugins dsp/
+
+# Archival PDIM capsules (hardware chip-flow checkpoints, Windows plugin build
+# output). These are workspace-local reference material only — nothing in
+# server/ or client/ reads them, and dist/pdim-restore.mjs never restores
+# them at boot, so shipping them would just re-introduce the exact bloat they
+# were packed to remove. Restore manually with scripts/restore-archive-capsule.sh.
+archive-capsules/
+
+# Development and CI files
+*.log
+npm-debug.log*
+logs/
+.DS_Store
+.nvmrc
+
+# TypeScript build info cache
+*.tsbuildinfo
+
+# Tests and test output
+test
+tests
+__tests__
+*.test.ts
+*.test.js
+*.spec.ts
+*.spec.js
+coverage/
+.nyc_output/
+playwright-report/
+test-results/
+test-results.xml
+junit.xml
+*.test.*
+*.spec.*
+
+# Documentation
+docs/
+design_guidelines.md
+*.md
+!replit.md
+
+# Screenshots, videos, and large media assets not needed at runtime
+client/public/screenshots
+client/public/videos
+generated-icon.png
+
+# Generated content (regenerated at runtime via PDIM)
+public/generated-content/
+
+# Development tooling and agent config
+# Keep the small runtime launch helpers below: start.sh invokes them inside the
+# published image before node_modules is restored and before the app can bind.
+scripts/*
+!scripts/
+!scripts/port-contract.sh
+!scripts/redis-supervisor.sh
+!scripts/build-boosterstate.sh
+!scripts/boosterstate-toolchain.nix
+!scripts/boot-stub-server.mjs
+!scripts/startup-health.mjs
+!scripts/check-port-contract.ts
+# Build-time sources for the required standalone retained-PDIM worker and the
+# server-bundled private-storage helper. Production executes only dist/*.mjs,
+# but both deployment build paths must be able to regenerate those artifacts.
+!scripts/retained-pdim-recovery-worker.ts
+!scripts/legacy-hybrid-recovery.ts
+!scripts/recovery-private-store.mjs
+.agents/
+attached_assets/
+
+# Capacitor / mobile configs (not needed in deployment container)
+capacitor.config.ts
+capacitor.config.json
+codemagic.yaml
+ecosystem.config.js
+watchdog.ps1
+install_watchdog.ps1
+
+# AI model training data (managed by MaxCore, not deployed here)
+ai_model/
+training/
+
+# Data and storage (runtime-created, not deployment artifacts)
+boostersheets_db/
+boosterstate-data/
+pocket-dimensions/
+data/
+uploads/
+
+# Hardware/chip-design flow (digital_gpu_core) — a separate EDA subsystem the
+# production Node/Python app never invokes (no yosys/openroad/magic/klayout
+# references anywhere in server/, shared/, or start.sh). 140MB of place/route
+# checkpoints, sim models, and flow scripts that only matter when the flow is
+# run interactively in the dev workspace.
+hardware/
+
+# Dev tooling output: typecheck/lint/autofix/production-readiness reports
+# written by scripts/ during local runs. Nothing at runtime reads this
+# directory (the admin "/moderation/reports" route and complianceService's
+# reportPath are DB-backed / logical paths, unrelated to this filesystem dir).
+reports/
+
+# Stale committed build output + accumulated local pocket-dimension runtime
+# state from an earlier maxcore/api-server run (last touched Aug 5). The
+# current maxcoreLocalSupervisor.ts reads external/maxcore/artifacts/api-server
+# (a separate, ~2KB path), never this top-level directory.
+artifacts/
+
+# Source trees are included in the repl layer so the SLOW PATH can do a full
+# build when pre-built artifacts are absent.  The FAST PATH detects dist/
+# artifacts and skips the compile step entirely, so including source here
+# does not slow down normal (fast-path) deployments.
+# Both paths delete the source tree immediately after their respective steps,
+# so source code is never present in the final run image.
+# The server reads this registry through fs at runtime. Keep the registry while
+# excluding shared TypeScript sources that are already compiled into dist/.
+shared/*
+!shared/social-platform-optimization.json
+
+# Static assets source (already compiled into dist/public by Vite pre-build)
+assets/
+
+# Pre-compressed static asset variants (gzip + brotli) — binary files that are
+# rejected by Replit's Repl-layer push with "invalid UTF-8". These are generated
+# at dev-time by Vite's vite-plugin-compression and excluded from git by .gitignore,
+# but they persist in the dev workspace between builds. The Node.js server serves
+# the uncompressed originals when the .gz/.br variants are absent. Mirrors the
+# existing .gitignore entries for dist/public/**/*.gz and dist/public/**/*.br.
+dist/public/**/*.gz
+dist/public/**/*.br
+
+# Python/miscellaneous
+# Root dependency manifests/locks must survive publishing build reentry.
+main.py
+cookies.txt
+.audit-wal/
+.capsule-temp/
+/.deployment-pack-state/
+storybook-static/
+*.backup
+
+# Build-time generated directories (created fresh by build.sh every deploy)
+# Excluding prevents stale workspace copies from polluting the repl layer.
+python_runtime/
+python_runtime/**
+services/
+services/**
+# .node_bin is the bootstrap executable: it must remain outside capsules
+# and be included in the deployment image.

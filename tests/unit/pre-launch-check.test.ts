@@ -27,6 +27,19 @@ describe("pre-launch gate helpers", () => {
     });
   });
 
+  it("selects NEON_PRIMARY_URL as the live project's database", () => {
+    expect(
+      selectDatabaseTarget({
+        NEON_PRIMARY_URL: "postgresql://primary:secret@neon.example/primary",
+        NEON_DATABASE_URL: "postgresql://app:secret@neon.example/app",
+        DATABASE_URL: "postgresql://managed:secret@managed.example/other",
+      }),
+    ).toEqual({
+      name: "NEON_PRIMARY_URL",
+      url: "postgresql://primary:secret@neon.example/primary",
+    });
+  });
+
   it("never selects a Neon secret over the disposable CI database", () => {
     expect(
       selectDatabaseTarget({

@@ -10,6 +10,7 @@ import {
   normalizeDashboardSocialPosts,
   readDashboardJson,
 } from "../../client/src/components/dashboard/dashboardDataContracts";
+import { hasPaidFeatureAccess } from "../../server/middleware/auth";
 
 const read = (path: string) =>
   readFileSync(resolve(process.cwd(), path), "utf8");
@@ -186,5 +187,37 @@ describe("Dashboard paid entitlement contract", () => {
     );
     expect(auth).toContain('code: "PAID_SUBSCRIPTION_REQUIRED"');
     expect(auth).toContain('upgradeUrl: "/pricing"');
+  });
+
+  it("uses owner-scoped MaxCore account analytics and skips hidden dashboard requests", () => {
+    const dashboard = read("client/src/pages/Dashboard.tsx");
+    const aiRoutes = read("server/routes/ai.ts");
+
+    expect(dashboard).toContain(
+      "enabled: hasPaidSubscription && !showSimplified && !showOnboarding",
+    );
+    expect(dashboard).toContain("meta: { silentError: true }");
+    expect(aiRoutes).toContain("accountAnalyticsService.insights(");
+    expect(aiRoutes).toContain("toDashboardInsightsEnvelope(insights)");
+    expect(aiRoutes).not.toContain("unifiedAIController?.generateInsights()");
+  });
+
+  it("uses the canonical admin and lifetime entitlement for next-action recommendations", () => {
+    const routes = read("server/routes.ts");
+    const routeStart = routes.indexOf('app.get("/api/dashboard/next-action"');
+    const routeEnd = routes.indexOf("\n  );", routeStart);
+    const nextActionRoute = routes.slice(routeStart, routeEnd);
+
+    expect(nextActionRoute).toContain("hasPaidFeatureAccess(req.user!)");
+    expect(nextActionRoute).not.toContain("subscriptionsTable");
+    expect(nextActionRoute).not.toContain("subResult.length");
+  });
+
+  it.each([
+    [{ role: "admin", subscriptionTier: "lifetime", subscriptionStatus: "active" }, true],
+    [{ role: "user", subscriptionTier: "lifetime", subscriptionStatus: "active" }, true],
+    [{ role: "user", subscriptionTier: "free", subscriptionStatus: "inactive" }, false],
+  ])("applies server paid access consistently for %o", (user, expected) => {
+    expect(hasPaidFeatureAccess(user)).toBe(expected);
   });
 });

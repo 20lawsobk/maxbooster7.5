@@ -34,23 +34,23 @@ const ENV_REQUIREMENTS: EnvRequirement[] = [
   // ── Critical ──────────────────────────────────────────────────────────────
   {
     name: "DATABASE_URL",
-    required: true,
-    category: "critical",
-    description: "PostgreSQL database connection string",
-    validator: (v) => v?.startsWith("postgres"),
-  },
-  {
-    name: "NEON_DATABASE_URL",
     required: false,
     category: "critical",
-    description: "Neon primary PostgreSQL URL (preferred over DATABASE_URL)",
+    description: "PostgreSQL compatibility database URL",
     validator: (v) => v?.startsWith("postgres"),
   },
   {
     name: "NEON_PRIMARY_URL",
     required: false,
     category: "critical",
-    description: "Neon primary URL alias",
+    description: "Primary Neon PostgreSQL URL (main application database)",
+    validator: (v) => v?.startsWith("postgres"),
+  },
+  {
+    name: "NEON_DATABASE_URL",
+    required: false,
+    category: "critical",
+    description: "Application Neon PostgreSQL URL fallback",
     validator: (v) => v?.startsWith("postgres"),
   },
   {
@@ -340,6 +340,12 @@ const ENV_REQUIREMENTS: EnvRequirement[] = [
     required: false,
     category: "storage",
     description: "Pocket Dimension auth key alias",
+  },
+  {
+    name: "Replit_storage_bucket_id",
+    required: false,
+    category: "storage",
+    description: "Private Replit App Storage bucket for durable PDIM",
   },
   {
     name: "REPLIT_BUCKET_ID",
@@ -723,33 +729,9 @@ const ENV_REQUIREMENTS: EnvRequirement[] = [
     description: "GitHub repo (owner/repo format)",
   },
 
-  // ── Distribution / LabelGrid ──────────────────────────────────────────────
-  {
-    name: "LABELGRID_API_URL",
-    required: false,
-    category: "distribution",
-    description: "LabelGrid API base URL",
-    validator: (v) => v?.startsWith("http"),
-  },
-  {
-    name: "LABELGRID_API_TOKEN",
-    required: false,
-    category: "distribution",
-    description: "LabelGrid API token scoped to the dev workspace URL",
-  },
-  {
-    name: "LABELGRID_API_TOKEN1",
-    required: false,
-    category: "distribution",
-    description: "LabelGrid API token scoped to the production URL",
-  },
-  {
-    name: "LABELGRID_WEBHOOK_URL",
-    required: false,
-    category: "distribution",
-    description: "LabelGrid webhook callback URL",
-    validator: (v) => v?.startsWith("http"),
-  },
+  // Too Lost is the active distribution provider. LabelGrid identifiers and
+  // readers remain for historical catalog migration, but its credentials are
+  // not a startup dependency and must not be reported as missing live config.
   {
     name: "TOOLOST_CLIENT_ID",
     required: false,
@@ -767,6 +749,12 @@ const ENV_REQUIREMENTS: EnvRequirement[] = [
     required: false,
     category: "distribution",
     description: "Too Lost sandbox OAuth client secret",
+  },
+  {
+    name: "TOOLOST_SANDBOX_SECRET",
+    required: false,
+    category: "distribution",
+    description: "Too Lost sandbox OAuth client secret (alternate name)",
   },
   {
     name: "TOOLOST_ENVIRONMENT",
@@ -847,6 +835,24 @@ export function validateEnvironment(
 
     valid++;
     logger.info(`   ✓ ${req.name}`);
+  }
+
+  const selectedDatabaseUrl =
+    process.env.NEON_PRIMARY_URL?.trim() ||
+    process.env.NEON_DATABASE_URL?.trim() ||
+    process.env.DATABASE_URL?.trim();
+  if (!selectedDatabaseUrl) {
+    errors.push(
+      "MISSING: NEON_PRIMARY_URL, NEON_DATABASE_URL, or DATABASE_URL - application PostgreSQL database URL",
+    );
+    missing++;
+    logger.warn("   ✗ application database URL - MISSING (required)");
+  } else if (!selectedDatabaseUrl.startsWith("postgres")) {
+    errors.push(
+      "INVALID: selected application database URL must use PostgreSQL",
+    );
+    invalid++;
+    logger.warn("   ✗ application database URL - INVALID format");
   }
 
   const isValid = errors?.length === 0;

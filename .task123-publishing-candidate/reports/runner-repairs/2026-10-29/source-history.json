@@ -1,0 +1,52 @@
+{
+  "recordedAt": "2026-10-29T23:01:22.996353+00:00",
+  "localBranch": "main",
+  "localHead": "5eb416a04021f66c9bfc8af93997ec9fe8a55e31",
+  "baselineMaster": "8a9b638c6c1ce1b46a19501ee4a48893497c2518",
+  "frozenMasterCommonSha256": "afd50ee1ca7c5f5f9391e2b81950478504b62a3af406b70767919082ae479757",
+  "immutableMasterHistory": "reports/test-verification/history/2026-10-29-8a9b638c-master",
+  "historicalCIHead": "d9d04498a02c25a1b6ce03306adc20727e9aa2d1",
+  "patches": [
+    {
+      "cohort": "node",
+      "patchPath": "node/source.patch",
+      "patchSha256": "cedbf0ea98adce00c23fc1603ea80fb6652c82ec07751fb00dc0ddbdad78949a",
+      "targetFiles": {
+        "scripts/testing/run-node-suites.py": "30733c63ca033859719f576df6277e7b88fd895bcbb5510b592c58db7431ec7e",
+        "tests/testing/test_catalog_snapshot_ownership.py": "1d366498a40f609f10f00dea4d615a69c3192f44e0897e23d4ad7fd1137a3d32",
+        "docs/testing/node-coverage-producer.md": "d63d3f0600ea1dec675bf831fefa5bb2ae4f29f186a6b2443ae6e6dfa301da15"
+      },
+      "scope": "Original outside candidate proof retained unchanged. Root reports application; these bytes do not replace fresh integrated tests/master."
+    },
+    {
+      "cohort": "python",
+      "patchPath": "python/source.patch",
+      "patchSha256": "3a3fa0cc6c3f6598e45e4f8d95b7acbb661b3280bea7d014749602ce1867de83",
+      "targetFiles": {
+        "scripts/testing/run-python-suites.py": "bd4e36f21886d1b6c81eba300ffc66892826842e1ffbfbf392dc66f28834e480",
+        "tests/testing/test_python_runner_scheduling.py": "e47e24cbf4eaf92675f3f632cceec832725085dd0a295e47a3b87ce52505a8dc"
+      },
+      "scope": "Original outside candidate proof retained unchanged. Root reports application; these bytes do not replace fresh integrated tests/master."
+    },
+    {
+      "cohort": "progress",
+      "patchPath": "progress/source.patch",
+      "patchSha256": "3b97a736c2660e673f3d3ca612fa4f5e8a6f5f7bcb38c3db54a66f5002e77fbb",
+      "targetFiles": {
+        "scripts/testing/report-progress.py": "ec0024fa83ea34aad9e03cb436438584ccb5b4c5854d5e876bf8ae13b2742cc7",
+        "tests/testing/test_report_progress.py": "5ade36db3ec3369ac4bcb1803730772a6327dae9005503bdc99a94240a29426e"
+      },
+      "scope": "Original outside candidate proof retained unchanged. Root reports application; these bytes do not replace fresh integrated tests/master."
+    },
+    {
+      "cohort": "http",
+      "patchPath": "http/source.patch",
+      "patchSha256": "76696d962bf300a7b2bad62e8552a070a3218e070d1f6e02c5885e8bf8d1bbfb",
+      "targetFiles": {
+        "tests/platform-acceptance-map.json": "98064ef08746b717d025c4934904aa3d6cf8a7f6c843abd1a0c15e4e44b303c4"
+      },
+      "scope": "Original outside candidate proof retained unchanged. Root reports application; these bytes do not replace fresh integrated tests/master."
+    }
+  ],
+  "productionReady": false
+}

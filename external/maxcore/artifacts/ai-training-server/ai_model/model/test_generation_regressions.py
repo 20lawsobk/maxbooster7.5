@@ -136,6 +136,58 @@ class AttentionShapeTests(unittest.TestCase):
 
 
 class GenerationContractTests(unittest.TestCase):
+    def test_live_awareness_serves_without_candidate_only_with_fresh_snapshot(self):
+        from ai_model.awareness import AwarenessUnavailable, bind
+        from ai_model.generation.live_serving import LiveServingModel
+        from ai_model.generation.plan import GenerationPlan, active_plan
+
+        agent = ScriptAgent(LiveServingModel())
+        request = ScriptRequest(
+            idea="A new independent music release",
+            platform="instagram",
+            goal="growth",
+            tone="warm",
+        )
+
+        # A trained candidate is unavailable in this isolated state. Without
+        # a request-bound fresh snapshot, the live-awareness serving mode must
+        # fail closed rather than claim it can generate.
+        plan_token = active_plan.set(GenerationPlan.from_request(vars(request), "text"))
+        try:
+            with self.assertNoLogs("script_agent", level="ERROR"):
+                with self.assertRaises(AwarenessUnavailable):
+                    agent.run(request)
+        finally:
+            active_plan.reset(plan_token)
+
+        # With a validated request-bound snapshot, the same server remains
+        # usable before a trained candidate exists, and accurately identifies
+        # the output as live-awareness composition.
+        snapshot = valid_awareness_snapshot()
+        with bind(snapshot):
+            plan_token = active_plan.set(GenerationPlan.from_request(vars(request), "text"))
+            try:
+                with self.assertNoLogs("script_agent", level="ERROR"):
+                    responses = [agent.run(request) for _ in range(2)]
+            finally:
+                active_plan.reset(plan_token)
+
+        self.assertEqual([response.source for response in responses],
+                         ["live_awareness", "live_awareness"])
+        self.assertEqual(responses[0], responses[1])
+        self.assertTrue(all(
+            self._meaningful(value)
+            for response in responses
+            for value in (response.hook, response.body, response.cta)
+        ))
+        self.assertIn(request.idea, responses[0].body)
+
+    @staticmethod
+    def _meaningful(value):
+        words = value.split()
+        unique = {word.casefold() for word in words}
+        return len(value) >= 10 and len(words) >= 3 and len(unique) >= len(words) * 0.3
+
     def test_released_word_vocab_is_not_encoded_as_untrained_bpe(self):
         legacy = SimpleTokenizer()
         expected = legacy.encode("music beat the song").ids

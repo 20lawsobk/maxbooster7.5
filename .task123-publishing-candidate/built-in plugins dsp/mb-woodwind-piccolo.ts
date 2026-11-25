@@ -1,0 +1,60 @@
+import type { PluginDefinition } from "../server/services/pluginHostService";
+
+const MbWoodwindPiccoloPlugin: PluginDefinition = {
+  id: "mb-woodwind-piccolo",
+  slug: "mb-woodwind-piccolo",
+  name: "MB Piccolo",
+  category: "instrument",
+  type: "woodwind" as any,
+  version: "1.0.0",
+  description: "Bright piercing piccolo flute",
+  author: "Max Booster",
+  grade: "A",
+  oscillators: [
+    { type: "sine", detune: 0, gain: 0.5 },
+    { type: "triangle", detune: 1200, gain: 0.3 },
+    { type: "noise", detune: 0, gain: 0.2 },
+  ],
+  envelope: { attack: 0.04, decay: 0.15, sustain: 0.85, release: 0.1 },
+  parameters: [
+    {
+      id: "brightness",
+      name: "Brightness",
+      type: "float",
+      defaultValue: 0.8,
+      minValue: 0,
+      maxValue: 1,
+      automatable: true,
+    },
+    {
+      id: "vibrato",
+      name: "Vibrato",
+      type: "float",
+      defaultValue: 0.3,
+      minValue: 0,
+      maxValue: 1,
+      automatable: true,
+    },
+    {
+      id: "air",
+      name: "Air",
+      type: "float",
+      defaultValue: 0.3,
+      minValue: 0,
+      maxValue: 1,
+      automatable: true,
+    },
+    {
+      id: "volume",
+      name: "Volume",
+      type: "float",
+      defaultValue: 0.7,
+      minValue: 0,
+      maxValue: 1,
+      automatable: true,
+    },
+  ],
+  defaultPreset: { brightness: 0.8, vibrato: 0.3, air: 0.3, volume: 0.7 },
+};
+
+export default MbWoodwindPiccoloPlugin;

@@ -46,7 +46,7 @@ describe("social work statistics: real PostgreSQL isolation", () => {
       });
     });
     postgres = spawn("postgres", ["-D", directory, "-h", "127.0.0.1",
-      "-k", directory, "-p", String(port)], { stdio: ["ignore", "ignore", "pipe"] });
+      "-c", "unix_socket_directories=", "-p", String(port)], { stdio: ["ignore", "ignore", "pipe"] });
     stopped = new Promise(resolve => postgres!.once("exit", () => resolve()));
     await new Promise<void>((resolve, reject) => {
       const timer = setTimeout(() => reject(new Error("Private PostgreSQL startup timed out")), 15000);

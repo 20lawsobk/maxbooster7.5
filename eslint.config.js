@@ -13,13 +13,20 @@ export default [
   {
     ignores: [
       "node_modules/**",
+      "**/node_modules/**",
       ".pythonlibs/**",
-      // Installed Python distributions contain third-party JS/terminfo,
-      // not application sources. Keep first-party subsystem sources in scope.
+      // Packaged runtimes, virtual environments, caches, and built bundles can
+      // contain third-party JS or binary data. They are validated by their
+      // owning dependency/runtime tests, not linted as first-party source.
+      "**/python_runtime/**",
       "python_runtime/**",
+      "**/.venv/**",
       "venv/**",
+      "**/venv/**",
+      "**/dist/**",
       "dist/**",
       "build/**",
+      "**/.cache/**",
       "coverage/**",
       "android/**",
       "ios/**",
@@ -43,6 +50,10 @@ export default [
       "client/public/**",
       "ReleasePackage/**",
       "reports/**",
+      // Historical script snapshots and isolated task copies are evidence, not
+      // executable source for the current app's lint gate.
+      "docs/archive/**",
+      ".task123-publishing-candidate/**",
     ],
   },
   js.configs.recommended,

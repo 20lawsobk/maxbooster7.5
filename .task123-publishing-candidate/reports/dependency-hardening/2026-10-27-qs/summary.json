@@ -1,0 +1,223 @@
+{
+  "recordedAt": "2026-10-27T22:22:33.679058+00:00",
+  "baselineCommit": "c06fbecdb32a5c3b76662f631604bfd9abac386b",
+  "scope": "qs6.16.1 advisory patch across3actualExpress/body-parser graphs plusguardedlegacy replay; dependency-level/ownedHTTPproof, notdeployedapplicationorlaunchreadiness",
+  "productionReady": false,
+  "advisory": "GHSA-6pq8-jhm2-2vcw",
+  "knownApplicationCommaSinkFound": false,
+  "changedFiles": [
+    "package.json",
+    "package-lock.json",
+    "pnpm-workspace.yaml",
+    "external/maxcore/pnpm-workspace.yaml",
+    "external/maxcore/pnpm-lock.yaml",
+    "external/pdim/pnpm-workspace.yaml",
+    "external/pdim/pnpm-lock.yaml",
+    "tools/legacy-security-update.json",
+    "tests/qs-security-contract.test.mjs"
+  ],
+  "sourceFilesSha256": {
+    "package.json": "4b922736b32dec3bff9f630b4482f88dc8f31e32cf39201812dc720be6254aa6",
+    "package-lock.json": "a58bbb3858639cdc236480decfccfc837e1d88d8637899835dba7b07839840d8",
+    "pnpm-workspace.yaml": "4061b234e8e63b773afa306675a11f24541d4cb20f054929209f78e2160ce10e",
+    "external/maxcore/pnpm-workspace.yaml": "0d9028dac393ced973f8e631ef1d875ca8008d88125dbffb8c72e7b843513377",
+    "external/maxcore/pnpm-lock.yaml": "2cb903ce8c9d9929de00d7678695ed8ca90d047b0dec1dbb9e6db6ad35ff75b2",
+    "external/pdim/pnpm-workspace.yaml": "256ad4dd753b1570c092f1e86e16eeaf6f72e40e6bd667d3d513a521bc72f4a4",
+    "external/pdim/pnpm-lock.yaml": "f7af3577ab6de0159f5cab9f0b61b5da3a6330ecb06d2c0829afa846ea7d3188",
+    "tools/legacy-security-update.json": "5585ffb05e5e2bec4b12a8ade00e02f5b45f2c8df136ab916349a0c69a42f911",
+    "tests/qs-security-contract.test.mjs": "917a3f3c8fdbcb598def8ee68e3d0ccc1abe8d19e6a71f5d0a70dce30019a64c"
+  },
+  "packageManagerInstallsDidNotChangeLocks": true,
+  "versions": {
+    "node": "v22.23.3",
+    "results": [
+      {
+        "scope": ".",
+        "expressResolvedQsVersion": "6.16.1",
+        "bodyParserResolvedQsVersion": "6.16.1",
+        "expressQsPath": "node_modules/qs/lib/index.js",
+        "bodyParserQsPath": "node_modules/qs/lib/index.js"
+      },
+      {
+        "scope": "external/maxcore/artifacts/api-server",
+        "expressResolvedQsVersion": "6.16.1",
+        "bodyParserResolvedQsVersion": "6.16.1",
+        "expressQsPath": "external/maxcore/node_modules/.pnpm/qs@6.16.1/node_modules/qs/lib/index.js",
+        "bodyParserQsPath": "external/maxcore/node_modules/.pnpm/qs@6.16.1/node_modules/qs/lib/index.js"
+      },
+      {
+        "scope": "external/pdim/artifacts/api-server",
+        "expressResolvedQsVersion": "6.16.1",
+        "bodyParserResolvedQsVersion": "6.16.1",
+        "expressQsPath": "external/pdim/node_modules/.pnpm/qs@6.16.1/node_modules/qs/lib/index.js",
+        "bodyParserQsPath": "external/pdim/node_modules/.pnpm/qs@6.16.1/node_modules/qs/lib/index.js"
+      }
+    ]
+  },
+  "cases": {
+    "before": {
+      "cases": 24,
+      "passed": 3,
+      "failed": 21,
+      "skipped": 0
+    },
+    "after": {
+      "cases": 52,
+      "passed": 52,
+      "failed": 0,
+      "skipped": 0
+    }
+  },
+  "newQsCases": 24,
+  "existingRegressionCases": 28,
+  "canonicalTestSourceBeforeAndAfterIdentical": true,
+  "auditObservations": {
+    "audit-dns-all": {
+      "exitCode": 0,
+      "vulnerabilities": {
+        "info": 0,
+        "low": 0,
+        "moderate": 0,
+        "high": 0,
+        "critical": 0,
+        "total": 0
+      },
+      "report": "reports/dependency-hardening/2026-10-27-qs/audit-dns-all.txt"
+    },
+    "audit-dns-prod": {
+      "exitCode": 0,
+      "vulnerabilities": {
+        "info": 0,
+        "low": 0,
+        "moderate": 0,
+        "high": 0,
+        "critical": 0,
+        "total": 0
+      },
+      "report": "reports/dependency-hardening/2026-10-27-qs/audit-dns-prod.txt"
+    },
+    "audit-maxcore-all": {
+      "exitCode": 1,
+      "vulnerabilities": {
+        "info": 0,
+        "low": 1,
+        "moderate": 0,
+        "high": 2,
+        "critical": 0
+      },
+      "report": "reports/dependency-hardening/2026-10-27-qs/audit-maxcore-all.txt"
+    },
+    "audit-maxcore-prod": {
+      "exitCode": 0,
+      "vulnerabilities": {
+        "info": 0,
+        "low": 0,
+        "moderate": 0,
+        "high": 0,
+        "critical": 0
+      },
+      "report": "reports/dependency-hardening/2026-10-27-qs/audit-maxcore-prod.txt"
+    },
+    "audit-pdim-all": {
+      "exitCode": 0,
+      "vulnerabilities": {
+        "info": 0,
+        "low": 0,
+        "moderate": 0,
+        "high": 0,
+        "critical": 0
+      },
+      "report": "reports/dependency-hardening/2026-10-27-qs/audit-pdim-all.txt"
+    },
+    "audit-pdim-prod": {
+      "exitCode": 0,
+      "vulnerabilities": {
+        "info": 0,
+        "low": 0,
+        "moderate": 0,
+        "high": 0,
+        "critical": 0
+      },
+      "report": "reports/dependency-hardening/2026-10-27-qs/audit-pdim-prod.txt"
+    },
+    "audit-root-all": {
+      "exitCode": 0,
+      "vulnerabilities": {
+        "info": 0,
+        "low": 0,
+        "moderate": 0,
+        "high": 0,
+        "critical": 0,
+        "total": 0
+      },
+      "report": "reports/dependency-hardening/2026-10-27-qs/audit-root-all.txt"
+    },
+    "audit-root-prod": {
+      "exitCode": 0,
+      "vulnerabilities": {
+        "info": 0,
+        "low": 0,
+        "moderate": 0,
+        "high": 0,
+        "critical": 0,
+        "total": 0
+      },
+      "report": "reports/dependency-hardening/2026-10-27-qs/audit-root-prod.txt"
+    },
+    "audit-tls-all": {
+      "exitCode": 0,
+      "vulnerabilities": {
+        "info": 0,
+        "low": 0,
+        "moderate": 0,
+        "high": 0,
+        "critical": 0,
+        "total": 0
+      },
+      "report": "reports/dependency-hardening/2026-10-27-qs/audit-tls-all.txt"
+    },
+    "audit-tls-prod": {
+      "exitCode": 0,
+      "vulnerabilities": {
+        "info": 0,
+        "low": 0,
+        "moderate": 0,
+        "high": 0,
+        "critical": 0,
+        "total": 0
+      },
+      "report": "reports/dependency-hardening/2026-10-27-qs/audit-tls-prod.txt"
+    }
+  },
+  "replayDrill": {
+    "baseline": "c06fbecdb32a5c3b76662f631604bfd9abac386b",
+    "originalEntries": 36,
+    "fixtureIsolated": true,
+    "status": "passed",
+    "updatedEntries": [
+      "maxbooster7.5/package.json",
+      "maxbooster7.5/package-lock.json",
+      "maxbooster7.5/pnpm-lock.yaml",
+      "maxbooster7.5/pnpm-workspace.yaml",
+      "maxbooster7.5/maxbooster7.5/package.json",
+      "maxbooster7.5/maxbooster7.5/package-lock.json",
+      "maxbooster7.5/maxbooster7.5/pnpm-lock.yaml",
+      "maxbooster7.5/maxbooster7.5/pnpm-workspace.yaml"
+    ],
+    "allCurrentChecksumsVerified": true,
+    "idempotent": true,
+    "customChangesRejectedAndPreserved": true,
+    "unrelatedFilePreserved": true,
+    "fixtureCleaned": true
+  },
+  "remainingAtThisQsSnapshot": [
+    "MaxCore development graph hasmarkdown-it14.3.2 low/highadvisories viaorval>typedoc andzod3.25.76 highadvisory viascripts>puppeteer-core>chromium-bidi. Production graph iszero. Noout-of-scopeforcedmajoroverridemade; rootisresearchingcompatiblefixes.",
+    "Freshintegratedmaster/capsulepreparationrequired afterthisdependencyinputchange."
+  ],
+  "priorRunnerFailuresPreserved": [
+    "after-tests-initial-proxy.xml",
+    "after-tests-initial-proxy.json",
+    "replay-drill-initial-buffer-limit.txt",
+    "replay-drill-initial-buffer-limit.json"
+  ]
+}

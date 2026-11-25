@@ -5,7 +5,7 @@ import math
 import re
 import unicodedata
 
-LICENSES = {"CC0-1.0", "CC-BY-4.0", "MIT", "Apache-2.0"}
+LICENSES = {"CC0-1.0", "CC-BY-4.0", "MIT", "Apache-2.0", "MAXCORE-INTERNAL-1.0"}
 LIVE_AWARENESS_TYPES = {
     "maxcore_live_awareness",
     "maxcore_live_awareness_observation",
@@ -58,6 +58,16 @@ def _valid_live_awareness_record(record):
     )
 
 
+def _valid_internal_record(record):
+    if (not isinstance(record, dict)
+            or record.get("provenance_type") not in {
+                "maxcore_owner_admin_output", "maxcore_simulated_choice",
+            }):
+        return False
+    from .rights_receipts import verify_training_record
+    return verify_training_record(record)
+
+
 def build_manifest(records, holdouts, *, smoke_only, allow_live_without_holdout=False):
     if not isinstance(holdouts, list) or any(not isinstance(t, str) for t in holdouts):
         raise ValueError("Explicit holdout text list required")
@@ -80,12 +90,13 @@ def build_manifest(records, holdouts, *, smoke_only, allow_live_without_holdout=
         if not isinstance(text, str) or not text.strip():
             raise ValueError("Empty or invalid corpus text")
         live_observation = _valid_live_awareness_record(record)
+        internal_record = _valid_internal_record(record)
         licensed_record = (
-            record.get("license") in LICENSES
+            record.get("license") in LICENSES - {"MAXCORE-INTERNAL-1.0"}
             and record.get("private") is False
             and bool(record.get("author"))
         )
-        if (not (live_observation or licensed_record)
+        if (not (live_observation or licensed_record or internal_record)
                 or not record.get("source")):
             raise ValueError("Record requires licensed-corpus metadata or explicit live-awareness provenance")
         if smoke_only and record.get("purpose") != "smoke-only":

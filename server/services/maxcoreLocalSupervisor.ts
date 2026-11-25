@@ -23,6 +23,11 @@ import { logger } from "../logger.js";
 import { computeWorkerSizing, computeHyperGpuSizing, type ComputeSizingResult } from "../computeSizing.js";
 import { isDevEnv } from "../lib/envHelpers.js";
 import { startNeonPostgresBridge } from "../lib/neonPostgresBridge.js";
+import {
+  MaxcoreCheckpointStorageError,
+  resolveMaxcoreCheckpointForStartup,
+  withMaxcoreCheckpointPath,
+} from "./maxcoreCheckpointStorage.js";
 
 let databaseBridge: Awaited<ReturnType<typeof startNeonPostgresBridge>> | null = null;
 
@@ -373,6 +378,25 @@ async function spawnChild(): Promise<void> {
   await ensureMaxcoreSchema(childDbUrl);
   if (shuttingDown || child) return;
 
+  // Legacy checkpoint mode consumes a pinned numerical-inference checkpoint.
+  // Restore it from App Storage and verify against model.release.json before
+  // any serving process starts. Live-awareness mode does not download weights.
+  const checkpointPath = await resolveMaxcoreCheckpointForStartup({
+    weightsDir: path.join(
+      MAXCORE_ROOT,
+      "artifacts",
+      "ai-training-server",
+      "ai_model",
+      "weights",
+    ),
+  });
+  if (shuttingDown || child) return;
+  if (checkpointPath) {
+    logger.info(
+      "[MaxCoreLocal] Pinned checkpoint restored and verified from App Storage.",
+    );
+  }
+
   const { port, modelApiPort } = config.maxcoreLocal;
   lastStartAt = Date.now();
 
@@ -406,7 +430,7 @@ async function spawnChild(): Promise<void> {
   child = spawn(production ? process.execPath : TSX_BIN, [production ? productionEntry : "src/index.ts"], {
     cwd: API_SERVER_DIR,
     env: {
-      ...process.env,
+      ...withMaxcoreCheckpointPath(process.env, checkpointPath),
       ...resourceEnv,
       NODE_ENV: production ? "production" : "development",
       MAXBOOSTER_EMBEDDED: "1",
@@ -443,6 +467,7 @@ async function spawnChild(): Promise<void> {
     // as a tree if the primary dies uncleanly (SIGKILL leaves orphans).
     detached: true,
   });
+  startupError = null;
 
   const prefixPipe = (data: Buffer) => {
     const text = data.toString().trimEnd();
@@ -451,13 +476,11 @@ async function spawnChild(): Promise<void> {
   child.stdout?.on("data", prefixPipe);
   child.stderr?.on("data", prefixPipe);
 
-  child.on("error", (err) => {
-    startupError = err.message;
-    logger.error(`[MaxCoreLocal] spawn error: ${err.message}`);
-  });
-
   const childPid = child.pid;
-  child.on("exit", (code, signal) => {
+  let childFinalized = false;
+  const finalizeChild = (code: number | null, signal: NodeJS.Signals | null) => {
+    if (childFinalized) return;
+    childFinalized = true;
     child = null;
     // The subsystem is gone — drop the cached readiness right away rather
     // than serving a stale `ready:true` for up to READY_TTL_MS.
@@ -488,7 +511,19 @@ async function spawnChild(): Promise<void> {
       void spawnChild();
     }, delay);
     restartTimer.unref();
+  };
+
+  child.on("error", (err) => {
+    const code = (err as NodeJS.ErrnoException).code;
+    const safeCode = code && /^[A-Z0-9_]{1,32}$/.test(code) ? code : "SPAWN_ERROR";
+    startupError = `MaxCore child failed to spawn (${safeCode})`;
+    logger.error(`[MaxCoreLocal] ${startupError}`);
   });
+  // `exit` handles normal termination promptly. `close` also handles spawn
+  // failures, which emit `error` and may never emit `exit`; the guard prevents
+  // both events from scheduling duplicate restarts.
+  child.once("exit", finalizeChild);
+  child.once("close", finalizeChild);
 }
 
 /** Install the nested MaxCore workspace on a clean checkout so the normal
@@ -562,6 +597,8 @@ export async function startMaxcoreLocal(): Promise<void> {
       if (!fs.existsSync(entry)) {
         startupError = "MaxCore production bundle is missing; run npm run build before starting";
         logger.error(`[MaxCoreLocal] ${startupError}`);
+        provisionAttempts++;
+        scheduleProvisionRetry(provisionBackoffMs());
         return;
       }
       workspaceWaitStartedAt = 0;
@@ -625,21 +662,59 @@ export async function startMaxcoreLocal(): Promise<void> {
     provisionAttempts = 0;
     startupError = null;
     await spawnChild();
+  } catch (err) {
+    if (shuttingDown) return;
+    const errorCode = err && typeof err === "object" && "code" in err
+      && typeof (err as NodeJS.ErrnoException).code === "string"
+      && /^[A-Z0-9_]{1,32}$/.test((err as NodeJS.ErrnoException).code!)
+      ? (err as NodeJS.ErrnoException).code!
+      : err instanceof Error ? err.name : "STARTUP_ERROR";
+    provisionAttempts++;
+    const delay = provisionBackoffMs();
+    const safeDetail = err instanceof MaxcoreCheckpointStorageError
+      ? `: ${err.message}`
+      : "";
+    startupError = `MaxCore startup attempt failed (${errorCode})${safeDetail}`;
+    logger.error(`[MaxCoreLocal] ${startupError} — retrying in ${delay}ms`);
+    scheduleProvisionRetry(delay);
   } finally {
     startInFlight = false;
   }
 }
 
-/** Ready = the Python-backed model service is actually healthy. The Node
- *  layer's /healthz answers even while Python is crash-looping, so probe
- *  /api/health (proxied to Python) and require both healthy status and the
- *  model-loaded flag. Python intentionally reports status=healthy while its
- *  process is alive but the checkpoint is still loading, so status alone is
- *  only child liveness, not model readiness. */
+/** Ready = the Python-backed serving contract is healthy. The Node layer's
+ *  /healthz answers even while Python is crash-looping, so require Python
+ *  health plus either a loaded certified checkpoint or an explicit,
+ *  snapshot-backed live-awareness generation release. Liveness alone is not
+ *  generation readiness. */
 export function isMaxcoreModelHealth(body: unknown): boolean {
   if (!body || typeof body !== "object") return false;
-  const health = body as { status?: unknown; model_loaded?: unknown };
-  return health.status === "healthy" && health.model_loaded === true;
+  const health = body as Record<string, unknown>;
+  const python = health.python && typeof health.python === "object"
+    ? health.python as Record<string, unknown> : health;
+  const node = health.node && typeof health.node === "object"
+    ? health.node as Record<string, unknown> : null;
+  const status = python.status ?? health.status;
+  const modelLoaded = python.model_loaded === true || health.model_loaded === true;
+  const generationReady = python.generation_ready === true || health.generation_ready === true;
+  const generationMode = python.generation_mode ?? health.generation_mode;
+  const liveAwareness = (python.live_awareness ?? health.live_awareness) as
+    | Record<string, unknown> | undefined;
+  const capabilityReady = modelLoaded || (
+    generationReady &&
+    generationMode === "live_awareness" &&
+    liveAwareness?.available === true &&
+    liveAwareness.live_awareness_serving === true
+  );
+  const aggregateReady = health.ready === true &&
+    python.reachable === true &&
+    node?.python_restarting === false &&
+    node?.circuit_breaker === "closed";
+
+  if (health.ready === true) {
+    return aggregateReady && generationReady && capabilityReady;
+  }
+  return status === "healthy" && generationReady && capabilityReady;
 }
 
 export async function checkMaxcoreLocalReady(): Promise<boolean> {
@@ -659,10 +734,9 @@ export async function checkMaxcoreLocalReady(): Promise<boolean> {
   lastReadyCheck = now;
   readyInFlight = (async () => {
     try {
-      // The supervised API server requires an explicit MaxCore service
-      // credential even for its proxied health endpoint. Reuse the normal
-      // generation authorization; never probe it anonymously or weaken its
-      // auth middleware just to satisfy the application's readiness gate.
+      // Probe the API server's full serving contract rather than its
+      // liveness-only Python health route. Reuse the normal generation
+      // authorization; do not weaken proxy authentication to satisfy readiness.
       const { getMaxcoreGenerationHeaders } = await import("./maxcoreConnector.js");
       const headers = getMaxcoreGenerationHeaders();
       if (!headers.Authorization) {
@@ -670,7 +744,7 @@ export async function checkMaxcoreLocalReady(): Promise<boolean> {
         return lastReady;
       }
       const r = await fetch(
-        `http://127.0.0.1:${config.maxcoreLocal.port}/api/health`,
+        `http://127.0.0.1:${config.maxcoreLocal.port}/api/system/readiness`,
         {
           headers,
           signal: AbortSignal.timeout(3_000),

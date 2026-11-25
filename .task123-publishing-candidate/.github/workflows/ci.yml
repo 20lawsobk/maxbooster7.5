@@ -1,0 +1,395 @@
+name: CI
+
+on:
+  push:
+    branches:
+      - main
+      - "release/**"
+  # Run the web/API release checks on stacked hardening PRs too; restricting
+  # pull_request to main leaves security fixes targeting a parent branch unchecked.
+  pull_request: {}
+
+# Cancel in-flight CI runs for the same ref when a newer commit arrives.
+# `pull_request` events use `head_ref`; `push` events use `ref`.
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.head_ref || github.ref }}
+  cancel-in-progress: true
+
+# Default to read-only token; individual jobs that need more must opt in.
+permissions:
+  contents: read
+
+jobs:
+  typecheck:
+    name: Type Check
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version-file: ".nvmrc"
+          cache: "npm"
+
+      - name: Install dependencies
+        run: npm ci --no-audit --no-fund --legacy-peer-deps
+
+      - name: Run TypeScript type check
+        run: npm run check
+
+  lint:
+    name: Lint
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version-file: ".nvmrc"
+          cache: "npm"
+
+      - name: Install dependencies
+        run: npm ci --no-audit --no-fund --legacy-peer-deps
+
+      - name: Run ESLint (collect warnings)
+        # Explicit glob paths — avoids scanning node_modules and generated
+        # directories, which is faster and prevents OOM on large runners.
+        # --max-warnings keeps the step green while informational; the hard
+        # gate below is the real enforcement point.
+        run: >
+          npx eslint
+          "server/**/*.ts"
+          "shared/**/*.ts"
+          "client/src/**/*.ts"
+          "client/src/**/*.tsx"
+          --max-warnings=50 || true
+
+      - name: ESLint hard gate (zero errors allowed)
+        # --quiet suppresses warnings, exits 1 only on rule-classified errors.
+        # Explicit paths mirror the step above for consistency.
+        run: >
+          npx eslint
+          "server/**/*.ts"
+          "shared/**/*.ts"
+          "client/src/**/*.ts"
+          "client/src/**/*.tsx"
+          --quiet
+
+  test:
+    name: Unit Tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version-file: ".nvmrc"
+          cache: "npm"
+
+      - name: Install dependencies
+        run: npm ci --no-audit --no-fund --legacy-peer-deps
+
+      - name: Prepare private PostgreSQL fixture binaries
+        run: |
+          if ! find /usr/lib/postgresql -path '*/bin/initdb' -type f -print -quit 2>/dev/null | grep -q .; then
+            sudo apt-get update
+            sudo apt-get install -y postgresql
+          fi
+          pg_bin="$(find /usr/lib/postgresql -path '*/bin/initdb' -type f -print -quit | xargs dirname)"
+          test -x "$pg_bin/postgres"
+          "$pg_bin/initdb" --version
+          echo "$pg_bin" >> "$GITHUB_PATH"
+
+      - name: Run unit tests
+        # Fixture suites launch private PostgreSQL processes as the runner user.
+        # A configured DATABASE_URL does not supply initdb/postgres binaries.
+        # Keep them separate from any provider or production database.
+        # The preceding step exposes the installed server binaries via PATH.
+        run: npm run test:ci
+        env:
+          NODE_ENV: test
+          SESSION_SECRET: ci-test-session-secret-minimum-32-chars-xxxx
+          DATABASE_URL: postgresql://postgres:postgres@localhost:5432/maxbooster_test
+
+      - name: Enforce coverage thresholds
+        # Runs vitest with --coverage so the thresholds defined in
+        # vitest.config.ts (statements/functions/lines ≥ 20%) are enforced.
+        # Kept as a separate step so a threshold breach does not swallow
+        # the test result upload that follows.
+        run: npx vitest run --coverage --config vitest.config.ts
+        env:
+          NODE_ENV: test
+          SESSION_SECRET: ci-test-session-secret-minimum-32-chars-xxxx
+          DATABASE_URL: postgresql://postgres:postgres@localhost:5432/maxbooster_test
+
+      - name: Upload coverage report
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: coverage-report
+          path: coverage/lcov.info
+          if-no-files-found: ignore
+          retention-days: 7
+
+      - name: Upload test results
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: test-results
+          path: test-results.xml
+          retention-days: 7
+
+  build:
+    name: Build Verification
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version-file: ".nvmrc"
+          cache: "npm"
+
+      - name: Install dependencies
+        run: npm ci --no-audit --no-fund --legacy-peer-deps
+
+      - name: Install capsule codec
+        run: sudo apt-get update && sudo apt-get install -y zstd
+
+      - name: Reconcile independent runtime dependencies
+        run: |
+          npm exec --yes --package=pnpm@10.26.1 -- node scripts/reconcile-nested-dependencies.mjs --apply --online
+          npm ci --prefix dns-os --ignore-scripts --no-audit --no-fund
+          npm ci --prefix tls-proxy --ignore-scripts --no-audit --no-fund
+
+      - name: Test isolated deployment contracts
+        run: env -i PATH="$PATH" node --test tests/deployment-contracts.cjs tests/deployment-remainder-contract.test.mjs
+
+      - name: Build release capsules through the production npm launcher
+        # Verify the public npm build entrypoint, not only its inner script.
+        run: npm run build
+        env:
+          NODE_ENV: production
+          DEPLOY_PACK: "1"
+
+      - name: Restore release capsules with the shipped runtime
+        run: .node_bin/node dist/pdim-restore.mjs all
+
+      - name: Validate source and artifact hashes after restore
+        # Fail closed on stale source/build identities before shipping.
+        run: |
+          .node_bin/node --input-type=module -e '
+            import { validateBuild } from "./scripts/start-production.mjs";
+            validateBuild(process.cwd());
+            console.log("Production source/artifact identity verified");
+          '
+
+      - name: Verify build output
+        run: |
+          set -euo pipefail
+          .node_bin/node scripts/verify-runtime-artifacts.mjs capsules
+          .node_bin/node scripts/verify-runtime-artifacts.mjs restored
+          .node_bin/node scripts/verify-runtime-artifacts.mjs dependencies
+          test -x .node_bin/node
+          test -x bin/boosterstate
+          test -f dist/gateway.mjs
+          test -f dist/compute-sizing.mjs
+          python_runtime/bin/python3 -c 'import numpy, PIL, scipy, fastapi, uvicorn, pydantic'
+          echo "=== Build Outputs ==="
+          ls -lh dist/public/ 2>/dev/null || echo "No dist/public found"
+          ls -lh dist/*.mjs 2>/dev/null || echo "No dist MJS files found"
+          echo "=== Checking index.html ==="
+          test -f dist/public/index.html
+          echo "=== Checking server bundle ==="
+          test -f dist/index.mjs
+          echo "=== Checking cluster bundle ==="
+          test -f dist/cluster.mjs
+
+      - name: Upload build artifacts (for inspection)
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: build-dist
+          path: |
+            dist/public/index.html
+            dist/index.mjs
+            dist/cluster.mjs
+          if-no-files-found: error
+          retention-days: 3
+
+  security:
+    name: Security Audit
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    # NOTE: this job IS a hard gate — the parsing step below exits 1 on
+    # high/critical findings. Do not re-add `continue-on-error: true`.
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version-file: ".nvmrc"
+          cache: "npm"
+
+      - name: Install dependencies
+        run: npm ci --no-audit --no-fund --legacy-peer-deps
+
+      - name: Run npm audit (high severity and above)
+        # `npm audit` returns non-zero when vulns exist; capture JSON either way
+        # and let the next step decide whether to fail.
+        run: npm audit --audit-level=high --json > audit-report.json || true
+
+      - name: Parse and display audit results
+        run: |
+          node -e "
+            const fs = require('fs');
+            const report = JSON.parse(fs.readFileSync('audit-report.json', 'utf8'));
+            const vulns = report.metadata?.vulnerabilities ?? {};
+            const total = Object.values(vulns).reduce((a, b) => a + b, 0);
+            console.log('== npm audit summary ==');
+            Object.entries(vulns).forEach(([sev, count]) => {
+              if (count > 0) console.log(\`  \${sev}: \${count}\`);
+            });
+            const highPlus = (vulns.high ?? 0) + (vulns.critical ?? 0);
+            if (highPlus > 0) {
+              console.error(\`❌ \${highPlus} high/critical vulnerabilities found\`);
+              process.exit(1);
+            } else {
+              console.log('✅ No high/critical vulnerabilities');
+            }
+          "
+
+      - name: Upload audit report
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: npm-audit-report
+          path: audit-report.json
+          retention-days: 7
+
+  test-integration:
+    name: Integration Tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: maxbooster_test
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 5432:5432
+
+    env:
+      NODE_ENV: test
+      DATABASE_URL: postgresql://postgres:postgres@localhost:5432/maxbooster_test
+      SESSION_SECRET: ci-integration-session-secret-minimum-32-chars-xxxx
+      STRIPE_SECRET_KEY: sk_test_placeholder_for_ci_only_not_real
+      PORT: 5001
+      CI: "true"
+      TEST_BASE_URL: http://localhost:5001
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version-file: ".nvmrc"
+          cache: "npm"
+
+      - name: Install dependencies
+        run: npm ci --no-audit --no-fund --legacy-peer-deps
+
+      - name: Push database schema
+        run: npx drizzle-kit push --force
+        env:
+          DATABASE_URL: postgresql://postgres:postgres@localhost:5432/maxbooster_test
+
+      - name: Start server in background
+        run: |
+          npx tsx server/index.ts &
+          echo $! > /tmp/server.pid
+          echo "Server started with PID $(cat /tmp/server.pid)"
+
+      - name: Wait for server to be ready
+        run: |
+          echo "Waiting for server on port 5001..."
+          for i in $(seq 1 30); do
+            if curl -sf http://localhost:5001/health > /dev/null 2>&1; then
+              echo "✅ Server is ready after ${i}s"
+              break
+            fi
+            if [ "$i" -eq 30 ]; then
+              echo "❌ Server did not start within 30s"
+              cat /tmp/server.pid | xargs kill 2>/dev/null || true
+              exit 1
+            fi
+            sleep 1
+          done
+
+      - name: Run integration tests (health + auth guards)
+        run: npm run test:integration:ci
+
+      - name: Stop server
+        if: always()
+        run: |
+          if [ -f /tmp/server.pid ]; then
+            kill $(cat /tmp/server.pid) 2>/dev/null || true
+          fi
+
+      - name: Upload integration test results
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: integration-test-results
+          path: test-results-integration.xml
+          retention-days: 7
+
+  ci-summary:
+    name: CI Summary
+    needs: [typecheck, lint, test, build, security, test-integration]
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    if: always()
+    steps:
+      - name: Summary
+        run: |
+          echo "## CI Summary" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "| Job | Status |" >> $GITHUB_STEP_SUMMARY
+          echo "|-----|--------|" >> $GITHUB_STEP_SUMMARY
+          echo "| Type Check | ${{ needs.typecheck.result }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Lint | ${{ needs.lint.result }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Unit Tests | ${{ needs.test.result }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Integration Tests | ${{ needs.test-integration.result }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Build | ${{ needs.build.result }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Security Audit | ${{ needs.security.result }} |" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          if [[ "${{ needs.typecheck.result }}" == "success" && "${{ needs.lint.result }}" == "success" && "${{ needs.test.result }}" == "success" && "${{ needs.test-integration.result }}" == "success" && "${{ needs.build.result }}" == "success" && "${{ needs.security.result }}" == "success" ]]; then
+            echo "✅ All checks passed" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "❌ One or more checks failed" >> $GITHUB_STEP_SUMMARY
+            exit 1
+          fi

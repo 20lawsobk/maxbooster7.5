@@ -366,7 +366,7 @@ router.post("/generate-pitch", async (req, res) => {
       text?: string;
       content?: string;
       output?: string;
-    }>("/generate/text", { ...awareness, prompt, maxTokens: 300 });
+    }>("/generate/text", { ...awareness, prompt, maxTokens: 300 }, req.user!.id);
     const pitchBody =
       generated?.text ?? generated?.content ?? generated?.output ?? "";
 

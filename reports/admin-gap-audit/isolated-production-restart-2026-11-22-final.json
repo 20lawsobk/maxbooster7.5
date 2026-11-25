@@ -1,0 +1,305 @@
+{
+  "applicationProcessAndRawListenersPassedEveryCycle": true,
+  "applicationStartupAndConfiguredPortsPassedEveryCycle": false,
+  "artifactIntegrityPassedEveryCycle": true,
+  "buildContractSha256": "97ad9a7aed424322955c9a383c638e5c6baa2483d3c1c92cec56a8f16ad2f757",
+  "buildIntegrityGatePreserved": true,
+  "capturedAt": "2026-11-22T16:02:26.512832+00:00",
+  "cycles": [
+    {
+      "cycle": 1,
+      "exitCode": 0,
+      "publicAssetState": {
+        "added": [],
+        "hashMismatches": [],
+        "missing": []
+      },
+      "readiness": {
+        "applicationAvailability": {
+          "boundedReadLoad": {
+            "concurrency": 8,
+            "p95_ms": 7.48,
+            "p99_ms": 13.95,
+            "read_p95_limit_ms": 800,
+            "read_p99_limit_ms": 1500,
+            "requests": 96,
+            "scope": "isolated compiled application homepage/health reads; not business/inference or worldwide capacity",
+            "unexpected_responses": 0
+          },
+          "configuredPortsAfterLoad": {
+            "count": 12,
+            "healthChecks": [
+              {
+                "name": "web application",
+                "status": 503
+              },
+              {
+                "name": "DNS API",
+                "status": 200
+              },
+              {
+                "name": "local DNS health",
+                "status": 200
+              },
+              {
+                "name": "MaxCore diffusion gateway",
+                "status": 200
+              },
+              {
+                "name": "MaxCore API",
+                "status": 200
+              },
+              {
+                "name": "MaxCore model API",
+                "status": 503
+              },
+              {
+                "name": "MaxCore model health",
+                "status": 200
+              },
+              {
+                "name": "MaxCore proxy sidecar",
+                "status": 200
+              }
+            ],
+            "healthReady": false,
+            "ready": true,
+            "tcpListeners": 12,
+            "udpListeners": 2
+          },
+          "configuredPortsAtLiveness": {
+            "count": 12,
+            "healthChecks": [
+              {
+                "name": "web application",
+                "status": 503
+              },
+              {
+                "name": "DNS API",
+                "status": 200
+              },
+              {
+                "name": "local DNS health",
+                "status": 200
+              },
+              {
+                "name": "MaxCore diffusion gateway",
+                "status": 200
+              },
+              {
+                "name": "MaxCore API",
+                "status": 200
+              },
+              {
+                "name": "MaxCore model API",
+                "status": 503
+              },
+              {
+                "name": "MaxCore model health",
+                "status": 200
+              },
+              {
+                "name": "MaxCore proxy sidecar",
+                "status": 200
+              }
+            ],
+            "healthReady": false,
+            "ready": true,
+            "tcpListeners": 12,
+            "udpListeners": 2
+          },
+          "healthStatus": 200,
+          "homepageStatus": 200,
+          "portCheckFailures": [],
+          "readinessFailureClass": "fresh_snapshot_missing",
+          "readinessStatus": 503,
+          "startCommandStillWaitingForFullReadiness": true
+        },
+        "cycle": 1,
+        "httpStatus": 503,
+        "overallStatus": "degraded",
+        "shutdown": {
+          "forcedKill": false,
+          "portsReleased": true,
+          "processExitCode": 0,
+          "signalRequested": "SIGTERM"
+        },
+        "subsystems": [
+          {
+            "failureClass": "other",
+            "name": "routes",
+            "status": "degraded"
+          }
+        ],
+        "topLevelFailureClass": null,
+        "unifiedAwareness": {
+          "collectorRunning": false,
+          "configuredSourceCount": null,
+          "failureClass": "fresh_snapshot_missing",
+          "ingestOwner": false,
+          "ready": false,
+          "snapshotPresent": false,
+          "sourceHealthStatusCounts": {},
+          "status": null
+        }
+      },
+      "startupFailureClass": null
+    },
+    {
+      "cycle": 2,
+      "exitCode": 0,
+      "publicAssetState": {
+        "added": [],
+        "hashMismatches": [],
+        "missing": []
+      },
+      "readiness": {
+        "applicationAvailability": {
+          "boundedReadLoad": {
+            "concurrency": 8,
+            "p95_ms": 9.67,
+            "p99_ms": 14.65,
+            "read_p95_limit_ms": 800,
+            "read_p99_limit_ms": 1500,
+            "requests": 96,
+            "scope": "isolated compiled application homepage/health reads; not business/inference or worldwide capacity",
+            "unexpected_responses": 0
+          },
+          "configuredPortsAfterLoad": {
+            "count": 12,
+            "healthChecks": [
+              {
+                "name": "web application",
+                "status": 503
+              },
+              {
+                "name": "DNS API",
+                "status": 200
+              },
+              {
+                "name": "local DNS health",
+                "status": 200
+              },
+              {
+                "name": "MaxCore diffusion gateway",
+                "status": 200
+              },
+              {
+                "name": "MaxCore API",
+                "status": 200
+              },
+              {
+                "name": "MaxCore model API",
+                "status": 503
+              },
+              {
+                "name": "MaxCore model health",
+                "status": 200
+              },
+              {
+                "name": "MaxCore proxy sidecar",
+                "status": 200
+              }
+            ],
+            "healthReady": false,
+            "ready": true,
+            "tcpListeners": 12,
+            "udpListeners": 2
+          },
+          "configuredPortsAtLiveness": {
+            "count": 12,
+            "healthChecks": [
+              {
+                "name": "web application",
+                "status": 503
+              },
+              {
+                "name": "DNS API",
+                "status": 200
+              },
+              {
+                "name": "local DNS health",
+                "status": 200
+              },
+              {
+                "name": "MaxCore diffusion gateway",
+                "status": 200
+              },
+              {
+                "name": "MaxCore API",
+                "status": 200
+              },
+              {
+                "name": "MaxCore model API",
+                "status": 503
+              },
+              {
+                "name": "MaxCore model health",
+                "status": 200
+              },
+              {
+                "name": "MaxCore proxy sidecar",
+                "status": 200
+              }
+            ],
+            "healthReady": false,
+            "ready": true,
+            "tcpListeners": 12,
+            "udpListeners": 2
+          },
+          "healthStatus": 200,
+          "homepageStatus": 200,
+          "portCheckFailures": [],
+          "readinessFailureClass": "fresh_snapshot_missing",
+          "readinessStatus": 503,
+          "startCommandStillWaitingForFullReadiness": true
+        },
+        "cycle": 2,
+        "httpStatus": 503,
+        "overallStatus": "degraded",
+        "shutdown": {
+          "forcedKill": false,
+          "portsReleased": true,
+          "processExitCode": 0,
+          "signalRequested": "SIGTERM"
+        },
+        "subsystems": [
+          {
+            "failureClass": "other",
+            "name": "routes",
+            "status": "degraded"
+          }
+        ],
+        "topLevelFailureClass": null,
+        "unifiedAwareness": {
+          "collectorRunning": false,
+          "configuredSourceCount": null,
+          "failureClass": "fresh_snapshot_missing",
+          "ingestOwner": false,
+          "ready": false,
+          "snapshotPresent": false,
+          "sourceHealthStatusCounts": {},
+          "status": null
+        }
+      },
+      "startupFailureClass": null
+    }
+  ],
+  "deploymentAssetPhase": {
+    "exitCode": 0,
+    "passed": true
+  },
+  "disposableDnsSchemaMigration": {
+    "exitCode": 0,
+    "passed": true,
+    "schema": "dns_os"
+  },
+  "networkNamespaceIsolated": true,
+  "readinessGatePreserved": true,
+  "readinessPassedEveryCycle": false,
+  "scope": "Disposable PostgreSQL and production artifact copy; application external TCP/TLS and UDP denied",
+  "shutdownCompletedEveryCycle": true,
+  "sourceRevision": "abc79dad3dfdf936f5669585ee1336785632dab2",
+  "startCommandCompletedBeforeTestShutdownEveryCycle": false,
+  "status": "degraded"
+}

@@ -1,0 +1,70 @@
+TAP version 13
+# Subtest: production build aliases do not invoke missing fixers or prune the workspace
+ok 1 - production build aliases do not invoke missing fixers or prune the workspace
+  ---
+  duration_ms: 1.342215
+  type: 'test'
+  ...
+# Subtest: release CI preserves PostgreSQL fixtures, builds through npm, and validates restored hashes
+ok 2 - release CI preserves PostgreSQL fixtures, builds through npm, and validates restored hashes
+  ---
+  duration_ms: 0.533926
+  type: 'test'
+  ...
+# Subtest: a late build failure invalidates its completion marker
+ok 3 - a late build failure invalidates its completion marker
+  ---
+  duration_ms: 2.051274
+  type: 'test'
+  ...
+# Subtest: Python provisioning fails closed without deleting the existing runtime
+ok 4 - Python provisioning fails closed without deleting the existing runtime
+  ---
+  duration_ms: 42.911129
+  type: 'test'
+  ...
+# Subtest: DNS shutdown immediately signals its owned process group and cancels restart
+ok 5 - DNS shutdown immediately signals its owned process group and cancels restart
+  ---
+  duration_ms: 2.999304
+  type: 'test'
+  ...
+# Subtest: DNS production startup uses a compiled entry, not tsx
+ok 6 - DNS production startup uses a compiled entry, not tsx
+  ---
+  duration_ms: 0.567947
+  type: 'test'
+  ...
+# Subtest: embedded production MaxCore has a compiled entry and excludes the dashboard
+ok 7 - embedded production MaxCore has a compiled entry and excludes the dashboard
+  ---
+  duration_ms: 0.359522
+  type: 'test'
+  ...
+# Subtest: production startup rejects missing, altered and stale build output
+ok 8 - production startup rejects missing, altered and stale build output
+  ---
+  duration_ms: 10.502591
+  type: 'test'
+  ...
+# Subtest: build input identity ignores nested dependency caches but tracks imported source
+ok 9 - build input identity ignores nested dependency caches but tracks imported source
+  ---
+  duration_ms: 1.712152
+  type: 'test'
+  ...
+# Subtest: startup sidecar reuse probes the configured health listener
+ok 10 - startup sidecar reuse probes the configured health listener
+  ---
+  duration_ms: 145.022828
+  type: 'test'
+  ...
+1..10
+# tests 10
+# suites 0
+# pass 10
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 347.188029

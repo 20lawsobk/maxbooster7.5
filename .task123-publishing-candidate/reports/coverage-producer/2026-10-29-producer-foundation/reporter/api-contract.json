@@ -1,0 +1,23 @@
+{
+  "package": "vitest",
+  "version": "4.1.12",
+  "publicApi": [
+    "Reporter.onInit(Vitest)",
+    "Reporter.onTestRunStart(ReadonlyArray<TestSpecification>)",
+    "Reporter.onTestRunEnd(ReadonlyArray<TestModule>, ReadonlyArray<SerializedError>, TestRunEndReason)",
+    "TestModule.moduleId",
+    "TestModule.state()",
+    "TestModule.errors()",
+    "TestModule.children.allTests()",
+    "TestCase.result()"
+  ],
+  "definitions": {
+    "path": "node_modules/vitest/dist/chunks/reporters.d.DtoKVV2s.d.ts",
+    "sha256": "7fa6fdc6eeeb3850e6b3166836f8c9199594c4f4bed3cee02cac0ca33d71894d",
+    "reporterDeclarationLine": 1041,
+    "onTestRunEndLine": 1061,
+    "testCollectionAllTestsLine": 221
+  },
+  "observedReasonCaveat": "The installed test-run-end reason can remain passed when unhandledErrors is nonempty; consumers must gate unhandledErrorCount independently.",
+  "result": "11 actual installed Vitest lifecycle cases passed, no skipped framework cases, owned cleanup zero live children; repeat mode executes two consecutive commands with coverage cleaning disabled."
+}

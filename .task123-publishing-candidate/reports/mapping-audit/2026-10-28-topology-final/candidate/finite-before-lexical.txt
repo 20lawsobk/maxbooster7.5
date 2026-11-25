@@ -1,0 +1,415 @@
+TAP version 13
+# Subtest: actual Fan Hub declarations produce GET/POST consent/unsubscribe routes
+ok 1 - actual Fan Hub declarations produce GET/POST consent/unsubscribe routes
+  ---
+  duration_ms: 41.102974
+  type: 'test'
+  ...
+# Subtest: const named literal arrays and repeated template variables retain correlation
+ok 2 - const named literal arrays and repeated template variables retain correlation
+  ---
+  duration_ms: 0.885545
+  type: 'test'
+  ...
+# Subtest: independent nested finite loops expand within a fixed bound
+ok 3 - independent nested finite loops expand within a fixed bound
+  ---
+  duration_ms: 0.431471
+  type: 'test'
+  ...
+# Subtest: unsupported runtime array stays unresolved
+ok 4 - unsupported runtime array stays unresolved
+  ---
+  duration_ms: 0.336978
+  type: 'test'
+  ...
+# Subtest: unsupported let loop binding stays unresolved
+ok 5 - unsupported let loop binding stays unresolved
+  ---
+  duration_ms: 0.227483
+  type: 'test'
+  ...
+# Subtest: unsupported mutated named array stays unresolved
+ok 6 - unsupported mutated named array stays unresolved
+  ---
+  duration_ms: 0.416278
+  type: 'test'
+  ...
+# Subtest: unsupported aliased named array stays unresolved
+ok 7 - unsupported aliased named array stays unresolved
+  ---
+  duration_ms: 0.307684
+  type: 'test'
+  ...
+# Subtest: unsupported shadowed local constant stays unresolved
+ok 8 - unsupported shadowed local constant stays unresolved
+  ---
+  duration_ms: 0.42433
+  type: 'test'
+  ...
+# Subtest: unsupported shadowed parameter stays unresolved
+ok 9 - unsupported shadowed parameter stays unresolved
+  ---
+  duration_ms: 0.627015
+  type: 'test'
+  ...
+# Subtest: unsupported shadowed catch binding stays unresolved
+ok 10 - unsupported shadowed catch binding stays unresolved
+  ---
+  duration_ms: 0.460294
+  type: 'test'
+  ...
+# Subtest: unsupported deferred closure stays unresolved
+ok 11 - unsupported deferred closure stays unresolved
+  ---
+  duration_ms: 0.244368
+  type: 'test'
+  ...
+# Subtest: unsupported reassignment stays unresolved
+ok 12 - unsupported reassignment stays unresolved
+  ---
+  duration_ms: 0.19903
+  type: 'test'
+  ...
+# Subtest: unsupported runtime interpolation stays unresolved
+ok 13 - unsupported runtime interpolation stays unresolved
+  ---
+  duration_ms: 0.143637
+  type: 'test'
+  ...
+# Subtest: unsupported unknown interpolation stays unresolved
+ok 14 - unsupported unknown interpolation stays unresolved
+  ---
+  duration_ms: 1.41227
+  type: 'test'
+  ...
+# Subtest: unsupported empty finite array stays unresolved
+ok 15 - unsupported empty finite array stays unresolved
+  ---
+  duration_ms: 0.196206
+  type: 'test'
+  ...
+# Subtest: unsupported spread element stays unresolved
+ok 16 - unsupported spread element stays unresolved
+  ---
+  duration_ms: 0.258049
+  type: 'test'
+  ...
+# Subtest: large finite products stay unresolved instead of truncating paths
+ok 17 - large finite products stay unresolved instead of truncating paths
+  ---
+  duration_ms: 0.544771
+  type: 'test'
+  ...
+# Subtest: excessive path lengths stay unresolved
+ok 18 - excessive path lengths stay unresolved
+  ---
+  duration_ms: 0.209105
+  type: 'test'
+  ...
+# Subtest: unsupported lexical classic for binding stays unresolved
+not ok 19 - unsupported lexical classic for binding stays unresolved
+  ---
+  duration_ms: 1.801597
+  type: 'test'
+  location: '/workspace/onboarding-results/topology-candidate/tests/finite-route-paths.before.test.mjs:66:4'
+  failureType: 'testCodeFailure'
+  error: |-
+    Expected values to be strictly equal:
+    + actual - expected
+    
+    + [
+    +   '/outer'
+    + ]
+    - null
+    
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected: ~
+  actual:
+    0: '/outer'
+  operator: 'strictEqual'
+  stack: |-
+    TestContext.<anonymous> (file:///workspace/onboarding-results/topology-candidate/tests/finite-route-paths.before.test.mjs:66:70)
+    Test.runInAsyncScope (node:async_hooks:214:14)
+    Test.run (node:internal/test_runner/test:1047:25)
+    Test.processPendingSubtests (node:internal/test_runner/test:744:18)
+    Test.postRun (node:internal/test_runner/test:1173:19)
+    Test.run (node:internal/test_runner/test:1101:12)
+    async Test.processPendingSubtests (node:internal/test_runner/test:744:7)
+  ...
+# Subtest: unsupported lexical for-in binding stays unresolved
+not ok 20 - unsupported lexical for-in binding stays unresolved
+  ---
+  duration_ms: 0.55033
+  type: 'test'
+  location: '/workspace/onboarding-results/topology-candidate/tests/finite-route-paths.before.test.mjs:66:4'
+  failureType: 'testCodeFailure'
+  error: |-
+    Expected values to be strictly equal:
+    + actual - expected
+    
+    + [
+    +   '/outer'
+    + ]
+    - null
+    
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected: ~
+  actual:
+    0: '/outer'
+  operator: 'strictEqual'
+  stack: |-
+    TestContext.<anonymous> (file:///workspace/onboarding-results/topology-candidate/tests/finite-route-paths.before.test.mjs:66:70)
+    Test.runInAsyncScope (node:async_hooks:214:14)
+    Test.run (node:internal/test_runner/test:1047:25)
+    Test.processPendingSubtests (node:internal/test_runner/test:744:18)
+    Test.postRun (node:internal/test_runner/test:1173:19)
+    Test.run (node:internal/test_runner/test:1101:12)
+    async Test.processPendingSubtests (node:internal/test_runner/test:744:7)
+  ...
+# Subtest: unsupported lexical switch-case binding stays unresolved
+not ok 21 - unsupported lexical switch-case binding stays unresolved
+  ---
+  duration_ms: 0.836632
+  type: 'test'
+  location: '/workspace/onboarding-results/topology-candidate/tests/finite-route-paths.before.test.mjs:66:4'
+  failureType: 'testCodeFailure'
+  error: |-
+    Expected values to be strictly equal:
+    + actual - expected
+    
+    + [
+    +   '/outer'
+    + ]
+    - null
+    
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected: ~
+  actual:
+    0: '/outer'
+  operator: 'strictEqual'
+  stack: |-
+    TestContext.<anonymous> (file:///workspace/onboarding-results/topology-candidate/tests/finite-route-paths.before.test.mjs:66:70)
+    Test.runInAsyncScope (node:async_hooks:214:14)
+    Test.run (node:internal/test_runner/test:1047:25)
+    Test.processPendingSubtests (node:internal/test_runner/test:744:18)
+    Test.postRun (node:internal/test_runner/test:1173:19)
+    Test.run (node:internal/test_runner/test:1101:12)
+    async Test.processPendingSubtests (node:internal/test_runner/test:744:7)
+  ...
+# Subtest: unsupported lexical enum binding stays unresolved
+not ok 22 - unsupported lexical enum binding stays unresolved
+  ---
+  duration_ms: 0.538873
+  type: 'test'
+  location: '/workspace/onboarding-results/topology-candidate/tests/finite-route-paths.before.test.mjs:66:4'
+  failureType: 'testCodeFailure'
+  error: |-
+    Expected values to be strictly equal:
+    + actual - expected
+    
+    + [
+    +   '/outer'
+    + ]
+    - null
+    
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected: ~
+  actual:
+    0: '/outer'
+  operator: 'strictEqual'
+  stack: |-
+    TestContext.<anonymous> (file:///workspace/onboarding-results/topology-candidate/tests/finite-route-paths.before.test.mjs:66:70)
+    Test.runInAsyncScope (node:async_hooks:214:14)
+    Test.run (node:internal/test_runner/test:1047:25)
+    Test.processPendingSubtests (node:internal/test_runner/test:744:18)
+    Test.postRun (node:internal/test_runner/test:1173:19)
+    Test.run (node:internal/test_runner/test:1101:12)
+    async Test.processPendingSubtests (node:internal/test_runner/test:744:7)
+  ...
+# Subtest: unsupported lexical namespace binding stays unresolved
+not ok 23 - unsupported lexical namespace binding stays unresolved
+  ---
+  duration_ms: 0.493143
+  type: 'test'
+  location: '/workspace/onboarding-results/topology-candidate/tests/finite-route-paths.before.test.mjs:66:4'
+  failureType: 'testCodeFailure'
+  error: |-
+    Expected values to be strictly equal:
+    + actual - expected
+    
+    + [
+    +   '/outer'
+    + ]
+    - null
+    
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected: ~
+  actual:
+    0: '/outer'
+  operator: 'strictEqual'
+  stack: |-
+    TestContext.<anonymous> (file:///workspace/onboarding-results/topology-candidate/tests/finite-route-paths.before.test.mjs:66:70)
+    Test.runInAsyncScope (node:async_hooks:214:14)
+    Test.run (node:internal/test_runner/test:1047:25)
+    Test.processPendingSubtests (node:internal/test_runner/test:744:18)
+    Test.postRun (node:internal/test_runner/test:1173:19)
+    Test.run (node:internal/test_runner/test:1101:12)
+    async Test.processPendingSubtests (node:internal/test_runner/test:744:7)
+  ...
+# Subtest: unsupported lexical named class expression stays unresolved
+not ok 24 - unsupported lexical named class expression stays unresolved
+  ---
+  duration_ms: 0.661988
+  type: 'test'
+  location: '/workspace/onboarding-results/topology-candidate/tests/finite-route-paths.before.test.mjs:66:4'
+  failureType: 'testCodeFailure'
+  error: |-
+    Expected values to be strictly equal:
+    + actual - expected
+    
+    + [
+    +   '/outer'
+    + ]
+    - null
+    
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected: ~
+  actual:
+    0: '/outer'
+  operator: 'strictEqual'
+  stack: |-
+    TestContext.<anonymous> (file:///workspace/onboarding-results/topology-candidate/tests/finite-route-paths.before.test.mjs:66:70)
+    Test.runInAsyncScope (node:async_hooks:214:14)
+    Test.run (node:internal/test_runner/test:1047:25)
+    Test.processPendingSubtests (node:internal/test_runner/test:744:18)
+    Test.postRun (node:internal/test_runner/test:1173:19)
+    Test.run (node:internal/test_runner/test:1101:12)
+    async Test.processPendingSubtests (node:internal/test_runner/test:744:7)
+  ...
+# Subtest: unsupported lexical with scope stays unresolved
+not ok 25 - unsupported lexical with scope stays unresolved
+  ---
+  duration_ms: 0.438331
+  type: 'test'
+  location: '/workspace/onboarding-results/topology-candidate/tests/finite-route-paths.before.test.mjs:66:4'
+  failureType: 'testCodeFailure'
+  error: |-
+    Expected values to be strictly equal:
+    + actual - expected
+    
+    + [
+    +   '/outer'
+    + ]
+    - null
+    
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected: ~
+  actual:
+    0: '/outer'
+  operator: 'strictEqual'
+  stack: |-
+    TestContext.<anonymous> (file:///workspace/onboarding-results/topology-candidate/tests/finite-route-paths.before.test.mjs:66:70)
+    Test.runInAsyncScope (node:async_hooks:214:14)
+    Test.run (node:internal/test_runner/test:1047:25)
+    Test.processPendingSubtests (node:internal/test_runner/test:744:18)
+    Test.postRun (node:internal/test_runner/test:1173:19)
+    Test.run (node:internal/test_runner/test:1101:12)
+    async Test.processPendingSubtests (node:internal/test_runner/test:744:7)
+  ...
+# Subtest: unsupported lexical destructuring write stays unresolved
+not ok 26 - unsupported lexical destructuring write stays unresolved
+  ---
+  duration_ms: 0.332211
+  type: 'test'
+  location: '/workspace/onboarding-results/topology-candidate/tests/finite-route-paths.before.test.mjs:66:4'
+  failureType: 'testCodeFailure'
+  error: |-
+    Expected values to be strictly equal:
+    + actual - expected
+    
+    + [
+    +   '/outer'
+    + ]
+    - null
+    
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected: ~
+  actual:
+    0: '/outer'
+  operator: 'strictEqual'
+  stack: |-
+    TestContext.<anonymous> (file:///workspace/onboarding-results/topology-candidate/tests/finite-route-paths.before.test.mjs:66:70)
+    Test.runInAsyncScope (node:async_hooks:214:14)
+    Test.run (node:internal/test_runner/test:1047:25)
+    Test.processPendingSubtests (node:internal/test_runner/test:744:18)
+    Test.postRun (node:internal/test_runner/test:1173:19)
+    Test.run (node:internal/test_runner/test:1101:12)
+    async Test.processPendingSubtests (node:internal/test_runner/test:744:7)
+  ...
+# Subtest: unsupported lexical outer named array hidden by classic for stays unresolved
+ok 27 - unsupported lexical outer named array hidden by classic for stays unresolved
+  ---
+  duration_ms: 0.223517
+  type: 'test'
+  ...
+# Subtest: unsupported lexical outer named array hidden by for-of stays unresolved
+ok 28 - unsupported lexical outer named array hidden by for-of stays unresolved
+  ---
+  duration_ms: 0.293513
+  type: 'test'
+  ...
+# Subtest: unsupported lexical outer named array hidden by class name stays unresolved
+ok 29 - unsupported lexical outer named array hidden by class name stays unresolved
+  ---
+  duration_ms: 0.260092
+  type: 'test'
+  ...
+# Subtest: a switch-local finite const array resolves its actual binding
+not ok 30 - a switch-local finite const array resolves its actual binding
+  ---
+  duration_ms: 0.66926
+  type: 'test'
+  location: '/workspace/onboarding-results/topology-candidate/tests/finite-route-paths.before.test.mjs:68:1'
+  failureType: 'testCodeFailure'
+  error: |-
+    Expected values to be strictly deep-equal:
+    + actual - expected
+    
+    + null
+    - [
+    -   '/inner'
+    - ]
+    
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected:
+    0: '/inner'
+  actual: ~
+  operator: 'deepStrictEqual'
+  stack: |-
+    TestContext.<anonymous> (file:///workspace/onboarding-results/topology-candidate/tests/finite-route-paths.before.test.mjs:69:10)
+    Test.runInAsyncScope (node:async_hooks:214:14)
+    Test.run (node:internal/test_runner/test:1047:25)
+    Test.processPendingSubtests (node:internal/test_runner/test:744:18)
+    Test.postRun (node:internal/test_runner/test:1173:19)
+    Test.run (node:internal/test_runner/test:1101:12)
+    async Test.processPendingSubtests (node:internal/test_runner/test:744:7)
+  ...
+1..30
+# tests 30
+# suites 0
+# pass 21
+# fail 9
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 526.438442

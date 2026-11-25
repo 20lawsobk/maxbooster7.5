@@ -1,0 +1,57 @@
+{
+  "schemaVersion": 1,
+  "recordedAt": "2026-10-28T09:10:42.427044+00:00",
+  "scope": "Independent read-only review of launch-audit generator, authoritative focused JUnit, exhaustive output identities and artifact/input hashes. No product test rerun or production acceptance.",
+  "status": "failed",
+  "checks": {
+    "all80DeclarationIdsExact": true,
+    "all80RouteAliasesExact": true,
+    "all80MarkdownRowsRetained": true,
+    "all2162SectionIdentitiesRetained": true,
+    "all12972ExactDimensionIdentitiesRetained": true,
+    "everySectionPreservesSevenLevelRoadmap": true,
+    "all52965OriginalWorkItemsRetained": true,
+    "all130UnknownMappingsRetained": true,
+    "all2720ExplicitCriterionInstancesRetained": true,
+    "staleEvidenceRemainsRedNoUnverifiedImplementationGuess": true,
+    "runtimeRequirementsTxtInventoried": true,
+    "allSixCurrentArtifactHashesAndSizesMatch": true,
+    "actualInputRegisterPlanHashesMatch": false,
+    "focusedJUnit42PassNoFailureErrorSkip": true,
+    "frozenSourceHashesMatchReviewedFinal": true,
+    "allReviewedInputsUnchangedDuringAudit": true
+  },
+  "sourceAndEvidenceInputsSha256": {
+    "reports/test-verification/platform-register.json": "6cfcf16c179f8845359b83ca9b3ff4aeef9247ca8d743c89fea6fdef8ccb42aa",
+    "reports/test-verification/completion-plan.json": "ae458592a8da2629ae868dbdd58098e9e08f01ccf3d18fe86627f6263cedde41",
+    "reports/launch-readiness/current/manifest.json": "a9c03e3f67ba94d35050295b1d9fff29568569a6249f98e5ba8c603985b545a7",
+    "reports/launch-readiness/focused-2026-10-28/manifest.json": "fc0aaf5441271c0b0185ddbbdea1e6e80a2acd8c4dd678ea53b83cbe349bff88",
+    "scripts/testing/launch-readiness-audit.py": "67266d4052c84b45517ba2042dab2cf04131ad6bf14147726a5986015b823c36",
+    "tests/testing/test_launch_readiness_audit.py": "44a81984703f06289255e59b1640d45edbc0c09e95b4dd79d0c78f0517103d18"
+  },
+  "focusedCounts": {
+    "tests": 42,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 0
+  },
+  "currentMatrixSummary": {
+    "pages": 80,
+    "colors": {
+      "RED": 80
+    },
+    "businessSections": 2162,
+    "businessDimensionSteps": 12972,
+    "retainedExistingWorkItems": 52965,
+    "criterionInstances": 2720,
+    "greenPages": 0,
+    "verifiedImplementationPercentage": null
+  },
+  "currentMatrixSourceStatus": "STALE",
+  "productionReady": false,
+  "limits": [
+    "The current matrix is a preserved preflight snapshot before the next full master. Regenerate after fresh canonical reports; this audit does not bind future overwritten outputs.",
+    "Synthetic complete/negative producer probes verify decision semantics only; they are not real-page acceptance cases.",
+    "Verified reporting completeness does not establish 80 page implementation percentages, accessibility conformance, provider delivery, deployment or global capacity."
+  ]
+}

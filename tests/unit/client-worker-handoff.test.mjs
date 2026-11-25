@@ -7,11 +7,18 @@ import { webcrypto } from "node:crypto";
 async function workerFixture() {
   const events = {};
   const stores = new Map();
-  const state = { online: false, invalid: false, failWrites: false, sent: [] };
+  const state = { online: false, invalid: false, failWrites: false, sent: [], fetches: [] };
   const keyOf = value => new URL(typeof value === "string" ? value : value.url, "https://app.example.com").href;
   const caches = {
     async keys() { return [...stores.keys()]; },
     async delete(name) { return stores.delete(name); },
+    async match(key) {
+      for (const values of stores.values()) {
+        const response = values.get(keyOf(key));
+        if (response) return response.clone();
+      }
+      return undefined;
+    },
     async open(name) {
       if (!stores.has(name)) stores.set(name, new Map());
       const values = stores.get(name);
@@ -39,6 +46,13 @@ async function workerFixture() {
     fetch: async (input, options) => {
       if (!state.online) throw Error("network unavailable");
       if (input === "/api/csrf-token") return Response.json({ csrfToken: "test-only-csrf" });
+      if (input instanceof Request && input.method === "GET") {
+        state.fetches.push(input.url);
+        return new Response("public-asset", {
+          status: 200,
+          headers: { "Cache-Control": "public, max-age=31536000, immutable" },
+        });
+      }
       const body = JSON.parse(options?.body || await input.clone().text());
       state.sent.push(body);
       return Response.json({ protocolVersion: 1, ownerId: body.ownerId,
@@ -127,4 +141,39 @@ test("waiting worker activates only after every live client explicitly acknowled
   fixture.events.activate({ waitUntil(promise) { pending = promise; } });
   await pending;
   assert.equal(claimed, true);
+});
+
+test("Vite base64url-hashed assets use immutable cache-first storage", async () => {
+  const fixture = await workerFixture();
+  fixture.state.online = true;
+
+  for (let requestNumber = 0; requestNumber < 2; requestNumber++) {
+    let pending;
+    fixture.events.fetch({
+      request: new Request("https://app.example.com/assets/vendor-react--lPTBB-X.js"),
+      respondWith(promise) { pending = promise; },
+    });
+    const response = await pending;
+    assert.equal(response.status, 200);
+    assert.equal(await response.text(), "public-asset");
+  }
+
+  assert.equal(fixture.state.fetches.length, 1);
+});
+
+test("optimized WebP logo is cacheable as an explicit public asset", async () => {
+  const fixture = await workerFixture();
+  fixture.state.online = true;
+
+  for (let requestNumber = 0; requestNumber < 2; requestNumber++) {
+    let pending;
+    fixture.events.fetch({
+      request: new Request("https://app.example.com/logo.webp"),
+      respondWith(promise) { pending = promise; },
+    });
+    const response = await pending;
+    assert.equal(response.status, 200);
+  }
+
+  assert.equal(fixture.state.fetches.length, 1);
 });

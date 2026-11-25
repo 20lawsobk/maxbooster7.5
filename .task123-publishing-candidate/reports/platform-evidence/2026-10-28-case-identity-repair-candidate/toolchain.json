@@ -1,0 +1,11 @@
+{
+  "node": "v22.23.3",
+  "python": "Python 3.12.14",
+  "vitest": "4.1.12",
+  "pytest": "pytest 9.1.1",
+  "frameworkCasesByFile": {
+    "tests.testing.test_platform_evidence": 83,
+    "tests.testing.test_summary_results": 9,
+    "tests.testing.test_endpoint_mount_resolution.MountResolutionConsumer": 7
+  }
+}

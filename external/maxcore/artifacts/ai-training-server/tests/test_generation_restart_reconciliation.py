@@ -10,6 +10,7 @@ import sys
 import tempfile
 import threading
 import time
+from types import SimpleNamespace
 import unittest
 from unittest.mock import Mock, patch
 
@@ -26,7 +27,9 @@ class RestartTests(unittest.TestCase):
         self.root = Path(self.directory.name)
         names = {"_job_path", "_job_write", "_job_read", "_job_update",
                  "_persist_generation_job", "_journal_records", "_journal_job_id", "_job_gc",
-                 "recover_dedicated_delivery", "generation_readiness"}
+                 "recover_dedicated_delivery", "_live_awareness_capability",
+                 "_generation_readiness", "_generation_endpoint_catalog",
+                 "generation_readiness"}
         tree = ast.parse((ROOT / "server.py").read_text())
         nodes = [n for n in tree.body if isinstance(n, (ast.FunctionDef, ast.AsyncFunctionDef))
                  and n.name in names]
@@ -37,8 +40,12 @@ class RestartTests(unittest.TestCase):
             "_request_job_owner": ContextVar("test_owner", default=None),
             "_api_jobs_lock": threading.Lock(), "_active_jobs_lock": threading.Lock(),
             "_active_jobs": {}, "_JOB_TTL_S": 600, "_render_manager": None,
-            "_model_ready": False, "_create_durable_render_manager": Mock(return_value=object()),
+            "_model_ready": False, "_trained_checkpoint_loaded": False,
+            "_create_durable_render_manager": Mock(return_value=object()),
             "_model_init_error": None, "_serving_release_status": {},
+            "_script_agent": SimpleNamespace(run_live_awareness=lambda _request: None),
+            "_live_learning_loop": None, "_live_serving_model": None,
+            "_generation_runtime_dependencies": lambda _modality: {},
         }
         exec(compile(ast.Module(body=nodes, type_ignores=[]), str(ROOT / "server.py"), "exec"),
              self.scope)
@@ -126,16 +133,32 @@ class RestartTests(unittest.TestCase):
         self.assertIsNotNone(self.read("committing"))
         self.assertIsNone(self.read("failed"))
 
-    def test_readiness_requires_both_model_and_fresh_awareness(self):
-        for model, awareness, expected in ((False, False, 503), (False, True, 503),
-                                           (True, False, 503), (True, True, 200)):
+    def test_readiness_accepts_trained_model_or_fresh_live_awareness(self):
+        cases = (
+            (False, False, False, 503, "unavailable"),
+            (False, False, True, 200, "live_awareness"),
+            (True, False, True, 200, "live_awareness"),
+            (True, True, False, 503, "unavailable"),
+            (True, True, True, 200, "trained_checkpoint"),
+        )
+        for model, trained, awareness, expected, expected_mode in cases:
             self.scope["_model_ready"] = model
+            self.scope["_trained_checkpoint_loaded"] = trained
             engine = Mock()
-            engine.status.return_value = {"ready": awareness}
-            with patch("ai_model.awareness.get_engine", return_value=engine):
+            engine.readiness_status.return_value = {"ready": awareness}
+            renderers = {
+                "image": {"renderer": "test-image"},
+                "audio": {"renderer": "test-audio"},
+                "video": {"renderer": "test-video"},
+            }
+            with patch.dict(os.environ, {"MAXCORE_SERVING_RELEASE": "live-awareness"}), \
+                 patch("ai_model.awareness.get_engine", return_value=engine), \
+                 patch("ai_model.capabilities.capabilities", return_value=renderers):
                 response = asyncio.run(self.scope["generation_readiness"]())
             self.assertEqual(response.status_code, expected)
-            self.assertEqual(json.loads(response.body)["ready"], expected == 200)
+            body = json.loads(response.body)
+            self.assertEqual(body["ready"], expected == 200)
+            self.assertEqual(body["generation_mode"], expected_mode)
 
     def test_invalid_journal_names_rejected_before_reconciliation_or_delivery(self):
         self.save("valid", status="running")

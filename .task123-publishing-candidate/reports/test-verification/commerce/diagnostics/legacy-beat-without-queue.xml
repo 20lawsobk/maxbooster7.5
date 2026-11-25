@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<testsuites name="vitest tests" tests="14" failures="1" errors="0" time="3.260112091">
+    <testsuite name="tests/unit/beat-sale-money-loop.test.ts" timestamp="2026-10-25T15:19:58.194Z" hostname="2fc971e77ddd" tests="14" failures="1" errors="0" skipped="0" time="3.260112091">
+        <testcase classname="tests/unit/beat-sale-money-loop.test.ts" name="A. Royalty split ledger &gt; writes a royalty_transactions row with the correct amount" time="0.014037002">
+        </testcase>
+        <testcase classname="tests/unit/beat-sale-money-loop.test.ts" name="A. Royalty split ledger &gt; increments royalty_splits.total_earned and pending_payout" time="0.001311167">
+        </testcase>
+        <testcase classname="tests/unit/beat-sale-money-loop.test.ts" name="A. Royalty split ledger &gt; does NOT double-credit on a second call (idempotency)" time="0.003761143">
+        </testcase>
+        <testcase classname="tests/unit/beat-sale-money-loop.test.ts" name="B. Revenue events &gt; records a revenue_events row with source=&apos;marketplace&apos;" time="0.004284012">
+        </testcase>
+        <testcase classname="tests/unit/beat-sale-money-loop.test.ts" name="B. Revenue events &gt; ON CONFLICT: a second revenue_events insert is a no-op" time="0.001324688">
+        </testcase>
+        <testcase classname="tests/unit/beat-sale-money-loop.test.ts" name="C. Sale notifications — confirmed payment idempotency &gt; processPayment on completed order delivers beat_sold + beat_purchased notifications" time="0.033784696">
+        </testcase>
+        <testcase classname="tests/unit/beat-sale-money-loop.test.ts" name="C. Sale notifications — confirmed payment idempotency &gt; replay — second processPayment call produces no additional notifications" time="0.004642152">
+        </testcase>
+        <testcase classname="tests/unit/beat-sale-money-loop.test.ts" name="C. Sale notifications — confirmed payment idempotency &gt; concurrent calls — only one delivery wins; exactly one notification per recipient" time="0.022150101">
+        </testcase>
+        <testcase classname="tests/unit/beat-sale-money-loop.test.ts" name="C. Sale notifications — confirmed payment idempotency &gt; failure resets notifStatus so the next retry can re-attempt delivery" time="0.001919215">
+        </testcase>
+        <testcase classname="tests/unit/beat-sale-money-loop.test.ts" name="C. Sale notifications — confirmed payment idempotency &gt; no beat_sold notification from initiation-time route send" time="0.00088187">
+        </testcase>
+        <testcase classname="tests/unit/beat-sale-money-loop.test.ts" name="D. Content-dispatch — beat-loop posts &gt; beat-loop post was inserted with _beatMoneyLoop marker and overdue scheduledAt" time="0.005917365">
+        </testcase>
+        <testcase classname="tests/unit/beat-sale-money-loop.test.ts" name="D. Content-dispatch — beat-loop posts &gt; runContentDispatch query selects the overdue beat-loop post" time="0.001793816">
+        </testcase>
+        <testcase classname="tests/unit/beat-sale-money-loop.test.ts" name="D. Content-dispatch — beat-loop posts &gt; publishToPlatform enqueues a job without throwing" time="0.210050184">
+            <failure message="[Redis/BullMQ] PDIM is not configured (PDIM_HTTP_EXEC_URL / PDIM_BEARER_TOKEN required) — refusing localhost fallback; queues need the internal PDIM subsystem" type="Error">
+Error: [Redis/BullMQ] PDIM is not configured (PDIM_HTTP_EXEC_URL / PDIM_BEARER_TOKEN required) — refusing localhost fallback; queues need the internal PDIM subsystem
+ ❯ newBullMQRedisConnection server/lib/redisClient.ts:102:11
+ ❯ makeQueueOptions server/services/queueService.ts:59:17
+ ❯ new QueueService server/services/queueService.ts:111:18
+ ❯ server/services/queueService.ts:228:29
+ ❯ server/services/socialQueueService.ts:8:1
+            </failure>
+        </testcase>
+        <testcase classname="tests/unit/beat-sale-money-loop.test.ts" name="D. Content-dispatch — beat-loop posts &gt; post transitions to published after successful dispatch" time="0.013596188">
+        </testcase>
+    </testsuite>
+</testsuites>

@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<testsuites name="vitest tests" tests="1" failures="0" errors="0" time="0.029854484">
+    <testsuite name="unhandled.test.ts" timestamp="2026-10-29T23:05:09.352Z" hostname="af966a6fd55d" tests="1" failures="0" errors="0" skipped="0" time="0.029854484">
+        <testcase classname="unhandled.test.ts" name="assertion passes but async runtime rejects" time="0.027131974">
+        </testcase>
+    </testsuite>
+</testsuites>

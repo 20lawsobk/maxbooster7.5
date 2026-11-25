@@ -16,6 +16,7 @@ import { logger } from "../logger.js";
 import { loopbackUrl, runtimePorts } from "../config/ports.js";
 import { execLuaViaPdim } from "./luaExecutor.js";
 import { cbAllowRequest, cbRecordFailure as cbRecord503, cbRecordSuccess, cbHalfOpenFailed, cbForceClose, cbGetState } from "./pdimCircuitBreaker.js";
+import { retryTransientStorageOperation } from "./transientStorageRetry.js";
 
 // ── Adaptive PDIM Rate Limiter (AIMD) ────────────────────────────────────────
 // "Fluid like water: easy to contain but expands freely when userbase expands."
@@ -739,15 +740,140 @@ interface Pipeline {
 
 type PdimPubSubCallback = (error: Error | null, count: number) => void;
 
+type PdimReadinessContext = {
+  promise: Promise<void> | null;
+  controller: AbortController | null;
+  ready: boolean;
+  waiters: number;
+};
+
+const PDIM_QUEUE_READY_TIMEOUT_MS = 180_000;
+const PDIM_QUEUE_READY_RETRY_MS = 1_000;
+
+function isTransientPdimReadinessError(error: unknown): boolean {
+  if (!(error instanceof Error)) return false;
+  if (error.name === "TimeoutError" || error.name === "AbortError") return true;
+  if (error instanceof TypeError && /fetch failed|failed to fetch/i.test(error.message)) {
+    return true;
+  }
+  return /PDIM HTTP (?:3\d\d|429|5\d\d)|circuit open|ECONN(?:RESET|REFUSED)|EHOSTUNREACH|ETIMEDOUT/i
+    .test(error.message);
+}
+
+async function probePdimQueueReadiness(
+  execUrl: string,
+  bearerToken: string,
+  signal: AbortSignal,
+): Promise<void> {
+  const deadline = Date.now() + PDIM_QUEUE_READY_TIMEOUT_MS;
+  let attempts = 0;
+  let consecutiveSuccesses = 0;
+  let lastError: unknown;
+
+  while (Date.now() < deadline) {
+    attempts++;
+    try {
+      const response = await fetch(execUrl, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          ...(bearerToken ? { Authorization: `Bearer ${bearerToken}` } : {}),
+        },
+        body: JSON.stringify({ cmd: "PING", args: [] }),
+        signal: AbortSignal.any([signal, AbortSignal.timeout(5_000)]),
+        redirect: "manual",
+      });
+
+      if (!response.ok) {
+        const error = new Error(`PDIM readiness returned HTTP ${response.status}`);
+        if (!isTransientPdimReadinessError(error)) throw error;
+        lastError = error;
+        consecutiveSuccesses = 0;
+      } else {
+        const result: unknown = await response.json();
+        const pingResult =
+          result && typeof result === "object" && "result" in result
+            ? (result as { result: unknown }).result
+            : result;
+        if (pingResult !== "PONG") {
+          throw new Error("PDIM readiness returned an invalid PING response");
+        }
+        consecutiveSuccesses++;
+        if (consecutiveSuccesses >= 2) {
+          logger.info(
+            `[PDIM] Queue readiness confirmed by ${attempts} probes; BullMQ connections may start`,
+          );
+          return;
+        }
+      }
+    } catch (error) {
+      if (signal.aborted) throw signal.reason ?? error;
+      if (!isTransientPdimReadinessError(error)) throw error;
+      lastError = error;
+      consecutiveSuccesses = 0;
+    }
+
+    const remainingMs = deadline - Date.now();
+    if (remainingMs <= 0) break;
+    await new Promise<void>((resolve, reject) => {
+      const timer = setTimeout(() => {
+        signal.removeEventListener("abort", onAbort);
+        resolve();
+      }, Math.min(PDIM_QUEUE_READY_RETRY_MS, remainingMs));
+      timer.unref?.();
+      const onAbort = () => {
+        clearTimeout(timer);
+        reject(signal.reason ?? new Error("PDIM readiness probe was cancelled"));
+      };
+      if (signal.aborted) onAbort();
+      else signal.addEventListener("abort", onAbort, { once: true });
+    });
+  }
+
+  if (signal.aborted) {
+    throw signal.reason ?? new Error("PDIM readiness probe was cancelled");
+  }
+  throw new Error(
+    `PDIM did not become ready for BullMQ within ${PDIM_QUEUE_READY_TIMEOUT_MS / 1000}s`,
+    { cause: lastError },
+  );
+}
+
+function waitForPdimQueueReadiness(
+  context: PdimReadinessContext,
+  execUrl: string,
+  bearerToken: string,
+): Promise<void> {
+  if (context.ready) return Promise.resolve();
+  if (!context.promise) {
+    context.controller = new AbortController();
+    const probe = probePdimQueueReadiness(
+      execUrl,
+      bearerToken,
+      context.controller.signal,
+    ).then(() => {
+      context.ready = true;
+    }).finally(() => {
+      if (context.promise === probe) {
+        context.promise = null;
+        context.controller = null;
+      }
+    });
+    context.promise = probe;
+  }
+  return context.promise;
+}
+
 export class PdimRedisClient extends EventEmitter {
-  public status: string = "ready";
+  public status: string = "connecting";
   private execUrl: string;
   private bearerToken: string;
+  private readonly readinessContext: PdimReadinessContext;
   private disconnected = false;
-  private readonly lifecycleController = new AbortController();
-  private readonly disconnectedError = Object.assign(
+  private lifecycleController = new AbortController();
+  private disconnectedError = Object.assign(
     new Error("[PDIM] Redis client disconnected"),
-    { name: "ConnectionError" },
+    { name: "ConnectionError", disconnectSource: "" },
   );
   private readonly pubSubChannels = new Set<string>();
   private readonly pubSubPatterns = new Set<string>();
@@ -757,19 +883,26 @@ export class PdimRedisClient extends EventEmitter {
   private pubSubRefreshChain: Promise<void> = Promise.resolve();
 
   private assertConnected(): void {
-    if (this.disconnected) throw this.disconnectedError;
+    if (this.isDisconnected()) throw this.disconnectedError;
   }
 
-  private requestSignal(timeoutMs: number | null = PDIM_EXEC_TIMEOUT_MS): AbortSignal {
-    if (timeoutMs === null) return this.lifecycleController.signal;
+  private isDisconnected(): boolean {
+    return this.disconnected || this.status === "end";
+  }
+
+  private requestSignal(
+    timeoutMs: number | null = PDIM_EXEC_TIMEOUT_MS,
+    lifecycleController = this.lifecycleController,
+  ): AbortSignal {
+    if (timeoutMs === null) return lifecycleController.signal;
     return AbortSignal.any([
-      this.lifecycleController.signal,
+      lifecycleController.signal,
       AbortSignal.timeout(timeoutMs),
     ]);
   }
 
   private awaitOrDisconnect<T>(operation: Promise<T>): Promise<T> {
-    if (this.disconnected) return Promise.reject(this.disconnectedError);
+    if (this.isDisconnected()) return Promise.reject(this.disconnectedError);
     return new Promise<T>((resolve, reject) => {
       const cleanup = () => {
         this.lifecycleController.signal.removeEventListener("abort", onAbort);
@@ -793,7 +926,7 @@ export class PdimRedisClient extends EventEmitter {
   }
 
   private delay(ms: number): Promise<void> {
-    if (this.disconnected) return Promise.reject(this.disconnectedError);
+    if (this.isDisconnected()) return Promise.reject(this.disconnectedError);
     if (ms <= 0) return Promise.resolve();
     return new Promise<void>((resolve, reject) => {
       const cleanup = () => {
@@ -867,7 +1000,7 @@ export class PdimRedisClient extends EventEmitter {
     let retryMs = 200;
     let initialReady = false;
     const isCurrent = () =>
-      !this.disconnected &&
+      !this.isDisconnected() &&
       !controller.signal.aborted &&
       !this.lifecycleController.signal.aborted &&
       generation === this.pubSubGeneration;
@@ -998,7 +1131,11 @@ export class PdimRedisClient extends EventEmitter {
     enableOfflineQueue: false,
   };
 
-  constructor(execUrl?: string, bearerToken?: string) {
+  constructor(
+    execUrl?: string,
+    bearerToken?: string,
+    readinessContext?: PdimReadinessContext,
+  ) {
     super();
     // PDIM_EXEC_URL / PDIM_EXEC_TOKEN are non-secret env vars that take
     // precedence over the legacy PDIM_HTTP_EXEC_URL / PDIM_BEARER_TOKEN
@@ -1013,17 +1150,16 @@ export class PdimRedisClient extends EventEmitter {
       process.env.PDIM_EXEC_TOKEN ||
       process.env.PDIM_BEARER_TOKEN ||
       "";
+    this.readinessContext = readinessContext ?? {
+      promise: null,
+      controller: null,
+      ready: false,
+      waiters: 0,
+    };
 
     if (!this.execUrl) {
       throw new Error("PDIM_HTTP_EXEC_URL is required for PdimRedisClient");
     }
-
-    setImmediate(() => {
-      if (this.disconnected) return;
-      this.emit("connect");
-      this.emit("ready");
-      logger.info("✅ [PDIM] Connected via HTTP exec endpoint");
-    });
   }
 
   // Static rate-limit deadline — shared across ALL PdimRedisClient instances.
@@ -1057,8 +1193,12 @@ export class PdimRedisClient extends EventEmitter {
     command: unknown[],
     options: { blocking?: boolean; requestTimeoutMs?: number | null } = {},
   ): Promise<T> {
-    if (this.disconnected) return Promise.reject(this.disconnectedError);
+    if (this.isDisconnected()) return Promise.reject(this.disconnectedError);
+    const requestLifecycle = this.lifecycleController;
     const [cmd, ...rawArgs] = command as (string | number | null | undefined)[];
+    if (typeof cmd !== "string" || !cmd.trim()) {
+      throw new TypeError("[PDIM] command must be a non-empty string");
+    }
     // PDIM's HTTP contract accepts only string arguments. An absent Redis value
     // is a result (`{ result: null }`), not a valid command argument. Rejecting
     // nullish inputs prevents silently persisting an empty string in its place.
@@ -1079,6 +1219,9 @@ export class PdimRedisClient extends EventEmitter {
     // code paths (direct calls, LuaExecutor redis.call, bzpopmin) pass through
     // this single chain, executed one at a time with a 150ms gap between them.
     const run = async () => {
+      if (requestLifecycle.signal.aborted) {
+        throw requestLifecycle.signal.reason ?? this.disconnectedError;
+      }
       this.assertConnected();
       // Rate-limit backoff is evaluated INSIDE the chain (at execution time, not
       // enqueue time).  This is critical: if all callers evaluated it at enqueue
@@ -1089,24 +1232,36 @@ export class PdimRedisClient extends EventEmitter {
       if (rlWait > 0) {
         await this.delay(rlWait);
       }
+      if (requestLifecycle.signal.aborted) {
+        throw requestLifecycle.signal.reason ?? this.disconnectedError;
+      }
       this.assertConnected();
 
       let counted = false; // prevent double-counting in the catch block
       try {
-        const res = await fetch(this.execUrl, {
+        const request = () => fetch(this.execUrl, {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
             Authorization: `Bearer ${this.bearerToken}`,
           },
           body: JSON.stringify({ cmd, args }),
-          signal: this.requestSignal(options.requestTimeoutMs),
+          signal: this.requestSignal(options.requestTimeoutMs, requestLifecycle),
           // Do not follow redirects automatically — if PDIM's proxy returns 302
           // (Replit redirecting to an error/login page when the service is down)
           // we need to see the raw 302 status so our 3xx handler can trip the
           // circuit breaker rather than silently following into an HTML page.
           redirect: "manual",
         });
+        // GET is read-only; HSET replaces the same field values on replay.
+        // A single transport-only retry is safe for both if the connection
+        // resets before the response reaches this process. Other commands,
+        // including INCR and queue mutations, are never replayed after an
+        // uncertain write.
+        const normalizedCommand = cmd.toUpperCase();
+        const res = normalizedCommand === "GET" || normalizedCommand === "HSET"
+          ? await retryTransientStorageOperation(request, { delaysMs: [100] })
+          : await request();
 
         if (!res.ok) {
           const text = await res.text().catch(() => "");
@@ -1230,7 +1385,10 @@ export class PdimRedisClient extends EventEmitter {
         }
         return data;
       } catch (err) {
-        if (this.disconnected) throw this.disconnectedError;
+        if (requestLifecycle.signal.aborted) {
+          throw requestLifecycle.signal.reason ?? this.disconnectedError;
+        }
+        if (this.isDisconnected()) throw this.disconnectedError;
         // AbortSignal.timeout() throws a TimeoutError (DOMException name='TimeoutError').
         // AbortController.abort() throws an AbortError (DOMException name='AbortError').
         // Neither should trip the circuit breaker — they indicate PDIM is slow/busy,
@@ -1433,25 +1591,94 @@ export class PdimRedisClient extends EventEmitter {
   }
 
   duplicate() {
-    return new PdimRedisClient(this.execUrl, this.bearerToken);
+    const connection = new PdimRedisClient(
+      this.execUrl,
+      this.bearerToken,
+      this.readinessContext,
+    );
+
+    // Match ioredis semantics: duplicated BullMQ clients connect on creation,
+    // and BullMQ waits for the client's `ready` event before initializing.
+    queueMicrotask(() => {
+      void connection.connect().catch(async (error: unknown) => {
+        if (connection.status === "end") return;
+        logger.warn(
+          {
+            errorType: error instanceof Error ? error.name : typeof error,
+          },
+          "[PDIM] Duplicated Redis connection failed its readiness probe",
+        );
+        if (connection.listenerCount("error") > 0) {
+          connection.emit("error", error);
+        }
+        await connection.quit();
+      });
+    });
+
+    return connection;
   }
 
   // Required by BullMQ's isRedisInstance() check: ['connect', 'disconnect', 'duplicate']
   async connect(): Promise<void> {
-    this.assertConnected();
-    // PDIM is HTTP-based — already "connected" on construction; no-op here
-    this.emit("connect");
-    this.emit("ready");
+    if (this.disconnected) throw this.disconnectedError;
+    if (this.status === "end") {
+      this.lifecycleController = new AbortController();
+      this.disconnectedError = Object.assign(
+        new Error("[PDIM] Redis client disconnected"),
+        { name: "ConnectionError", disconnectSource: "" },
+      );
+      this.status = "connecting";
+    }
+    const context = this.readinessContext;
+    if (context.ready) {
+      if (this.status !== "ready") {
+        this.status = "ready";
+        this.emit("connect");
+        this.emit("ready");
+      }
+      return;
+    }
+    context.waiters++;
+    try {
+      await this.awaitOrDisconnect(
+        waitForPdimQueueReadiness(context, this.execUrl, this.bearerToken),
+      );
+      this.assertConnected();
+      if (this.status !== "ready") {
+        this.status = "ready";
+        this.emit("connect");
+        this.emit("ready");
+      }
+    } finally {
+      context.waiters--;
+      if (!context.ready && context.waiters === 0) {
+        context.controller?.abort(this.disconnectedError);
+      }
+    }
   }
 
   async quit(): Promise<"OK"> {
-    await this.disconnect();
+    if (this.status !== "end") await this.disconnect();
+    this.disconnected = true;
+    this.disconnectedError = Object.assign(
+      new Error("[PDIM] Redis client disconnected"),
+      { name: "ConnectionError", disconnectSource: "" },
+    );
     return "OK";
   }
-  async disconnect(): Promise<void> {
-    if (this.disconnected) return;
-    this.disconnected = true;
+  async disconnect(_reconnect = false): Promise<void> {
+    if (this.disconnected || this.status === "end") return;
     this.status = "end";
+    const disconnectSource =
+      new Error("PDIM client disconnect origin").stack?.split("\n").slice(2, 8).join("\n") ??
+      "unavailable";
+    this.disconnectedError = Object.assign(
+      new Error("Connection is closed."),
+      {
+        name: "ConnectionClosedError",
+        disconnectSource,
+      },
+    );
     this.pubSubGeneration++;
     this.pubSubController?.abort(this.disconnectedError);
     this.lifecycleController.abort(this.disconnectedError);
@@ -1627,7 +1854,7 @@ export class PdimRedisClient extends EventEmitter {
         }
         return data;
       } catch (err) {
-        if (this.disconnected) throw this.disconnectedError;
+        if (this.isDisconnected()) throw this.disconnectedError;
         // Same TimeoutError/AbortError exclusion as the main exec catch block —
         // slow PDIM responses should not trip the circuit breaker.
         const isTimeout =
@@ -1961,19 +2188,39 @@ export class PdimRedisClient extends EventEmitter {
     if (!Number.isFinite(timeout) || timeout < 0) {
       throw new TypeError("BZPOPMIN timeout must be a finite non-negative number");
     }
-    const result = await this.exec<unknown>(
-      ["BZPOPMIN", key, String(timeout)],
-      {
-        blocking: true,
-        requestTimeoutMs:
-          timeout === 0 ? null : timeout * 1000 + PDIM_EXEC_TIMEOUT_MS,
-      },
-    );
-    if (result === null) return null;
-    if (!Array.isArray(result) || result.length !== 3) {
-      throw new Error("PDIM BZPOPMIN returned an invalid Redis response");
+    // Undici's fetch response-header deadline is five minutes even when the
+    // AbortSignal is unbounded. A Redis timeout=0 over HTTP therefore failed
+    // every five minutes with UND_ERR_HEADERS_TIMEOUT. Keep Redis's indefinite
+    // blocking semantics by issuing bounded 240-second server waits and
+    // transparently renewing them before that transport deadline.
+    const deadline = timeout === 0 ? null : performance.now() + timeout * 1000;
+    while (true) {
+      const remainingSeconds = deadline === null
+        ? MAX_HTTP_BZPOP_WAIT_SECONDS
+        : Math.max(0, (deadline - performance.now()) / 1000);
+      if (remainingSeconds <= 0) return null;
+      const serverWaitSeconds = Math.min(MAX_HTTP_BZPOP_WAIT_SECONDS, remainingSeconds);
+      const startedAt = performance.now();
+      const result = await this.exec<unknown>(
+        ["BZPOPMIN", key, String(serverWaitSeconds)],
+        {
+          blocking: true,
+          requestTimeoutMs: Math.ceil(serverWaitSeconds * 1000) + PDIM_EXEC_TIMEOUT_MS,
+        },
+      );
+      if (result !== null) {
+        if (!Array.isArray(result) || result.length !== 3) {
+          throw new Error("PDIM BZPOPMIN returned an invalid Redis response");
+        }
+        return [String(result[0]), String(result[1]), String(result[2])];
+      }
+      if (deadline !== null && performance.now() >= deadline) return null;
+      // A conforming server returns null only after the requested wait. If it
+      // returns early, avoid a hot retry loop while preserving prompt wakeup.
+      if (performance.now() - startedAt < serverWaitSeconds * 1000 - 1_000) {
+        await this.delay(50);
+      }
     }
-    return [String(result[0]), String(result[1]), String(result[2])];
   }
 
   // ── List atomic move ───────────────────────────────────────────────────────
@@ -2226,10 +2473,23 @@ export class PdimRedisClient extends EventEmitter {
 
   // ── Server commands ───────────────────────────────────────────────────────
   async ping(): Promise<"PONG"> {
+    this.assertConnected();
     try {
-      return await this.exec<"PONG">(["PING"]);
-    } catch {
-      return "PONG";
+      const result = await this.exec<"PONG">(["PING"]);
+      this.assertConnected();
+      if (result !== "PONG") {
+        throw new Error("[PDIM] Health probe returned an invalid PING response");
+      }
+      if (this.status !== "ready") {
+        this.status = "ready";
+        this.emit("connect");
+        this.emit("ready");
+        logger.info("✅ [PDIM] Connected after a successful HTTP PING");
+      }
+      return result;
+    } catch (error) {
+      if (!this.isDisconnected()) this.status = "reconnecting";
+      throw error;
     }
   }
   async info(_section?: string): Promise<string> {
@@ -2356,6 +2616,7 @@ const DIRECT_PROBE_TIMEOUT_MS = 5_000;
 // still keeps the per-lane drain rate at ~2 calls/s (vs 0.5 at 15s) and
 // gives real latency spikes a chance to resolve before the timeout fires.
 const PDIM_EXEC_TIMEOUT_MS = 4_000;
+const MAX_HTTP_BZPOP_WAIT_SECONDS = 240;
 
 let _directProbeTimer: ReturnType<typeof setInterval> | null = null;
 

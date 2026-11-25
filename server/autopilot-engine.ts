@@ -420,59 +420,50 @@ export class AutopilotEngine extends EventEmitter {
     const brandVoice = String(job.data.brandVoice ?? this.config.brandVoice);
     const contentType = String(job.data.contentType ?? "social_post");
 
-    try {
-      // This would call your actual AI service
-      // Optional advanced-URL-parser brief from configured source links.
-      // Undefined when no sourceUrls configured ⇒ unchanged topic-only behavior.
-      const urlBrief = await this.resolveUrlBrief(job.platform);
+    // Resolve source context before sending the request through the configured
+    // MaxCore generation path. Without configured source URLs this remains a
+    // topic-only request.
+    const urlBrief = await this.resolveUrlBrief(job.platform);
 
-      const generatedContent = await this.generateContentForAutopilot({
-        topic,
-        platform: job.platform,
-        brandVoice,
-        contentType,
-        targetAudience: this.config.targetAudience,
-        businessGoals: this.config.businessGoals,
-        urlBrief,
-        intent: job.data.intent,
-        direction: job.data.direction,
-        context: job.data.context,
-        awareness: job.data.awareness,
-      });
+    const generatedContent = await this.generateContentForAutopilot({
+      topic,
+      platform: job.platform,
+      brandVoice,
+      contentType,
+      targetAudience: this.config.targetAudience,
+      businessGoals: this.config.businessGoals,
+      urlBrief,
+      intent: job.data.intent,
+      direction: job.data.direction,
+      context: job.data.context,
+      awareness: job.data.awareness,
+    });
 
-      // Store generated content in-memory queue item.
-      // Persist topic + contentType so publish context (captured after the
-      // item is shift()-ed off the queue) carries the real values into
-      // performance analysis instead of synthetic 'social_post' / undefined.
-      const content = {
-        id: randomUUID(),
-        text: generatedContent.text,
-        hashtags: generatedContent.hashtags,
-        platforms: [job.platform],
-        status: "draft",
-        type: contentType,
-        topic,
-        ...(urlBrief?.sourceUrl ? { sourceUrl: urlBrief.sourceUrl } : {}),
-        intent: job.data.intent,
-        direction: job.data.direction,
-        context: job.data.context,
-        awareness: job.data.awareness,
-        createdAt: new Date(),
-      };
+    // Persist topic + contentType so publish context (captured after the
+    // item is shift()-ed off the queue) carries the real values into
+    // performance analysis instead of synthetic 'social_post' / undefined.
+    const content = {
+      id: randomUUID(),
+      text: generatedContent.text,
+      hashtags: generatedContent.hashtags,
+      platforms: [job.platform],
+      status: "draft",
+      type: contentType,
+      topic,
+      ...(urlBrief?.sourceUrl ? { sourceUrl: urlBrief.sourceUrl } : {}),
+      intent: job.data.intent,
+      direction: job.data.direction,
+      context: job.data.context,
+      awareness: job.data.awareness,
+      createdAt: new Date(),
+    };
 
-      // Add to content queue
-      if (!this.contentQueue.has(job.platform)) {
-        this.contentQueue.set(job.platform, []);
-      }
-      this.contentQueue.get(job.platform)!.push(content);
-
-      this.emit("contentGenerated", { job, content });
-    } catch (error: unknown) {
-      // If AI service is not configured, create a placeholder request
-      throw new Error(
-        "AI content generation service not configured. Please connect your AI service.",
-      );
+    if (!this.contentQueue.has(job.platform)) {
+      this.contentQueue.set(job.platform, []);
     }
+    this.contentQueue.get(job.platform)!.push(content);
+
+    this.emit("contentGenerated", { job, content });
   }
 
   private async executeContentPublishing(job: AutopilotJob): Promise<void> {

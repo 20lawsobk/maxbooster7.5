@@ -16,7 +16,7 @@ export function currentFabricGeneration(): string {
 export async function withFabricCatalogTransaction<T>(work: (tx: Transaction) => Promise<T>): Promise<T> {
   const generation = currentFabricGeneration();
   return db.transaction(async tx => {
-    const row = (await tx.execute(sql`SELECT generation::text AS generation FROM fabric_catalog_fence WHERE id='root-catalog' FOR UPDATE`)).rows[0];
+    const row = (await tx.execute(sql`SELECT generation::text AS generation FROM public.fabric_catalog_fence WHERE id='root-catalog' FOR UPDATE`)).rows[0];
     if (!row || row.generation !== generation) throw new Error("Stale fabric catalog generation; retry through the current owner");
     return work(tx);
   });
@@ -30,7 +30,7 @@ const catalogDatabase = {
 // advisory transaction remains held. Every metadata transaction locks/checks
 // this row, so an old owner cannot commit after its successor starts cleanup.
 export const withFabricCatalogLock = <T>(work: () => Promise<T>): Promise<T> => fence("root-catalog", async () => {
-  const row = (await db.execute(sql`UPDATE fabric_catalog_fence SET generation=generation+1 WHERE id='root-catalog' RETURNING generation::text AS generation`)).rows[0];
+  const row = (await db.execute(sql`UPDATE public.fabric_catalog_fence SET generation=generation+1 WHERE id='root-catalog' RETURNING generation::text AS generation`)).rows[0];
   if (!row) throw new Error("Fabric migration 0096 is required before serving storage");
   return generations.run(String(row.generation), work);
 });

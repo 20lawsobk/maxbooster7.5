@@ -297,9 +297,12 @@ async function fetchJsonFromPort(port, path) {
 }
 
 async function runBrowserJourney(email, password, expectedUserId, browserEnv) {
-  const chromium = ["/usr/bin/chromium", "/usr/bin/chromium-browser", "/usr/bin/google-chrome", "/repl/tools/bin/chromium",
-    ...String(browserEnv.PATH ?? "").split(":").map(directory => join(directory, "chromium"))]
-    .find(candidate => { try { accessSync(candidate, constants.X_OK); return true; } catch { return false; } });
+  const configuredChromium = process.env.MAXBOOSTER_TEST_CHROMIUM;
+  const candidates = configuredChromium ? [resolve(configuredChromium)] : ["/usr/bin/chromium", "/usr/bin/chromium-browser", "/usr/bin/google-chrome", "/repl/tools/bin/chromium",
+    ...String(browserEnv.PATH ?? "").split(":").map(directory => join(directory, "chromium"))];
+  const chromium = candidates.find(candidate => {
+    try { accessSync(candidate, constants.X_OK); return true; } catch { return false; }
+  });
   if (!chromium) throw new Error("Install Chromium or add its executable to PATH before browser acceptance");
   const debuggerPort = await reserveEphemeralPort();
   const profile = join(temp, "chromium-profile");
@@ -505,6 +508,7 @@ async function runBrowserJourney(email, password, expectedUserId, browserEnv) {
     } catch (error) {
       screenshotEvidence = `unavailable: ${error.message}`;
     }
+    evidence.browser = { engine: "Chromium CDP", hydrated, screenshot: screenshotEvidence };
     if (!hydrated) {
       const diagnosis = await evaluate(`({href:location.href,title:document.title,text:(document.body?.innerText||'').slice(0,160),scripts:[...document.scripts].map(s=>s.src).slice(0,4)})`);
       throw new Error(`login page did not hydrate: ${JSON.stringify(diagnosis)}`);
@@ -599,8 +603,29 @@ async function runBrowserJourney(email, password, expectedUserId, browserEnv) {
 
     const artistName = `Acceptance artist ${randomBytes(4).toString("hex")}`;
     const bio = "Disposable artist biography saved through the actual browser form.";
-    await navigateUntil("/press-kit", "Boolean(document.querySelector('form #artistName'))");
-    await evaluate(`(()=>{for(const [id,value] of Object.entries(${JSON.stringify({ artistName, bio, shortBio: "A saved browser press kit", genres: "Electronic", contactEmail: "artist@example.test", bookingEmail: "booking@example.test", website: "https://example.test" })})){const input=document.getElementById(id);if(!input)throw Error('Missing press kit field '+id);const proto=input instanceof HTMLTextAreaElement?HTMLTextAreaElement.prototype:HTMLInputElement.prototype;Object.getOwnPropertyDescriptor(proto,'value').set.call(input,value);input.dispatchEvent(new Event('input',{bubbles:true}));}document.querySelector('form').requestSubmit();return true})()`);
+    const pressKitValues = {
+      artistName, bio, shortBio: "A saved browser press kit", genres: "Electronic",
+      contactEmail: "artist@example.test", bookingEmail: "booking@example.test",
+      website: "https://example.test",
+    };
+    // Wait for and submit from the same document evaluation. Separating the
+    // readiness query from the form action allowed a React route transition to
+    // replace the form between two CDP commands.
+    await navigateUntil("/press-kit", `(()=> {
+      const form=document.querySelector('form');
+      const values=${JSON.stringify(pressKitValues)};
+      if(!form)return false;
+      const missing=Object.keys(values).filter(id=>!form.querySelector('#'+CSS.escape(id)));
+      if(missing.length)return false;
+      for(const [id,value] of Object.entries(values)){
+        const input=form.querySelector('#'+CSS.escape(id));
+        const proto=input instanceof HTMLTextAreaElement?HTMLTextAreaElement.prototype:HTMLInputElement.prototype;
+        Object.getOwnPropertyDescriptor(proto,'value').set.call(input,value);
+        input.dispatchEvent(new Event('input',{bubbles:true}));
+      }
+      form.requestSubmit();
+      return true;
+    })()`, "Press Kit form did not expose every required field before the browser acceptance deadline");
     let savedKit;
     const saveDeadline = Date.now() + 15_000;
     while (Date.now() < saveDeadline) {
@@ -1048,7 +1073,16 @@ try {
   symlinkSync(join(root, "external"), join(temp, "cwd", "external"), "dir");
   symlinkSync(join(root, "tsconfig.json"), join(temp, "cwd", "tsconfig.json"), "file");
   symlinkSync(join(root, "tsconfig.server.json"), join(temp, "cwd", "tsconfig.server.json"), "file");
-  const baseEnv = { PATH: process.env.PATH, HOME: join(temp, "home"), LANG: "C", TZ: "UTC", ...(process.env.LD_LIBRARY_PATH ? { LD_LIBRARY_PATH: process.env.LD_LIBRARY_PATH } : {}) };
+  const baseEnv = {
+    PATH: process.env.PATH,
+    HOME: join(temp, "home"),
+    LANG: "C",
+    TZ: "UTC",
+    ...((process.env.MAXBOOSTER_PYTHON || process.env.MAXBOOSTER_TEST_PYTHON)
+      ? { MAXBOOSTER_PYTHON: process.env.MAXBOOSTER_PYTHON || process.env.MAXBOOSTER_TEST_PYTHON }
+      : {}),
+    ...(process.env.LD_LIBRARY_PATH ? { LD_LIBRARY_PATH: process.env.LD_LIBRARY_PATH } : {}),
+  };
 
   const schema = readFileSync(join(root, "shared/schema.ts"), "utf8");
   const readinessExport = 'export * from "./readiness-schema";';
@@ -1067,10 +1101,11 @@ try {
   evidence.schemaGeneration = "pass";
 
   run("initdb", ["-D", join(temp, "pg"), "-U", "acceptance", "--auth=trust", "--no-locale", "--encoding=UTF8"], baseEnv);
+  // Every fixture client uses loopback TCP, so no Unix socket is needed.
   run("pg_ctl", [
     "-D", join(temp, "pg"),
     "-l", join(temp, "postgres.log"),
-    "-o", `-h 127.0.0.1 -k ${temp} -p ${pgPort} -c shared_buffers=32MB -c max_connections=30`,
+    "-o", `-h 127.0.0.1 -c unix_socket_directories= -p ${pgPort} -c shared_buffers=32MB -c max_connections=30`,
     "-w", "start",
   ], baseEnv);
   postgresStarted = true;
@@ -1079,7 +1114,12 @@ try {
   for (const file of baselineMigrations) {
     await client.query(readFileSync(join(temp, "generated", file), "utf8"));
   }
-  for (const file of readdirSync(join(root, "migrations")).filter((name) => /^\d+.*\.sql$/.test(name) && Number(name.split("_")[0]) >= 20).sort()) {
+  // The current Drizzle baseline already contains the 0100 MaxCore registry
+  // and 0101 collaboration rooms. Their migration SQL is validated separately.
+  for (const file of readdirSync(join(root, "migrations")).filter((name) =>
+    /^\d+.*\.sql$/.test(name) && Number(name.split("_")[0]) >= 20
+    && name !== "0100_maxcore_cognitive_registry.sql"
+    && name !== "0101_collaboration_rooms.sql").sort()) {
     await client.query(readFileSync(join(root, "migrations", file), "utf8"));
   }
   evidence.postgres = "pass";
@@ -1088,6 +1128,11 @@ try {
   const appEnv = {
     ...baseEnv,
     NODE_ENV: "production",
+    // This opt-in is limited to the disposable acceptance process and database.
+    // Production remains private/admin-only unless its own launch configuration
+    // explicitly enables public access.
+    MAXBOOSTER_ADMIN_ONLY_MODE: "false",
+    MAXBOOSTER_PUBLIC_LAUNCH_ENABLED: "true",
     PORT: String(appPort),
     DATABASE_URL: `postgresql://acceptance@127.0.0.1:${pgPort}/postgres`,
     SESSION_SECRET: sessionSecret,
@@ -1162,6 +1207,29 @@ try {
     response.status === 200 && /application\/json/.test(response.contentType) &&
     typeof jsonBody(response).csrfToken === "string", 90_000);
 
+  const registrationSettingsDeadline = Date.now() + 90_000;
+  let registrationDefaultsSeeded = false;
+  while (Date.now() < registrationSettingsDeadline) {
+    const defaults = await client.query(
+      "SELECT 1 FROM system_settings WHERE key = 'user_registration_enabled'",
+    );
+    if (defaults.rowCount) {
+      registrationDefaultsSeeded = true;
+      break;
+    }
+    await new Promise((resolveDelay) => setTimeout(resolveDelay, 100));
+  }
+  if (!registrationDefaultsSeeded) {
+    throw new Error("Disposable app registration defaults did not seed before account acceptance");
+  }
+  await client.query(
+    "INSERT INTO system_settings (key, value, description) VALUES ('platform.userRegistrationEnabled', $1::jsonb, 'Disposable public-account acceptance only') ON CONFLICT (key) DO UPDATE SET value = EXCLUDED.value",
+    ["true"],
+  );
+  evidence.registrationPolicyFixture =
+    "public registration enabled only in disposable PostgreSQL; production configuration is unchanged";
+  evidence.registrationPolicy = evidence.registrationPolicyFixture;
+
   if (httpLoadOnly) {
     evidence.browser = "intentionally skipped only for explicit --http-load mode";
     try {
@@ -1213,8 +1281,8 @@ try {
         : "Investigate the recorded browser login failure against the current built asset.";
       evidence.browser = {
         engine: "Chromium CDP",
-        hydrated: true,
-        screenshot: "reports/readiness-implementation/assembled-acceptance-login.png",
+        hydrated: false,
+        ...(typeof evidence.browser === "object" ? evidence.browser : {}),
         formLogin: "fail",
         failure: browserFailure,
         prerequisite,
@@ -1272,7 +1340,7 @@ try {
       ? "Explicit load-only mode did not launch Chromium; the default invocation retains its browser flow."
       : evidence.browser.formLogin === true
       ? "A real headless Chromium page hydrated the login UI, submitted the login form, persisted its cookie session, logged out, and captured a pre-credential screenshot."
-      : "A real headless Chromium page hydrated the login UI and captured a pre-credential screenshot, but the assembled browser login failed; HTTP auth evidence remains distinct and the artifact prerequisite is recorded.",
+      : "Chromium did not complete the browser acceptance journey. The report records the observed browser and HTTP authentication results.",
   );
   if (ready.status !== 503 || readyBody.unifiedAwareness?.ready !== false) {
     failures.push(

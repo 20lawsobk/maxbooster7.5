@@ -1,0 +1,125 @@
+{
+  "generatedAt": "2026-11-07T00:00:26.472596+00:00",
+  "revision": "253b69cca4c57068494de0d8a6d1b950feb19ec9",
+  "scope": "Canonical native/imported subsystem checks; no production database or provider credentials",
+  "settings": {
+    "includeRustConcurrency": false,
+    "includePdimSmoke": true,
+    "offline": false,
+    "portableRustSelected": true
+  },
+  "results": [
+    {
+      "id": "rust-boosterstate",
+      "status": "passed",
+      "exitCode": 0,
+      "timedOut": false,
+      "seconds": 4.136,
+      "command": [
+        "cargo",
+        "test",
+        "--locked",
+        "--all-targets",
+        "--manifest-path",
+        "boosterstate/Cargo.toml"
+      ],
+      "cwd": ".",
+      "sourceFiles": [
+        "boosterstate/tests/runtime_dependency.rs"
+      ],
+      "stdoutFile": "rust-boosterstate.txt",
+      "sourceSha256": {
+        "boosterstate/tests/runtime_dependency.rs": "158a12bef96d3fedb149f254355f84d251e34ee89e89dffa68e71f569a7792dd"
+      },
+      "passedTests": 3
+    },
+    {
+      "id": "go-dns",
+      "status": "passed",
+      "exitCode": 0,
+      "timedOut": false,
+      "seconds": 9.622,
+      "command": [
+        "go",
+        "test",
+        "-json",
+        "-count=1",
+        "-mod=readonly",
+        "./..."
+      ],
+      "cwd": "dns-os/services/dns-authoritative",
+      "sourceFiles": [
+        "dns-os/services/dns-authoritative/dependency_runtime_test.go"
+      ],
+      "stdoutFile": "go-dns.txt",
+      "sourceSha256": {
+        "dns-os/services/dns-authoritative/dependency_runtime_test.go": "2127be4589281ccde342b5c24799878089a22fedb15a36e3a70e6ba9964807c0"
+      },
+      "passedTests": 2
+    },
+    {
+      "id": "pdim-erasure",
+      "status": "passed",
+      "exitCode": 0,
+      "timedOut": false,
+      "seconds": 0.372,
+      "command": [
+        "node",
+        "--import",
+        "tsx",
+        "external/pdim/artifacts/api-server/src/pocket-dimension/fabric/erasure/__rs_test.ts"
+      ],
+      "cwd": ".",
+      "sourceFiles": [
+        "external/pdim/artifacts/api-server/src/pocket-dimension/fabric/erasure/__rs_test.ts"
+      ],
+      "stdoutFile": "pdim-erasure.txt",
+      "sourceSha256": {
+        "external/pdim/artifacts/api-server/src/pocket-dimension/fabric/erasure/__rs_test.ts": "f6323c8f2cefaf7c6a2622b764cec4ae6adf483c0430694cefd9d86cf299d27b"
+      },
+      "passedScenarios": 60
+    },
+    {
+      "id": "maxcore-js-security",
+      "status": "passed",
+      "exitCode": 0,
+      "timedOut": false,
+      "seconds": 2.088,
+      "command": [
+        "node",
+        "scripts/check-js-security-versions.js"
+      ],
+      "cwd": "external/maxcore",
+      "sourceFiles": [
+        "external/maxcore/scripts/check-js-security-versions.js"
+      ],
+      "stdoutFile": "maxcore-js-security.txt",
+      "sourceSha256": {
+        "external/maxcore/scripts/check-js-security-versions.js": "9da01755624fae6858b2f617a17f6b466eb428fac42c30b0d3b09b77256ee581"
+      }
+    },
+    {
+      "id": "pdim-http-load",
+      "status": "passed",
+      "exitCode": 0,
+      "timedOut": false,
+      "seconds": 10.776,
+      "command": [
+        "node",
+        "scripts/testing/run-pdim-smoke.mjs",
+        "/home/runner/workspace/reports/aso/isolated-full-20261106T233139Z/subsystems"
+      ],
+      "cwd": ".",
+      "sourceFiles": [
+        "external/pdim/scripts/src/smoke-load-test.ts"
+      ],
+      "stdoutFile": "pdim-http-load.txt",
+      "sourceSha256": {
+        "external/pdim/scripts/src/smoke-load-test.ts": "56b3e0f1b3fc88e92a0b0d10dd4f5c8bfc7b1b782a97e9c90aa2bc5bf7ca3710"
+      },
+      "passedTests": 54,
+      "totalTests": 54,
+      "fixtureReport": "pdim-smoke-results.json"
+    }
+  ]
+}

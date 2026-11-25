@@ -1,0 +1,99 @@
+{
+  "schemaVersion": 1,
+  "scope": "Pure esbuild transform and empty-counter AST map control for two small source files; no product execution, participating runtime adoption or merge",
+  "baseline": "Selected exact a160 historical maps",
+  "controls": [
+    {
+      "file": "server/logger.ts",
+      "sourceSha256": "5f01d80a911170282910ed53d0731fd1175008832e5325c77a8b504df695fac5",
+      "options": {
+        "sourcefile": "/workspace/maxbooster7.5/server/logger.ts",
+        "loader": "ts",
+        "sourcemap": "external",
+        "sourcesContent": true,
+        "format": "esm",
+        "target": "esnext",
+        "minify": false,
+        "minifyIdentifiers": false,
+        "minifySyntax": false,
+        "minifyWhitespace": false,
+        "treeShaking": false,
+        "keepNames": false,
+        "tsconfigRaw": {
+          "compilerOptions": {
+            "useDefineForClassFields": true
+          }
+        }
+      },
+      "codeSha256": "75b15b9c454f2a63f778ab1763f2be2716ec82052e80854d4d45a95a71c8f3bc",
+      "mapSha256": "8be3aa96827cd70b9608ad8c672244ce282c4179cdfe205629ca0620dbec6d6a",
+      "comparison": {
+        "statementMap": {
+          "equal": false,
+          "baselineEntries": 21,
+          "controlEntries": 21
+        },
+        "fnMap": {
+          "equal": false,
+          "baselineEntries": 7,
+          "controlEntries": 7
+        },
+        "branchMap": {
+          "equal": false,
+          "baselineEntries": 7,
+          "controlEntries": 7
+        }
+      },
+      "allCountersZero": true,
+      "executed": false,
+      "mergedIntoGlobalCoverage": false
+    },
+    {
+      "file": "server/logSanitizer.ts",
+      "sourceSha256": "f012622e80390701551ab38f7eda478daf9f7ee4a692e63a71ebaa856a145fb5",
+      "options": {
+        "sourcefile": "/workspace/maxbooster7.5/server/logSanitizer.ts",
+        "loader": "ts",
+        "sourcemap": "external",
+        "sourcesContent": true,
+        "format": "esm",
+        "target": "esnext",
+        "minify": false,
+        "minifyIdentifiers": false,
+        "minifySyntax": false,
+        "minifyWhitespace": false,
+        "treeShaking": false,
+        "keepNames": false,
+        "tsconfigRaw": {
+          "compilerOptions": {
+            "useDefineForClassFields": true
+          }
+        }
+      },
+      "codeSha256": "6b3afbef9eb4b82c2ae30e34c228aaaa06ec5e1477da116d78490fb7801663e6",
+      "mapSha256": "be8f9c3bcb28259b232dd7abb8b9c197ab32947e1f85710519ed6e257741db52",
+      "comparison": {
+        "statementMap": {
+          "equal": false,
+          "baselineEntries": 44,
+          "controlEntries": 44
+        },
+        "fnMap": {
+          "equal": false,
+          "baselineEntries": 5,
+          "controlEntries": 5
+        },
+        "branchMap": {
+          "equal": false,
+          "baselineEntries": 22,
+          "controlEntries": 22
+        }
+      },
+      "allCountersZero": true,
+      "executed": false,
+      "mergedIntoGlobalCoverage": false
+    }
+  ],
+  "productionReady": false,
+  "mergedIntoGlobalCoverage": false
+}

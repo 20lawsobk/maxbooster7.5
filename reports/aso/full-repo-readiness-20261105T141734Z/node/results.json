@@ -1,0 +1,3696 @@
+{
+  "sourceRevision": "2b33ccd242213157f2478619224246620415b992",
+  "group": "node",
+  "runs": [
+    {
+      "command": [
+        "node",
+        "--import",
+        "tsx",
+        "--test",
+        "--test-concurrency=1",
+        "--test-reporter=tap",
+        "evaluations/maxcore-fused/live-api.test.mjs"
+      ],
+      "cwd": ".",
+      "startedAt": "2026-11-05T14:31:36.980845+00:00",
+      "durationSeconds": 0.217,
+      "exitCode": 0,
+      "timedOut": false,
+      "status": "passed",
+      "log": "reports/aso/full-repo-readiness-20261105T141734Z/node/evaluations__maxcore-fused__live-api.test.mjs.txt",
+      "logSha256": "6b7e64f43b74107c7dbc403f116ffef931fd89670cb993e9e03928834e34d706",
+      "file": "evaluations/maxcore-fused/live-api.test.mjs",
+      "counts": {
+        "tests": 5,
+        "pass": 5,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0
+      },
+      "countScope": "node:test reported totals (includes parent tests)"
+    },
+    {
+      "command": [
+        "node",
+        "--import",
+        "tsx",
+        "--test",
+        "--test-concurrency=1",
+        "--test-reporter=tap",
+        "evaluations/maxcore-fused/runner.test.mjs"
+      ],
+      "cwd": ".",
+      "startedAt": "2026-11-05T14:31:37.203443+00:00",
+      "durationSeconds": 0.166,
+      "exitCode": 0,
+      "timedOut": false,
+      "status": "passed",
+      "log": "reports/aso/full-repo-readiness-20261105T141734Z/node/evaluations__maxcore-fused__runner.test.mjs.txt",
+      "logSha256": "ffeef20af8e55e793d693d4f380b590d2e29ad98e2da5dbe394005efba3c93aa",
+      "file": "evaluations/maxcore-fused/runner.test.mjs",
+      "counts": {
+        "tests": 6,
+        "pass": 6,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0
+      },
+      "countScope": "node:test reported totals (includes parent tests)"
+    },
+    {
+      "command": [
+        "node",
+        "--import",
+        "tsx",
+        "--test",
+        "--test-concurrency=1",
+        "--test-reporter=tap",
+        "script/security-consumers.test.cjs"
+      ],
+      "cwd": ".",
+      "startedAt": "2026-11-05T14:31:37.374626+00:00",
+      "durationSeconds": 2.021,
+      "exitCode": 0,
+      "timedOut": false,
+      "status": "passed",
+      "log": "reports/aso/full-repo-readiness-20261105T141734Z/node/script__security-consumers.test.cjs.txt",
+      "logSha256": "0a8995506a1ab1aa13cfa30f3535e8a27cffe4db00dd9be7d81d765cdae7e441",
+      "file": "script/security-consumers.test.cjs",
+      "counts": {
+        "tests": 5,
+        "pass": 5,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0
+      },
+      "countScope": "node:test reported totals (includes parent tests)"
+    },
+    {
+      "command": [
+        "node",
+        "--import",
+        "tsx",
+        "--test",
+        "--test-concurrency=1",
+        "--test-reporter=tap",
+        "script/security-readiness.test.mjs"
+      ],
+      "cwd": ".",
+      "startedAt": "2026-11-05T14:31:39.400411+00:00",
+      "durationSeconds": 0.617,
+      "exitCode": 0,
+      "timedOut": false,
+      "status": "passed",
+      "log": "reports/aso/full-repo-readiness-20261105T141734Z/node/script__security-readiness.test.mjs.txt",
+      "logSha256": "423f35f888b78e58bb0e07722df5cc86e02303fe5bbbaaf2db0fff75704d3a1b",
+      "file": "script/security-readiness.test.mjs",
+      "counts": {
+        "tests": 3,
+        "pass": 3,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0
+      },
+      "countScope": "node:test reported totals (includes parent tests)"
+    },
+    {
+      "command": [
+        "node",
+        "--import",
+        "tsx",
+        "scripts/test-data-runtime.mjs"
+      ],
+      "cwd": ".",
+      "startedAt": "2026-11-05T14:31:40.023567+00:00",
+      "durationSeconds": 0.316,
+      "exitCode": 0,
+      "timedOut": false,
+      "status": "passed",
+      "log": "reports/aso/full-repo-readiness-20261105T141734Z/node/scripts__test-data-runtime.mjs.txt",
+      "logSha256": "242711c28769d54367a6457805412ab84368c7803b4899a07f42fa8e7b7d9d55",
+      "file": "scripts/test-data-runtime.mjs",
+      "counts": {},
+      "countScope": "assertion script; no case count reported"
+    },
+    {
+      "command": [
+        "node",
+        "--import",
+        "tsx",
+        "scripts/test-fabric-deletion.mjs"
+      ],
+      "cwd": ".",
+      "startedAt": "2026-11-05T14:31:40.344423+00:00",
+      "durationSeconds": 0.165,
+      "exitCode": 0,
+      "timedOut": false,
+      "status": "passed",
+      "log": "reports/aso/full-repo-readiness-20261105T141734Z/node/scripts__test-fabric-deletion.mjs.txt",
+      "logSha256": "7e291a999c5ae6ce0429f86e6a0a21f3d3c20825b9691326d172e5f8b989c8d5",
+      "file": "scripts/test-fabric-deletion.mjs",
+      "counts": {},
+      "countScope": "assertion script; no case count reported"
+    },
+    {
+      "command": [
+        "node",
+        "--import",
+        "tsx",
+        "--test",
+        "--test-concurrency=1",
+        "--test-reporter=tap",
+        "server/logSanitizer.test.ts"
+      ],
+      "cwd": ".",
+      "startedAt": "2026-11-05T14:31:40.514818+00:00",
+      "durationSeconds": 0.316,
+      "exitCode": 0,
+      "timedOut": false,
+      "status": "passed",
+      "log": "reports/aso/full-repo-readiness-20261105T141734Z/node/server__logSanitizer.test.ts.txt",
+      "logSha256": "6460d913797542653f6bf34d60d196e69edd69dd16707ed0c42ee71e9c118318",
+      "file": "server/logSanitizer.test.ts",
+      "counts": {
+        "tests": 6,
+        "pass": 6,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0
+      },
+      "countScope": "node:test reported totals (includes parent tests)"
+    },
+    {
+      "command": [
+        "node",
+        "--import",
+        "tsx",
+        "--test",
+        "--test-concurrency=1",
+        "--test-reporter=tap",
+        "server/services/accountErasureWorkflow.test.ts"
+      ],
+      "cwd": ".",
+      "startedAt": "2026-11-05T14:31:40.835387+00:00",
+      "durationSeconds": 0.265,
+      "exitCode": 0,
+      "timedOut": false,
+      "status": "passed",
+      "log": "reports/aso/full-repo-readiness-20261105T141734Z/node/server__services__accountErasureWorkflow.test.ts.txt",
+      "logSha256": "821f8abfdd4a5be0dddab9383d546b39287783c6a6a5adbca9813fe62f5c0b8c",
+      "file": "server/services/accountErasureWorkflow.test.ts",
+      "counts": {
+        "tests": 11,
+        "pass": 11,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0
+      },
+      "countScope": "node:test reported totals (includes parent tests)"
+    },
+    {
+      "command": [
+        "node",
+        "--import",
+        "tsx",
+        "--test",
+        "--test-concurrency=1",
+        "--test-reporter=tap",
+        "server/services/commerce.isolated.test.mjs"
+      ],
+      "cwd": ".",
+      "startedAt": "2026-11-05T14:31:41.106249+00:00",
+      "durationSeconds": 0.416,
+      "exitCode": 0,
+      "timedOut": false,
+      "status": "passed",
+      "log": "reports/aso/full-repo-readiness-20261105T141734Z/node/server__services__commerce.isolated.test.mjs.txt",
+      "logSha256": "6af96fc4005f014254535e7934b720b0a762df16dd3e27a2bd5876f3b1c92ca1",
+      "file": "server/services/commerce.isolated.test.mjs",
+      "counts": {
+        "tests": 10,
+        "pass": 10,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0
+      },
+      "countScope": "node:test reported totals (includes parent tests)"
+    },
+    {
+      "command": [
+        "node",
+        "--import",
+        "tsx",
+        "--test",
+        "--test-concurrency=1",
+        "--test-reporter=tap",
+        "server/services/commerce/orchestrator.isolated.test.mjs"
+      ],
+      "cwd": ".",
+      "startedAt": "2026-11-05T14:31:41.526894+00:00",
+      "durationSeconds": 0.266,
+      "exitCode": 0,
+      "timedOut": false,
+      "status": "passed",
+      "log": "reports/aso/full-repo-readiness-20261105T141734Z/node/server__services__commerce__orchestrator.isolated.test.mjs.txt",
+      "logSha256": "12db97aa8f163b618c3de7c67a6aca40bc541085fbe9764e71b9ae39e457ef49",
+      "file": "server/services/commerce/orchestrator.isolated.test.mjs",
+      "counts": {
+        "tests": 12,
+        "pass": 12,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0
+      },
+      "countScope": "node:test reported totals (includes parent tests)"
+    },
+    {
+      "command": [
+        "node",
+        "--import",
+        "tsx",
+        "--test",
+        "--test-concurrency=1",
+        "--test-reporter=tap",
+        "server/services/securityAuthority.test.ts"
+      ],
+      "cwd": ".",
+      "startedAt": "2026-11-05T14:31:41.799266+00:00",
+      "durationSeconds": 0.718,
+      "exitCode": 0,
+      "timedOut": false,
+      "status": "passed",
+      "log": "reports/aso/full-repo-readiness-20261105T141734Z/node/server__services__securityAuthority.test.ts.txt",
+      "logSha256": "0a22ab107e8c7701374688eae68ce00ab12f35f8e196cf0389aaf7d49a1669c0",
+      "file": "server/services/securityAuthority.test.ts",
+      "counts": {
+        "tests": 8,
+        "pass": 8,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0
+      },
+      "countScope": "node:test reported totals (includes parent tests)"
+    },
+    {
+      "command": [
+        "node",
+        "--import",
+        "tsx",
+        "--test",
+        "--test-concurrency=1",
+        "--test-reporter=tap",
+        "server/services/securityJwtChain.test.mjs"
+      ],
+      "cwd": ".",
+      "startedAt": "2026-11-05T14:31:42.523195+00:00",
+      "durationSeconds": 0.266,
+      "exitCode": 0,
+      "timedOut": false,
+      "status": "passed",
+      "log": "reports/aso/full-repo-readiness-20261105T141734Z/node/server__services__securityJwtChain.test.mjs.txt",
+      "logSha256": "2229824e6c949202dd576b50639aa166bc25396efd57c321fffd09d91c917a64",
+      "file": "server/services/securityJwtChain.test.mjs",
+      "counts": {
+        "tests": 4,
+        "pass": 4,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0
+      },
+      "countScope": "node:test reported totals (includes parent tests)"
+    },
+    {
+      "command": [
+        "node",
+        "--import",
+        "tsx",
+        "--test",
+        "--test-concurrency=1",
+        "--test-reporter=tap",
+        "tests/access-control-isolated.cjs"
+      ],
+      "cwd": ".",
+      "startedAt": "2026-11-05T14:31:42.796149+00:00",
+      "durationSeconds": 0.717,
+      "exitCode": 0,
+      "timedOut": false,
+      "status": "passed",
+      "log": "reports/aso/full-repo-readiness-20261105T141734Z/node/tests__access-control-isolated.cjs.txt",
+      "logSha256": "31c7ff37ebf9f74c76b490a0eba5bc159b05296cd66d8c1000816d4d7910ad36",
+      "file": "tests/access-control-isolated.cjs",
+      "counts": {
+        "tests": 4,
+        "pass": 4,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0
+      },
+      "countScope": "node:test reported totals (includes parent tests)"
+    },
+    {
+      "command": [
+        "node",
+        "--import",
+        "tsx",
+        "--test",
+        "--test-concurrency=1",
+        "--test-reporter=tap",
+        "tests/account-analytics-browser.test.mjs"
+      ],
+      "cwd": ".",
+      "startedAt": "2026-11-05T14:31:43.518100+00:00",
+      "durationSeconds": 3.829,
+      "exitCode": 0,
+      "timedOut": false,
+      "status": "passed",
+      "log": "reports/aso/full-repo-readiness-20261105T141734Z/node/tests__account-analytics-browser.test.mjs.txt",
+      "logSha256": "9f3db1a95c3b71c0511f266d9aee2aeb628d646cdd80ab31ab827a7d22b17956",
+      "file": "tests/account-analytics-browser.test.mjs",
+      "counts": {
+        "tests": 1,
+        "pass": 1,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0
+      },
+      "countScope": "node:test reported totals (includes parent tests)"
+    },
+    {
+      "command": [
+        "node",
+        "--import",
+        "tsx",
+        "--test",
+        "--test-concurrency=1",
+        "--test-reporter=tap",
+        "tests/account-analytics-contract.test.mjs"
+      ],
+      "cwd": ".",
+      "startedAt": "2026-11-05T14:31:47.352283+00:00",
+      "durationSeconds": 14.075,
+      "exitCode": 0,
+      "timedOut": false,
+      "status": "passed",
+      "log": "reports/aso/full-repo-readiness-20261105T141734Z/node/tests__account-analytics-contract.test.mjs.txt",
+      "logSha256": "d5bbb28ec5fda8d632b33554179d67488cf39324d2bfe05367deb0fc9af88bfe",
+      "file": "tests/account-analytics-contract.test.mjs",
+      "counts": {
+        "tests": 13,
+        "pass": 13,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0
+      },
+      "countScope": "node:test reported totals (includes parent tests)"
+    },
+    {
+      "command": [
+        "node",
+        "--import",
+        "tsx",
+        "--test",
+        "--test-concurrency=1",
+        "--test-reporter=tap",
+        "tests/admin-governance-isolated.cjs"
+      ],
+      "cwd": ".",
+      "startedAt": "2026-11-05T14:32:01.433903+00:00",
+      "durationSeconds": 2.68,
+      "exitCode": 0,
+      "timedOut": false,
+      "status": "passed",
+      "log": "reports/aso/full-repo-readiness-20261105T141734Z/node/tests__admin-governance-isolated.cjs.txt",
+      "logSha256": "e78cad54ce08e55e7351de1eaef15f6fa9932e3675148d39cade5c1cb2e44e12",
+      "file": "tests/admin-governance-isolated.cjs",
+      "counts": {
+        "tests": 12,
+        "pass": 12,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0
+      },
+      "countScope": "node:test reported totals (includes parent tests)"
+    },
+    {
+      "command": [
+        "node",
+        "--import",
+        "tsx",
+        "--test",
+        "--test-concurrency=1",
+        "--test-reporter=tap",
+        "tests/aso-controllers.test.mjs"
+      ],
+      "cwd": ".",
+      "startedAt": "2026-11-05T14:32:04.120493+00:00",
+      "durationSeconds": 0.868,
+      "exitCode": 0,
+      "timedOut": false,
+      "status": "passed",
+      "log": "reports/aso/full-repo-readiness-20261105T141734Z/node/tests__aso-controllers.test.mjs.txt",
+      "logSha256": "11b3c025c031c025d2c5831222128da717af220dcd437a6f9d89b6940e3e4fec",
+      "file": "tests/aso-controllers.test.mjs",
+      "counts": {
+        "tests": 11,
+        "pass": 11,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0
+      },
+      "countScope": "node:test reported totals (includes parent tests)"
+    },
+    {
+      "command": [
+        "node",
+        "--import",
+        "tsx",
+        "--test",
+        "--test-concurrency=1",
+        "--test-reporter=tap",
+        "tests/audio-metadata-security.test.mjs"
+      ],
+      "cwd": ".",
+      "startedAt": "2026-11-05T14:32:04.993264+00:00",
+      "durationSeconds": 0.417,
+      "exitCode": 0,
+      "timedOut": false,
+      "status": "passed",
+      "log": "reports/aso/full-repo-readiness-20261105T141734Z/node/tests__audio-metadata-security.test.mjs.txt",
+      "logSha256": "3901103a331d17d3217c5a890839464d9b08163b5d4c24083b42a6053641483b",
+      "file": "tests/audio-metadata-security.test.mjs",
+      "counts": {
+        "tests": 3,
+        "pass": 3,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0
+      },
+      "countScope": "node:test reported totals (includes parent tests)"
+    },
+    {
+      "command": [
+        "node",
+        "--import",
+        "tsx",
+        "--test",
+        "--test-concurrency=1",
+        "--test-reporter=tap",
+        "tests/beat-loop-test-safety.test.mjs"
+      ],
+      "cwd": ".",
+      "startedAt": "2026-11-05T14:32:05.416961+00:00",
+      "durationSeconds": 0.921,
+      "exitCode": 0,
+      "timedOut": false,
+      "status": "passed",
+      "log": "reports/aso/full-repo-readiness-20261105T141734Z/node/tests__beat-loop-test-safety.test.mjs.txt",
+      "logSha256": "035c155640db2f22d5b8d8e073d56af936219c8189faccc98a404afa24c07e88",
+      "file": "tests/beat-loop-test-safety.test.mjs",
+      "counts": {
+        "tests": 1,
+        "pass": 1,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0
+      },
+      "countScope": "node:test reported totals (includes parent tests)"
+    },
+    {
+      "command": [
+        "node",
+        "--import",
+        "tsx",
+        "--test",
+        "--test-concurrency=1",
+        "--test-reporter=tap",
+        "tests/block-compressor-transfer.test.mjs"
+      ],
+      "cwd": ".",
+      "startedAt": "2026-11-05T14:32:06.342569+00:00",
+      "durationSeconds": 0.316,
+      "exitCode": 0,
+      "timedOut": false,
+      "status": "passed",
+      "log": "reports/aso/full-repo-readiness-20261105T141734Z/node/tests__block-compressor-transfer.test.mjs.txt",
+      "logSha256": "339d3b00ac0c02ae20b44248cb336ba42fd89140027a72d275df6ab360fa25c1",
+      "file": "tests/block-compressor-transfer.test.mjs",
+      "counts": {
+        "tests": 1,
+        "pass": 1,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0
+      },
+      "countScope": "node:test reported totals (includes parent tests)"
+    },
+    {
+      "command": [
+        "node",
+        "--import",
+        "tsx",
+        "--test",
+        "--test-concurrency=1",
+        "--test-reporter=tap",
+        "tests/browser-runtime-discovery.test.mjs"
+      ],
+      "cwd": ".",
+      "startedAt": "2026-11-05T14:32:06.666126+00:00",
+      "durationSeconds": 0.216,
+      "exitCode": 0,
+      "timedOut": false,
+      "status": "passed",
+      "log": "reports/aso/full-repo-readiness-20261105T141734Z/node/tests__browser-runtime-discovery.test.mjs.txt",
+      "logSha256": "86e5e6bddab42fb87c83865dd2acd5eb377bcdac8ac03cb4203aa51befed5218",
+      "file": "tests/browser-runtime-discovery.test.mjs",
+      "counts": {
+        "tests": 1,
+        "pass": 1,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0
+      },
+      "countScope": "node:test reported totals (includes parent tests)"
+    },
+    {
+      "command": [
+        "node",
+        "--import",
+        "tsx",
+        "--test",
+        "--test-concurrency=1",
+        "--test-reporter=tap",
+        "tests/build-dependency-inputs.test.mjs"
+      ],
+      "cwd": ".",
+      "startedAt": "2026-11-05T14:32:06.887848+00:00",
+      "durationSeconds": 0.416,
+      "exitCode": 0,
+      "timedOut": false,
+      "status": "passed",
+      "log": "reports/aso/full-repo-readiness-20261105T141734Z/node/tests__build-dependency-inputs.test.mjs.txt",
+      "logSha256": "e02b56f01058e408b56faeca83120cdf8f07c979d7e0a8bc691362d8b9680fe4",
+      "file": "tests/build-dependency-inputs.test.mjs",
+      "counts": {
+        "tests": 4,
+        "pass": 4,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0
+      },
+      "countScope": "node:test reported totals (includes parent tests)"
+    },
+    {
+      "command": [
+        "node",
+        "--import",
+        "tsx",
+        "--test",
+        "--test-concurrency=1",
+        "--test-reporter=tap",
+        "tests/build-native-cleanup.test.mjs"
+      ],
+      "cwd": ".",
+      "startedAt": "2026-11-05T14:32:07.309776+00:00",
+      "durationSeconds": 0.215,
+      "exitCode": 0,
+      "timedOut": false,
+      "status": "passed",
+      "log": "reports/aso/full-repo-readiness-20261105T141734Z/node/tests__build-native-cleanup.test.mjs.txt",
+      "logSha256": "2fb4df32e1217a8f68e14e04aef5eace112978eddb8c61866b57c185d2af8538",
+      "file": "tests/build-native-cleanup.test.mjs",
+      "counts": {
+        "tests": 2,
+        "pass": 2,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0
+      },
+      "countScope": "node:test reported totals (includes parent tests)"
+    },
+    {
+      "command": [
+        "node",
+        "--import",
+        "tsx",
+        "--test",
+        "--test-concurrency=1",
+        "--test-reporter=tap",
+        "tests/closure-integrations-shared.cjs"
+      ],
+      "cwd": ".",
+      "startedAt": "2026-11-05T14:32:07.530683+00:00",
+      "durationSeconds": 0.617,
+      "exitCode": 0,
+      "timedOut": false,
+      "status": "passed",
+      "log": "reports/aso/full-repo-readiness-20261105T141734Z/node/tests__closure-integrations-shared.cjs.txt",
+      "logSha256": "7c2a0f3afe34048785ecedaebd7e7e2fcdc599834e4a362aacfe5df788db5033",
+      "file": "tests/closure-integrations-shared.cjs",
+      "counts": {
+        "tests": 4,
+        "pass": 4,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0
+      },
+      "countScope": "node:test reported totals (includes parent tests)"
+    },
+    {
+      "command": [
+        "node",
+        "--import",
+        "tsx",
+        "--test",
+        "--test-concurrency=1",
+        "--test-reporter=tap",
+        "tests/closure-integrations.cjs"
+      ],
+      "cwd": ".",
+      "startedAt": "2026-11-05T14:32:08.152699+00:00",
+      "durationSeconds": 0.717,
+      "exitCode": 0,
+      "timedOut": false,
+      "status": "passed",
+      "log": "reports/aso/full-repo-readiness-20261105T141734Z/node/tests__closure-integrations.cjs.txt",
+      "logSha256": "3d0e6eda2124c1f77fcaa4947702f610f14f76dc9254177602c87230c07fa9cf",
+      "file": "tests/closure-integrations.cjs",
+      "counts": {
+        "tests": 8,
+        "pass": 8,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0
+      },
+      "countScope": "node:test reported totals (includes parent tests)"
+    },
+    {
+      "command": [
+        "node",
+        "--import",
+        "tsx",
+        "--test",
+        "--test-concurrency=1",
+        "--test-reporter=tap",
+        "tests/cold-runtime-readiness.test.mjs"
+      ],
+      "cwd": ".",
+      "startedAt": "2026-11-05T14:32:08.878019+00:00",
+      "durationSeconds": 0.166,
+      "exitCode": 0,
+      "timedOut": false,
+      "status": "passed",
+      "log": "reports/aso/full-repo-readiness-20261105T141734Z/node/tests__cold-runtime-readiness.test.mjs.txt",
+      "logSha256": "74ea9ffe6f57cca890c0f0a4a54d6972275fb245961c14a500cea27416725942",
+      "file": "tests/cold-runtime-readiness.test.mjs",
+      "counts": {
+        "tests": 3,
+        "pass": 3,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0
+      },
+      "countScope": "node:test reported totals (includes parent tests)"
+    },
+    {
+      "command": [
+        "node",
+        "--import",
+        "tsx",
+        "--test",
+        "--test-concurrency=1",
+        "--test-reporter=tap",
+        "tests/commerce-migration-gate.test.mjs"
+      ],
+      "cwd": ".",
+      "startedAt": "2026-11-05T14:32:09.051663+00:00",
+      "durationSeconds": 0.57,
+      "exitCode": 0,
+      "timedOut": false,
+      "status": "passed",
+      "log": "reports/aso/full-repo-readiness-20261105T141734Z/node/tests__commerce-migration-gate.test.mjs.txt",
+      "logSha256": "7f4c163a8d44c8763d8c5174bf92ed4f9832ad64b7d583921b95e8a5801403c3",
+      "file": "tests/commerce-migration-gate.test.mjs",
+      "counts": {
+        "tests": 6,
+        "pass": 6,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0
+      },
+      "countScope": "node:test reported totals (includes parent tests)"
+    },
+    {
+      "command": [
+        "node",
+        "--import",
+        "tsx",
+        "--test",
+        "--test-concurrency=1",
+        "--test-reporter=tap",
+        "tests/current-storage-joint-recovery.test.mjs"
+      ],
+      "cwd": ".",
+      "startedAt": "2026-11-05T14:32:09.627133+00:00",
+      "durationSeconds": 6.707,
+      "exitCode": 0,
+      "timedOut": false,
+      "status": "passed",
+      "log": "reports/aso/full-repo-readiness-20261105T141734Z/node/tests__current-storage-joint-recovery.test.mjs.txt",
+      "logSha256": "7f04e701b33e283cf56bcff3d2b13c93d7248a2b2359b790b526fab1be8b2272",
+      "file": "tests/current-storage-joint-recovery.test.mjs",
+      "counts": {
+        "tests": 6,
+        "pass": 6,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0
+      },
+      "countScope": "node:test reported totals (includes parent tests)"
+    },
+    {
+      "command": [
+        "node",
+        "--import",
+        "tsx",
+        "--test",
+        "--test-concurrency=1",
+        "--test-reporter=tap",
+        "tests/database-backup-restore-postgres.test.mjs"
+      ],
+      "cwd": ".",
+      "startedAt": "2026-11-05T14:32:16.340479+00:00",
+      "durationSeconds": 1.821,
+      "exitCode": 0,
+      "timedOut": false,
+      "status": "passed",
+      "log": "reports/aso/full-repo-readiness-20261105T141734Z/node/tests__database-backup-restore-postgres.test.mjs.txt",
+      "logSha256": "55e92737575c0b1fed887010e08999c6d45243174416f9f7fdd0ab33b8b06a18",
+      "file": "tests/database-backup-restore-postgres.test.mjs",
+      "counts": {
+        "tests": 5,
+        "pass": 5,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0
+      },
+      "countScope": "node:test reported totals (includes parent tests)"
+    },
+    {
+      "command": [
+        "node",
+        "--import",
+        "tsx",
+        "--test",
+        "--test-concurrency=1",
+        "--test-reporter=tap",
+        "tests/database-recovery-schema.test.mjs"
+      ],
+      "cwd": ".",
+      "startedAt": "2026-11-05T14:32:18.166465+00:00",
+      "durationSeconds": 1.168,
+      "exitCode": 0,
+      "timedOut": false,
+      "status": "passed",
+      "log": "reports/aso/full-repo-readiness-20261105T141734Z/node/tests__database-recovery-schema.test.mjs.txt",
+      "logSha256": "1eb16bebdd10fa0314f9ea418295acfad01d03a0fd51bc394e5d2243b7aa2be1",
+      "file": "tests/database-recovery-schema.test.mjs",
+      "counts": {
+        "tests": 1,
+        "pass": 1,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0
+      },
+      "countScope": "node:test reported totals (includes parent tests)"
+    },
+    {
+      "command": [
+        "node",
+        "--import",
+        "tsx",
+        "--test",
+        "--test-concurrency=1",
+        "--test-reporter=tap",
+        "tests/database-recovery-tools.test.mjs"
+      ],
+      "cwd": ".",
+      "startedAt": "2026-11-05T14:32:19.339846+00:00",
+      "durationSeconds": 0.216,
+      "exitCode": 0,
+      "timedOut": false,
+      "status": "passed",
+      "log": "reports/aso/full-repo-readiness-20261105T141734Z/node/tests__database-recovery-tools.test.mjs.txt",
+      "logSha256": "3c995471bf881fc45a3ab99fcdfd408118836e28142221ba5a16010112e4cefd",
+      "file": "tests/database-recovery-tools.test.mjs",
+      "counts": {
+        "tests": 2,
+        "pass": 2,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0
+      },
+      "countScope": "node:test reported totals (includes parent tests)"
+    },
+    {
+      "command": [
+        "node",
+        "--import",
+        "tsx",
+        "--test",
+        "--test-concurrency=1",
+        "--test-reporter=tap",
+        "tests/dependency-advisories.test.mjs"
+      ],
+      "cwd": ".",
+      "startedAt": "2026-11-05T14:32:19.565028+00:00",
+      "durationSeconds": 7.909,
+      "exitCode": 0,
+      "timedOut": false,
+      "status": "passed",
+      "log": "reports/aso/full-repo-readiness-20261105T141734Z/node/tests__dependency-advisories.test.mjs.txt",
+      "logSha256": "ba42d081690f5378828ef7ae383cc1222f4ede7b1396603a16d2a2cef584740a",
+      "file": "tests/dependency-advisories.test.mjs",
+      "counts": {
+        "tests": 10,
+        "pass": 10,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0
+      },
+      "countScope": "node:test reported totals (includes parent tests)"
+    },
+    {
+      "command": [
+        "node",
+        "--import",
+        "tsx",
+        "--test",
+        "--test-concurrency=1",
+        "--test-reporter=tap",
+        "tests/dependency-security-paths.test.mjs"
+      ],
+      "cwd": ".",
+      "startedAt": "2026-11-05T14:32:27.482404+00:00",
+      "durationSeconds": 10.222,
+      "exitCode": 0,
+      "timedOut": false,
+      "status": "passed",
+      "log": "reports/aso/full-repo-readiness-20261105T141734Z/node/tests__dependency-security-paths.test.mjs.txt",
+      "logSha256": "55637e03dbe1369a7f60e7140d2311fc00a063172f8dace8efe695aa13093a18",
+      "file": "tests/dependency-security-paths.test.mjs",
+      "counts": {
+        "tests": 6,
+        "pass": 6,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0
+      },
+      "countScope": "node:test reported totals (includes parent tests)"
+    },
+    {
+      "command": [
+        "node",
+        "--import",
+        "tsx",
+        "--test",
+        "--test-concurrency=1",
+        "--test-reporter=tap",
+        "tests/dependency-transport-teardown.test.mjs"
+      ],
+      "cwd": ".",
+      "startedAt": "2026-11-05T14:32:37.711187+00:00",
+      "durationSeconds": 0.819,
+      "exitCode": 0,
+      "timedOut": false,
+      "status": "passed",
+      "log": "reports/aso/full-repo-readiness-20261105T141734Z/node/tests__dependency-transport-teardown.test.mjs.txt",
+      "logSha256": "ee579e8e01b60fd28e966f8fe08065ac9674620264547c81daa671959ca3d86d",
+      "file": "tests/dependency-transport-teardown.test.mjs",
+      "counts": {
+        "tests": 4,
+        "pass": 4,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0
+      },
+      "countScope": "node:test reported totals (includes parent tests)"
+    },
+    {
+      "command": [
+        "node",
+        "--import",
+        "tsx",
+        "--test",
+        "--test-concurrency=1",
+        "--test-reporter=tap",
+        "tests/deployment-bootstrap.test.mjs"
+      ],
+      "cwd": ".",
+      "startedAt": "2026-11-05T14:32:38.543558+00:00",
+      "durationSeconds": 1.79,
+      "exitCode": 0,
+      "timedOut": false,
+      "status": "passed",
+      "log": "reports/aso/full-repo-readiness-20261105T141734Z/node/tests__deployment-bootstrap.test.mjs.txt",
+      "logSha256": "708e9f083d814612b2a208dce36d603a03ce5fdbdca0c521c35d996d8e76ea2d",
+      "file": "tests/deployment-bootstrap.test.mjs",
+      "counts": {
+        "tests": 2,
+        "pass": 2,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0
+      },
+      "countScope": "node:test reported totals (includes parent tests)"
+    },
+    {
+      "command": [
+        "node",
+        "--import",
+        "tsx",
+        "--test",
+        "--test-concurrency=1",
+        "--test-reporter=tap",
+        "tests/deployment-compressor-exit.test.mjs"
+      ],
+      "cwd": ".",
+      "startedAt": "2026-11-05T14:32:40.346093+00:00",
+      "durationSeconds": 1.422,
+      "exitCode": 0,
+      "timedOut": false,
+      "status": "passed",
+      "log": "reports/aso/full-repo-readiness-20261105T141734Z/node/tests__deployment-compressor-exit.test.mjs.txt",
+      "logSha256": "44c608f09df393aa2e83b89f2bd5e682656cf81b96fce97f6287b8b410f57019",
+      "file": "tests/deployment-compressor-exit.test.mjs",
+      "counts": {
+        "tests": 1,
+        "pass": 1,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0
+      },
+      "countScope": "node:test reported totals (includes parent tests)"
+    },
+    {
+      "command": [
+        "node",
+        "--import",
+        "tsx",
+        "--test",
+        "--test-concurrency=1",
+        "--test-reporter=tap",
+        "tests/deployment-contracts.cjs"
+      ],
+      "cwd": ".",
+      "startedAt": "2026-11-05T14:32:41.775204+00:00",
+      "durationSeconds": 0.717,
+      "exitCode": 0,
+      "timedOut": false,
+      "status": "passed",
+      "log": "reports/aso/full-repo-readiness-20261105T141734Z/node/tests__deployment-contracts.cjs.txt",
+      "logSha256": "b40d3dc46ebbab761f1addc11aa776ef64d84e75f68453b767eca05ef8b13d4b",
+      "file": "tests/deployment-contracts.cjs",
+      "counts": {
+        "tests": 9,
+        "pass": 9,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0
+      },
+      "countScope": "node:test reported totals (includes parent tests)"
+    },
+    {
+      "command": [
+        "node",
+        "--import",
+        "tsx",
+        "--test",
+        "--test-concurrency=1",
+        "--test-reporter=tap",
+        "tests/deployment-control-files.test.ts"
+      ],
+      "cwd": ".",
+      "startedAt": "2026-11-05T14:32:42.498313+00:00",
+      "durationSeconds": 0.567,
+      "exitCode": 0,
+      "timedOut": false,
+      "status": "passed",
+      "log": "reports/aso/full-repo-readiness-20261105T141734Z/node/tests__deployment-control-files.test.ts.txt",
+      "logSha256": "c5d3c774c1645c620242c90f62474f74c1261ad456ff1b7875c5755bc39e5649",
+      "file": "tests/deployment-control-files.test.ts",
+      "counts": {
+        "tests": 2,
+        "pass": 2,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0
+      },
+      "countScope": "node:test reported totals (includes parent tests)"
+    },
+    {
+      "command": [
+        "node",
+        "--import",
+        "tsx",
+        "--test",
+        "--test-concurrency=1",
+        "--test-reporter=tap",
+        "tests/deployment-current-source.test.mjs"
+      ],
+      "cwd": ".",
+      "startedAt": "2026-11-05T14:32:43.072992+00:00",
+      "durationSeconds": 0.216,
+      "exitCode": 0,
+      "timedOut": false,
+      "status": "passed",
+      "log": "reports/aso/full-repo-readiness-20261105T141734Z/node/tests__deployment-current-source.test.mjs.txt",
+      "logSha256": "cffbd42ad2e05012d886d6136eb925a4ac2afb58ce23ef7449997582972d33f5",
+      "file": "tests/deployment-current-source.test.mjs",
+      "counts": {
+        "tests": 2,
+        "pass": 2,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0
+      },
+      "countScope": "node:test reported totals (includes parent tests)"
+    },
+    {
+      "command": [
+        "node",
+        "--import",
+        "tsx",
+        "--test",
+        "--test-concurrency=1",
+        "--test-reporter=tap",
+        "tests/deployment-executive.test.mjs"
+      ],
+      "cwd": ".",
+      "startedAt": "2026-11-05T14:32:43.295111+00:00",
+      "durationSeconds": 2.675,
+      "exitCode": 0,
+      "timedOut": false,
+      "status": "passed",
+      "log": "reports/aso/full-repo-readiness-20261105T141734Z/node/tests__deployment-executive.test.mjs.txt",
+      "logSha256": "699e4dd85b12557802e038a843faca29a2b040f56be336f5b46c1504805f266a",
+      "file": "tests/deployment-executive.test.mjs",
+      "counts": {
+        "tests": 9,
+        "pass": 9,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0
+      },
+      "countScope": "node:test reported totals (includes parent tests)"
+    },
+    {
+      "command": [
+        "node",
+        "--import",
+        "tsx",
+        "--test",
+        "--test-concurrency=1",
+        "--test-reporter=tap",
+        "tests/deployment-image-size-gate.test.mjs"
+      ],
+      "cwd": ".",
+      "startedAt": "2026-11-05T14:32:45.977565+00:00",
+      "durationSeconds": 0.517,
+      "exitCode": 0,
+      "timedOut": false,
+      "status": "passed",
+      "log": "reports/aso/full-repo-readiness-20261105T141734Z/node/tests__deployment-image-size-gate.test.mjs.txt",
+      "logSha256": "6462cf48ab19cbb6245e2698d99846d74f6c8c925e935112ba8a6ea1932df235",
+      "file": "tests/deployment-image-size-gate.test.mjs",
+      "counts": {
+        "tests": 6,
+        "pass": 6,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0
+      },
+      "countScope": "node:test reported totals (includes parent tests)"
+    },
+    {
+      "command": [
+        "node",
+        "--import",
+        "tsx",
+        "--test",
+        "--test-concurrency=1",
+        "--test-reporter=tap",
+        "tests/deployment-recovery-location.test.mjs"
+      ],
+      "cwd": ".",
+      "startedAt": "2026-11-05T14:32:46.503463+00:00",
+      "durationSeconds": 1.022,
+      "exitCode": 0,
+      "timedOut": false,
+      "status": "passed",
+      "log": "reports/aso/full-repo-readiness-20261105T141734Z/node/tests__deployment-recovery-location.test.mjs.txt",
+      "logSha256": "9de5638d7060877feadc2878916d1d7187ca897954cb947e3260bec6503c0ca0",
+      "file": "tests/deployment-recovery-location.test.mjs",
+      "counts": {
+        "tests": 4,
+        "pass": 4,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0
+      },
+      "countScope": "node:test reported totals (includes parent tests)"
+    },
+    {
+      "command": [
+        "node",
+        "--import",
+        "tsx",
+        "--test",
+        "--test-concurrency=1",
+        "--test-reporter=tap",
+        "tests/deployment-remainder-contract.test.mjs"
+      ],
+      "cwd": ".",
+      "startedAt": "2026-11-05T14:32:47.532108+00:00",
+      "durationSeconds": 0.216,
+      "exitCode": 0,
+      "timedOut": false,
+      "status": "passed",
+      "log": "reports/aso/full-repo-readiness-20261105T141734Z/node/tests__deployment-remainder-contract.test.mjs.txt",
+      "logSha256": "0d0464c5b0ddf7305b27238144917d4f7d153c4a04c686fdae35053b105cb062",
+      "file": "tests/deployment-remainder-contract.test.mjs",
+      "counts": {
+        "tests": 2,
+        "pass": 2,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0
+      },
+      "countScope": "node:test reported totals (includes parent tests)"
+    },
+    {
+      "command": [
+        "node",
+        "--import",
+        "tsx",
+        "--test",
+        "--test-concurrency=1",
+        "--test-reporter=tap",
+        "tests/deployment-rust-phase.test.mjs"
+      ],
+      "cwd": ".",
+      "startedAt": "2026-11-05T14:32:47.756237+00:00",
+      "durationSeconds": 0.216,
+      "exitCode": 0,
+      "timedOut": false,
+      "status": "passed_with_skips",
+      "log": "reports/aso/full-repo-readiness-20261105T141734Z/node/tests__deployment-rust-phase.test.mjs.txt",
+      "logSha256": "b5fa98fef9fc470d3b64966820760528563915698c8b5e5c00c857a57f50c6d7",
+      "file": "tests/deployment-rust-phase.test.mjs",
+      "counts": {
+        "tests": 2,
+        "pass": 1,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 1
+      },
+      "countScope": "node:test reported totals (includes parent tests)"
+    },
+    {
+      "command": [
+        "node",
+        "--import",
+        "tsx",
+        "--test",
+        "--test-concurrency=1",
+        "--test-reporter=tap",
+        "tests/desktop-runtime-policy.test.mjs"
+      ],
+      "cwd": ".",
+      "startedAt": "2026-11-05T14:32:47.978632+00:00",
+      "durationSeconds": 0.215,
+      "exitCode": 0,
+      "timedOut": false,
+      "status": "passed",
+      "log": "reports/aso/full-repo-readiness-20261105T141734Z/node/tests__desktop-runtime-policy.test.mjs.txt",
+      "logSha256": "4056f67a12fe5b6efa2422e9df769f4ab2c6a6fe435821ab644d953e5991160f",
+      "file": "tests/desktop-runtime-policy.test.mjs",
+      "counts": {
+        "tests": 3,
+        "pass": 3,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0
+      },
+      "countScope": "node:test reported totals (includes parent tests)"
+    },
+    {
+      "command": [
+        "node",
+        "--import",
+        "tsx",
+        "--test",
+        "--test-concurrency=1",
+        "--test-reporter=tap",
+        "tests/distribution-workflow-tenancy.test.mjs"
+      ],
+      "cwd": ".",
+      "startedAt": "2026-11-05T14:32:48.199629+00:00",
+      "durationSeconds": 7.965,
+      "exitCode": 0,
+      "timedOut": false,
+      "status": "passed",
+      "log": "reports/aso/full-repo-readiness-20261105T141734Z/node/tests__distribution-workflow-tenancy.test.mjs.txt",
+      "logSha256": "457e07d5a6d74300f3e13ad3de86dbc9814d047dd3fb72796952b2272a1f4582",
+      "file": "tests/distribution-workflow-tenancy.test.mjs",
+      "counts": {
+        "tests": 10,
+        "pass": 10,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0
+      },
+      "countScope": "node:test reported totals (includes parent tests)"
+    },
+    {
+      "command": [
+        "node",
+        "--import",
+        "tsx",
+        "--test",
+        "--test-concurrency=1",
+        "--test-reporter=tap",
+        "tests/dns-dependency-consumers.test.mjs"
+      ],
+      "cwd": ".",
+      "startedAt": "2026-11-05T14:32:56.177554+00:00",
+      "durationSeconds": 2.015,
+      "exitCode": 0,
+      "timedOut": false,
+      "status": "passed",
+      "log": "reports/aso/full-repo-readiness-20261105T141734Z/node/tests__dns-dependency-consumers.test.mjs.txt",
+      "logSha256": "18ada2e9a6826983f9e1e497a021235b3647ce82e79587a6a02c9e41c349b9d7",
+      "file": "tests/dns-dependency-consumers.test.mjs",
+      "counts": {
+        "tests": 2,
+        "pass": 2,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0
+      },
+      "countScope": "node:test reported totals (includes parent tests)"
+    },
+    {
+      "command": [
+        "node",
+        "--import",
+        "tsx",
+        "--test",
+        "--test-concurrency=1",
+        "--test-reporter=tap",
+        "tests/electron-asar-launch-policy.test.mjs"
+      ],
+      "cwd": ".",
+      "startedAt": "2026-11-05T14:32:58.210673+00:00",
+      "durationSeconds": 1.735,
+      "exitCode": 0,
+      "timedOut": false,
+      "status": "passed",
+      "log": "reports/aso/full-repo-readiness-20261105T141734Z/node/tests__electron-asar-launch-policy.test.mjs.txt",
+      "logSha256": "4d41df17bf7c1ab52ab5bb6ea413146902d079b13ee314add60ac505498e3320",
+      "file": "tests/electron-asar-launch-policy.test.mjs",
+      "counts": {
+        "tests": 9,
+        "pass": 9,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0
+      },
+      "countScope": "node:test reported totals (includes parent tests)"
+    },
+    {
+      "command": [
+        "node",
+        "--import",
+        "tsx",
+        "--test",
+        "--test-concurrency=1",
+        "--test-reporter=tap",
+        "tests/endpoint-topology.test.mjs"
+      ],
+      "cwd": ".",
+      "startedAt": "2026-11-05T14:32:59.961269+00:00",
+      "durationSeconds": 3.983,
+      "exitCode": 0,
+      "timedOut": false,
+      "status": "passed",
+      "log": "reports/aso/full-repo-readiness-20261105T141734Z/node/tests__endpoint-topology.test.mjs.txt",
+      "logSha256": "4d9bd3d79f01ae3b2e4310819c4ab61615ab7e9b3fa79493f0cbf9a782db8738",
+      "file": "tests/endpoint-topology.test.mjs",
+      "counts": {
+        "tests": 8,
+        "pass": 8,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0
+      },
+      "countScope": "node:test reported totals (includes parent tests)"
+    },
+    {
+      "command": [
+        "node",
+        "--import",
+        "tsx",
+        "--test",
+        "--test-concurrency=1",
+        "--test-reporter=tap",
+        "tests/fabric-deletion-postgres.test.mjs"
+      ],
+      "cwd": ".",
+      "startedAt": "2026-11-05T14:33:03.962243+00:00",
+      "durationSeconds": 2.376,
+      "exitCode": 0,
+      "timedOut": false,
+      "status": "passed",
+      "log": "reports/aso/full-repo-readiness-20261105T141734Z/node/tests__fabric-deletion-postgres.test.mjs.txt",
+      "logSha256": "54d819e0ef2df4811a18eab11a45b0a53c4dc721e034575af140c7e185bc6cb2",
+      "file": "tests/fabric-deletion-postgres.test.mjs",
+      "counts": {
+        "tests": 1,
+        "pass": 1,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0
+      },
+      "countScope": "node:test reported totals (includes parent tests)"
+    },
+    {
+      "command": [
+        "node",
+        "--import",
+        "tsx",
+        "--test",
+        "--test-concurrency=1",
+        "--test-reporter=tap",
+        "tests/fabric-imported-reconcile-postgres.test.mjs"
+      ],
+      "cwd": ".",
+      "startedAt": "2026-11-05T14:33:06.350852+00:00",
+      "durationSeconds": 1.724,
+      "exitCode": 0,
+      "timedOut": false,
+      "status": "passed",
+      "log": "reports/aso/full-repo-readiness-20261105T141734Z/node/tests__fabric-imported-reconcile-postgres.test.mjs.txt",
+      "logSha256": "5d009b660c45c58d18e96e9dd5ff79e086e841e1d208cd6b1c648d14bfbb2163",
+      "file": "tests/fabric-imported-reconcile-postgres.test.mjs",
+      "counts": {
+        "tests": 1,
+        "pass": 1,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0
+      },
+      "countScope": "node:test reported totals (includes parent tests)"
+    },
+    {
+      "command": [
+        "node",
+        "--import",
+        "tsx",
+        "--test",
+        "--test-concurrency=1",
+        "--test-reporter=tap",
+        "tests/fabric-migration-outbox-postgres.test.mjs"
+      ],
+      "cwd": ".",
+      "startedAt": "2026-11-05T14:33:08.081152+00:00",
+      "durationSeconds": 19.451,
+      "exitCode": 0,
+      "timedOut": false,
+      "status": "passed",
+      "log": "reports/aso/full-repo-readiness-20261105T141734Z/node/tests__fabric-migration-outbox-postgres.test.mjs.txt",
+      "logSha256": "3820120eb856a92035f8716769aa2e785e97094125356ba5b6272262cee04879",
+      "file": "tests/fabric-migration-outbox-postgres.test.mjs",
+      "counts": {
+        "tests": 17,
+        "pass": 17,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0
+      },
+      "countScope": "node:test reported totals (includes parent tests)"
+    },
+    {
+      "command": [
+        "node",
+        "--import",
+        "tsx",
+        "--test",
+        "--test-concurrency=1",
+        "--test-reporter=tap",
+        "tests/fabric-object-lineage.test.mjs"
+      ],
+      "cwd": ".",
+      "startedAt": "2026-11-05T14:33:27.540978+00:00",
+      "durationSeconds": 0.318,
+      "exitCode": 0,
+      "timedOut": false,
+      "status": "passed",
+      "log": "reports/aso/full-repo-readiness-20261105T141734Z/node/tests__fabric-object-lineage.test.mjs.txt",
+      "logSha256": "4cdc7318d398775c821174b8aa432fa4d1cbd741aefd7cab548867a4b1af4b0b",
+      "file": "tests/fabric-object-lineage.test.mjs",
+      "counts": {
+        "tests": 1,
+        "pass": 1,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0
+      },
+      "countScope": "node:test reported totals (includes parent tests)"
+    },
+    {
+      "command": [
+        "node",
+        "--import",
+        "tsx",
+        "--test",
+        "--test-concurrency=1",
+        "--test-reporter=tap",
+        "tests/fabric-replica-generation.test.mjs"
+      ],
+      "cwd": ".",
+      "startedAt": "2026-11-05T14:33:27.866547+00:00",
+      "durationSeconds": 0.569,
+      "exitCode": 0,
+      "timedOut": false,
+      "status": "passed",
+      "log": "reports/aso/full-repo-readiness-20261105T141734Z/node/tests__fabric-replica-generation.test.mjs.txt",
+      "logSha256": "1d400bbbc080984769b49e5fe9df8c94bb349319ca96ebef918db0f5c6469476",
+      "file": "tests/fabric-replica-generation.test.mjs",
+      "counts": {
+        "tests": 2,
+        "pass": 2,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0
+      },
+      "countScope": "node:test reported totals (includes parent tests)"
+    },
+    {
+      "command": [
+        "node",
+        "--import",
+        "tsx",
+        "--test",
+        "--test-concurrency=1",
+        "--test-reporter=tap",
+        "tests/fabric-root-storage-postgres.test.mjs"
+      ],
+      "cwd": ".",
+      "startedAt": "2026-11-05T14:33:28.441459+00:00",
+      "durationSeconds": 2.225,
+      "exitCode": 0,
+      "timedOut": false,
+      "status": "passed",
+      "log": "reports/aso/full-repo-readiness-20261105T141734Z/node/tests__fabric-root-storage-postgres.test.mjs.txt",
+      "logSha256": "0c661c663d6bf883035b382dc888262f8f867f6d92064fb8dc06039fde2ac7c8",
+      "file": "tests/fabric-root-storage-postgres.test.mjs",
+      "counts": {
+        "tests": 1,
+        "pass": 1,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0
+      },
+      "countScope": "node:test reported totals (includes parent tests)"
+    },
+    {
+      "command": [
+        "node",
+        "--import",
+        "tsx",
+        "--test",
+        "--test-concurrency=1",
+        "--test-reporter=tap",
+        "tests/fabric-schema-generation.test.mjs"
+      ],
+      "cwd": ".",
+      "startedAt": "2026-11-05T14:33:30.672343+00:00",
+      "durationSeconds": 3.528,
+      "exitCode": 0,
+      "timedOut": false,
+      "status": "passed",
+      "log": "reports/aso/full-repo-readiness-20261105T141734Z/node/tests__fabric-schema-generation.test.mjs.txt",
+      "logSha256": "87d9672dc02398df3989d0aab5db2c238b2fa6805593c8b367a6f9d049ac9237",
+      "file": "tests/fabric-schema-generation.test.mjs",
+      "counts": {
+        "tests": 1,
+        "pass": 1,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0
+      },
+      "countScope": "node:test reported totals (includes parent tests)"
+    },
+    {
+      "command": [
+        "node",
+        "--import",
+        "tsx",
+        "--test",
+        "--test-concurrency=1",
+        "--test-reporter=tap",
+        "tests/finite-route-paths.test.mjs"
+      ],
+      "cwd": ".",
+      "startedAt": "2026-11-05T14:33:34.206776+00:00",
+      "durationSeconds": 1.018,
+      "exitCode": 0,
+      "timedOut": false,
+      "status": "passed",
+      "log": "reports/aso/full-repo-readiness-20261105T141734Z/node/tests__finite-route-paths.test.mjs.txt",
+      "logSha256": "6b445ebfb0cc13a2f7e550a50a797af2d9cf89fbb71ec8a1cb900b49b62f2176",
+      "file": "tests/finite-route-paths.test.mjs",
+      "counts": {
+        "tests": 30,
+        "pass": 30,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0
+      },
+      "countScope": "node:test reported totals (includes parent tests)"
+    },
+    {
+      "command": [
+        "node",
+        "--import",
+        "tsx",
+        "--test",
+        "--test-concurrency=1",
+        "--test-reporter=tap",
+        "tests/fixture-command-input.test.mjs"
+      ],
+      "cwd": ".",
+      "startedAt": "2026-11-05T14:33:35.233384+00:00",
+      "durationSeconds": 0.316,
+      "exitCode": 0,
+      "timedOut": false,
+      "status": "passed",
+      "log": "reports/aso/full-repo-readiness-20261105T141734Z/node/tests__fixture-command-input.test.mjs.txt",
+      "logSha256": "f39ae13595859fbfa860b1575031bbebda6f91af39a4f81d581a21e4bb3bbeed",
+      "file": "tests/fixture-command-input.test.mjs",
+      "counts": {
+        "tests": 2,
+        "pass": 2,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0
+      },
+      "countScope": "node:test reported totals (includes parent tests)"
+    },
+    {
+      "command": [
+        "node",
+        "--import",
+        "tsx",
+        "--test",
+        "--test-concurrency=1",
+        "--test-reporter=tap",
+        "tests/http-dependency-consumers.test.mjs"
+      ],
+      "cwd": ".",
+      "startedAt": "2026-11-05T14:33:35.556437+00:00",
+      "durationSeconds": 0.72,
+      "exitCode": 0,
+      "timedOut": false,
+      "status": "passed",
+      "log": "reports/aso/full-repo-readiness-20261105T141734Z/node/tests__http-dependency-consumers.test.mjs.txt",
+      "logSha256": "8f04e84788742d61d1c5e4fa30f0868deebd440b21b4c2b5b59431599f0ea131",
+      "file": "tests/http-dependency-consumers.test.mjs",
+      "counts": {
+        "tests": 5,
+        "pass": 5,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0
+      },
+      "countScope": "node:test reported totals (includes parent tests)"
+    },
+    {
+      "command": [
+        "node",
+        "--import",
+        "tsx",
+        "--test",
+        "--test-concurrency=1",
+        "--test-reporter=tap",
+        "tests/hybrid-storage-postgres.test.mjs"
+      ],
+      "cwd": ".",
+      "startedAt": "2026-11-05T14:33:36.282852+00:00",
+      "durationSeconds": 4.994,
+      "exitCode": 0,
+      "timedOut": false,
+      "status": "passed",
+      "log": "reports/aso/full-repo-readiness-20261105T141734Z/node/tests__hybrid-storage-postgres.test.mjs.txt",
+      "logSha256": "83d347d29b5c923fecb63754c93b2633d49066a2cba2475823abd90ca2f2eb6c",
+      "file": "tests/hybrid-storage-postgres.test.mjs",
+      "counts": {
+        "tests": 22,
+        "pass": 22,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0
+      },
+      "countScope": "node:test reported totals (includes parent tests)"
+    },
+    {
+      "command": [
+        "node",
+        "--import",
+        "tsx",
+        "tests/integration-webhooks.cjs"
+      ],
+      "cwd": ".",
+      "startedAt": "2026-11-05T14:33:41.282732+00:00",
+      "durationSeconds": 0.568,
+      "exitCode": 0,
+      "timedOut": false,
+      "status": "passed",
+      "log": "reports/aso/full-repo-readiness-20261105T141734Z/node/tests__integration-webhooks.cjs.txt",
+      "logSha256": "2bd12deb1492944cea24e104159dd82b6b021f0a87d7f837374c5ec8e1f4383b",
+      "file": "tests/integration-webhooks.cjs",
+      "counts": {},
+      "countScope": "assertion script; no case count reported"
+    },
+    {
+      "command": [
+        "node",
+        "--import",
+        "tsx",
+        "tests/integrations-readiness.cjs"
+      ],
+      "cwd": ".",
+      "startedAt": "2026-11-05T14:33:41.857789+00:00",
+      "durationSeconds": 0.667,
+      "exitCode": 0,
+      "timedOut": false,
+      "status": "passed",
+      "log": "reports/aso/full-repo-readiness-20261105T141734Z/node/tests__integrations-readiness.cjs.txt",
+      "logSha256": "81af353d256586d5e91da2d157ed9c141d2a958b8688648732155aef3bf688c5",
+      "file": "tests/integrations-readiness.cjs",
+      "counts": {},
+      "countScope": "assertion script; no case count reported"
+    },
+    {
+      "command": [
+        "node",
+        "--import",
+        "tsx",
+        "--test",
+        "--test-concurrency=1",
+        "--test-reporter=tap",
+        "tests/isolated-acceptance-readiness.test.mjs"
+      ],
+      "cwd": ".",
+      "startedAt": "2026-11-05T14:33:42.530552+00:00",
+      "durationSeconds": 0.165,
+      "exitCode": 0,
+      "timedOut": false,
+      "status": "passed",
+      "log": "reports/aso/full-repo-readiness-20261105T141734Z/node/tests__isolated-acceptance-readiness.test.mjs.txt",
+      "logSha256": "67045f56e5b612a93440b6d6d95aa23134e988c76467418a9f206e50b2092f16",
+      "file": "tests/isolated-acceptance-readiness.test.mjs",
+      "counts": {
+        "tests": 7,
+        "pass": 7,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0
+      },
+      "countScope": "node:test reported totals (includes parent tests)"
+    },
+    {
+      "command": [
+        "node",
+        "--import",
+        "tsx",
+        "--test",
+        "--test-concurrency=1",
+        "--test-reporter=tap",
+        "tests/isolated-codec-guard.test.mjs"
+      ],
+      "cwd": ".",
+      "startedAt": "2026-11-05T14:33:42.707506+00:00",
+      "durationSeconds": 0.219,
+      "exitCode": 0,
+      "timedOut": false,
+      "status": "passed",
+      "log": "reports/aso/full-repo-readiness-20261105T141734Z/node/tests__isolated-codec-guard.test.mjs.txt",
+      "logSha256": "b4dbff8fa1cac7d83438803d51b1bd00148f40bd5153f9e79077c1fb6e645a5a",
+      "file": "tests/isolated-codec-guard.test.mjs",
+      "counts": {
+        "tests": 2,
+        "pass": 2,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0
+      },
+      "countScope": "node:test reported totals (includes parent tests)"
+    },
+    {
+      "command": [
+        "node",
+        "--import",
+        "tsx",
+        "--test",
+        "--test-concurrency=1",
+        "--test-reporter=tap",
+        "tests/labelgrid-retirement-boundaries.test.cjs"
+      ],
+      "cwd": ".",
+      "startedAt": "2026-11-05T14:33:42.932194+00:00",
+      "durationSeconds": 0.215,
+      "exitCode": 0,
+      "timedOut": false,
+      "status": "passed",
+      "log": "reports/aso/full-repo-readiness-20261105T141734Z/node/tests__labelgrid-retirement-boundaries.test.cjs.txt",
+      "logSha256": "ac172e9af1e1e6cb297fe5267b7eefdd7f1338e7264ae36e65dc317ed3d4b2f4",
+      "file": "tests/labelgrid-retirement-boundaries.test.cjs",
+      "counts": {
+        "tests": 4,
+        "pass": 4,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0
+      },
+      "countScope": "node:test reported totals (includes parent tests)"
+    },
+    {
+      "command": [
+        "node",
+        "--import",
+        "tsx",
+        "--test",
+        "--test-concurrency=1",
+        "--test-reporter=tap",
+        "tests/layout-navigation-accessibility-browser.test.mjs"
+      ],
+      "cwd": ".",
+      "startedAt": "2026-11-05T14:33:43.153243+00:00",
+      "durationSeconds": 1.873,
+      "exitCode": 0,
+      "timedOut": false,
+      "status": "passed",
+      "log": "reports/aso/full-repo-readiness-20261105T141734Z/node/tests__layout-navigation-accessibility-browser.test.mjs.txt",
+      "logSha256": "88788df978bb1d78ae7ecea12cdc26fc71e66905ad3bf1f378798700f3721a8f",
+      "file": "tests/layout-navigation-accessibility-browser.test.mjs",
+      "counts": {
+        "tests": 12,
+        "pass": 12,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0
+      },
+      "countScope": "node:test reported totals (includes parent tests)"
+    },
+    {
+      "command": [
+        "node",
+        "--import",
+        "tsx",
+        "--test",
+        "--test-concurrency=1",
+        "--test-reporter=tap",
+        "tests/legacy-security-update.test.mjs"
+      ],
+      "cwd": ".",
+      "startedAt": "2026-11-05T14:33:45.032026+00:00",
+      "durationSeconds": 0.216,
+      "exitCode": 0,
+      "timedOut": false,
+      "status": "passed",
+      "log": "reports/aso/full-repo-readiness-20261105T141734Z/node/tests__legacy-security-update.test.mjs.txt",
+      "logSha256": "1fc9a990d1751ad79e71b82ddae246aceec580b98a5c004394e8ac54ee1d19b1",
+      "file": "tests/legacy-security-update.test.mjs",
+      "counts": {
+        "tests": 7,
+        "pass": 7,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0
+      },
+      "countScope": "node:test reported totals (includes parent tests)"
+    },
+    {
+      "command": [
+        "node",
+        "--import",
+        "tsx",
+        "--test",
+        "--test-concurrency=1",
+        "--test-reporter=tap",
+        "tests/legacy-sendgrid-security-coherence.test.mjs"
+      ],
+      "cwd": ".",
+      "startedAt": "2026-11-05T14:33:45.253760+00:00",
+      "durationSeconds": 0.867,
+      "exitCode": 0,
+      "timedOut": false,
+      "status": "passed",
+      "log": "reports/aso/full-repo-readiness-20261105T141734Z/node/tests__legacy-sendgrid-security-coherence.test.mjs.txt",
+      "logSha256": "0d69764e5f3c51cffd376ab99d076100beb9e96645bf90d3342c67f5281ae720",
+      "file": "tests/legacy-sendgrid-security-coherence.test.mjs",
+      "counts": {
+        "tests": 2,
+        "pass": 2,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0
+      },
+      "countScope": "node:test reported totals (includes parent tests)"
+    },
+    {
+      "command": [
+        "node",
+        "--import",
+        "tsx",
+        "--test",
+        "--test-concurrency=1",
+        "--test-reporter=tap",
+        "tests/linux-vst3-build.test.mjs"
+      ],
+      "cwd": ".",
+      "startedAt": "2026-11-05T14:33:46.128392+00:00",
+      "durationSeconds": 0.768,
+      "exitCode": 0,
+      "timedOut": false,
+      "status": "passed",
+      "log": "reports/aso/full-repo-readiness-20261105T141734Z/node/tests__linux-vst3-build.test.mjs.txt",
+      "logSha256": "fa7cfeaebf487f556129f66d1572713d43e9d2442b89755595fee1cb3ab393da",
+      "file": "tests/linux-vst3-build.test.mjs",
+      "counts": {
+        "tests": 2,
+        "pass": 2,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0
+      },
+      "countScope": "node:test reported totals (includes parent tests)"
+    },
+    {
+      "command": [
+        "node",
+        "--import",
+        "tsx",
+        "--test",
+        "--test-concurrency=1",
+        "--test-reporter=tap",
+        "tests/marketplace-storefront-access.cjs"
+      ],
+      "cwd": ".",
+      "startedAt": "2026-11-05T14:33:46.906965+00:00",
+      "durationSeconds": 1.07,
+      "exitCode": 0,
+      "timedOut": false,
+      "status": "passed",
+      "log": "reports/aso/full-repo-readiness-20261105T141734Z/node/tests__marketplace-storefront-access.cjs.txt",
+      "logSha256": "9290f0a5757296e9fabe45119a046094ce31ae438eaa21c765065eac5b2ec599",
+      "file": "tests/marketplace-storefront-access.cjs",
+      "counts": {
+        "tests": 14,
+        "pass": 14,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0
+      },
+      "countScope": "node:test reported totals (includes parent tests)"
+    },
+    {
+      "command": [
+        "node",
+        "--import",
+        "tsx",
+        "--test",
+        "--test-concurrency=1",
+        "--test-reporter=tap",
+        "tests/maxcore-dev-dependency-security.test.mjs"
+      ],
+      "cwd": ".",
+      "startedAt": "2026-11-05T14:33:47.983172+00:00",
+      "durationSeconds": 4.939,
+      "exitCode": 0,
+      "timedOut": false,
+      "status": "passed",
+      "log": "reports/aso/full-repo-readiness-20261105T141734Z/node/tests__maxcore-dev-dependency-security.test.mjs.txt",
+      "logSha256": "199696f9661f5b7226e9f858b57551cc5256b0bf74fe0a0352213cd00e294a78",
+      "file": "tests/maxcore-dev-dependency-security.test.mjs",
+      "counts": {
+        "tests": 7,
+        "pass": 7,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0
+      },
+      "countScope": "node:test reported totals (includes parent tests)"
+    },
+    {
+      "command": [
+        "node",
+        "--import",
+        "tsx",
+        "--test",
+        "--test-concurrency=1",
+        "--test-reporter=tap",
+        "tests/maxcore-mockup-discovery.test.mjs"
+      ],
+      "cwd": ".",
+      "startedAt": "2026-11-05T14:33:52.930459+00:00",
+      "durationSeconds": 0.316,
+      "exitCode": 0,
+      "timedOut": false,
+      "status": "passed",
+      "log": "reports/aso/full-repo-readiness-20261105T141734Z/node/tests__maxcore-mockup-discovery.test.mjs.txt",
+      "logSha256": "3a31928c91491a6d6d7b57d1be22856551f6635e8415b88f3bb36936958a1b5c",
+      "file": "tests/maxcore-mockup-discovery.test.mjs",
+      "counts": {
+        "tests": 1,
+        "pass": 1,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0
+      },
+      "countScope": "node:test reported totals (includes parent tests)"
+    },
+    {
+      "command": [
+        "node",
+        "--import",
+        "tsx",
+        "--test",
+        "--test-concurrency=1",
+        "--test-reporter=tap",
+        "tests/maxcore-security-policy.test.mjs"
+      ],
+      "cwd": ".",
+      "startedAt": "2026-11-05T14:33:53.253339+00:00",
+      "durationSeconds": 0.617,
+      "exitCode": 0,
+      "timedOut": false,
+      "status": "passed",
+      "log": "reports/aso/full-repo-readiness-20261105T141734Z/node/tests__maxcore-security-policy.test.mjs.txt",
+      "logSha256": "9b79d80246fb24f63ddd4100d7fde76ed508a99f243068dafb1e9b27703864f2",
+      "file": "tests/maxcore-security-policy.test.mjs",
+      "counts": {
+        "tests": 5,
+        "pass": 5,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0
+      },
+      "countScope": "node:test reported totals (includes parent tests)"
+    },
+    {
+      "command": [
+        "node",
+        "--import",
+        "tsx",
+        "--test",
+        "--test-concurrency=1",
+        "--test-reporter=tap",
+        "tests/neon-schema-contract.test.mjs"
+      ],
+      "cwd": ".",
+      "startedAt": "2026-11-05T14:33:53.876744+00:00",
+      "durationSeconds": 0.868,
+      "exitCode": 0,
+      "timedOut": false,
+      "status": "passed",
+      "log": "reports/aso/full-repo-readiness-20261105T141734Z/node/tests__neon-schema-contract.test.mjs.txt",
+      "logSha256": "ce4cb54bf7e5d2760f3e225573cecdae4cee28449aca6e7424965bc3244a0803",
+      "file": "tests/neon-schema-contract.test.mjs",
+      "counts": {
+        "tests": 6,
+        "pass": 6,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0
+      },
+      "countScope": "node:test reported totals (includes parent tests)"
+    },
+    {
+      "command": [
+        "node",
+        "--import",
+        "tsx",
+        "--test",
+        "--test-concurrency=1",
+        "--test-reporter=tap",
+        "tests/nested-reconciliation.test.mjs"
+      ],
+      "cwd": ".",
+      "startedAt": "2026-11-05T14:33:54.750239+00:00",
+      "durationSeconds": 0.416,
+      "exitCode": 0,
+      "timedOut": false,
+      "status": "passed",
+      "log": "reports/aso/full-repo-readiness-20261105T141734Z/node/tests__nested-reconciliation.test.mjs.txt",
+      "logSha256": "117835612675ca871ef7c612295179a708ca3682c38b49237f3884b8e46dbbab",
+      "file": "tests/nested-reconciliation.test.mjs",
+      "counts": {
+        "tests": 5,
+        "pass": 5,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0
+      },
+      "countScope": "node:test reported totals (includes parent tests)"
+    },
+    {
+      "command": [
+        "node",
+        "--import",
+        "tsx",
+        "--test",
+        "--test-concurrency=1",
+        "--test-reporter=tap",
+        "tests/npm-build-start-contract.test.mjs"
+      ],
+      "cwd": ".",
+      "startedAt": "2026-11-05T14:33:55.176614+00:00",
+      "durationSeconds": 0.417,
+      "exitCode": 0,
+      "timedOut": false,
+      "status": "passed",
+      "log": "reports/aso/full-repo-readiness-20261105T141734Z/node/tests__npm-build-start-contract.test.mjs.txt",
+      "logSha256": "d930348151e9679be6ab52bb72652365108f7fc7633d4c8169cc834ffba6e669",
+      "file": "tests/npm-build-start-contract.test.mjs",
+      "counts": {
+        "tests": 10,
+        "pass": 10,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0
+      },
+      "countScope": "node:test reported totals (includes parent tests)"
+    },
+    {
+      "command": [
+        "node",
+        "--import",
+        "tsx",
+        "--test",
+        "--test-concurrency=1",
+        "--test-reporter=tap",
+        "tests/owned-deployment-processes.test.mjs"
+      ],
+      "cwd": ".",
+      "startedAt": "2026-11-05T14:33:55.599111+00:00",
+      "durationSeconds": 2.726,
+      "exitCode": 0,
+      "timedOut": false,
+      "status": "passed",
+      "log": "reports/aso/full-repo-readiness-20261105T141734Z/node/tests__owned-deployment-processes.test.mjs.txt",
+      "logSha256": "d14ebb88e72817b1a01e9595652dc6aa25275a2114da93688b07e871902e8f03",
+      "file": "tests/owned-deployment-processes.test.mjs",
+      "counts": {
+        "tests": 3,
+        "pass": 3,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0
+      },
+      "countScope": "node:test reported totals (includes parent tests)"
+    },
+    {
+      "command": [
+        "node",
+        "--import",
+        "tsx",
+        "--test",
+        "--test-concurrency=1",
+        "--test-reporter=tap",
+        "tests/parallel-build-cleanup.test.mjs"
+      ],
+      "cwd": ".",
+      "startedAt": "2026-11-05T14:33:58.330761+00:00",
+      "durationSeconds": 8.255,
+      "exitCode": 0,
+      "timedOut": false,
+      "status": "passed",
+      "log": "reports/aso/full-repo-readiness-20261105T141734Z/node/tests__parallel-build-cleanup.test.mjs.txt",
+      "logSha256": "3dab54cf452cd71de15507d88467aac18c807ea15e7e255bdf98f66096406ddb",
+      "file": "tests/parallel-build-cleanup.test.mjs",
+      "counts": {
+        "tests": 2,
+        "pass": 2,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0
+      },
+      "countScope": "node:test reported totals (includes parent tests)"
+    },
+    {
+      "command": [
+        "node",
+        "--import",
+        "tsx",
+        "--test",
+        "--test-concurrency=1",
+        "--test-reporter=tap",
+        "tests/patent-pdf-runtime.test.mjs"
+      ],
+      "cwd": ".",
+      "startedAt": "2026-11-05T14:34:06.594652+00:00",
+      "durationSeconds": 2.072,
+      "exitCode": 0,
+      "timedOut": false,
+      "status": "passed",
+      "log": "reports/aso/full-repo-readiness-20261105T141734Z/node/tests__patent-pdf-runtime.test.mjs.txt",
+      "logSha256": "90276bb7903b276cec3c035e5415a2c189cedd632ee4653cd9d2e18bb329eba6",
+      "file": "tests/patent-pdf-runtime.test.mjs",
+      "counts": {
+        "tests": 2,
+        "pass": 2,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0
+      },
+      "countScope": "node:test reported totals (includes parent tests)"
+    },
+    {
+      "command": [
+        "node",
+        "--import",
+        "tsx",
+        "--test",
+        "--test-concurrency=1",
+        "--test-reporter=tap",
+        "tests/pdim-acknowledged-crash-capacity.test.mjs"
+      ],
+      "cwd": ".",
+      "startedAt": "2026-11-05T14:34:08.672566+00:00",
+      "durationSeconds": 1.424,
+      "exitCode": 0,
+      "timedOut": false,
+      "status": "passed",
+      "log": "reports/aso/full-repo-readiness-20261105T141734Z/node/tests__pdim-acknowledged-crash-capacity.test.mjs.txt",
+      "logSha256": "f184dbec4c125d71a18ff772dbbb7659f7419055f77105f9042a111f0bbe134c",
+      "file": "tests/pdim-acknowledged-crash-capacity.test.mjs",
+      "counts": {
+        "tests": 1,
+        "pass": 1,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0
+      },
+      "countScope": "node:test reported totals (includes parent tests)"
+    },
+    {
+      "command": [
+        "node",
+        "--import",
+        "tsx",
+        "--test",
+        "--test-concurrency=1",
+        "--test-reporter=tap",
+        "tests/pdim-staging-archive.test.mjs"
+      ],
+      "cwd": ".",
+      "startedAt": "2026-11-05T14:34:10.102991+00:00",
+      "durationSeconds": 0.416,
+      "exitCode": 0,
+      "timedOut": false,
+      "status": "passed",
+      "log": "reports/aso/full-repo-readiness-20261105T141734Z/node/tests__pdim-staging-archive.test.mjs.txt",
+      "logSha256": "afe597a09374995e5bffd891afcbf6d2bcf1250eac95235c0bedc28493d1c99e",
+      "file": "tests/pdim-staging-archive.test.mjs",
+      "counts": {
+        "tests": 3,
+        "pass": 3,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0
+      },
+      "countScope": "node:test reported totals (includes parent tests)"
+    },
+    {
+      "command": [
+        "node",
+        "--import",
+        "tsx",
+        "--test",
+        "--test-concurrency=1",
+        "--test-reporter=tap",
+        "tests/pocket-durable-delete.test.mjs"
+      ],
+      "cwd": ".",
+      "startedAt": "2026-11-05T14:34:10.525382+00:00",
+      "durationSeconds": 0.668,
+      "exitCode": 0,
+      "timedOut": false,
+      "status": "passed",
+      "log": "reports/aso/full-repo-readiness-20261105T141734Z/node/tests__pocket-durable-delete.test.mjs.txt",
+      "logSha256": "d3f3b8189c4e1988d2da338b876ec9dd2eaddc031f7389435a66cdec68d95c59",
+      "file": "tests/pocket-durable-delete.test.mjs",
+      "counts": {
+        "tests": 2,
+        "pass": 2,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0
+      },
+      "countScope": "node:test reported totals (includes parent tests)"
+    },
+    {
+      "command": [
+        "node",
+        "--import",
+        "tsx",
+        "--test",
+        "--test-concurrency=1",
+        "--test-reporter=tap",
+        "tests/portable-python-isolation.test.mjs"
+      ],
+      "cwd": ".",
+      "startedAt": "2026-11-05T14:34:11.200141+00:00",
+      "durationSeconds": 2.723,
+      "exitCode": 0,
+      "timedOut": false,
+      "status": "passed",
+      "log": "reports/aso/full-repo-readiness-20261105T141734Z/node/tests__portable-python-isolation.test.mjs.txt",
+      "logSha256": "379ab2cef0bed93b9174a102b1760663f4234af5a49ceb59fdfae725ce76a271",
+      "file": "tests/portable-python-isolation.test.mjs",
+      "counts": {
+        "tests": 2,
+        "pass": 2,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0
+      },
+      "countScope": "node:test reported totals (includes parent tests)"
+    },
+    {
+      "command": [
+        "node",
+        "--import",
+        "tsx",
+        "--test",
+        "--test-concurrency=1",
+        "--test-reporter=tap",
+        "tests/production-container-contract.test.mjs"
+      ],
+      "cwd": ".",
+      "startedAt": "2026-11-05T14:34:13.929710+00:00",
+      "durationSeconds": 0.216,
+      "exitCode": 0,
+      "timedOut": false,
+      "status": "passed",
+      "log": "reports/aso/full-repo-readiness-20261105T141734Z/node/tests__production-container-contract.test.mjs.txt",
+      "logSha256": "6fa4435ce8fb04d5f9c289488c8e3940ae1f8b3f90424a4940df5b7becca4e81",
+      "file": "tests/production-container-contract.test.mjs",
+      "counts": {
+        "tests": 4,
+        "pass": 4,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0
+      },
+      "countScope": "node:test reported totals (includes parent tests)"
+    },
+    {
+      "command": [
+        "node",
+        "--import",
+        "tsx",
+        "--test",
+        "--test-concurrency=1",
+        "--test-reporter=tap",
+        "tests/production-simulation-resume.test.mjs"
+      ],
+      "cwd": ".",
+      "startedAt": "2026-11-05T14:34:14.151200+00:00",
+      "durationSeconds": 0.366,
+      "exitCode": 0,
+      "timedOut": false,
+      "status": "passed",
+      "log": "reports/aso/full-repo-readiness-20261105T141734Z/node/tests__production-simulation-resume.test.mjs.txt",
+      "logSha256": "3b480cd9e5cc12d1e16094e5be5bb9328bd5cc56a8733f19eb084b3068efc4c9",
+      "file": "tests/production-simulation-resume.test.mjs",
+      "counts": {
+        "tests": 22,
+        "pass": 22,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0
+      },
+      "countScope": "node:test reported totals (includes parent tests)"
+    },
+    {
+      "command": [
+        "node",
+        "--import",
+        "tsx",
+        "--test",
+        "--test-concurrency=1",
+        "--test-reporter=tap",
+        "tests/publishing-build-entry.test.mjs"
+      ],
+      "cwd": ".",
+      "startedAt": "2026-11-05T14:34:14.523273+00:00",
+      "durationSeconds": 6.441,
+      "exitCode": 0,
+      "timedOut": false,
+      "status": "passed",
+      "log": "reports/aso/full-repo-readiness-20261105T141734Z/node/tests__publishing-build-entry.test.mjs.txt",
+      "logSha256": "1950b029f9191b3c48826ecce18e1facc2d376c4097b74c7a2dcd51529d5b492",
+      "file": "tests/publishing-build-entry.test.mjs",
+      "counts": {
+        "tests": 9,
+        "pass": 9,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0
+      },
+      "countScope": "node:test reported totals (includes parent tests)"
+    },
+    {
+      "command": [
+        "node",
+        "--import",
+        "tsx",
+        "--test",
+        "--test-concurrency=1",
+        "--test-reporter=tap",
+        "tests/publishing-cache-isolation.test.mjs"
+      ],
+      "cwd": ".",
+      "startedAt": "2026-11-05T14:34:20.971003+00:00",
+      "durationSeconds": 0.266,
+      "exitCode": 0,
+      "timedOut": false,
+      "status": "passed",
+      "log": "reports/aso/full-repo-readiness-20261105T141734Z/node/tests__publishing-cache-isolation.test.mjs.txt",
+      "logSha256": "696b9f3ccf51d9e18cc060ea5e29df902d484e44155c4dec9830a9b274f069de",
+      "file": "tests/publishing-cache-isolation.test.mjs",
+      "counts": {
+        "tests": 3,
+        "pass": 3,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0
+      },
+      "countScope": "node:test reported totals (includes parent tests)"
+    },
+    {
+      "command": [
+        "node",
+        "--import",
+        "tsx",
+        "--test",
+        "--test-concurrency=1",
+        "--test-reporter=tap",
+        "tests/publishing-compression.test.mjs"
+      ],
+      "cwd": ".",
+      "startedAt": "2026-11-05T14:34:21.242424+00:00",
+      "durationSeconds": 1.421,
+      "exitCode": 0,
+      "timedOut": false,
+      "status": "passed",
+      "log": "reports/aso/full-repo-readiness-20261105T141734Z/node/tests__publishing-compression.test.mjs.txt",
+      "logSha256": "4307f79af2ebbbf6e0f114e0fb7973a701ad5dae38830ef4201e4f2e233af160",
+      "file": "tests/publishing-compression.test.mjs",
+      "counts": {
+        "tests": 7,
+        "pass": 7,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0
+      },
+      "countScope": "node:test reported totals (includes parent tests)"
+    },
+    {
+      "command": [
+        "node",
+        "--import",
+        "tsx",
+        "--test",
+        "--test-concurrency=1",
+        "--test-reporter=tap",
+        "tests/publishing-context.test.mjs"
+      ],
+      "cwd": ".",
+      "startedAt": "2026-11-05T14:34:22.671574+00:00",
+      "durationSeconds": 1.123,
+      "exitCode": 0,
+      "timedOut": false,
+      "status": "passed",
+      "log": "reports/aso/full-repo-readiness-20261105T141734Z/node/tests__publishing-context.test.mjs.txt",
+      "logSha256": "72e44698e852fecbc7c4deba56ef05cbc9390ec4bb1b1f59851a497fafd78f71",
+      "file": "tests/publishing-context.test.mjs",
+      "counts": {
+        "tests": 4,
+        "pass": 4,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0
+      },
+      "countScope": "node:test reported totals (includes parent tests)"
+    },
+    {
+      "command": [
+        "node",
+        "--import",
+        "tsx",
+        "--test",
+        "--test-concurrency=1",
+        "--test-reporter=tap",
+        "tests/qs-security-contract.test.mjs"
+      ],
+      "cwd": ".",
+      "startedAt": "2026-11-05T14:34:23.804407+00:00",
+      "durationSeconds": 0.717,
+      "exitCode": 0,
+      "timedOut": false,
+      "status": "passed",
+      "log": "reports/aso/full-repo-readiness-20261105T141734Z/node/tests__qs-security-contract.test.mjs.txt",
+      "logSha256": "28719fa83f2ebf418a86f16ed78dc70b875e8e32beee010be322ce93dee6e094",
+      "file": "tests/qs-security-contract.test.mjs",
+      "counts": {
+        "tests": 24,
+        "pass": 24,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0
+      },
+      "countScope": "node:test reported totals (includes parent tests)"
+    },
+    {
+      "command": [
+        "node",
+        "--import",
+        "tsx",
+        "--test",
+        "--test-concurrency=1",
+        "--test-reporter=tap",
+        "tests/readiness-beta-history.test.mjs"
+      ],
+      "cwd": ".",
+      "startedAt": "2026-11-05T14:34:24.528312+00:00",
+      "durationSeconds": 0.165,
+      "exitCode": 0,
+      "timedOut": false,
+      "status": "passed",
+      "log": "reports/aso/full-repo-readiness-20261105T141734Z/node/tests__readiness-beta-history.test.mjs.txt",
+      "logSha256": "8b3931b93d0a24ea958f720593799440f8157d10466222126012dff2c6113f22",
+      "file": "tests/readiness-beta-history.test.mjs",
+      "counts": {
+        "tests": 2,
+        "pass": 2,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0
+      },
+      "countScope": "node:test reported totals (includes parent tests)"
+    },
+    {
+      "command": [
+        "node",
+        "--import",
+        "tsx",
+        "--test",
+        "--test-concurrency=1",
+        "--test-reporter=tap",
+        "tests/readiness-sast-scan.test.mjs"
+      ],
+      "cwd": ".",
+      "startedAt": "2026-11-05T14:34:24.702006+00:00",
+      "durationSeconds": 0.366,
+      "exitCode": 0,
+      "timedOut": false,
+      "status": "passed",
+      "log": "reports/aso/full-repo-readiness-20261105T141734Z/node/tests__readiness-sast-scan.test.mjs.txt",
+      "logSha256": "057bd7cf869db6d7a739a36c0e63b253f545a9afffc4adba068a3e4c9cebc637",
+      "file": "tests/readiness-sast-scan.test.mjs",
+      "counts": {
+        "tests": 9,
+        "pass": 9,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0
+      },
+      "countScope": "node:test reported totals (includes parent tests)"
+    },
+    {
+      "command": [
+        "node",
+        "--import",
+        "tsx",
+        "--test",
+        "--test-concurrency=1",
+        "--test-reporter=tap",
+        "tests/readiness-worker-composition.cjs"
+      ],
+      "cwd": ".",
+      "startedAt": "2026-11-05T14:34:25.073855+00:00",
+      "durationSeconds": 0.215,
+      "exitCode": 0,
+      "timedOut": false,
+      "status": "passed",
+      "log": "reports/aso/full-repo-readiness-20261105T141734Z/node/tests__readiness-worker-composition.cjs.txt",
+      "logSha256": "4264e38abf3cd6076d10b64ee9fd6ee7644ef413e726d1c47a4ddfaa5aa99c0f",
+      "file": "tests/readiness-worker-composition.cjs",
+      "counts": {
+        "tests": 3,
+        "pass": 3,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0
+      },
+      "countScope": "node:test reported totals (includes parent tests)"
+    },
+    {
+      "command": [
+        "node",
+        "--import",
+        "tsx",
+        "--test",
+        "--test-concurrency=1",
+        "--test-reporter=tap",
+        "tests/recovery-private-store.test.mjs"
+      ],
+      "cwd": ".",
+      "startedAt": "2026-11-05T14:34:25.295273+00:00",
+      "durationSeconds": 0.367,
+      "exitCode": 0,
+      "timedOut": false,
+      "status": "passed",
+      "log": "reports/aso/full-repo-readiness-20261105T141734Z/node/tests__recovery-private-store.test.mjs.txt",
+      "logSha256": "9f0b2c4e7100481c1fe3b4d1eb8ac6a70b15efad89fd46837bc391a65a3f9a0f",
+      "file": "tests/recovery-private-store.test.mjs",
+      "counts": {
+        "tests": 6,
+        "pass": 6,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0
+      },
+      "countScope": "node:test reported totals (includes parent tests)"
+    },
+    {
+      "command": [
+        "node",
+        "--import",
+        "tsx",
+        "--test",
+        "--test-concurrency=1",
+        "--test-reporter=tap",
+        "tests/recovery-snapshot-integrity.test.mjs"
+      ],
+      "cwd": ".",
+      "startedAt": "2026-11-05T14:34:25.671592+00:00",
+      "durationSeconds": 0.216,
+      "exitCode": 0,
+      "timedOut": false,
+      "status": "passed",
+      "log": "reports/aso/full-repo-readiness-20261105T141734Z/node/tests__recovery-snapshot-integrity.test.mjs.txt",
+      "logSha256": "edadd24aecfc55f35f6bf758f58dea3ba62d7f1f00f58a89bec4c21f35ed33ce",
+      "file": "tests/recovery-snapshot-integrity.test.mjs",
+      "counts": {
+        "tests": 3,
+        "pass": 3,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0
+      },
+      "countScope": "node:test reported totals (includes parent tests)"
+    },
+    {
+      "command": [
+        "node",
+        "--import",
+        "tsx",
+        "--test",
+        "--test-concurrency=1",
+        "--test-reporter=tap",
+        "tests/redirect-credential-boundary.test.mjs"
+      ],
+      "cwd": ".",
+      "startedAt": "2026-11-05T14:34:25.893711+00:00",
+      "durationSeconds": 0.266,
+      "exitCode": 0,
+      "timedOut": false,
+      "status": "passed",
+      "log": "reports/aso/full-repo-readiness-20261105T141734Z/node/tests__redirect-credential-boundary.test.mjs.txt",
+      "logSha256": "35297b4478993eda8145f2d9023989bac383a6d1fe06b197ec6c307084d8267d",
+      "file": "tests/redirect-credential-boundary.test.mjs",
+      "counts": {
+        "tests": 1,
+        "pass": 1,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0
+      },
+      "countScope": "node:test reported totals (includes parent tests)"
+    },
+    {
+      "command": [
+        "node",
+        "--import",
+        "tsx",
+        "--test",
+        "--test-concurrency=1",
+        "--test-reporter=tap",
+        "tests/release-threads.test.mjs"
+      ],
+      "cwd": ".",
+      "startedAt": "2026-11-05T14:34:26.166628+00:00",
+      "durationSeconds": 0.215,
+      "exitCode": 0,
+      "timedOut": false,
+      "status": "passed",
+      "log": "reports/aso/full-repo-readiness-20261105T141734Z/node/tests__release-threads.test.mjs.txt",
+      "logSha256": "66e9923fb45f47d2b6405ea7afbecb2cf4a0b780ce4731afd6954f07bf036060",
+      "file": "tests/release-threads.test.mjs",
+      "counts": {
+        "tests": 1,
+        "pass": 1,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0
+      },
+      "countScope": "node:test reported totals (includes parent tests)"
+    },
+    {
+      "command": [
+        "node",
+        "--import",
+        "tsx",
+        "--test",
+        "--test-concurrency=1",
+        "--test-reporter=tap",
+        "tests/replit-chunk-delete.test.mjs"
+      ],
+      "cwd": ".",
+      "startedAt": "2026-11-05T14:34:26.388930+00:00",
+      "durationSeconds": 0.215,
+      "exitCode": 0,
+      "timedOut": false,
+      "status": "passed",
+      "log": "reports/aso/full-repo-readiness-20261105T141734Z/node/tests__replit-chunk-delete.test.mjs.txt",
+      "logSha256": "9af3ec8c8caf4295284d2119e4239e05da53995ee7b18863cace24b257e0da01",
+      "file": "tests/replit-chunk-delete.test.mjs",
+      "counts": {
+        "tests": 2,
+        "pass": 2,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0
+      },
+      "countScope": "node:test reported totals (includes parent tests)"
+    },
+    {
+      "command": [
+        "node",
+        "--import",
+        "tsx",
+        "--test",
+        "--test-concurrency=1",
+        "--test-reporter=tap",
+        "tests/replit-configuration.test.mjs"
+      ],
+      "cwd": ".",
+      "startedAt": "2026-11-05T14:34:27.031191+00:00",
+      "durationSeconds": 1.17,
+      "exitCode": 0,
+      "timedOut": false,
+      "status": "passed",
+      "log": "reports/aso/full-repo-readiness-20261105T141734Z/node/tests__replit-configuration.test.mjs.txt",
+      "logSha256": "9f0f98ac0c2ae250b5300f18d2a8bc5441be3dfe8bc1b38b42462d58e887d365",
+      "file": "tests/replit-configuration.test.mjs",
+      "counts": {
+        "tests": 3,
+        "pass": 3,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0
+      },
+      "countScope": "node:test reported totals (includes parent tests)"
+    },
+    {
+      "command": [
+        "node",
+        "--import",
+        "tsx",
+        "--test",
+        "--test-concurrency=1",
+        "--test-reporter=tap",
+        "tests/replit-profile.contract.test.mjs"
+      ],
+      "cwd": ".",
+      "startedAt": "2026-11-05T14:34:28.207957+00:00",
+      "durationSeconds": 0.316,
+      "exitCode": 0,
+      "timedOut": false,
+      "status": "passed",
+      "log": "reports/aso/full-repo-readiness-20261105T141734Z/node/tests__replit-profile.contract.test.mjs.txt",
+      "logSha256": "ed9bc9648308629bfb6fd031e635cf51ac9015a2e39bf48048a7e740f8b805ff",
+      "file": "tests/replit-profile.contract.test.mjs",
+      "counts": {
+        "tests": 5,
+        "pass": 5,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0
+      },
+      "countScope": "node:test reported totals (includes parent tests)"
+    },
+    {
+      "command": [
+        "node",
+        "--import",
+        "tsx",
+        "--test",
+        "--test-concurrency=1",
+        "--test-reporter=tap",
+        "tests/request-validation-security.test.mjs"
+      ],
+      "cwd": ".",
+      "startedAt": "2026-11-05T14:34:28.529879+00:00",
+      "durationSeconds": 0.466,
+      "exitCode": 0,
+      "timedOut": false,
+      "status": "passed",
+      "log": "reports/aso/full-repo-readiness-20261105T141734Z/node/tests__request-validation-security.test.mjs.txt",
+      "logSha256": "024d578c9b16496c801bfb18d4eeeaf83caf4bc9990c3d7bfe4f0a472efc771c",
+      "file": "tests/request-validation-security.test.mjs",
+      "counts": {
+        "tests": 2,
+        "pass": 2,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0
+      },
+      "countScope": "node:test reported totals (includes parent tests)"
+    },
+    {
+      "command": [
+        "node",
+        "--import",
+        "tsx",
+        "--test",
+        "--test-concurrency=1",
+        "--test-reporter=tap",
+        "tests/restore-lock-safety.test.mjs"
+      ],
+      "cwd": ".",
+      "startedAt": "2026-11-05T14:34:29.002724+00:00",
+      "durationSeconds": 0.216,
+      "exitCode": 0,
+      "timedOut": false,
+      "status": "passed",
+      "log": "reports/aso/full-repo-readiness-20261105T141734Z/node/tests__restore-lock-safety.test.mjs.txt",
+      "logSha256": "8017e08a989414567568d744264851c4ea279b6d9ee3b90c110e4b062b0969c6",
+      "file": "tests/restore-lock-safety.test.mjs",
+      "counts": {
+        "tests": 2,
+        "pass": 2,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0
+      },
+      "countScope": "node:test reported totals (includes parent tests)"
+    },
+    {
+      "command": [
+        "node",
+        "--import",
+        "tsx",
+        "--test",
+        "--test-concurrency=1",
+        "--test-reporter=tap",
+        "tests/resume-integration-contracts.cjs"
+      ],
+      "cwd": ".",
+      "startedAt": "2026-11-05T14:34:29.224774+00:00",
+      "durationSeconds": 1.12,
+      "exitCode": 0,
+      "timedOut": false,
+      "status": "passed",
+      "log": "reports/aso/full-repo-readiness-20261105T141734Z/node/tests__resume-integration-contracts.cjs.txt",
+      "logSha256": "7a7f73a84850850996892537b06140eab89ef43a5cc14f9781a7e641c428a7d5",
+      "file": "tests/resume-integration-contracts.cjs",
+      "counts": {
+        "tests": 5,
+        "pass": 5,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0
+      },
+      "countScope": "node:test reported totals (includes parent tests)"
+    },
+    {
+      "command": [
+        "node",
+        "--import",
+        "tsx",
+        "--test",
+        "--test-concurrency=1",
+        "--test-reporter=tap",
+        "tests/runtime-artifact-gates.test.mjs"
+      ],
+      "cwd": ".",
+      "startedAt": "2026-11-05T14:34:30.356634+00:00",
+      "durationSeconds": 0.466,
+      "exitCode": 0,
+      "timedOut": false,
+      "status": "passed",
+      "log": "reports/aso/full-repo-readiness-20261105T141734Z/node/tests__runtime-artifact-gates.test.mjs.txt",
+      "logSha256": "6c74f257795c2f16f7770678900d841fde5784097a37c6aa968067edb9e939d6",
+      "file": "tests/runtime-artifact-gates.test.mjs",
+      "counts": {
+        "tests": 10,
+        "pass": 10,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0
+      },
+      "countScope": "node:test reported totals (includes parent tests)"
+    },
+    {
+      "command": [
+        "node",
+        "--import",
+        "tsx",
+        "--test",
+        "--test-concurrency=1",
+        "--test-reporter=tap",
+        "tests/runtime-bucket-restore.test.mjs"
+      ],
+      "cwd": ".",
+      "startedAt": "2026-11-05T14:34:30.833679+00:00",
+      "durationSeconds": 0.369,
+      "exitCode": 0,
+      "timedOut": false,
+      "status": "passed_with_skips",
+      "log": "reports/aso/full-repo-readiness-20261105T141734Z/node/tests__runtime-bucket-restore.test.mjs.txt",
+      "logSha256": "a57c2cc7dad7cf0b867b21db288c2a532a9d3bd96732b1b45b4719a05f8d3055",
+      "file": "tests/runtime-bucket-restore.test.mjs",
+      "counts": {
+        "tests": 1,
+        "pass": 0,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 1
+      },
+      "countScope": "node:test reported totals (includes parent tests)"
+    },
+    {
+      "command": [
+        "node",
+        "--import",
+        "tsx",
+        "--test",
+        "--test-concurrency=1",
+        "--test-reporter=tap",
+        "tests/scheduled-post-receipt-compatibility.cjs"
+      ],
+      "cwd": ".",
+      "startedAt": "2026-11-05T14:34:31.214951+00:00",
+      "durationSeconds": 1.62,
+      "exitCode": 0,
+      "timedOut": false,
+      "status": "passed",
+      "log": "reports/aso/full-repo-readiness-20261105T141734Z/node/tests__scheduled-post-receipt-compatibility.cjs.txt",
+      "logSha256": "62a66c4669dc3b3de3de9c6e6c3fbdf9819a4241affd83fcea88e64e014eb61e",
+      "file": "tests/scheduled-post-receipt-compatibility.cjs",
+      "counts": {
+        "tests": 3,
+        "pass": 3,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0
+      },
+      "countScope": "node:test reported totals (includes parent tests)"
+    },
+    {
+      "command": [
+        "node",
+        "--import",
+        "tsx",
+        "--test",
+        "--test-concurrency=1",
+        "--test-reporter=tap",
+        "tests/security-alert-recipients-postgres.test.mjs"
+      ],
+      "cwd": ".",
+      "startedAt": "2026-11-05T14:34:32.841484+00:00",
+      "durationSeconds": 1.77,
+      "exitCode": 0,
+      "timedOut": false,
+      "status": "passed",
+      "log": "reports/aso/full-repo-readiness-20261105T141734Z/node/tests__security-alert-recipients-postgres.test.mjs.txt",
+      "logSha256": "3736b79c7e380d81e255817368c9d1464efb59ec9b7a09945eeaecee6a0f9a25",
+      "file": "tests/security-alert-recipients-postgres.test.mjs",
+      "counts": {
+        "tests": 5,
+        "pass": 5,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0
+      },
+      "countScope": "node:test reported totals (includes parent tests)"
+    },
+    {
+      "command": [
+        "node",
+        "--import",
+        "tsx",
+        "--test",
+        "--test-concurrency=1",
+        "--test-reporter=tap",
+        "tests/selective-brand-icons.test.mjs"
+      ],
+      "cwd": ".",
+      "startedAt": "2026-11-05T14:34:34.617917+00:00",
+      "durationSeconds": 1.518,
+      "exitCode": 0,
+      "timedOut": false,
+      "status": "passed",
+      "log": "reports/aso/full-repo-readiness-20261105T141734Z/node/tests__selective-brand-icons.test.mjs.txt",
+      "logSha256": "6cf576db43d0468e52417141a7a7327caa8ccb019fc6566bb1c08356a6610cf4",
+      "file": "tests/selective-brand-icons.test.mjs",
+      "counts": {
+        "tests": 1,
+        "pass": 1,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0
+      },
+      "countScope": "node:test reported totals (includes parent tests)"
+    },
+    {
+      "command": [
+        "node",
+        "--import",
+        "tsx",
+        "--test",
+        "--test-concurrency=1",
+        "--test-reporter=tap",
+        "tests/sendgrid-alert-transport.test.mjs"
+      ],
+      "cwd": ".",
+      "startedAt": "2026-11-05T14:34:36.144414+00:00",
+      "durationSeconds": 0.567,
+      "exitCode": 0,
+      "timedOut": false,
+      "status": "passed",
+      "log": "reports/aso/full-repo-readiness-20261105T141734Z/node/tests__sendgrid-alert-transport.test.mjs.txt",
+      "logSha256": "69636dcb52170adaed8bf14bfcda32c1f3bf23c8dfda55bbc03f6cca4fe1f916",
+      "file": "tests/sendgrid-alert-transport.test.mjs",
+      "counts": {
+        "tests": 11,
+        "pass": 11,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0
+      },
+      "countScope": "node:test reported totals (includes parent tests)"
+    },
+    {
+      "command": [
+        "node",
+        "--import",
+        "tsx",
+        "--test",
+        "--test-concurrency=1",
+        "--test-reporter=tap",
+        "tests/sharp-security.test.mjs"
+      ],
+      "cwd": ".",
+      "startedAt": "2026-11-05T14:34:36.718105+00:00",
+      "durationSeconds": 0.42,
+      "exitCode": 0,
+      "timedOut": false,
+      "status": "passed",
+      "log": "reports/aso/full-repo-readiness-20261105T141734Z/node/tests__sharp-security.test.mjs.txt",
+      "logSha256": "9ad131449f3c3b4b3586a6720e9634d43b977dde33447807d602a8867d466b54",
+      "file": "tests/sharp-security.test.mjs",
+      "counts": {
+        "tests": 2,
+        "pass": 2,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0
+      },
+      "countScope": "node:test reported totals (includes parent tests)"
+    },
+    {
+      "command": [
+        "node",
+        "--import",
+        "tsx",
+        "--test",
+        "--test-concurrency=1",
+        "--test-reporter=tap",
+        "tests/social-media-jobs-postgres.test.mjs"
+      ],
+      "cwd": ".",
+      "startedAt": "2026-11-05T14:34:37.144636+00:00",
+      "durationSeconds": 1.369,
+      "exitCode": 0,
+      "timedOut": false,
+      "status": "passed",
+      "log": "reports/aso/full-repo-readiness-20261105T141734Z/node/tests__social-media-jobs-postgres.test.mjs.txt",
+      "logSha256": "e5b81bfa41acd6e5336ca92500ba2d68388401dca5bdc9003c8febf4c5ab9d30",
+      "file": "tests/social-media-jobs-postgres.test.mjs",
+      "counts": {
+        "tests": 21,
+        "pass": 21,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0
+      },
+      "countScope": "node:test reported totals (includes parent tests)"
+    },
+    {
+      "command": [
+        "node",
+        "--import",
+        "tsx",
+        "--test",
+        "--test-concurrency=1",
+        "--test-reporter=tap",
+        "tests/social-oauth-state.cjs"
+      ],
+      "cwd": ".",
+      "startedAt": "2026-11-05T14:34:38.519755+00:00",
+      "durationSeconds": 2.772,
+      "exitCode": 0,
+      "timedOut": false,
+      "status": "passed",
+      "log": "reports/aso/full-repo-readiness-20261105T141734Z/node/tests__social-oauth-state.cjs.txt",
+      "logSha256": "e96375a6f017f8f508feb0a93b9358d5ac6239f1c9e259ff94d3e8bee70ece06",
+      "file": "tests/social-oauth-state.cjs",
+      "counts": {
+        "tests": 1,
+        "pass": 1,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0
+      },
+      "countScope": "node:test reported totals (includes parent tests)"
+    },
+    {
+      "command": [
+        "node",
+        "--import",
+        "tsx",
+        "--test",
+        "--test-concurrency=1",
+        "--test-reporter=tap",
+        "tests/social-publish-now-postgres.test.mjs"
+      ],
+      "cwd": ".",
+      "startedAt": "2026-11-05T14:34:41.301282+00:00",
+      "durationSeconds": 1.771,
+      "exitCode": 0,
+      "timedOut": false,
+      "status": "passed",
+      "log": "reports/aso/full-repo-readiness-20261105T141734Z/node/tests__social-publish-now-postgres.test.mjs.txt",
+      "logSha256": "ea12810cb9dd8777f62a6916ae491d478ff05a946eca01a5e038620e9c160921",
+      "file": "tests/social-publish-now-postgres.test.mjs",
+      "counts": {
+        "tests": 6,
+        "pass": 6,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0
+      },
+      "countScope": "node:test reported totals (includes parent tests)"
+    },
+    {
+      "command": [
+        "node",
+        "--import",
+        "tsx",
+        "--test",
+        "--test-concurrency=1",
+        "--test-reporter=tap",
+        "tests/source-capsule-admission.test.mjs"
+      ],
+      "cwd": ".",
+      "startedAt": "2026-11-05T14:34:43.078986+00:00",
+      "durationSeconds": 0.517,
+      "exitCode": 0,
+      "timedOut": false,
+      "status": "passed",
+      "log": "reports/aso/full-repo-readiness-20261105T141734Z/node/tests__source-capsule-admission.test.mjs.txt",
+      "logSha256": "2d15d23275fd54f53d492f076e020cf84464357d5d77708924a7c382f5972b6e",
+      "file": "tests/source-capsule-admission.test.mjs",
+      "counts": {
+        "tests": 1,
+        "pass": 1,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0
+      },
+      "countScope": "node:test reported totals (includes parent tests)"
+    },
+    {
+      "command": [
+        "node",
+        "--import",
+        "tsx",
+        "--test",
+        "--test-concurrency=1",
+        "--test-reporter=tap",
+        "tests/startup-health.test.mjs"
+      ],
+      "cwd": ".",
+      "startedAt": "2026-11-05T14:34:43.603649+00:00",
+      "durationSeconds": 3.246,
+      "exitCode": 0,
+      "timedOut": false,
+      "status": "passed",
+      "log": "reports/aso/full-repo-readiness-20261105T141734Z/node/tests__startup-health.test.mjs.txt",
+      "logSha256": "b9de507c6bd2ca4cf68b85d17033ada6bc4f5b59f452314b3dec39b6da3e5bc6",
+      "file": "tests/startup-health.test.mjs",
+      "counts": {
+        "tests": 5,
+        "pass": 5,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0
+      },
+      "countScope": "node:test reported totals (includes parent tests)"
+    },
+    {
+      "command": [
+        "node",
+        "--import",
+        "tsx",
+        "--test",
+        "--test-concurrency=1",
+        "--test-reporter=tap",
+        "tests/storage-chunk-shared-postgres.test.mjs"
+      ],
+      "cwd": ".",
+      "startedAt": "2026-11-05T14:34:48.124017+00:00",
+      "durationSeconds": 8.091,
+      "exitCode": 0,
+      "timedOut": false,
+      "status": "passed",
+      "log": "reports/aso/full-repo-readiness-20261105T141734Z/node/tests__storage-chunk-shared-postgres.test.mjs.txt",
+      "logSha256": "e754896e7a21029cbe812b16e1565fdb172e307d99d035ef598f3d1a3fa9f390",
+      "file": "tests/storage-chunk-shared-postgres.test.mjs",
+      "counts": {
+        "tests": 11,
+        "pass": 11,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0
+      },
+      "countScope": "node:test reported totals (includes parent tests)"
+    },
+    {
+      "command": [
+        "node",
+        "--import",
+        "tsx",
+        "--test",
+        "--test-concurrency=1",
+        "--test-reporter=tap",
+        "tests/storefront-canonical-links.test.mjs"
+      ],
+      "cwd": ".",
+      "startedAt": "2026-11-05T14:34:56.222094+00:00",
+      "durationSeconds": 1.671,
+      "exitCode": 0,
+      "timedOut": false,
+      "status": "passed",
+      "log": "reports/aso/full-repo-readiness-20261105T141734Z/node/tests__storefront-canonical-links.test.mjs.txt",
+      "logSha256": "f0e59ec0ecc6874be4ff9612141fa51b97ab18bfbc555a1b78b0dc1cab3fd7e8",
+      "file": "tests/storefront-canonical-links.test.mjs",
+      "counts": {
+        "tests": 2,
+        "pass": 2,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0
+      },
+      "countScope": "node:test reported totals (includes parent tests)"
+    },
+    {
+      "command": [
+        "node",
+        "--import",
+        "tsx",
+        "--test",
+        "--test-concurrency=1",
+        "--test-reporter=tap",
+        "tests/subscription-checkout-isolated.test.mjs"
+      ],
+      "cwd": ".",
+      "startedAt": "2026-11-05T14:34:57.899171+00:00",
+      "durationSeconds": 0.517,
+      "exitCode": 0,
+      "timedOut": false,
+      "status": "passed",
+      "log": "reports/aso/full-repo-readiness-20261105T141734Z/node/tests__subscription-checkout-isolated.test.mjs.txt",
+      "logSha256": "ad0a763b51f403b01b5f813256bbbd6db94972ae61b1e1aac48729cc13ace85e",
+      "file": "tests/subscription-checkout-isolated.test.mjs",
+      "counts": {
+        "tests": 12,
+        "pass": 12,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0
+      },
+      "countScope": "node:test reported totals (includes parent tests)"
+    },
+    {
+      "command": [
+        "node",
+        "--import",
+        "tsx",
+        "--test",
+        "--test-concurrency=1",
+        "--test-reporter=tap",
+        "tests/testing/coverage-coordinate-contract.test.mjs"
+      ],
+      "cwd": ".",
+      "startedAt": "2026-11-05T14:34:58.424212+00:00",
+      "durationSeconds": 6.587,
+      "exitCode": 0,
+      "timedOut": false,
+      "status": "passed",
+      "log": "reports/aso/full-repo-readiness-20261105T141734Z/node/tests__testing__coverage-coordinate-contract.test.mjs.txt",
+      "logSha256": "e828391bc02af135dafffda3c8d0b23ecca7133eb2b9e35614542c6432164ab5",
+      "file": "tests/testing/coverage-coordinate-contract.test.mjs",
+      "counts": {
+        "tests": 50,
+        "pass": 50,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0
+      },
+      "countScope": "node:test reported totals (includes parent tests)"
+    },
+    {
+      "command": [
+        "node",
+        "--import",
+        "tsx",
+        "--test",
+        "--test-concurrency=1",
+        "--test-reporter=tap",
+        "tests/testing/coverage-outcome-reporter.test.mjs"
+      ],
+      "cwd": ".",
+      "startedAt": "2026-11-05T14:35:05.018935+00:00",
+      "durationSeconds": 8.396,
+      "exitCode": 0,
+      "timedOut": false,
+      "status": "passed",
+      "log": "reports/aso/full-repo-readiness-20261105T141734Z/node/tests__testing__coverage-outcome-reporter.test.mjs.txt",
+      "logSha256": "1cfc2dc322bcadf0b83cf05bb47e033911765a5a141052d03cb38c12acd5767f",
+      "file": "tests/testing/coverage-outcome-reporter.test.mjs",
+      "counts": {
+        "tests": 11,
+        "pass": 11,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0
+      },
+      "countScope": "node:test reported totals (includes parent tests)"
+    },
+    {
+      "command": [
+        "node",
+        "--import",
+        "tsx",
+        "--test",
+        "--test-concurrency=1",
+        "--test-reporter=tap",
+        "tests/testing/coverage-provenance.test.mjs"
+      ],
+      "cwd": ".",
+      "startedAt": "2026-11-05T14:35:13.421601+00:00",
+      "durationSeconds": 4.034,
+      "exitCode": 0,
+      "timedOut": false,
+      "status": "passed",
+      "log": "reports/aso/full-repo-readiness-20261105T141734Z/node/tests__testing__coverage-provenance.test.mjs.txt",
+      "logSha256": "4c491e36d1ce23107c700384fef25269f1d7bcd9faa2a5f61e321deac1016aad",
+      "file": "tests/testing/coverage-provenance.test.mjs",
+      "counts": {
+        "tests": 22,
+        "pass": 22,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0
+      },
+      "countScope": "node:test reported totals (includes parent tests)"
+    },
+    {
+      "command": [
+        "node",
+        "--import",
+        "tsx",
+        "--test",
+        "--test-concurrency=1",
+        "--test-reporter=tap",
+        "tests/tls-toolchain-consumer.test.mjs"
+      ],
+      "cwd": ".",
+      "startedAt": "2026-11-05T14:35:17.462513+00:00",
+      "durationSeconds": 0.868,
+      "exitCode": 0,
+      "timedOut": false,
+      "status": "passed",
+      "log": "reports/aso/full-repo-readiness-20261105T141734Z/node/tests__tls-toolchain-consumer.test.mjs.txt",
+      "logSha256": "4bb88747a7bccaa044ceb45555f48358f341729d6a91d752244b2de94e94b6ed",
+      "file": "tests/tls-toolchain-consumer.test.mjs",
+      "counts": {
+        "tests": 2,
+        "pass": 2,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0
+      },
+      "countScope": "node:test reported totals (includes parent tests)"
+    },
+    {
+      "command": [
+        "node",
+        "--import",
+        "tsx",
+        "--test",
+        "--test-concurrency=1",
+        "--test-reporter=tap",
+        "tests/unit/aiMediaResourceContracts.test.mjs"
+      ],
+      "cwd": ".",
+      "startedAt": "2026-11-05T14:35:18.337803+00:00",
+      "durationSeconds": 0.366,
+      "exitCode": 0,
+      "timedOut": false,
+      "status": "passed",
+      "log": "reports/aso/full-repo-readiness-20261105T141734Z/node/tests__unit__aiMediaResourceContracts.test.mjs.txt",
+      "logSha256": "a21689bc856bd6560a5e3c74fc09abc6f9e63e85bf71bc448175c12f9526c3c8",
+      "file": "tests/unit/aiMediaResourceContracts.test.mjs",
+      "counts": {
+        "tests": 5,
+        "pass": 5,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0
+      },
+      "countScope": "node:test reported totals (includes parent tests)"
+    },
+    {
+      "command": [
+        "node",
+        "--import",
+        "tsx",
+        "--test",
+        "--test-concurrency=1",
+        "--test-reporter=tap",
+        "tests/unit/client-account-boundary.test.mjs"
+      ],
+      "cwd": ".",
+      "startedAt": "2026-11-05T14:35:18.711625+00:00",
+      "durationSeconds": 0.216,
+      "exitCode": 0,
+      "timedOut": false,
+      "status": "passed",
+      "log": "reports/aso/full-repo-readiness-20261105T141734Z/node/tests__unit__client-account-boundary.test.mjs.txt",
+      "logSha256": "2545668f0c3712fec34ca30afae2de08c0b8ff652c25260ba978781ca1ba424e",
+      "file": "tests/unit/client-account-boundary.test.mjs",
+      "counts": {
+        "tests": 3,
+        "pass": 3,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0
+      },
+      "countScope": "node:test reported totals (includes parent tests)"
+    },
+    {
+      "command": [
+        "node",
+        "--import",
+        "tsx",
+        "--test",
+        "--test-concurrency=1",
+        "--test-reporter=tap",
+        "tests/unit/client-auth-beta-contracts.test.mjs"
+      ],
+      "cwd": ".",
+      "startedAt": "2026-11-05T14:35:18.938155+00:00",
+      "durationSeconds": 0.318,
+      "exitCode": 0,
+      "timedOut": false,
+      "status": "passed",
+      "log": "reports/aso/full-repo-readiness-20261105T141734Z/node/tests__unit__client-auth-beta-contracts.test.mjs.txt",
+      "logSha256": "2ed894d778b9d66a8858b2bee99a8bd49f139b875e62cf3510f2b5f52bea0a7f",
+      "file": "tests/unit/client-auth-beta-contracts.test.mjs",
+      "counts": {
+        "tests": 5,
+        "pass": 5,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0
+      },
+      "countScope": "node:test reported totals (includes parent tests)"
+    },
+    {
+      "command": [
+        "node",
+        "--import",
+        "tsx",
+        "--test",
+        "--test-concurrency=1",
+        "--test-reporter=tap",
+        "tests/unit/client-offline-readiness.test.mjs"
+      ],
+      "cwd": ".",
+      "startedAt": "2026-11-05T14:35:19.272253+00:00",
+      "durationSeconds": 0.467,
+      "exitCode": 0,
+      "timedOut": false,
+      "status": "passed",
+      "log": "reports/aso/full-repo-readiness-20261105T141734Z/node/tests__unit__client-offline-readiness.test.mjs.txt",
+      "logSha256": "2554da9c3e6f38f9e17a023b125f4179851b82cc503c548c6486650e588c312f",
+      "file": "tests/unit/client-offline-readiness.test.mjs",
+      "counts": {
+        "tests": 5,
+        "pass": 5,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0
+      },
+      "countScope": "node:test reported totals (includes parent tests)"
+    },
+    {
+      "command": [
+        "node",
+        "--import",
+        "tsx",
+        "--test",
+        "--test-concurrency=1",
+        "--test-reporter=tap",
+        "tests/unit/client-sync-receipts.test.mjs"
+      ],
+      "cwd": ".",
+      "startedAt": "2026-11-05T14:35:19.747102+00:00",
+      "durationSeconds": 0.216,
+      "exitCode": 0,
+      "timedOut": false,
+      "status": "passed",
+      "log": "reports/aso/full-repo-readiness-20261105T141734Z/node/tests__unit__client-sync-receipts.test.mjs.txt",
+      "logSha256": "895fdc6cd128cc7a29bf31081ae7849042e650e2449de11956c1507d4b8dc259",
+      "file": "tests/unit/client-sync-receipts.test.mjs",
+      "counts": {
+        "tests": 1,
+        "pass": 1,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0
+      },
+      "countScope": "node:test reported totals (includes parent tests)"
+    },
+    {
+      "command": [
+        "node",
+        "--import",
+        "tsx",
+        "--test",
+        "--test-concurrency=1",
+        "--test-reporter=tap",
+        "tests/unit/client-worker-handoff.test.mjs"
+      ],
+      "cwd": ".",
+      "startedAt": "2026-11-05T14:35:19.969979+00:00",
+      "durationSeconds": 0.266,
+      "exitCode": 0,
+      "timedOut": false,
+      "status": "passed",
+      "log": "reports/aso/full-repo-readiness-20261105T141734Z/node/tests__unit__client-worker-handoff.test.mjs.txt",
+      "logSha256": "5ac19f30742b7e49c6b7f4f342dc0fc6512ed9ce94d45df1b835a94cfae5574f",
+      "file": "tests/unit/client-worker-handoff.test.mjs",
+      "counts": {
+        "tests": 3,
+        "pass": 3,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0
+      },
+      "countScope": "node:test reported totals (includes parent tests)"
+    },
+    {
+      "command": [
+        "node",
+        "--import",
+        "tsx",
+        "tests/unit/generated-pdim-isolated.mjs"
+      ],
+      "cwd": ".",
+      "startedAt": "2026-11-05T14:35:20.244105+00:00",
+      "durationSeconds": 19.984,
+      "exitCode": 0,
+      "timedOut": false,
+      "status": "passed",
+      "log": "reports/aso/full-repo-readiness-20261105T141734Z/node/tests__unit__generated-pdim-isolated.mjs.txt",
+      "logSha256": "6a824fdc396751dd15050fdc358d26026a3b97612e7253f54f282bc5f4008d1e",
+      "file": "tests/unit/generated-pdim-isolated.mjs",
+      "counts": {},
+      "countScope": "assertion script; no case count reported"
+    },
+    {
+      "command": [
+        "node",
+        "--import",
+        "tsx",
+        "--test",
+        "--test-concurrency=1",
+        "--test-reporter=tap",
+        "tests/unit/production-simulation-policy.test.mjs"
+      ],
+      "cwd": ".",
+      "startedAt": "2026-11-05T14:35:40.235473+00:00",
+      "durationSeconds": 0.367,
+      "exitCode": 0,
+      "timedOut": false,
+      "status": "passed",
+      "log": "reports/aso/full-repo-readiness-20261105T141734Z/node/tests__unit__production-simulation-policy.test.mjs.txt",
+      "logSha256": "a29ce644ffd4f6ed38fd2a5217de3d9d33071680f7e1e48b412a4e8a3d8d7bb2",
+      "file": "tests/unit/production-simulation-policy.test.mjs",
+      "counts": {
+        "tests": 4,
+        "pass": 4,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0
+      },
+      "countScope": "node:test reported totals (includes parent tests)"
+    },
+    {
+      "command": [
+        "node",
+        "--import",
+        "tsx",
+        "--test",
+        "--test-concurrency=1",
+        "--test-reporter=tap",
+        "tests/vite-development-entry.test.mjs"
+      ],
+      "cwd": ".",
+      "startedAt": "2026-11-05T14:35:40.610912+00:00",
+      "durationSeconds": 14.063,
+      "exitCode": 0,
+      "timedOut": false,
+      "status": "passed",
+      "log": "reports/aso/full-repo-readiness-20261105T141734Z/node/tests__vite-development-entry.test.mjs.txt",
+      "logSha256": "a90e618ad5eed14421e9d5b3f79b7a8ed710999d3e1afb91633ce7a8d86ff07a",
+      "file": "tests/vite-development-entry.test.mjs",
+      "counts": {
+        "tests": 1,
+        "pass": 1,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0
+      },
+      "countScope": "node:test reported totals (includes parent tests)"
+    },
+    {
+      "command": [
+        "node",
+        "--import",
+        "tsx",
+        "--test",
+        "--test-concurrency=1",
+        "--test-reporter=tap",
+        "tests/vst3-binary-inspection.test.mjs"
+      ],
+      "cwd": ".",
+      "startedAt": "2026-11-05T14:35:54.681772+00:00",
+      "durationSeconds": 0.617,
+      "exitCode": 0,
+      "timedOut": false,
+      "status": "passed",
+      "log": "reports/aso/full-repo-readiness-20261105T141734Z/node/tests__vst3-binary-inspection.test.mjs.txt",
+      "logSha256": "67c8356e56afa55da7e03f33db9f2ef6b91fd1a070f46780d74e0eed85181aaf",
+      "file": "tests/vst3-binary-inspection.test.mjs",
+      "counts": {
+        "tests": 21,
+        "pass": 21,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0
+      },
+      "countScope": "node:test reported totals (includes parent tests)"
+    },
+    {
+      "command": [
+        "node",
+        "--import",
+        "tsx",
+        "--test",
+        "--test-concurrency=1",
+        "--test-reporter=tap",
+        "tests/web-ci-scope.test.mjs"
+      ],
+      "cwd": ".",
+      "startedAt": "2026-11-05T14:35:55.306267+00:00",
+      "durationSeconds": 0.216,
+      "exitCode": 0,
+      "timedOut": false,
+      "status": "passed",
+      "log": "reports/aso/full-repo-readiness-20261105T141734Z/node/tests__web-ci-scope.test.mjs.txt",
+      "logSha256": "3bd326039ba9356b626cf3ead2190778d7c2706eff752923858b7094cc5ca0d6",
+      "file": "tests/web-ci-scope.test.mjs",
+      "counts": {
+        "tests": 1,
+        "pass": 1,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0
+      },
+      "countScope": "node:test reported totals (includes parent tests)"
+    }
+  ],
+  "summary": {
+    "files": 133,
+    "failedFiles": 0,
+    "counts": {
+      "tests": 774,
+      "pass": 772,
+      "fail": 0,
+      "skipped": 2,
+      "cancelled": 0
+    }
+  }
+}

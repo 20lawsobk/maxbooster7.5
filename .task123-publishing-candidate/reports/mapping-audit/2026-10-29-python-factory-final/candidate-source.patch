@@ -1,0 +1,689 @@
+--- a/scripts/testing/platform-register.py
++++ b/scripts/testing/platform-register.py
+@@ -27,6 +27,9 @@
+ _JUNIT_SPEC = importlib.util.spec_from_file_location("maxbooster_junit_evidence", Path(__file__).with_name("junit_evidence.py"))
+ _JUNIT = importlib.util.module_from_spec(_JUNIT_SPEC)
+ _JUNIT_SPEC.loader.exec_module(_JUNIT)
++_FACTORY_SPEC = importlib.util.spec_from_file_location("maxbooster_python_factory_mounts", Path(__file__).with_name("python_factory_mounts.py"))
++_FACTORY = importlib.util.module_from_spec(_FACTORY_SPEC)
++_FACTORY_SPEC.loader.exec_module(_FACTORY)
+ METHODS = {"get", "post", "put", "patch", "delete", "head", "options", "all"}
+ 
+ NODE_EXTRACTOR = r'''
+@@ -439,13 +442,14 @@
+ 
+ 
+ def python_routes(paths):
+-    rows, unknown = [], []
++    rows, unknown, trees = [], [], {}
+     for file in paths:
+         if not file.endswith(".py") or not file.startswith(("server/", "external/")): continue
+         try: tree = ast.parse((ROOT / file).read_text())
+         except (SyntaxError, UnicodeError) as error:
+             unknown.append({"kind": "python-parse-diagnostic", "file": file, "line": getattr(error, "lineno", None)})
+             continue
++        trees[file] = tree
+         owners = {}
+         for node in ast.walk(tree):
+             if isinstance(node, (ast.Assign, ast.AnnAssign)):
+@@ -473,7 +477,29 @@
+                     rows.append({"file": file, "line": decorator.lineno, "method": verb, "path": path,
+                                  "processScope": "python-declared:" + file, "confidence": "declared-only; mount prefix unverified",
+                                  "receiver": owner, "handler": node.name, "mountResolved": owners[owner] in ("FastAPI", "Flask")})
+-    return rows, unknown
++    mounted, mount_unknown = _FACTORY.python_factory_mounts(trees)
++    expanded = []
++    for row in rows:
++        contexts = mounted.get((row["file"], row["line"]), [])
++        if not contexts:
++            expanded.append(row)
++            continue
++        if len(contexts) != 1:
++            # Preserve the original declaration and all its acceptance checks.
++            # Multiple process-specific instances need an explicit identity
++            # contract rather than arbitrarily selecting or merging a mount.
++            expanded.append(row)
++            mount_unknown.append({"kind": "python-factory-multiple-mounts", "file": row["file"], "line": row["line"],
++                                  "contexts": contexts})
++            continue
++        context = contexts[0]
++        resolved_path = context["includeRouterPrefix"] + context["routerPrefix"] + row["path"] if isinstance(row["path"], str) else None
++        expanded.append({**row, **context, "declaredPath": row["path"], "path": resolved_path,
++                         "declarationSubjectId": identifier("api", row["file"], row["line"], row["method"], row["path"]),
++                         "pathResolved": resolved_path is not None,
++                         "mountResolved": resolved_path is not None and not context["mountConditional"],
++                         "confidence": "source-proven conditional factory mount" if context["mountConditional"] else "source-proven factory mount; runtime unverified"})
++    return expanded, unknown + mount_unknown
+ 
+ 
+ def native_routes(paths):
+@@ -724,10 +750,16 @@
+                            "mountResolved": base is not None and bool(path), "origin": "typescript-router-ast"})
+     python, python_unknown = python_routes(source); unknown += python_unknown
+     for raw in python + native_routes(source):
+-        routes.append({"id": identifier("api", raw["file"], raw["line"], raw["method"], raw["path"]),
+-                       "method": raw["method"], "path": raw["path"], "source": location(raw["file"], raw["line"]),
+-                       "processScope": raw["processScope"], "confidence": raw["confidence"], "mountResolved": raw["mountResolved"],
+-                       "origin": "python-decorator-ast" if raw["file"].endswith(".py") else "native-source-declaration"})
++        # Factory prefix resolution enriches an existing declaration; it does
++        # not erase or replace its original subject/check identities.
++        item = {"id": raw.get("declarationSubjectId") or identifier("api", raw["file"], raw["line"], raw["method"], raw["path"]),
++                "method": raw["method"], "path": raw["path"], "source": location(raw["file"], raw["line"]),
++                "processScope": raw["processScope"], "confidence": raw["confidence"], "mountResolved": raw["mountResolved"],
++                "origin": "python-decorator-ast" if raw["file"].endswith(".py") else "native-source-declaration"}
++        for key in ("declaredPath", "declarationSubjectId", "pathResolved", "routerPrefix", "includeRouterPrefix", "factory",
++                    "mountSource", "mountConditions", "mountConditional", "runtimeAvailability"):
++            if key in raw: item[key] = raw[key]
++        routes.append(item)
+     route_by_location = defaultdict(list)
+     for item in routes:
+         file = item["source"]["file"]; path = item["path"] or "<computed>"
+@@ -751,7 +783,11 @@
+             present = {row["path"] for row in item["testCandidates"]}
+             item["testCandidates"] += [{"path": test, "association": "exact-route-literal-only", "executionStatus": execution.get(test, {}).get("status", "not_run")}
+                                        for test in sorted(literal_url_tests.get(item["path"], set()) - present)]
+-        if not item["mountResolved"]: unknown.append({"kind": "unverified-route-mount", "subjectId": item["id"], **item["source"], "declaredPath": item["path"]})
++        if not item["mountResolved"] or item.get("runtimeAvailability") == "UNVERIFIED":
++            # Source topology does not close runtime-mount acceptance. Retain
++            # the original warning bytes so existing mapping work IDs survive.
++            unknown.append({"kind": "unverified-route-mount", "subjectId": item["id"], **item["source"],
++                            "declaredPath": item.get("declaredPath", item["path"])})
+         route_by_location[(file, item["source"]["line"], item["method"])].append(item["id"])
+ 
+     contracts_by_file = defaultdict(list)
+--- /dev/null
++++ b/scripts/testing/python_factory_mounts.py
+@@ -0,0 +1,295 @@
++"""Bounded source topology for direct FastAPI router factories; never imports app code."""
++import ast
++from collections import defaultdict
++import json
++from pathlib import Path
++
++
++def python_factory_mounts(trees):
++    """Resolve finite direct FastAPI factory mounts without importing source.
++
++    Only unambiguous module applications, top-level synchronous factories and
++    direct returned APIRouter bindings qualify. Unsupported data/control flow
++    retains the original declared-only route; source topology is not runtime
++    availability or behavioral acceptance.
++    """
++    parents, bindings, contexts, diagnostics = {}, {}, defaultdict(list), []
++    # Fail closed for unexpectedly large/generated sources. No recursion across
++    # imported factories is needed by this direct-mount contract.
++    if len(trees) > 4096:
++        return contexts, [{"kind": "python-factory-analysis-budget", "budget": "files", "limit": 4096}]
++    nodes = 0
++    for tree in trees.values():
++        for _ in ast.walk(tree):
++            nodes += 1
++            if nodes > 2000000:
++                return contexts, [{"kind": "python-factory-analysis-budget", "budget": "ast-nodes", "limit": 2000000}]
++    for file, tree in trees.items():
++        for node in ast.walk(tree):
++            for child in ast.iter_child_nodes(node): parents[(file, child)] = node
++
++    def controls(file, node, stop=None):
++        result = []
++        child = node
++        while (parent := parents.get((file, child))) is not None and parent is not stop:
++            if isinstance(parent, ast.If):
++                result.append({"file": file, "line": parent.lineno, "kind": "if" if child in parent.body else "else",
++                               "expression": ast.unparse(parent.test)})
++            elif isinstance(parent, ast.Try):
++                branch = "try" if child in parent.body else "finally" if child in parent.finalbody else "else" if child in parent.orelse else "except"
++                result.append({"file": file, "line": parent.lineno, "kind": branch})
++            elif isinstance(parent, (ast.For, ast.AsyncFor, ast.While, ast.With, ast.AsyncWith, ast.Match, ast.comprehension, ast.ListComp, ast.SetComp, ast.DictComp, ast.GeneratorExp, ast.TryStar)):
++                result.append({"file": file, "line": getattr(parent, "lineno", None), "kind": "unsupported-control"})
++            elif isinstance(parent, ast.ExceptHandler):
++                result.append({"file": file, "line": parent.lineno, "kind": "except-handler",
++                               "expression": ast.unparse(parent.type) if parent.type else "BaseException"})
++            child = parent
++        return result
++
++    def local_nodes(scope):
++        def visit(node):
++            yield node
++            if isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef, ast.ClassDef, ast.Lambda)):
++                # Bodies execute in their own lexical scope. Defaults,
++                # decorators and bases execute in the enclosing scope.
++                expressions = list(getattr(node, "decorator_list", [])) + list(getattr(node, "bases", []))
++                if hasattr(node, "args"):
++                    expressions += [*node.args.defaults, *(value for value in node.args.kw_defaults if value is not None)]
++                for expression in expressions: yield from visit(expression)
++                return
++            for child in ast.iter_child_nodes(node): yield from visit(child)
++        for statement in scope.body: yield from visit(statement)
++
++    def stores(file, scope):
++        key = file, scope
++        if key in bindings: return bindings[key]
++        found = defaultdict(list)
++        if isinstance(scope, (ast.FunctionDef, ast.AsyncFunctionDef)):
++            args = scope.args
++            for arg in [*args.posonlyargs, *args.args, *args.kwonlyargs, *([args.vararg] if args.vararg else []), *([args.kwarg] if args.kwarg else [])]:
++                found[arg.arg].append(("parameter", arg, None))
++        for node in local_nodes(scope):
++            if isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef, ast.ClassDef)):
++                found[node.name].append(("definition", node, None))
++            elif isinstance(node, ast.ImportFrom):
++                for alias in node.names: found[alias.asname or alias.name].append(("from", node, alias.name))
++            elif isinstance(node, ast.Import):
++                for alias in node.names: found[alias.asname or alias.name.split(".")[0]].append(("import", node, alias.name))
++            elif isinstance(node, ast.Name) and isinstance(node.ctx, (ast.Store, ast.Del)):
++                parent = parents.get((file, node))
++                if isinstance(parent, (ast.Assign, ast.AnnAssign)):
++                    found[node.id].append(("assignment", parent, parent.value))
++                else:
++                    found[node.id].append(("non-simple-binding", node, None))
++            elif isinstance(node, ast.ExceptHandler) and node.name:
++                found[node.name].append(("exception", node, None))
++            elif isinstance(node, (ast.MatchAs, ast.MatchStar)) and node.name:
++                found[node.name].append(("pattern", node, None))
++            elif isinstance(node, ast.MatchMapping) and node.rest:
++                found[node.rest].append(("pattern", node, None))
++            elif isinstance(node, (ast.Global, ast.Nonlocal)):
++                for name in node.names: found[name].append(("dynamic-scope", node, None))
++        bindings[key] = found
++        return found
++
++    def constructor(file, scope, expression, wanted):
++        if not isinstance(expression, ast.Name): return None
++        options = stores(file, scope).get(expression.id, [])
++        if not options and scope is not trees[file]: options = stores(file, trees[file]).get(expression.id, [])
++        imports = [row for row in options if row[0] == "from" and row[1].module == "fastapi" and row[1].level == 0 and row[2] == wanted]
++        if len(imports) != 1 or imports[0][1].lineno >= expression.lineno: return None
++        for kind, node, value in options:
++            if (kind, node, value) == imports[0]: continue
++            # The Director's optional FastAPI import has an explicit None
++            # fallback. Retain that availability condition rather than treating
++            # arbitrary reassignments as the constructor binding.
++            if not (kind == "assignment" and isinstance(value, ast.Constant) and value.value is None
++                    and optional_import_fallback(file, imports[0][1], node)): return None
++        return controls(file, imports[0][1], trees[file])
++
++    def optional_import_fallback(file, imported, fallback):
++        # A None fallback is admissible only in an ImportError handler of the
++        # SAME try statement as the sole FastAPI import, not an unrelated try.
++        cursor = imported
++        while (parent := parents.get((file, cursor))) is not None:
++            if isinstance(parent, ast.Try) and cursor in parent.body:
++                expected = parent
++                break
++            cursor = parent
++        else: return False
++        cursor = fallback
++        while (parent := parents.get((file, cursor))) is not None:
++            if isinstance(parent, ast.ExceptHandler):
++                exception = parent.type
++                return (parents.get((file, parent)) is expected and isinstance(exception, ast.Name)
++                        and exception.id in {"ImportError", "ModuleNotFoundError"})
++            cursor = parent
++        return False
++
++    def unsupported_conditions(values):
++        return any(value["kind"] == "unsupported-control" for value in values)
++
++    def mutated_receiver(scope, owner):
++        # Replacing methods, using setattr/exec, or passing a live router to an
++        # unknown registration-time call invalidates this narrow proof.
++        for node in local_nodes(scope):
++            if isinstance(node, (ast.Attribute, ast.Subscript)) and isinstance(node.ctx, (ast.Store, ast.Del)):
++                base = node.value
++                if isinstance(base, ast.Name) and base.id == owner: return True
++            if isinstance(node, ast.Call):
++                if isinstance(node.func, ast.Name) and node.func.id in {"exec", "eval"}: return True
++                values = [*node.args, *(keyword.value for keyword in node.keywords)]
++                if any(isinstance(value, ast.Name) and value.id == owner for value in values):
++                    # Returning the binding is safe; passing it to arbitrary
++                    # code is outside a direct APIRouter factory contract.
++                    return True
++        return False
++
++    def escaped_router(file, factory, owner):
++        allowed = {"get", "post", "put", "patch", "delete", "head", "options", "api_route", "route", "websocket", "on_event"}
++        for node in local_nodes(factory):
++            if not isinstance(node, ast.Name) or node.id != owner or not isinstance(node.ctx, ast.Load): continue
++            parent = parents.get((file, node))
++            if isinstance(parent, ast.Return) and parent.value is node: continue
++            if isinstance(parent, ast.Attribute) and parent.value is node and parent.attr in allowed:
++                call = parents.get((file, parent))
++                handler = parents.get((file, call))
++                if (isinstance(call, ast.Call) and call.func is parent
++                        and isinstance(handler, (ast.FunctionDef, ast.AsyncFunctionDef))
++                        and call in handler.decorator_list and handler in factory.body): continue
++            # Aliases, container escapes, arbitrary helper/method calls and
++            # nested attribute mutation need a wider ownership proof.
++            return True
++        return False
++
++    def prefix(call):
++        if any(keyword.arg is None for keyword in call.keywords): return None
++        values = [keyword.value for keyword in call.keywords if keyword.arg == "prefix"]
++        if len(values) > 1: return None
++        value = values[0] if values else ast.Constant(value="")
++        if not isinstance(value, ast.Constant) or not isinstance(value.value, str): return None
++        text = value.value
++        return text if len(text) <= 2048 and (not text or text.startswith("/") and not text.endswith("/")) else None
++
++    def module_file(file, import_node):
++        module = import_node.module or ""
++        if not module or any(not part.isidentifier() for part in module.split(".")): return None
++        origin = Path(file).parent
++        if import_node.level:
++            if import_node.level > len(origin.parts): return None
++            base = origin
++            for _ in range(import_node.level - 1): base = base.parent
++            candidates = [base]
++        else:
++            # Absolute imports are admitted only under this entrypoint's
++            # directory. Guessing arbitrary ancestor sys.path entries can bind
++            # an unrelated same-named package.
++            candidates = [origin]
++        for base in candidates:
++            target = base.joinpath(*module.split("."))
++            matches = [str(target.with_suffix(".py")), str(target / "__init__.py")]
++            hits = [name for name in matches if name in trees]
++            if hits: return hits[0] if len(hits) == 1 else None
++        return None
++
++    factories = {}
++    for file, tree in trees.items():
++        for name, values in stores(file, tree).items():
++            if len(values) != 1 or values[0][0] != "definition" or not isinstance(values[0][1], ast.FunctionDef): continue
++            factory = values[0][1]
++            # Nested/deferred factory definitions are not module exports.
++            if parents.get((file, factory)) is not tree or factory.decorator_list: continue
++            if any(isinstance(node, (ast.Yield, ast.YieldFrom)) for node in local_nodes(factory)): continue
++            for statement in factory.body:
++                if not isinstance(statement, (ast.Assign, ast.AnnAssign)) or not isinstance(statement.value, ast.Call): continue
++                targets = statement.targets if isinstance(statement, ast.Assign) else [statement.target]
++                if len(targets) != 1 or not isinstance(targets[0], ast.Name): continue
++                owner = targets[0].id
++                if (len(stores(file, factory).get(owner, [])) != 1 or mutated_receiver(factory, owner)
++                        or escaped_router(file, factory, owner)): continue
++                constructor_conditions = constructor(file, factory, statement.value.func, "APIRouter")
++                router_prefix = prefix(statement.value)
++                if constructor_conditions is None or router_prefix is None or statement.value.args: continue
++                returns = [node for node in local_nodes(factory) if isinstance(node, ast.Return)]
++                # One unconditional final router return prevents implicit None
++                # and early returns before decorator registration.
++                final = factory.body[-1]
++                if not isinstance(final, ast.Return) or not isinstance(final.value, ast.Name) or final.value.id != owner: continue
++                if any(isinstance(node.value, ast.Name) for node in returns if node is not final): continue
++                if any(not (isinstance(node.value, ast.Name) and node.value.id == owner) and
++                       not (node.value is None or isinstance(node.value, ast.Constant) and node.value.value is None) for node in returns): continue
++                optional = [node for node in returns if not isinstance(node.value, ast.Name)]
++                routes = []
++                for handler in factory.body:
++                    if not isinstance(handler, (ast.FunctionDef, ast.AsyncFunctionDef)): continue
++                    for decorator in handler.decorator_list:
++                        if (isinstance(decorator, ast.Call) and isinstance(decorator.func, ast.Attribute)
++                                and isinstance(decorator.func.value, ast.Name) and decorator.func.value.id == owner):
++                            routes.append(decorator)
++                conditions = [*controls(file, factory, tree), *constructor_conditions]
++                if unsupported_conditions(conditions): continue
++                for node in optional:
++                    conditions.extend(controls(file, node, factory))
++                    conditions.append({"file": file, "line": node.lineno, "kind": "factory-may-return-none"})
++                factories[(file, name)] = {"factory": factory, "owner": owner, "prefix": router_prefix,
++                                          "routes": routes, "conditions": conditions}
++
++    def called_factory(file, expression, include_line):
++        if isinstance(expression, ast.Name):
++            values = stores(file, trees[file]).get(expression.id, [])
++            if len(values) != 1 or values[0][0] != "assignment": return None
++            assignment = values[0][1]
++            if assignment.lineno >= include_line or len(getattr(assignment, "targets", [assignment.target] if isinstance(assignment, ast.AnnAssign) else [])) != 1: return None
++            expression = assignment.value
++            assigned_conditions = controls(file, assignment, trees[file])
++        else: assigned_conditions = []
++        if not isinstance(expression, ast.Call) or not isinstance(expression.func, ast.Name): return None
++        if any(isinstance(arg, ast.Starred) for arg in expression.args) or any(keyword.arg is None for keyword in expression.keywords): return None
++        values = stores(file, trees[file]).get(expression.func.id, [])
++        if len(values) != 1: return None
++        kind, binding, exported = values[0]
++        if binding.lineno >= expression.lineno: return None
++        if kind == "definition": key = file, expression.func.id
++        elif kind == "from":
++            target = module_file(file, binding)
++            key = target, exported
++        else: return None
++        descriptor = factories.get(key)
++        if descriptor is None: return None
++        return key, descriptor, [*assigned_conditions, *controls(file, binding, trees[file])]
++
++    for file, tree in trees.items():
++        apps = {}
++        for name, values in stores(file, tree).items():
++            if len(values) != 1 or values[0][0] != "assignment": continue
++            node = values[0][1]
++            if parents.get((file, node)) is not tree or not isinstance(node.value, ast.Call): continue
++            targets = node.targets if isinstance(node, ast.Assign) else [node.target]
++            if len(targets) != 1 or not isinstance(targets[0], ast.Name): continue
++            app_conditions = constructor(file, tree, node.value.func, "FastAPI")
++            if (not node.value.args and not any(keyword.arg is None for keyword in node.value.keywords)
++                    and app_conditions is not None and not unsupported_conditions(app_conditions)
++                    and not mutated_receiver(tree, name)):
++                apps[name] = node, app_conditions
++        if not apps: continue
++        for node in local_nodes(tree):
++            if (not isinstance(node, ast.Call) or not isinstance(node.func, ast.Attribute) or node.func.attr != "include_router"
++                    or not isinstance(node.func.value, ast.Name) or node.func.value.id not in apps or len(node.args) != 1): continue
++            mount_prefix = prefix(node)
++            if mount_prefix is None: continue
++            bound = called_factory(file, node.args[0], node.lineno)
++            if bound is None: continue
++            key, descriptor, import_conditions = bound
++            application, app_conditions = apps[node.func.value.id]
++            conditions = [*app_conditions, *import_conditions, *descriptor["conditions"], *controls(file, node, tree)]
++            if unsupported_conditions(conditions) or node.lineno <= application.lineno: continue
++            unique = {json.dumps(value, sort_keys=True): value for value in conditions}
++            conditions = [unique[key] for key in sorted(unique)]
++            for decorator in descriptor["routes"]:
++                contexts[(key[0], decorator.lineno)].append({
++                    "processScope": "python-app:" + file + "::" + node.func.value.id,
++                    "routerPrefix": descriptor["prefix"], "includeRouterPrefix": mount_prefix,
++                    "factory": {"file": key[0], "name": key[1], "line": descriptor["factory"].lineno},
++                    "mountSource": {"file": file, "line": node.lineno}, "mountConditions": conditions,
++                    "mountConditional": bool(conditions), "runtimeAvailability": "UNVERIFIED"})
++    return contexts, diagnostics
+--- /dev/null
++++ b/tests/testing/test_python_factory_mounts.py
+@@ -0,0 +1,295 @@
++"""Static factory topology must preserve declarations and fail closed on ambiguity."""
++import ast
++import importlib.util
++import json
++import os
++from pathlib import Path
++import sys
++import subprocess
++import tempfile
++import textwrap
++import unittest
++
++ROOT = Path(os.environ.get('MAXBOOSTER_FACTORY_REPO_ROOT', Path(__file__).resolve().parents[2]))
++HELPER = Path(os.environ.get('PYTHON_FACTORY_MOUNTS_CANDIDATE', ROOT / 'scripts/testing/python_factory_mounts.py'))
++REGISTER = Path(os.environ.get('PLATFORM_REGISTER_CANDIDATE', ROOT / 'scripts/testing/platform-register.py'))
++spec = importlib.util.spec_from_file_location('reviewed_factory_mounts', HELPER)
++helper = importlib.util.module_from_spec(spec)
++spec.loader.exec_module(helper)
++spec = importlib.util.spec_from_file_location('factory_register_candidate', REGISTER)
++register = importlib.util.module_from_spec(spec)
++spec.loader.exec_module(register)
++
++ROUTES = '''\
++from fastapi import APIRouter
++
++def build():
++    router = APIRouter(prefix="/api")
++
++    @router.get("/thing")
++    def handler():
++        return {"ok": True}
++
++    return router
++'''
++APP = '''\
++from fastapi import FastAPI
++from routes import build as factory
++app = FastAPI()
++app.include_router(factory(), prefix="/v2")
++'''
++
++
++def parse(files):
++    return {file: ast.parse(textwrap.dedent(text)) for file, text in files.items()}
++
++
++def contexts(app=APP, routes=ROUTES, extra=None):
++    files = {'external/app.py': app, 'external/routes.py': routes, **(extra or {})}
++    return helper.python_factory_mounts(parse(files))
++
++
++def actual_rows(files):
++    with tempfile.TemporaryDirectory(prefix='python-factory-source-') as directory:
++        root = Path(directory)
++        for file, text in files.items():
++            target = root / file
++            target.parent.mkdir(parents=True, exist_ok=True)
++            target.write_text(textwrap.dedent(text))
++        previous = register.ROOT
++        try:
++            register.ROOT = root
++            return register.python_routes(sorted(files))
++        finally:
++            register.ROOT = previous
++
++
++def consumer_items(rows):
++    """Execute the actual consumer AST, not a duplicate test implementation."""
++    tree = ast.parse(REGISTER.read_text())
++    main = next(node for node in tree.body if isinstance(node, ast.FunctionDef) and node.name == 'main')
++    ingest = next(node for node in main.body if isinstance(node, ast.For)
++                  and ast.unparse(node.iter) == 'python + native_routes(source)')
++    enrich = next(node for node in main.body if isinstance(node, ast.For)
++                  and ast.unparse(node.target) == 'item' and ast.unparse(node.iter) == 'routes')
++    namespace = dict(register.__dict__)
++    from collections import defaultdict
++    namespace.update(python=rows, native_routes=lambda paths: [], source=[], routes=[], unknown=[],
++                     candidates_by_source=defaultdict(list), literal_url_tests=defaultdict(set),
++                     execution={}, route_by_location=defaultdict(list))
++    exec(compile(ast.fix_missing_locations(ast.Module(body=[ingest, enrich], type_ignores=[])), str(REGISTER), 'exec'), namespace)
++    return namespace['routes'], namespace['unknown']
++
++
++class FactoryMounts(unittest.TestCase):
++    def test_direct_import_alias_and_prefixes(self):
++        found, diagnostics = contexts()
++        self.assertEqual(diagnostics, [])
++        self.assertEqual(len(found), 1)
++        row = next(iter(found.values()))[0]
++        self.assertEqual((row['routerPrefix'], row['includeRouterPrefix']), ('/api', '/v2'))
++        self.assertEqual(row['processScope'], 'python-app:external/app.py::app')
++        self.assertFalse(row['mountConditional'])
++        self.assertEqual(row['runtimeAvailability'], 'UNVERIFIED')
++
++    def test_constructor_alias_is_resolved_in_its_lexical_scope(self):
++        found, _ = contexts(routes=ROUTES.replace('import APIRouter', 'import APIRouter as Router').replace('= APIRouter(', '= Router('))
++        self.assertEqual(len(found), 1)
++
++    def test_same_module_factory_and_relative_import(self):
++        same = 'from fastapi import FastAPI\n' + ROUTES + '\napp = FastAPI()\napp.include_router(build())\n'
++        found, _ = helper.python_factory_mounts(parse({'external/app.py': same}))
++        self.assertEqual(len(found), 1)
++        found, _ = contexts(app=APP.replace('from routes', 'from .routes'))
++        self.assertEqual(len(found), 1)
++
++    def test_assigned_router_and_optional_none_remain_conditional(self):
++        app = APP.replace('app.include_router(factory(), prefix="/v2")', 'candidate = factory()\nif candidate is not None:\n    app.include_router(candidate, prefix="/v2")')
++        routes = ROUTES.replace('    router =', '    if disabled:\n        return None\n    router =', 1)
++        found, _ = contexts(app=app, routes=routes)
++        row = next(iter(found.values()))[0]
++        self.assertTrue(row['mountConditional'])
++        self.assertIn('factory-may-return-none', {condition['kind'] for condition in row['mountConditions']})
++        self.assertIn('if', {condition['kind'] for condition in row['mountConditions']})
++
++    def test_optional_fastapi_none_fallback_requires_same_import_try(self):
++        optional = ROUTES.replace('from fastapi import APIRouter', 'try:\n    from fastapi import APIRouter\nexcept ImportError:\n    APIRouter = None')
++        found, _ = contexts(routes=optional)
++        self.assertTrue(next(iter(found.values()))[0]['mountConditional'])
++        unrelated = ROUTES.replace('from fastapi import APIRouter', 'from fastapi import APIRouter\ntry:\n    fail()\nexcept ImportError:\n    APIRouter = None')
++        self.assertFalse(contexts(routes=unrelated)[0])
++
++    def test_conditional_application_constructor_import_is_retained(self):
++        app = APP.replace('from fastapi import FastAPI', 'try:\n    from fastapi import FastAPI\nexcept ImportError:\n    FastAPI = None')
++        found, _ = contexts(app=app)
++        self.assertTrue(next(iter(found.values()))[0]['mountConditional'])
++        self.assertIn('try', {item['kind'] for item in next(iter(found.values()))[0]['mountConditions']})
++        self.assertFalse(contexts(app=APP.replace('FastAPI()', 'FastAPI(**options)'))[0])
++
++    def test_module_app_and_router_binding_shadowing_reject(self):
++        variants = {
++            'app-reassignment': (APP + '\napp = Fake()\n', ROUTES),
++            'app-multitarget': (APP.replace('app = FastAPI()', 'app = other = FastAPI()'), ROUTES),
++            'app-method-replacement': (APP + '\napp.include_router = replacement\n', ROUTES),
++            'factory-reassignment': (APP + '\nfactory = replacement\n', ROUTES),
++            'constructor-reassignment': (APP, ROUTES.replace('\ndef build', '\nAPIRouter = Fake\n\ndef build')),
++            'constructor-parameter': (APP, ROUTES.replace('def build():', 'def build(APIRouter):')),
++            'router-parameter': (APP, ROUTES.replace('def build():', 'def build(router):')),
++            'router-reassignment': (APP, ROUTES.replace('    return router', '    router = Fake()\n    return router')),
++            'router-delete': (APP, ROUTES.replace('    return router', '    del router\n    return router')),
++            'router-named-expression': (APP, ROUTES.replace('    return router', '    (router := Fake())\n    return router')),
++            'router-with-binding': (APP, ROUTES.replace('    return router', '    with context() as router:\n        pass\n    return router')),
++            'router-match-binding': (APP, ROUTES.replace('    return router', '    match data:\n        case router:\n            pass\n    return router')),
++            'router-attribute-replacement': (APP, ROUTES.replace('    return router', '    router.get = replacement\n    return router')),
++            'router-setattr': (APP, ROUTES.replace('    return router', '    setattr(router, "get", replacement)\n    return router')),
++            'router-alias': (APP, ROUTES.replace('    return router', '    alias = router\n    return router')),
++            'router-nested-mutation': (APP, ROUTES.replace('    return router', '    router.routes.clear()\n    return router')),
++            'router-non-decorator': (APP, ROUTES.replace('    return router', '    router.get("/not-a-decorator")\n    return router')),
++            'router-exec': (APP, ROUTES.replace('    return router', '    exec(code)\n    return router')),
++        }
++        for label, (app, routes) in variants.items():
++            with self.subTest(label=label): self.assertFalse(contexts(app=app, routes=routes)[0])
++
++    def test_nested_scope_shadowing_does_not_replace_outer_bindings(self):
++        routes = ROUTES.replace('    return router', '    def unrelated(APIRouter):\n        router = None\n        return router\n    return router')
++        app = APP + '\nclass Container:\n    FastAPI = Fake\n\ndef later():\n    app = Fake()\n'
++        found, _ = contexts(app=app, routes=routes)
++        self.assertEqual(len(found), 1)
++
++    def test_decorated_async_generator_early_or_implicit_return_factories_reject(self):
++        variants = {
++            'decorated': ROUTES.replace('def build():', '@replacement\ndef build():'),
++            'async': ROUTES.replace('def build():', 'async def build():'),
++            'generator': ROUTES.replace('    return router', '    yield router\n    return router'),
++            'implicit-return': ROUTES.replace('    return router', '    if ready:\n        return router'),
++            'early-router': ROUTES.replace('    @router.get', '    if ready:\n        return router\n    @router.get'),
++            'other-return': ROUTES.replace('    return router', '    if ready:\n        return Fake()\n    return router'),
++        }
++        for label, routes in variants.items():
++            with self.subTest(label=label): self.assertFalse(contexts(routes=routes)[0])
++
++    def test_deferred_loop_comprehension_with_match_mounts_reject(self):
++        include = 'app.include_router(factory(), prefix="/v2")'
++        variants = [
++            'def later():\n    ' + include,
++            'class Later:\n    ' + include,
++            'for item in rows:\n    ' + include,
++            'while ready:\n    ' + include,
++            'with context():\n    ' + include,
++            '[' + include + ' for item in rows]',
++            'match value:\n    case 1:\n        ' + include,
++            'try:\n    ' + include + '\nexcept* ValueError:\n    pass',
++        ]
++        for replacement in variants:
++            with self.subTest(replacement=replacement): self.assertFalse(contexts(app=APP.replace(include, replacement))[0])
++
++    def test_ordinary_if_and_try_mounts_record_conditions(self):
++        include = 'app.include_router(factory(), prefix="/v2")'
++        for replacement in ['if enabled:\n    ' + include, 'try:\n    '+include+'\nexcept ValueError:\n    pass']:
++            found, _ = contexts(app=APP.replace(include, replacement))
++            self.assertTrue(next(iter(found.values()))[0]['mountConditional'])
++
++    def test_invalid_prefix_and_dynamic_spreads_reject(self):
++        for suffix in ['prefix=prefix', 'prefix="bad"', 'prefix="/bad/"', '**options', 'prefix="/ok", **options']:
++            with self.subTest(suffix=suffix): self.assertFalse(contexts(app=APP.replace('prefix="/v2"', suffix))[0])
++        for value in ['"/bad/"', 'prefix', '42', '"' + '/' + 'a'*2048 + '"']:
++            with self.subTest(prefix=value): self.assertFalse(contexts(routes=ROUTES.replace('"/api"', value))[0])
++        self.assertFalse(contexts(app=APP.replace('factory()', 'factory(*arguments)'))[0])
++
++    def test_constructor_and_factory_call_before_import_reject(self):
++        self.assertFalse(contexts(app=APP.replace('from fastapi import FastAPI\n', '') + '\nfrom fastapi import FastAPI\n')[0])
++        app = APP.replace('from routes import build as factory\n', '').replace('app.include_router(factory(), prefix="/v2")', 'candidate = factory()\nfrom routes import build as factory\napp.include_router(candidate)')
++        self.assertFalse(contexts(app=app)[0])
++
++    def test_ambiguous_packages_and_reexport_cycles_reject(self):
++        self.assertFalse(contexts(extra={'external/routes/__init__.py': ROUTES})[0])
++        cycle = {'external/routes.py': 'from cycle import build', 'external/cycle.py': 'from routes import build'}
++        self.assertFalse(helper.python_factory_mounts(parse({'external/app.py': APP, **cycle}))[0])
++        # Importlib/sys.path probing must not guess an ancestor same-name file.
++        self.assertFalse(helper.python_factory_mounts(parse({'external/pkg/app.py': APP, 'external/routes.py': ROUTES}))[0])
++
++    def test_router_lifecycle_decorator_preserves_direct_route_topology(self):
++        routes = ROUTES.replace('    @router.get', '    @router.on_event("startup")\n    async def startup():\n        await engine.start()\n\n    @router.get')
++        found, _ = contexts(routes=routes)
++        self.assertEqual(len(found), 2)
++        rows, _ = actual_rows({'external/app.py': APP, 'external/routes.py': routes})
++        # on_event is a lifecycle declaration, not an HTTP route.
++        self.assertEqual(len(rows), 1)
++        self.assertEqual(rows[0]['path'], '/v2/api/thing')
++
++    def test_source_is_never_executed_and_unicode_prefix_preserved(self):
++        routes = 'raise RuntimeError("must not import source")\n' + ROUTES.replace('"/api"', '"/música/音楽"')
++        found, _ = contexts(routes=routes)
++        self.assertEqual(next(iter(found.values()))[0]['routerPrefix'], '/música/音楽')
++
++    def test_finite_file_budget_fails_closed(self):
++        found, diagnostics = helper.python_factory_mounts({str(index): ast.Module(body=[], type_ignores=[]) for index in range(4097)})
++        self.assertFalse(found)
++        self.assertEqual(diagnostics[0]['kind'], 'python-factory-analysis-budget')
++
++    def test_importlib_consumer_loads_paired_helpers_without_sys_path(self):
++        with tempfile.TemporaryDirectory(prefix='factory-importlib-consumer-') as directory:
++            root = Path(directory)
++            for file, text in {'external/app.py': APP, 'external/routes.py': ROUTES}.items():
++                target = root / file
++                target.parent.mkdir(parents=True, exist_ok=True)
++                target.write_text(text)
++            code = """
++import importlib.util, json, sys
++from pathlib import Path
++consumer = Path(sys.argv[1]).resolve()
++assert str(consumer.parent) not in sys.path
++assert not any(value.endswith('/scripts/testing') for value in sys.path)
++spec = importlib.util.spec_from_file_location('isolated_factory_consumer', consumer)
++module = importlib.util.module_from_spec(spec)
++spec.loader.exec_module(module)
++module.ROOT = Path(sys.argv[2])
++rows, unknown = module.python_routes(['external/app.py', 'external/routes.py'])
++assert len(rows) == 1 and unknown == []
++assert rows[0]['path'] == '/v2/api/thing'
++assert rows[0]['runtimeAvailability'] == 'UNVERIFIED'
++assert hasattr(module, '_JUNIT') and hasattr(module, '_FACTORY')
++print(json.dumps({'rows': len(rows), 'path': rows[0]['path'], 'pairedHelpers': True}))
++"""
++            result = subprocess.run([sys.executable, '-I', '-c', code, str(REGISTER), str(root)],
++                                    cwd=root, env={'PATH': os.defpath, 'LANG': 'C', 'TZ': 'UTC'},
++                                    stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True, timeout=15)
++            self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
++            self.assertEqual(json.loads(result.stdout), {'rows': 1, 'path': '/v2/api/thing', 'pairedHelpers': True})
++
++    def test_actual_consumer_retains_declaration_check_and_unknown_identities(self):
++        rows, unknown = actual_rows({'external/app.py': APP, 'external/routes.py': ROUTES})
++        self.assertEqual(unknown, [])
++        self.assertEqual(len(rows), 1)
++        self.assertEqual(rows[0]['path'], '/v2/api/thing')
++        self.assertEqual(rows[0]['declaredPath'], '/thing')
++        expected = register.identifier('api', rows[0]['file'], rows[0]['line'], rows[0]['method'], '/thing')
++        items, warnings = consumer_items(rows)
++        self.assertEqual(items[0]['id'], expected)
++        self.assertEqual({check['id'] for check in items[0]['requiredChecks']}, {expected + '/' + name for name in ['response-contract', 'access-policy', 'input-boundaries', 'tenant-boundary', 'dependency-failure']})
++        self.assertTrue(items[0]['mountResolved'])
++        self.assertEqual(items[0]['runtimeAvailability'], 'UNVERIFIED')
++        self.assertEqual(warnings, [{'kind': 'unverified-route-mount', 'subjectId': expected, 'file': rows[0]['file'], 'line': rows[0]['line'], 'declaredPath': '/thing'}])
++
++    def test_multiple_mounts_retain_original_declaration_and_explicit_unknown(self):
++        app = APP + '\napp.include_router(factory(), prefix="/other")\n'
++        rows, unknown = actual_rows({'external/app.py': app, 'external/routes.py': ROUTES})
++        self.assertEqual(len(rows), 1)
++        self.assertEqual(rows[0]['path'], '/thing')
++        self.assertFalse(rows[0]['mountResolved'])
++        self.assertEqual(unknown[0]['kind'], 'python-factory-multiple-mounts')
++        self.assertEqual(len(unknown[0]['contexts']), 2)
++        self.assertEqual({context['includeRouterPrefix'] for context in unknown[0]['contexts']}, {'/v2', '/other'})
++        items, _ = consumer_items(rows)
++        self.assertEqual(len({item['id'] for item in items}), len(items))
++
++    def test_nonliteral_decorator_path_remains_unresolved(self):
++        rows, _ = actual_rows({'external/app.py': APP, 'external/routes.py': ROUTES.replace('"/thing"', 'path')})
++        self.assertEqual(len(rows), 1)
++        self.assertIsNone(rows[0]['path'])
++        self.assertFalse(rows[0]['pathResolved'])
++        self.assertFalse(rows[0]['mountResolved'])
++
++
++if __name__ == '__main__':
++    unittest.main()

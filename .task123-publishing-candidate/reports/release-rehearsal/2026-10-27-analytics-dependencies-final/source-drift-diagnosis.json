@@ -1,0 +1,623 @@
+{
+  "scope": "Post-failure admitted source inventory and filesystem mutation times. Previous successful release is historical comparison, not the missing initial inventory of this failed attempt.",
+  "failedAttemptInitialReleaseInventoryRetained": false,
+  "commonCodeInputDigestStable": true,
+  "sourceInventoryAfterSha256": "cd3ea52429a636714fd7805e3f40b2d7190d3a4fd6c52b6bff1d83ac73f2f453",
+  "admittedEntries": 4562,
+  "mutationWindow": {
+    "start": "2026-10-28T01:45:36.926068+00:00",
+    "end": "2026-10-28T02:09:14.815245+00:00"
+  },
+  "admittedPathsWithMtimeOrCtimeInsideAttempt": [
+    {
+      "current": {
+        "path": "dist",
+        "sha256": "333178788eae3e0b14c9b07bbbb6232bfa4689c7f134eeaa9daae60aba96de53",
+        "mode": 448,
+        "bytes": 0
+      },
+      "mtime": "2026-10-28T01:47:03.236228+00:00",
+      "ctime": "2026-10-28T01:47:03.236228+00:00",
+      "previousSuccessfulRelease": {
+        "path": "dist",
+        "sha256": "333178788eae3e0b14c9b07bbbb6232bfa4689c7f134eeaa9daae60aba96de53",
+        "mode": 448,
+        "bytes": 0
+      }
+    },
+    {
+      "current": {
+        "path": "external/maxcore/artifacts/ai-training-server/uploads/images",
+        "sha256": "333178788eae3e0b14c9b07bbbb6232bfa4689c7f134eeaa9daae60aba96de53",
+        "mode": 448,
+        "bytes": 0
+      },
+      "mtime": "2026-10-28T01:57:26.396013+00:00",
+      "ctime": "2026-10-28T01:57:26.396013+00:00",
+      "previousSuccessfulRelease": {
+        "path": "external/maxcore/artifacts/ai-training-server/uploads/images",
+        "sha256": "333178788eae3e0b14c9b07bbbb6232bfa4689c7f134eeaa9daae60aba96de53",
+        "mode": 448,
+        "bytes": 0
+      }
+    },
+    {
+      "current": {
+        "path": "external/maxcore/artifacts/ai-training-server/uploads/images/img_c2d04937f6ec4cc8.png",
+        "sha256": "7568f15aa8c9338a32b0876fc50d89d9048536ac2e4f05ed1fcbf8966899739a",
+        "mode": 384,
+        "bytes": 3393204
+      },
+      "mtime": "2026-10-28T01:57:26.396013+00:00",
+      "ctime": "2026-10-28T01:57:26.396013+00:00",
+      "previousSuccessfulRelease": null
+    },
+    {
+      "current": {
+        "path": "external/maxcore/artifacts/ai-training-server/uploads/videos/.tmp",
+        "sha256": "333178788eae3e0b14c9b07bbbb6232bfa4689c7f134eeaa9daae60aba96de53",
+        "mode": 448,
+        "bytes": 0
+      },
+      "mtime": "2026-10-28T01:58:21.357440+00:00",
+      "ctime": "2026-10-28T01:58:21.357440+00:00",
+      "previousSuccessfulRelease": {
+        "path": "external/maxcore/artifacts/ai-training-server/uploads/videos/.tmp",
+        "sha256": "333178788eae3e0b14c9b07bbbb6232bfa4689c7f134eeaa9daae60aba96de53",
+        "mode": 448,
+        "bytes": 0
+      }
+    },
+    {
+      "current": {
+        "path": "external/maxcore/artifacts/api-server",
+        "sha256": "333178788eae3e0b14c9b07bbbb6232bfa4689c7f134eeaa9daae60aba96de53",
+        "mode": 448,
+        "bytes": 0
+      },
+      "mtime": "2026-10-28T01:46:44.827778+00:00",
+      "ctime": "2026-10-28T01:46:44.827778+00:00",
+      "previousSuccessfulRelease": {
+        "path": "external/maxcore/artifacts/api-server",
+        "sha256": "333178788eae3e0b14c9b07bbbb6232bfa4689c7f134eeaa9daae60aba96de53",
+        "mode": 448,
+        "bytes": 0
+      }
+    },
+    {
+      "current": {
+        "path": "external/maxcore/artifacts/api-server/dist",
+        "sha256": "333178788eae3e0b14c9b07bbbb6232bfa4689c7f134eeaa9daae60aba96de53",
+        "mode": 448,
+        "bytes": 0
+      },
+      "mtime": "2026-10-28T01:46:44.827778+00:00",
+      "ctime": "2026-10-28T01:46:44.827778+00:00",
+      "previousSuccessfulRelease": {
+        "path": "external/maxcore/artifacts/api-server/dist",
+        "sha256": "333178788eae3e0b14c9b07bbbb6232bfa4689c7f134eeaa9daae60aba96de53",
+        "mode": 448,
+        "bytes": 0
+      }
+    },
+    {
+      "current": {
+        "path": "external/maxcore/artifacts/api-server/dist/index.mjs",
+        "sha256": "091430c60b16374b2acf14d166782a1db6a5c8c6275be16e2caac7b7a435fc07",
+        "mode": 384,
+        "bytes": 1028146
+      },
+      "mtime": "2026-10-28T01:46:44.827778+00:00",
+      "ctime": "2026-10-28T01:46:44.827778+00:00",
+      "previousSuccessfulRelease": {
+        "path": "external/maxcore/artifacts/api-server/dist/index.mjs",
+        "sha256": "1fca53d852b26931397caaed578cf1c7503749511e7891abfc5839872625b0e9",
+        "mode": 384,
+        "bytes": 1025205
+      }
+    },
+    {
+      "current": {
+        "path": "external/maxcore/lib/api-spec",
+        "sha256": "333178788eae3e0b14c9b07bbbb6232bfa4689c7f134eeaa9daae60aba96de53",
+        "mode": 448,
+        "bytes": 0
+      },
+      "mtime": "2026-10-28T01:54:37.323590+00:00",
+      "ctime": "2026-10-28T01:54:37.323590+00:00",
+      "previousSuccessfulRelease": {
+        "path": "external/maxcore/lib/api-spec",
+        "sha256": "333178788eae3e0b14c9b07bbbb6232bfa4689c7f134eeaa9daae60aba96de53",
+        "mode": 448,
+        "bytes": 0
+      }
+    },
+    {
+      "current": {
+        "path": "external/pdim/lib/api-spec",
+        "sha256": "333178788eae3e0b14c9b07bbbb6232bfa4689c7f134eeaa9daae60aba96de53",
+        "mode": 448,
+        "bytes": 0
+      },
+      "mtime": "2026-10-28T01:54:37.323590+00:00",
+      "ctime": "2026-10-28T01:54:37.323590+00:00",
+      "previousSuccessfulRelease": {
+        "path": "external/pdim/lib/api-spec",
+        "sha256": "333178788eae3e0b14c9b07bbbb6232bfa4689c7f134eeaa9daae60aba96de53",
+        "mode": 448,
+        "bytes": 0
+      }
+    },
+    {
+      "current": {
+        "path": "samples",
+        "sha256": "333178788eae3e0b14c9b07bbbb6232bfa4689c7f134eeaa9daae60aba96de53",
+        "mode": 448,
+        "bytes": 0
+      },
+      "mtime": "2026-10-28T01:52:58.205093+00:00",
+      "ctime": "2026-10-28T01:52:58.205093+00:00",
+      "previousSuccessfulRelease": {
+        "path": "samples",
+        "sha256": "333178788eae3e0b14c9b07bbbb6232bfa4689c7f134eeaa9daae60aba96de53",
+        "mode": 448,
+        "bytes": 0
+      }
+    },
+    {
+      "current": {
+        "path": "tests",
+        "sha256": "333178788eae3e0b14c9b07bbbb6232bfa4689c7f134eeaa9daae60aba96de53",
+        "mode": 448,
+        "bytes": 0
+      },
+      "mtime": "2026-10-28T01:52:17.488070+00:00",
+      "ctime": "2026-10-28T01:52:17.488070+00:00",
+      "previousSuccessfulRelease": {
+        "path": "tests",
+        "sha256": "333178788eae3e0b14c9b07bbbb6232bfa4689c7f134eeaa9daae60aba96de53",
+        "mode": 448,
+        "bytes": 0
+      }
+    }
+  ],
+  "changedVsPreviousSuccessfulRelease": [
+    {
+      "current": {
+        "path": "client/src/pages/analytics/AIDashboard.tsx",
+        "sha256": "c3dcd8a430b88caefcb9c9c4a7cef318cea375a6630e85ae3525b81cb3f80228",
+        "mode": 384,
+        "bytes": 6941
+      },
+      "previousSuccessfulRelease": {
+        "path": "client/src/pages/analytics/AIDashboard.tsx",
+        "sha256": "db52f23b7e4a0fad4928c97d6ef3e45ed82abb45f9741a42fa3e4410836b532e",
+        "mode": 384,
+        "bytes": 5101
+      }
+    },
+    {
+      "current": {
+        "path": "external/maxcore/artifacts/ai-training-server/ai_model/analytics.py",
+        "sha256": "6e20ef9133b98c809f20d346f4062e86f38267cb19c53a70eec98f6a9ec4891e",
+        "mode": 384,
+        "bytes": 12935
+      },
+      "previousSuccessfulRelease": null
+    },
+    {
+      "current": {
+        "path": "external/maxcore/artifacts/ai-training-server/server.py",
+        "sha256": "9c892a5bdbc677c441a09964dd6a94c0b12b86731a3792f5367413732fce26b2",
+        "mode": 384,
+        "bytes": 592385
+      },
+      "previousSuccessfulRelease": {
+        "path": "external/maxcore/artifacts/ai-training-server/server.py",
+        "sha256": "57e54839adafdacd741f2e38ae9b5fb9f90d906c7d1c1a0b18798766c11633eb",
+        "mode": 384,
+        "bytes": 591949
+      }
+    },
+    {
+      "current": {
+        "path": "external/maxcore/artifacts/ai-training-server/uploads/images/img_8ce41fb482f84869.png",
+        "sha256": "f45076b32b836b38de5a94669cae61853aff5786f5e2d25d6c738272a17c4cae",
+        "mode": 384,
+        "bytes": 3397946
+      },
+      "previousSuccessfulRelease": null
+    },
+    {
+      "current": {
+        "path": "external/maxcore/artifacts/ai-training-server/uploads/images/img_c2d04937f6ec4cc8.png",
+        "sha256": "7568f15aa8c9338a32b0876fc50d89d9048536ac2e4f05ed1fcbf8966899739a",
+        "mode": 384,
+        "bytes": 3393204
+      },
+      "previousSuccessfulRelease": null
+    },
+    {
+      "current": {
+        "path": "external/maxcore/artifacts/api-server/dist/index.mjs",
+        "sha256": "091430c60b16374b2acf14d166782a1db6a5c8c6275be16e2caac7b7a435fc07",
+        "mode": 384,
+        "bytes": 1028146
+      },
+      "previousSuccessfulRelease": {
+        "path": "external/maxcore/artifacts/api-server/dist/index.mjs",
+        "sha256": "1fca53d852b26931397caaed578cf1c7503749511e7891abfc5839872625b0e9",
+        "mode": 384,
+        "bytes": 1025205
+      }
+    },
+    {
+      "current": {
+        "path": "external/maxcore/artifacts/api-server/src/routes/model-proxy.ts",
+        "sha256": "3e236513a52a760b899723afc2e7f2c0dd8eda9c3efb22369a338a4484d5820a",
+        "mode": 384,
+        "bytes": 68865
+      },
+      "previousSuccessfulRelease": {
+        "path": "external/maxcore/artifacts/api-server/src/routes/model-proxy.ts",
+        "sha256": "3f070a93e4227b69838f25bba797f8fc0f11fe97ca077731e7aa5118aeae6e97",
+        "mode": 384,
+        "bytes": 68164
+      }
+    },
+    {
+      "current": {
+        "path": "external/maxcore/pnpm-lock.yaml",
+        "sha256": "6dfd669204bf96c65263669b945eab377984a165eb588492667b892d5569249c",
+        "mode": 384,
+        "bytes": 220208
+      },
+      "previousSuccessfulRelease": {
+        "path": "external/maxcore/pnpm-lock.yaml",
+        "sha256": "805e7c44a2ebbb1792334201ddb38510f1b2c99d9694c519dfdf33923dd53b88",
+        "mode": 384,
+        "bytes": 220353
+      }
+    },
+    {
+      "current": {
+        "path": "external/maxcore/pnpm-workspace.yaml",
+        "sha256": "cd05d6aceb793eceee44a627629bdda34b1905cde14bcc2209c3f9b3d383f50a",
+        "mode": 384,
+        "bytes": 5090
+      },
+      "previousSuccessfulRelease": {
+        "path": "external/maxcore/pnpm-workspace.yaml",
+        "sha256": "55c0f4ca78a8b33e71d18dd39e4b03b406cb5194ddd6c56e8bd192ee4d3decac",
+        "mode": 384,
+        "bytes": 5090
+      }
+    },
+    {
+      "current": {
+        "path": "external/maxcore/scripts/check-js-security-versions.js",
+        "sha256": "b62a38ac786e3d9ffd4a8bff3c84c33c1483fc0fb783692b6e21c93105c466d1",
+        "mode": 384,
+        "bytes": 3666
+      },
+      "previousSuccessfulRelease": {
+        "path": "external/maxcore/scripts/check-js-security-versions.js",
+        "sha256": "fdd83b9bccf793a6a25c48128af3aecbedb9d1299fafce7d5108eef362edd473",
+        "mode": 384,
+        "bytes": 3666
+      }
+    },
+    {
+      "current": {
+        "path": "external/maxcore/scripts/package.json",
+        "sha256": "708443896dfa23240bf0d4662df06591113fa714071f4b55946ae0cd433e24e0",
+        "mode": 384,
+        "bytes": 369
+      },
+      "previousSuccessfulRelease": {
+        "path": "external/maxcore/scripts/package.json",
+        "sha256": "9a7386a60f34eeecb9b780b2a5ee323adca502636aec9bdf19a6b61304057b93",
+        "mode": 384,
+        "bytes": 370
+      }
+    },
+    {
+      "current": {
+        "path": "external/pdim/pnpm-lock.yaml",
+        "sha256": "f7af3577ab6de0159f5cab9f0b61b5da3a6330ecb06d2c0829afa846ea7d3188",
+        "mode": 384,
+        "bytes": 226520
+      },
+      "previousSuccessfulRelease": {
+        "path": "external/pdim/pnpm-lock.yaml",
+        "sha256": "195483f0da875e652c048bb0780b9ab0c15e47bc5469651b7321332e88ee0246",
+        "mode": 384,
+        "bytes": 226520
+      }
+    },
+    {
+      "current": {
+        "path": "external/pdim/pnpm-workspace.yaml",
+        "sha256": "256ad4dd753b1570c092f1e86e16eeaf6f72e40e6bd667d3d513a521bc72f4a4",
+        "mode": 384,
+        "bytes": 5194
+      },
+      "previousSuccessfulRelease": {
+        "path": "external/pdim/pnpm-workspace.yaml",
+        "sha256": "597577136518569685254823c69658e9466eddce80b2211daf58ea15c6fab511",
+        "mode": 384,
+        "bytes": 5194
+      }
+    },
+    {
+      "current": {
+        "path": "package-lock.json",
+        "sha256": "5b3367c2823a5ecb18ea8b74d3b2486e24ec180c6287e34c9586e4870787ffad",
+        "mode": 384,
+        "bytes": 718526
+      },
+      "previousSuccessfulRelease": {
+        "path": "package-lock.json",
+        "sha256": "1e02ca2b8245a20867f61d6d09b8cc347b275a57a3cfb94d017158fdaea8f80e",
+        "mode": 384,
+        "bytes": 720224
+      }
+    },
+    {
+      "current": {
+        "path": "package.json",
+        "sha256": "02bd05b1f4c1462e72025cb3e55b590d96d2ce062ac822e36456b3a53fd22083",
+        "mode": 384,
+        "bytes": 19896
+      },
+      "previousSuccessfulRelease": {
+        "path": "package.json",
+        "sha256": "6b4985977a99b3d37149f4de98d2d0f5d7c219eac1b11b4932b384fd7897673e",
+        "mode": 384,
+        "bytes": 19928
+      }
+    },
+    {
+      "current": {
+        "path": "pnpm-workspace.yaml",
+        "sha256": "4061b234e8e63b773afa306675a11f24541d4cb20f054929209f78e2160ce10e",
+        "mode": 384,
+        "bytes": 1386
+      },
+      "previousSuccessfulRelease": {
+        "path": "pnpm-workspace.yaml",
+        "sha256": "00a7cfccb9f0136113d053c3d9bf82ee9e974534ba8b5d05ccc68b3bc93245f3",
+        "mode": 384,
+        "bytes": 1386
+      }
+    },
+    {
+      "current": {
+        "path": "scripts/testing/__pycache__/platform-register.cpython-312.pyc",
+        "sha256": "e00bb413a8c5dd5d2db8a7e41a37dedac6e7ebdaecf208389295454455546098",
+        "mode": 384,
+        "bytes": 66316
+      },
+      "previousSuccessfulRelease": {
+        "path": "scripts/testing/__pycache__/platform-register.cpython-312.pyc",
+        "sha256": "822869afce07622b6f1e228686578f3a266b940d40d27cd9125717387b3fc873",
+        "mode": 384,
+        "bytes": 64230
+      }
+    },
+    {
+      "current": {
+        "path": "scripts/testing/collect-node-coverage.mjs",
+        "sha256": "5690f641c69b2d55c12be972920a740cac23e0215a87ef5ed5692b0830308cd3",
+        "mode": 384,
+        "bytes": 7261
+      },
+      "previousSuccessfulRelease": null
+    },
+    {
+      "current": {
+        "path": "scripts/testing/coverage-node-bootstrap.mjs",
+        "sha256": "bd1a984cf459aeb3c0c6416bf72091f0d08752628c7cbff47b33d3577805baa4",
+        "mode": 384,
+        "bytes": 4115
+      },
+      "previousSuccessfulRelease": null
+    },
+    {
+      "current": {
+        "path": "scripts/testing/coverage-provenance.mjs",
+        "sha256": "71e7697be79434da049ccce6b79dc06139ab8ea63f5290891109878efd2c5030",
+        "mode": 384,
+        "bytes": 12153
+      },
+      "previousSuccessfulRelease": null
+    },
+    {
+      "current": {
+        "path": "scripts/testing/integration-browser.mjs",
+        "sha256": "fb481f18f985d6d7e748d4f00dd067e536980ac03a495bdb2149030b9448f4b6",
+        "mode": 384,
+        "bytes": 17781
+      },
+      "previousSuccessfulRelease": {
+        "path": "scripts/testing/integration-browser.mjs",
+        "sha256": "9fa027334d8682fec28ba9a950b240fb0a7d660b523fb8c953c107a4deb8f84f",
+        "mode": 384,
+        "bytes": 14981
+      }
+    },
+    {
+      "current": {
+        "path": "scripts/testing/platform-register.py",
+        "sha256": "25bf59e91f237d3f256d26bf046e6b3d42c43d3c67863bdb21c88f27f5b457d1",
+        "mode": 384,
+        "bytes": 50292
+      },
+      "previousSuccessfulRelease": {
+        "path": "scripts/testing/platform-register.py",
+        "sha256": "bfda1529d437095ae114c57efb45bdee47fd2b84ced730aa2becd539fe184f8d",
+        "mode": 384,
+        "bytes": 48392
+      }
+    },
+    {
+      "current": {
+        "path": "scripts/verify-runtime-artifacts.mjs",
+        "sha256": "ba5b3514a63abd4dd1c4ac399c656327ed4303502ffa2ff8a49f0ea4d2f1f8d0",
+        "mode": 384,
+        "bytes": 11877
+      },
+      "previousSuccessfulRelease": {
+        "path": "scripts/verify-runtime-artifacts.mjs",
+        "sha256": "67328083338a5f9186fcf8ddd188337839e1a8ef0c7df4a6eb15f1f7537f4dd8",
+        "mode": 384,
+        "bytes": 11695
+      }
+    },
+    {
+      "current": {
+        "path": "server/lib/aiCapabilityContracts.ts",
+        "sha256": "2172470f5989d37835caa49254b433d9651c44e59b19d2b67604d364e8c14d93",
+        "mode": 384,
+        "bytes": 1116
+      },
+      "previousSuccessfulRelease": {
+        "path": "server/lib/aiCapabilityContracts.ts",
+        "sha256": "293b08670d107a5927eb5850a3411b966a5c5c4d6c064aff78d4c524e928aaea",
+        "mode": 384,
+        "bytes": 803
+      }
+    },
+    {
+      "current": {
+        "path": "server/lib/sendgridAlertTransport.ts",
+        "sha256": "bc2e412164e1bd13400210eba71422c7476c27e7294f45dc47d06759e6369bc6",
+        "mode": 384,
+        "bytes": 2892
+      },
+      "previousSuccessfulRelease": null
+    },
+    {
+      "current": {
+        "path": "server/monitoring/alertingService.ts",
+        "sha256": "b7aefd988b825b138264d2bc14c37a3c486b4021e7cdbf9c659397b4348cb0b8",
+        "mode": 384,
+        "bytes": 11975
+      },
+      "previousSuccessfulRelease": {
+        "path": "server/monitoring/alertingService.ts",
+        "sha256": "e9a42e8bc24435156314b9b378c6a2fd156e19fc59c434d2da8525a970d5cc8f",
+        "mode": 384,
+        "bytes": 9762
+      }
+    },
+    {
+      "current": {
+        "path": "server/monitoring/emailMonitor.ts",
+        "sha256": "17cdb56f917deeaa17c4895100f7340de11dbf9be39a9bebf2010a21297965cf",
+        "mode": 384,
+        "bytes": 1731
+      },
+      "previousSuccessfulRelease": {
+        "path": "server/monitoring/emailMonitor.ts",
+        "sha256": "db4e1fa16ede8461f28fd4540b38ad532745daa98fdf7f7badb3c171ce15b2f9",
+        "mode": 384,
+        "bytes": 1716
+      }
+    },
+    {
+      "current": {
+        "path": "server/routes/ai.ts",
+        "sha256": "619190fa9c320432950ccae117e24180f88d7c7da936c765a0191d8d24f54361",
+        "mode": 384,
+        "bytes": 33878
+      },
+      "previousSuccessfulRelease": {
+        "path": "server/routes/ai.ts",
+        "sha256": "0509bf0b5380ddc250724531003ca1a1665e59ecd4c35eb003091b22f7a50118",
+        "mode": 384,
+        "bytes": 33449
+      }
+    },
+    {
+      "current": {
+        "path": "server/routes/monitoring.ts",
+        "sha256": "ff6b2d4b9976f591bff66a7e0daca3666abbf271700308fcccf9824397296099",
+        "mode": 384,
+        "bytes": 9338
+      },
+      "previousSuccessfulRelease": {
+        "path": "server/routes/monitoring.ts",
+        "sha256": "a056c19644c7a5bf18fb340b34b16895671e21eab4a38003cf93f605e183d601",
+        "mode": 384,
+        "bytes": 8996
+      }
+    },
+    {
+      "current": {
+        "path": "server/services/accountAnalyticsService.ts",
+        "sha256": "4800e08ee78288cf372b8053296ad6bf4b19b1d2b92dcb622a8c050c67957749",
+        "mode": 384,
+        "bytes": 10876
+      },
+      "previousSuccessfulRelease": null
+    },
+    {
+      "current": {
+        "path": "server/services/aiAnalyticsService.ts",
+        "sha256": "c8e32f11d50bd108430d5c4d02b7507a91f654d37e7dc04a753e1b8a6163e1d6",
+        "mode": 384,
+        "bytes": 31775
+      },
+      "previousSuccessfulRelease": {
+        "path": "server/services/aiAnalyticsService.ts",
+        "sha256": "f1370b8a2646062128bad653014620c583f5fe3d06c02fc497ec9e4ec3a36017",
+        "mode": 384,
+        "bytes": 35029
+      }
+    },
+    {
+      "current": {
+        "path": "server/services/unifiedAIController.ts",
+        "sha256": "fc54a1fd7701373073650371737cca8c91ac81ab15d691276126246760e40506",
+        "mode": 384,
+        "bytes": 36651
+      },
+      "previousSuccessfulRelease": {
+        "path": "server/services/unifiedAIController.ts",
+        "sha256": "42d42147b936b8553f8af93602b6c51c3677f00adcad3406aaece0ac089e795d",
+        "mode": 384,
+        "bytes": 36628
+      }
+    },
+    {
+      "current": {
+        "path": "server/workers/index.ts",
+        "sha256": "67588805b1be3d7a40fca8abbea759aef8e67eb5d32c6abe8360cd4738b5d291",
+        "mode": 384,
+        "bytes": 16748
+      },
+      "previousSuccessfulRelease": {
+        "path": "server/workers/index.ts",
+        "sha256": "912290d73c51dd8238375fbdbe681c5d6ade31a3bcde772db608c6ad2d4f5ecd",
+        "mode": 384,
+        "bytes": 17050
+      }
+    },
+    {
+      "current": {
+        "path": "tools/legacy-security-update.json",
+        "sha256": "1c683b8231d68483b5979ae6e6de0a06c8a1d0a8016ac332db0837e84e1fdb2c",
+        "mode": 384,
+        "bytes": 3381532
+      },
+      "previousSuccessfulRelease": {
+        "path": "tools/legacy-security-update.json",
+        "sha256": "42a29b91bc3cf1bc89774715beb5aa9669026caba2dd5aff151f47d2603045a7",
+        "mode": 384,
+        "bytes": 3295390
+      }
+    }
+  ],
+  "productionReady": false
+}

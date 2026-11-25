@@ -1,0 +1,22 @@
+{
+  "scope": "Actual isolated PostgreSQL, real Drizzle engine, user FK/admin roles and security detect/respond/recover pipeline; no external notification or production data touched",
+  "sourceSha256": {
+    "server/services/selfHealingSecurityEngine.ts": "b1c709efdf1ea37bdf6a035cf1e6c4729874f4a50a4c27a5542fa1df607b9fc4",
+    "tests/unit/selfHealingSecurityEngine.test.ts": "aa2aa3f24a0183d970a45e9d219d544f169e184fa078c5264bc2a502bfcf6fe0",
+    "tests/security-alert-recipients-postgres.test.mjs": "e70b71cba793d47cc87bc0d58e5f4eb088c3c1ddc772ecd2b5fb4129ef7913d6"
+  },
+  "actualPostgresLeafCases": 4,
+  "existingUnitCases": 29,
+  "productionDataTouched": false,
+  "junitSha256": {
+    "security-alert-existing-unit.xml": "a3aafffaae5ad0693cc8ec098f83074fc27266285ce84833de5ff84e13cb10c6",
+    "security-alert-recipients-postgres.xml": "8842cd180d17efef5975d442f5e61a7818f5f984fdbc203f3297172633ff4b09"
+  },
+  "checks": {
+    "unitRecheck": "29 passed after final fixture-admin assertion",
+    "actualPostgres": "4 leaf passed",
+    "eslint": "passed",
+    "syntax": "passed",
+    "diffWhitespace": "passed"
+  }
+}

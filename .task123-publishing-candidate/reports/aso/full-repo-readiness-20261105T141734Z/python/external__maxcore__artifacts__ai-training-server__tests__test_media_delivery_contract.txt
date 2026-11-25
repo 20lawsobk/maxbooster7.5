@@ -1,0 +1,1077 @@
+....F...........F..FF                                                    [100%]
+=================================== FAILURES ===================================
+____ CheckpointTests.test_archive_loader_is_weights_only_and_validates_root ____
+
+self = <tests.test_media_delivery_contract.CheckpointTests testMethod=test_archive_loader_is_weights_only_and_validates_root>
+
+    def test_archive_loader_is_weights_only_and_validates_root(self):
+        tensor = types.SimpleNamespace(shape=(2, 3))
+>       with patch("torch.load", return_value={"model_state_dict": {"weight": tensor}}) as loader:
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests/test_media_delivery_contract.py:87: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+/nix/store/h097imm3w6dpx10qynrd2sz9fks2wbq8-python3-3.12.11/lib/python3.12/unittest/mock.py:1451: in __enter__
+    self.target = self.getter()
+                  ^^^^^^^^^^^^^
+/nix/store/h097imm3w6dpx10qynrd2sz9fks2wbq8-python3-3.12.11/lib/python3.12/pkgutil.py:513: in resolve_name
+    mod = importlib.import_module(modname)
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+/nix/store/h097imm3w6dpx10qynrd2sz9fks2wbq8-python3-3.12.11/lib/python3.12/importlib/__init__.py:90: in import_module
+    return _bootstrap._gcd_import(name[level:], package, level)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+<frozen importlib._bootstrap>:1387: in _gcd_import
+    ???
+<frozen importlib._bootstrap>:1360: in _find_and_load
+    ???
+<frozen importlib._bootstrap>:1331: in _find_and_load_unlocked
+    ???
+<frozen importlib._bootstrap>:935: in _load_unlocked
+    ???
+<frozen importlib._bootstrap_external>:999: in exec_module
+    ???
+<frozen importlib._bootstrap>:488: in _call_with_frames_removed
+    ???
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+    """
+    The torch package contains data structures for multi-dimensional
+    tensors and defines mathematical operations over these tensors.
+    Additionally, it provides many utilities for efficient serialization of
+    Tensors and arbitrary types, and other useful utilities.
+    
+    It has a CUDA counterpart, that enables you to run your tensor computations
+    on an NVIDIA GPU with compute capability >= 3.0.
+    """
+    
+    import builtins
+    import ctypes
+    import functools
+    import glob
+    import importlib
+    import inspect
+    import math
+    import os
+    import platform
+    import sys
+    import textwrap
+    import threading
+    import typing
+    import typing_extensions
+    import warnings
+    from collections.abc import Callable as _Callable, Sequence as _Sequence
+    from types import ModuleType as _ModuleType
+    from typing import (
+        Any as _Any,
+        get_origin as _get_origin,
+        overload as _overload,
+        TYPE_CHECKING,
+        TypeAlias as _TypeAlias,
+        TypeGuard as _TypeGuard,
+        TypeVar as _TypeVar,
+    )
+    from typing_extensions import (
+        deprecated as _deprecated,
+        LiteralString as _LiteralString,
+        Never as _Never,
+        ParamSpec as _ParamSpec,
+        Self as _Self,
+        TypeIs as _TypeIs,
+    )
+    
+    
+    # Re-executing this file (retrying a failed import, or `reload`) would corrupt the C++ global state the first run set up.
+    if getattr(sys, "_torch_import_started", False):
+        raise ImportError(
+            "`torch` can only be initialized once per process, so this module cannot "
+            "be imported again: neither via `importlib.reload(torch)`, nor by "
+            "re-importing after a failed `import torch`."
+        )
+    sys._torch_import_started = True  # type: ignore[attr-defined]
+    
+    
+    # As a bunch of torch.packages internally still have this check
+    # we need to keep this. @todo: Remove tests that rely on this check as
+    # they are likely stale.
+    def _running_with_deploy() -> builtins.bool:
+        return False
+    
+    
+    from torch._utils import (
+        _functionalize_sync as _sync,
+        _import_dotted_name,
+        classproperty,
+    )
+    from torch._utils_internal import (
+        get_file_path,
+        prepare_multiprocessing_environment,
+        profiler_allow_cudagraph_cupti_lazy_reinit_cuda12,
+        USE_GLOBAL_DEPS,
+        USE_RTLD_GLOBAL_WITH_LIBTORCH,
+    )
+    from torch.torch_version import __version__ as __version__
+    
+    
+    if TYPE_CHECKING:
+        import sympy
+    
+        from torch.distributed._local_tensor import LocalIntNode
+        from torch.fx.experimental._constant_symnode import ConstantIntNode
+        from torch.fx.experimental.dynamic_spec import ParamsSpec, ShapesSpec
+        from torch.fx.experimental.sym_node import SymNode
+        from torch.nested._internal.nested_int import NestedIntNode
+        from torch.types import BoolLikeType, Device, FloatLikeType, IntLikeType, PySymType
+    
+        _SymNodeLike = SymNode | NestedIntNode | ConstantIntNode | LocalIntNode
+    
+    
+    __all__ = [
+        "BoolStorage",
+        "BoolTensor",
+        "ByteStorage",
+        "ByteTensor",
+        "CharStorage",
+        "CharTensor",
+        "DoubleStorage",
+        "DoubleTensor",
+        "FloatStorage",
+        "FloatTensor",
+        "GradScaler",
+        "IntStorage",
+        "IntTensor",
+        "LongStorage",
+        "LongTensor",
+        "ShortStorage",
+        "ShortTensor",
+        "SymBool",
+        "SymFloat",
+        "SymInt",
+        "Tensor",
+        "TypedStorage",
+        "UntypedStorage",
+        "are_deterministic_algorithms_enabled",
+        "autocast",
+        "chunk",
+        "compile",
+        "cond",
+        "enable_grad",
+        "export",
+        "get_default_device",
+        "get_deterministic_debug_mode",
+        "get_device_module",
+        "get_float32_matmul_precision",
+        "get_rng_state",
+        "inference_mode",
+        "initial_seed",
+        "is_deterministic_algorithms_warn_only_enabled",
+        "is_storage",
+        "is_tensor",
+        "is_warn_always_enabled",
+        "load",
+        "lobpcg",
+        "manual_seed",
+        "matmul",
+        "no_grad",
+        "rand",
+        "randn",
+        "save",
+        "seed",
+        "set_default_device",
+        "set_default_tensor_type",
+        "set_deterministic_debug_mode",
+        "set_float32_matmul_precision",
+        "set_printoptions",
+        "set_rng_state",
+        "set_warn_always",
+        "split",
+        "stack",
+        "sym_float",
+        "sym_fresh_size",
+        "sym_int",
+        "sym_ite",
+        "sym_max",
+        "sym_min",
+        "sym_not",
+        "sym_sum",
+        "thread_safe_generator",
+        "typename",
+        "unravel_index",
+        "use_deterministic_algorithms",
+        "vmap",
+    ]
+    
+    # Please keep this list sorted
+    if __all__ != sorted(__all__):
+        raise AssertionError("__all__ must be kept sorted")
+    
+    ################################################################################
+    # Load the extension module
+    ################################################################################
+    
+    # If PyTorch was built against the ROCm runtime wheels, then there will be
+    # a _rocm_init module and it will define an initialize() function which can
+    # prepare ROCm for use. See general documentation on ROCm runtime wheels:
+    # https://github.com/ROCm/TheRock/blob/main/docs/packaging/python_packaging.md
+    # Since this module is only ever added to the wheel if built for such a
+    # deployment, it is always safe to attempt.
+    try:
+        from . import _rocm_init  # type: ignore[attr-defined]
+    except ImportError:
+        pass
+    else:
+        _rocm_init.initialize()
+        del _rocm_init
+    
+    
+    if sys.platform == "win32":
+    
+        def _load_dll_libraries() -> None:
+            import importlib.util
+            import sysconfig
+    
+            from torch.version import cuda as cuda_version
+    
+            pfiles_path = os.getenv("ProgramFiles", r"C:\Program Files")
+            py_dll_path = os.path.join(sys.exec_prefix, "Library", "bin")
+            th_dll_path = os.path.join(os.path.dirname(__file__), "lib")
+            # Anchor the DLL dir on the compiled _C extension rather than __file__:
+            # editable installs (e.g. scikit-build-core) run this __init__ from the
+            # source tree, whose lib/ is empty, while _C and its dependent DLLs live
+            # in the installed tree. In a wheel install both resolve to the same dir.
+            _spec = importlib.util.find_spec("torch._C")
+            if _spec is not None and _spec.origin:
+                th_dll_path = os.path.join(os.path.dirname(_spec.origin), "lib")
+            usebase_path = os.path.join(
+                sysconfig.get_config_var("userbase"), "Library", "bin"
+            )
+            py_root_bin_path = os.path.join(sys.exec_prefix, "bin")
+    
+            # When users create a virtualenv that inherits the base environment,
+            # we will need to add the corresponding library directory into
+            # DLL search directories. Otherwise, it will rely on `PATH` which
+            # is dependent on user settings.
+            if sys.exec_prefix != sys.base_exec_prefix:
+                base_py_dll_path = os.path.join(sys.base_exec_prefix, "Library", "bin")
+            else:
+                base_py_dll_path = ""
+    
+            dll_paths = [
+                p
+                for p in (
+                    th_dll_path,
+                    py_dll_path,
+                    base_py_dll_path,
+                    usebase_path,
+                    py_root_bin_path,
+                )
+                if os.path.exists(p)
+            ]
+    
+            if not builtins.any(
+                os.path.exists(os.path.join(p, "nvToolsExt64_1.dll")) for p in dll_paths
+            ):
+                nvtoolsext_dll_path = os.path.join(
+                    os.getenv(
+                        "NVTOOLSEXT_PATH",
+                        os.path.join(pfiles_path, "NVIDIA Corporation", "NvToolsExt"),
+                    ),
+                    "bin",
+                    "x64",
+                )
+            else:
+                nvtoolsext_dll_path = ""
+    
+            if cuda_version and builtins.all(
+                not glob.glob(os.path.join(p, "cudart64*.dll")) for p in dll_paths
+            ):
+                cuda_version_1 = cuda_version.replace(".", "_")
+                cuda_path_var = "CUDA_PATH_V" + cuda_version_1
+                default_path = os.path.join(
+                    pfiles_path, "NVIDIA GPU Computing Toolkit", "CUDA", f"v{cuda_version}"
+                )
+                cuda_path = os.path.join(os.getenv(cuda_path_var, default_path), "bin")
+            else:
+                cuda_path = ""
+    
+            dll_paths.extend(
+                p for p in (nvtoolsext_dll_path, cuda_path) if os.path.exists(p)
+            )
+    
+            kernel32 = ctypes.WinDLL("kernel32.dll", use_last_error=True)
+            with_load_library_flags = hasattr(kernel32, "AddDllDirectory")
+            prev_error_mode = kernel32.SetErrorMode(0x0001)
+    
+            kernel32.LoadLibraryW.restype = ctypes.c_void_p
+            if with_load_library_flags:
+                kernel32.LoadLibraryExW.restype = ctypes.c_void_p
+    
+            for dll_path in dll_paths:
+                os.add_dll_directory(dll_path)
+    
+            try:
+                ctypes.CDLL("vcruntime140.dll")
+                ctypes.CDLL("msvcp140.dll")
+                if platform.machine() != "ARM64":
+                    ctypes.CDLL("vcruntime140_1.dll")
+            except OSError:
+                print(
+                    textwrap.dedent(
+                        """
+                        Microsoft Visual C++ Redistributable is not installed, this may lead to the DLL load failure.
+                        It can be downloaded at https://aka.ms/vs/17/release/vc_redist.x64.exe
+                        """
+                    ).strip()
+                )
+    
+            dlls = glob.glob(os.path.join(th_dll_path, "*.dll"))
+            path_patched = False
+            for dll in dlls:
+                is_loaded = False
+                if with_load_library_flags:
+                    res = kernel32.LoadLibraryExW(dll, None, 0x00001100)
+                    last_error = ctypes.get_last_error()
+                    if res is None and last_error != 126:
+                        err = ctypes.WinError(last_error)
+                        err.strerror += (
+                            f' Error loading "{dll}" or one of its dependencies.'
+                        )
+                        raise err
+                    elif res is not None:
+                        is_loaded = True
+                if not is_loaded:
+                    if not path_patched:
+                        os.environ["PATH"] = ";".join(dll_paths + [os.environ["PATH"]])
+                        path_patched = True
+                    res = kernel32.LoadLibraryW(dll)
+                    if res is None:
+                        err = ctypes.WinError(ctypes.get_last_error())
+                        err.strerror += (
+                            f' Error loading "{dll}" or one of its dependencies.'
+                        )
+                        raise err
+    
+            kernel32.SetErrorMode(prev_error_mode)
+    
+        _load_dll_libraries()
+        del _load_dll_libraries
+    
+    
+    def _get_cuda_dep_paths(path: str, lib_folder: str, lib_name: str) -> list[str]:
+        # Libraries can either be in
+        # path/nvidia/lib_folder/lib or
+        # path/nvidia/cuXX/lib (since CUDA 13.0) or
+        # path/lib_folder/lib
+        from torch.version import cuda as cuda_version
+    
+        nvidia_lib_paths = glob.glob(
+            os.path.join(path, "nvidia", lib_folder, "lib", lib_name)
+        )
+        if cuda_version is not None:
+            maj_cuda_version = cuda_version.split(".")[0]
+            nvidia_lib_paths += glob.glob(
+                os.path.join(path, "nvidia", f"cu{maj_cuda_version}", "lib", lib_name)
+            )
+        lib_paths = glob.glob(os.path.join(path, lib_folder, "lib", lib_name))
+    
+        return nvidia_lib_paths + lib_paths
+    
+    
+    def _preload_cuda_lib(lib_folder: str, lib_name: str, required: bool = True) -> None:  # type: ignore[valid-type]
+        """Preloads cuda library if it could not be found otherwise."""
+        # Should only be called on Linux if default path resolution have failed
+        if platform.system() != "Linux":
+            raise AssertionError(f"Should only be called on Linux, got {platform.system()}")
+    
+        lib_path = None
+        for path in sys.path:
+            candidate_lib_paths = _get_cuda_dep_paths(path, lib_folder, lib_name)
+            if candidate_lib_paths:
+                lib_path = candidate_lib_paths[0]
+                break
+        if not lib_path and required:
+            raise ValueError(f"{lib_name} not found in the system path {sys.path}")
+        if lib_path:
+            ctypes.CDLL(lib_path)
+    
+    
+    def _preload_cuda_deps(err: OSError | None = None, required: bool = True) -> None:
+        cuda_libs: list[tuple[str, str]] = [
+            # NOTE: Order matters! We must preload libcublasLt BEFORE libcublas to prevent
+            # libcublas from loading a mismatched system-wide libcublasLt via its RUNPATH.
+            # Without this, if a different CUDA Toolkit version exists in the system PATH,
+            # libcublas may load the wrong libcublasLt, causing symbol errors or runtime failures.
+            ("cublas", "libcublasLt.so.*[0-9]"),
+            ("cublas", "libcublas.so.*[0-9]"),
+            ("cudnn", "libcudnn.so.*[0-9]"),
+            ("cuda_nvrtc", "libnvrtc.so.*[0-9]"),
+            ("cuda_nvrtc", "libnvrtc-builtins.so.*[0-9]"),
+            ("cuda_runtime", "libcudart.so.*[0-9]"),
+            ("cuda_cupti", "libcupti.so.*[0-9]"),
+            ("cufft", "libcufft.so.*[0-9]"),
+            ("nvjitlink", "libnvJitLink.so.*[0-9]"),
+            ("cusparse", "libcusparse.so.*[0-9]"),
+            ("cusparselt", "libcusparseLt.so.*[0-9]"),
+            ("cusolver", "libcusolver.so.*[0-9]"),
+            ("nccl", "libnccl.so.*[0-9]"),
+            ("nvshmem", "libnvshmem_host.so.*[0-9]"),
+            ("cufile", "libcufile.so.*[0-9]"),
+        ]
+        # If error is passed, re-raise it if it's not about one of the abovementioned
+        # libraries
+        if err is not None and not [
+            lib for _, lib in cuda_libs if lib.split(".", 1)[0] in err.args[0]
+        ]:
+            raise err
+    
+        # Otherwise, try to preload dependencies from site-packages. With
+        # required=False each lib is best-effort: a partial install that only ships
+        # some of these wheels (e.g. just a cupti wheel alongside a system CUDA)
+        # preloads the ones present instead of aborting on the first missing one.
+        for lib_folder, lib_name in cuda_libs:
+            _preload_cuda_lib(lib_folder, lib_name, required=required)
+    
+        # libnvToolsExt is Optional Dependency
+        _preload_cuda_lib("nvtx", "libnvToolsExt.so.*[0-9]", required=False)
+    
+    
+    # See Note [Global dependencies]
+    def _load_global_deps() -> None:
+        if platform.system() == "Windows":
+            return
+    
+        # Determine the file extension based on the platform
+        lib_ext = ".dylib" if platform.system() == "Darwin" else ".so"
+        lib_name = f"libtorch_global_deps{lib_ext}"
+        here = os.path.abspath(__file__)
+        global_deps_lib_path = os.path.join(os.path.dirname(here), "lib", lib_name)
+    
+        # In scikit-build-core editable installs with redirect mode, native libs are
+        # installed to the dist package location rather than relative to __file__.
+        if not os.path.exists(global_deps_lib_path):
+            try:
+                from importlib.metadata import distribution
+    
+                installed = distribution("torch").locate_file(
+                    os.path.join("torch", "lib", lib_name)
+                )
+                # The importlib metadata SimplePath protocol was missing the exists
+                # method in older versions; however, the actual Path implementation
+                # has it and newer versions of importlib metadata have added it to
+                # the protocol, making the following ignore unnecessary from
+                # importlib_metadata 7.0.1 and Python 3.13 onwards.
+                # pyrefly: ignore[missing-attribute]
+                if installed.exists():
+                    global_deps_lib_path = str(installed)
+            except Exception:
+                pass
+    
+        try:
+            ctypes.CDLL(global_deps_lib_path, mode=ctypes.RTLD_GLOBAL)
+            # Workaround slim-wheel CUDA dependency bugs in cusparse and cudnn by preloading nvjitlink
+            # and nvrtc. In CUDA-12.4+ cusparse depends on nvjitlink, but does not have rpath when
+            # shipped as wheel, which results in OS picking wrong/older version of nvjitlink library
+            # if `LD_LIBRARY_PATH` is defined, see https://github.com/pytorch/pytorch/issues/138460
+            # Similar issue exist in cudnn that dynamically loads nvrtc, unaware of its relative path.
+            # See https://github.com/pytorch/pytorch/issues/145580
+            try:
+                with open("/proc/self/maps") as f:
+                    _maps = f.read()
+    
+                # libtorch_global_deps.so always depends in cudart, check if its installed and loaded
+                if "libcudart.so" not in _maps:
+                    return
+                # If all above-mentioned conditions are met, preload CUDA dependencies.
+                # Only libtorch_global_deps is loaded so far (it pulls libcudart, not
+                # the rest); libtorch_cpu, which DT_NEEDEDs the other CUDA libs, is
+                # imported below via torch._C. So be best-effort and front-load any
+                # component wheels that ARE present now, before that import, so they
+                # win libtorch_cpu's DT_NEEDED soname lookups (e.g. a newer cupti
+                # wheel over a system copy). A missing wheel must not abort -- rpath
+                # will satisfy libtorch_cpu's DT_NEEDED for whatever isn't preloaded.
+                _preload_cuda_deps(required=False)
+            except Exception:
+                pass
+    
+        except OSError as err:
+            # Can happen for wheel with cuda libs as PYPI deps
+            # As PyTorch is not purelib, but nvidia-*-cu12 is
+            _preload_cuda_deps(err)
+            ctypes.CDLL(global_deps_lib_path, mode=ctypes.RTLD_GLOBAL)
+    
+    
+    if (USE_RTLD_GLOBAL_WITH_LIBTORCH or os.getenv("TORCH_USE_RTLD_GLOBAL")) and (
+        platform.system() != "Windows"
+    ):
+        # Do it the hard way.  You might want to load libtorch with RTLD_GLOBAL in a
+        # few circumstances:
+        #
+        #   1. You're in a build environment (e.g., fbcode) where
+        #      libtorch_global_deps is not available, but you still need
+        #      to get mkl to link in with RTLD_GLOBAL or it will just
+        #      not work.
+        #
+        #   2. You're trying to run PyTorch under UBSAN and you need
+        #      to ensure that only one copy of libtorch is loaded, so
+        #      vptr checks work properly
+        #
+        # If you're using this setting, you must verify that all the libraries
+        # you load consistently use the same libstdc++, or you may have
+        # mysterious segfaults.
+        #
+        old_flags = sys.getdlopenflags()
+        sys.setdlopenflags(os.RTLD_GLOBAL | os.RTLD_LAZY)
+    
+        from torch._C import *  # noqa: F403
+    
+        sys.setdlopenflags(old_flags)
+        del old_flags
+    
+    else:
+        # Easy way.  You want this most of the time, because it will prevent
+        # C++ symbols from libtorch clobbering C++ symbols from other
+        # libraries, leading to mysterious segfaults.
+        #
+        # If building in an environment where libtorch_global_deps isn't available
+        # like parts of fbsource, but where RTLD_GLOBAL causes segfaults, you will
+        # want USE_RTLD_GLOBAL_WITH_LIBTORCH = False and USE_GLOBAL_DEPS = False
+        #
+        # See Note [Global dependencies]
+        if USE_GLOBAL_DEPS:
+            _load_global_deps()
+>       from torch._C import *  # noqa: F403
+        ^^^^^^^^^^^^^^^^^^^^^^
+E       ImportError: libstdc++.so.6: cannot open shared object file: No such file or directory
+
+../../../../.pythonlibs/lib/python3.12/site-packages/torch/__init__.py:505: ImportError
+____________ ManifestTests.test_logo_is_composited_into_real_pixels ____________
+
+    """
+    Contains the core of NumPy: ndarray, ufuncs, dtypes, etc.
+    
+    Please note that this module is private.  All functions and objects
+    are available in the main ``numpy`` namespace - use that instead.
+    
+    """
+    
+    import os
+    
+    from numpy.version import version as __version__
+    
+    # disables OpenBLAS affinity setting of the main thread that limits
+    # python threads or processes to one core
+    env_added = []
+    for envkey in ['OPENBLAS_MAIN_FREE']:
+        if envkey not in os.environ:
+            # Note: using `putenv` (and `unsetenv` further down) instead of updating
+            # `os.environ` on purpose to avoid a race condition, see gh-30627.
+            os.putenv(envkey, '1')
+            env_added.append(envkey)
+    
+    try:
+>       from . import multiarray
+
+../../../../.pythonlibs/lib/python3.12/site-packages/numpy/_core/__init__.py:24: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+    """
+    Create the numpy._core.multiarray namespace for backward compatibility.
+    In v1.16 the multiarray and umath c-extension modules were merged into
+    a single _multiarray_umath extension module. So we replicate the old
+    namespace by importing from the extension module.
+    
+    """
+    
+    import functools
+    
+>   from . import _multiarray_umath, overrides
+E   ImportError: libstdc++.so.6: cannot open shared object file: No such file or directory
+
+../../../../.pythonlibs/lib/python3.12/site-packages/numpy/_core/multiarray.py:11: ImportError
+
+The above exception was the direct cause of the following exception:
+
+self = <tests.test_media_delivery_contract.ManifestTests testMethod=test_logo_is_composited_into_real_pixels>
+
+    def test_logo_is_composited_into_real_pixels(self):
+        from PIL import Image
+        def encoded(color):
+            buf = io.BytesIO()
+            Image.new("RGB", (100, 100), color).save(buf, format="PNG")
+            return base64.b64encode(buf.getvalue()).decode()
+        with tempfile.TemporaryDirectory() as tmp:
+            scene = types.SimpleNamespace(reference_b64=encoded("red"),
+                                          logo_b64=encoded("blue"),
+                                          color_grade="", film_grain_amount=0)
+            with patch.object(scene_module, "TEMP_DIR", tmp):
+>               _, png, _ = scene_module._pil_bg_frame(scene, 100, 100)
+                            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests/test_media_delivery_contract.py:315: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+ai_model/video/scenes.py:256: in _pil_bg_frame
+    import numpy as np
+../../../../.pythonlibs/lib/python3.12/site-packages/numpy/__init__.py:112: in <module>
+    from numpy.__config__ import show_config
+../../../../.pythonlibs/lib/python3.12/site-packages/numpy/__config__.py:4: in <module>
+    from numpy._core._multiarray_umath import (
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+    """
+    Contains the core of NumPy: ndarray, ufuncs, dtypes, etc.
+    
+    Please note that this module is private.  All functions and objects
+    are available in the main ``numpy`` namespace - use that instead.
+    
+    """
+    
+    import os
+    
+    from numpy.version import version as __version__
+    
+    # disables OpenBLAS affinity setting of the main thread that limits
+    # python threads or processes to one core
+    env_added = []
+    for envkey in ['OPENBLAS_MAIN_FREE']:
+        if envkey not in os.environ:
+            # Note: using `putenv` (and `unsetenv` further down) instead of updating
+            # `os.environ` on purpose to avoid a race condition, see gh-30627.
+            os.putenv(envkey, '1')
+            env_added.append(envkey)
+    
+    try:
+        from . import multiarray
+    except ImportError as exc:
+        import sys
+    
+        # Bypass for the module re-initialization opt-out
+        if exc.msg == "cannot load module more than once per process":
+            raise
+    
+        # Basically always, the problem should be that the C module is wrong/missing...
+        if (
+            isinstance(exc, ModuleNotFoundError)
+            and exc.name == "numpy._core._multiarray_umath"
+        ):
+            import sys
+            candidates = []
+            for path in __path__:
+                candidates.extend(
+                    f for f in os.listdir(path) if f.startswith("_multiarray_umath"))
+            if len(candidates) == 0:
+                bad_c_module_info = (
+                    "We found no compiled module, did NumPy build successfully?\n")
+            else:
+                candidate_str = '\n  * '.join(candidates)
+                # cache_tag is documented to be possibly None, so just use name if it is
+                # this guesses at cache_tag being the same as the extension module scheme
+                tag = sys.implementation.cache_tag or sys.implementation.name
+                bad_c_module_info = (
+                    f"The following compiled module files exist, but seem incompatible\n"
+                    f"with with either python '{tag}' or the "
+                    f"platform '{sys.platform}':\n\n  * {candidate_str}\n"
+                )
+        else:
+            bad_c_module_info = ""
+    
+        major, minor, *_ = sys.version_info
+        msg = f"""
+    
+    IMPORTANT: PLEASE READ THIS FOR ADVICE ON HOW TO SOLVE THIS ISSUE!
+    
+    Importing the numpy C-extensions failed. This error can happen for
+    many reasons, often due to issues with your setup or how NumPy was
+    installed.
+    {bad_c_module_info}
+    We have compiled some common reasons and troubleshooting tips at:
+    
+        https://numpy.org/devdocs/user/troubleshooting-importerror.html
+    
+    Please note and check the following:
+    
+      * The Python version is: Python {major}.{minor} from "{sys.executable}"
+      * The NumPy version is: "{__version__}"
+    
+    and make sure that they are the versions you expect.
+    
+    Please carefully study the information and documentation linked above.
+    This is unlikely to be a NumPy issue but will be caused by a bad install
+    or environment on your machine.
+    
+    Original error was: {exc}
+    """
+    
+>       raise ImportError(msg) from exc
+E       ImportError: 
+E       
+E       IMPORTANT: PLEASE READ THIS FOR ADVICE ON HOW TO SOLVE THIS ISSUE!
+E       
+E       Importing the numpy C-extensions failed. This error can happen for
+E       many reasons, often due to issues with your setup or how NumPy was
+E       installed.
+E       
+E       We have compiled some common reasons and troubleshooting tips at:
+E       
+E           https://numpy.org/devdocs/user/troubleshooting-importerror.html
+E       
+E       Please note and check the following:
+E       
+E         * The Python version is: Python 3.12 from "/nix/store/h097imm3w6dpx10qynrd2sz9fks2wbq8-python3-3.12.11/bin/python3"
+E         * The NumPy version is: "2.4.4"
+E       
+E       and make sure that they are the versions you expect.
+E       
+E       Please carefully study the information and documentation linked above.
+E       This is unlikely to be a NumPy issue but will be caused by a bad install
+E       or environment on your machine.
+E       
+E       Original error was: libstdc++.so.6: cannot open shared object file: No such file or directory
+
+../../../../.pythonlibs/lib/python3.12/site-packages/numpy/_core/__init__.py:85: ImportError
+___________________ ManifestTests.test_measured_audio_onsets ___________________
+
+    """
+    Contains the core of NumPy: ndarray, ufuncs, dtypes, etc.
+    
+    Please note that this module is private.  All functions and objects
+    are available in the main ``numpy`` namespace - use that instead.
+    
+    """
+    
+    import os
+    
+    from numpy.version import version as __version__
+    
+    # disables OpenBLAS affinity setting of the main thread that limits
+    # python threads or processes to one core
+    env_added = []
+    for envkey in ['OPENBLAS_MAIN_FREE']:
+        if envkey not in os.environ:
+            # Note: using `putenv` (and `unsetenv` further down) instead of updating
+            # `os.environ` on purpose to avoid a race condition, see gh-30627.
+            os.putenv(envkey, '1')
+            env_added.append(envkey)
+    
+    try:
+>       from . import multiarray
+
+../../../../.pythonlibs/lib/python3.12/site-packages/numpy/_core/__init__.py:24: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+    """
+    Create the numpy._core.multiarray namespace for backward compatibility.
+    In v1.16 the multiarray and umath c-extension modules were merged into
+    a single _multiarray_umath extension module. So we replicate the old
+    namespace by importing from the extension module.
+    
+    """
+    
+    import functools
+    
+>   from . import _multiarray_umath, overrides
+E   ImportError: libstdc++.so.6: cannot open shared object file: No such file or directory
+
+../../../../.pythonlibs/lib/python3.12/site-packages/numpy/_core/multiarray.py:11: ImportError
+
+The above exception was the direct cause of the following exception:
+
+self = <tests.test_media_delivery_contract.ManifestTests testMethod=test_measured_audio_onsets>
+
+    def test_measured_audio_onsets(self):
+>       import numpy as np
+
+tests/test_media_delivery_contract.py:261: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+../../../../.pythonlibs/lib/python3.12/site-packages/numpy/__init__.py:112: in <module>
+    from numpy.__config__ import show_config
+../../../../.pythonlibs/lib/python3.12/site-packages/numpy/__config__.py:4: in <module>
+    from numpy._core._multiarray_umath import (
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+    """
+    Contains the core of NumPy: ndarray, ufuncs, dtypes, etc.
+    
+    Please note that this module is private.  All functions and objects
+    are available in the main ``numpy`` namespace - use that instead.
+    
+    """
+    
+    import os
+    
+    from numpy.version import version as __version__
+    
+    # disables OpenBLAS affinity setting of the main thread that limits
+    # python threads or processes to one core
+    env_added = []
+    for envkey in ['OPENBLAS_MAIN_FREE']:
+        if envkey not in os.environ:
+            # Note: using `putenv` (and `unsetenv` further down) instead of updating
+            # `os.environ` on purpose to avoid a race condition, see gh-30627.
+            os.putenv(envkey, '1')
+            env_added.append(envkey)
+    
+    try:
+        from . import multiarray
+    except ImportError as exc:
+        import sys
+    
+        # Bypass for the module re-initialization opt-out
+        if exc.msg == "cannot load module more than once per process":
+            raise
+    
+        # Basically always, the problem should be that the C module is wrong/missing...
+        if (
+            isinstance(exc, ModuleNotFoundError)
+            and exc.name == "numpy._core._multiarray_umath"
+        ):
+            import sys
+            candidates = []
+            for path in __path__:
+                candidates.extend(
+                    f for f in os.listdir(path) if f.startswith("_multiarray_umath"))
+            if len(candidates) == 0:
+                bad_c_module_info = (
+                    "We found no compiled module, did NumPy build successfully?\n")
+            else:
+                candidate_str = '\n  * '.join(candidates)
+                # cache_tag is documented to be possibly None, so just use name if it is
+                # this guesses at cache_tag being the same as the extension module scheme
+                tag = sys.implementation.cache_tag or sys.implementation.name
+                bad_c_module_info = (
+                    f"The following compiled module files exist, but seem incompatible\n"
+                    f"with with either python '{tag}' or the "
+                    f"platform '{sys.platform}':\n\n  * {candidate_str}\n"
+                )
+        else:
+            bad_c_module_info = ""
+    
+        major, minor, *_ = sys.version_info
+        msg = f"""
+    
+    IMPORTANT: PLEASE READ THIS FOR ADVICE ON HOW TO SOLVE THIS ISSUE!
+    
+    Importing the numpy C-extensions failed. This error can happen for
+    many reasons, often due to issues with your setup or how NumPy was
+    installed.
+    {bad_c_module_info}
+    We have compiled some common reasons and troubleshooting tips at:
+    
+        https://numpy.org/devdocs/user/troubleshooting-importerror.html
+    
+    Please note and check the following:
+    
+      * The Python version is: Python {major}.{minor} from "{sys.executable}"
+      * The NumPy version is: "{__version__}"
+    
+    and make sure that they are the versions you expect.
+    
+    Please carefully study the information and documentation linked above.
+    This is unlikely to be a NumPy issue but will be caused by a bad install
+    or environment on your machine.
+    
+    Original error was: {exc}
+    """
+    
+>       raise ImportError(msg) from exc
+E       ImportError: 
+E       
+E       IMPORTANT: PLEASE READ THIS FOR ADVICE ON HOW TO SOLVE THIS ISSUE!
+E       
+E       Importing the numpy C-extensions failed. This error can happen for
+E       many reasons, often due to issues with your setup or how NumPy was
+E       installed.
+E       
+E       We have compiled some common reasons and troubleshooting tips at:
+E       
+E           https://numpy.org/devdocs/user/troubleshooting-importerror.html
+E       
+E       Please note and check the following:
+E       
+E         * The Python version is: Python 3.12 from "/nix/store/h097imm3w6dpx10qynrd2sz9fks2wbq8-python3-3.12.11/bin/python3"
+E         * The NumPy version is: "2.4.4"
+E       
+E       and make sure that they are the versions you expect.
+E       
+E       Please carefully study the information and documentation linked above.
+E       This is unlikely to be a NumPy issue but will be caused by a bad install
+E       or environment on your machine.
+E       
+E       Original error was: libstdc++.so.6: cannot open shared object file: No such file or directory
+
+../../../../.pythonlibs/lib/python3.12/site-packages/numpy/_core/__init__.py:85: ImportError
+_____________ ManifestTests.test_ten_real_images_condition_pixels ______________
+
+    """
+    Contains the core of NumPy: ndarray, ufuncs, dtypes, etc.
+    
+    Please note that this module is private.  All functions and objects
+    are available in the main ``numpy`` namespace - use that instead.
+    
+    """
+    
+    import os
+    
+    from numpy.version import version as __version__
+    
+    # disables OpenBLAS affinity setting of the main thread that limits
+    # python threads or processes to one core
+    env_added = []
+    for envkey in ['OPENBLAS_MAIN_FREE']:
+        if envkey not in os.environ:
+            # Note: using `putenv` (and `unsetenv` further down) instead of updating
+            # `os.environ` on purpose to avoid a race condition, see gh-30627.
+            os.putenv(envkey, '1')
+            env_added.append(envkey)
+    
+    try:
+>       from . import multiarray
+
+../../../../.pythonlibs/lib/python3.12/site-packages/numpy/_core/__init__.py:24: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+    """
+    Create the numpy._core.multiarray namespace for backward compatibility.
+    In v1.16 the multiarray and umath c-extension modules were merged into
+    a single _multiarray_umath extension module. So we replicate the old
+    namespace by importing from the extension module.
+    
+    """
+    
+    import functools
+    
+>   from . import _multiarray_umath, overrides
+E   ImportError: libstdc++.so.6: cannot open shared object file: No such file or directory
+
+../../../../.pythonlibs/lib/python3.12/site-packages/numpy/_core/multiarray.py:11: ImportError
+
+The above exception was the direct cause of the following exception:
+
+self = <tests.test_media_delivery_contract.ManifestTests testMethod=test_ten_real_images_condition_pixels>
+
+    def test_ten_real_images_condition_pixels(self):
+>       import numpy as np
+
+tests/test_media_delivery_contract.py:287: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+../../../../.pythonlibs/lib/python3.12/site-packages/numpy/__init__.py:112: in <module>
+    from numpy.__config__ import show_config
+../../../../.pythonlibs/lib/python3.12/site-packages/numpy/__config__.py:4: in <module>
+    from numpy._core._multiarray_umath import (
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+    """
+    Contains the core of NumPy: ndarray, ufuncs, dtypes, etc.
+    
+    Please note that this module is private.  All functions and objects
+    are available in the main ``numpy`` namespace - use that instead.
+    
+    """
+    
+    import os
+    
+    from numpy.version import version as __version__
+    
+    # disables OpenBLAS affinity setting of the main thread that limits
+    # python threads or processes to one core
+    env_added = []
+    for envkey in ['OPENBLAS_MAIN_FREE']:
+        if envkey not in os.environ:
+            # Note: using `putenv` (and `unsetenv` further down) instead of updating
+            # `os.environ` on purpose to avoid a race condition, see gh-30627.
+            os.putenv(envkey, '1')
+            env_added.append(envkey)
+    
+    try:
+        from . import multiarray
+    except ImportError as exc:
+        import sys
+    
+        # Bypass for the module re-initialization opt-out
+        if exc.msg == "cannot load module more than once per process":
+            raise
+    
+        # Basically always, the problem should be that the C module is wrong/missing...
+        if (
+            isinstance(exc, ModuleNotFoundError)
+            and exc.name == "numpy._core._multiarray_umath"
+        ):
+            import sys
+            candidates = []
+            for path in __path__:
+                candidates.extend(
+                    f for f in os.listdir(path) if f.startswith("_multiarray_umath"))
+            if len(candidates) == 0:
+                bad_c_module_info = (
+                    "We found no compiled module, did NumPy build successfully?\n")
+            else:
+                candidate_str = '\n  * '.join(candidates)
+                # cache_tag is documented to be possibly None, so just use name if it is
+                # this guesses at cache_tag being the same as the extension module scheme
+                tag = sys.implementation.cache_tag or sys.implementation.name
+                bad_c_module_info = (
+                    f"The following compiled module files exist, but seem incompatible\n"
+                    f"with with either python '{tag}' or the "
+                    f"platform '{sys.platform}':\n\n  * {candidate_str}\n"
+                )
+        else:
+            bad_c_module_info = ""
+    
+        major, minor, *_ = sys.version_info
+        msg = f"""
+    
+    IMPORTANT: PLEASE READ THIS FOR ADVICE ON HOW TO SOLVE THIS ISSUE!
+    
+    Importing the numpy C-extensions failed. This error can happen for
+    many reasons, often due to issues with your setup or how NumPy was
+    installed.
+    {bad_c_module_info}
+    We have compiled some common reasons and troubleshooting tips at:
+    
+        https://numpy.org/devdocs/user/troubleshooting-importerror.html
+    
+    Please note and check the following:
+    
+      * The Python version is: Python {major}.{minor} from "{sys.executable}"
+      * The NumPy version is: "{__version__}"
+    
+    and make sure that they are the versions you expect.
+    
+    Please carefully study the information and documentation linked above.
+    This is unlikely to be a NumPy issue but will be caused by a bad install
+    or environment on your machine.
+    
+    Original error was: {exc}
+    """
+    
+>       raise ImportError(msg) from exc
+E       ImportError: 
+E       
+E       IMPORTANT: PLEASE READ THIS FOR ADVICE ON HOW TO SOLVE THIS ISSUE!
+E       
+E       Importing the numpy C-extensions failed. This error can happen for
+E       many reasons, often due to issues with your setup or how NumPy was
+E       installed.
+E       
+E       We have compiled some common reasons and troubleshooting tips at:
+E       
+E           https://numpy.org/devdocs/user/troubleshooting-importerror.html
+E       
+E       Please note and check the following:
+E       
+E         * The Python version is: Python 3.12 from "/nix/store/h097imm3w6dpx10qynrd2sz9fks2wbq8-python3-3.12.11/bin/python3"
+E         * The NumPy version is: "2.4.4"
+E       
+E       and make sure that they are the versions you expect.
+E       
+E       Please carefully study the information and documentation linked above.
+E       This is unlikely to be a NumPy issue but will be caused by a bad install
+E       or environment on your machine.
+E       
+E       Original error was: libstdc++.so.6: cannot open shared object file: No such file or directory
+
+../../../../.pythonlibs/lib/python3.12/site-packages/numpy/_core/__init__.py:85: ImportError
+=========================== short test summary info ============================
+FAILED tests/test_media_delivery_contract.py::CheckpointTests::test_archive_loader_is_weights_only_and_validates_root
+FAILED tests/test_media_delivery_contract.py::ManifestTests::test_logo_is_composited_into_real_pixels
+FAILED tests/test_media_delivery_contract.py::ManifestTests::test_measured_audio_onsets
+FAILED tests/test_media_delivery_contract.py::ManifestTests::test_ten_real_images_condition_pixels
+4 failed, 17 passed in 1.40s

@@ -10,7 +10,6 @@ import {
   MaxCoreControlError,
   maxCoreControlTransport,
 } from "../services/maxcoreControlTransport.js";
-import { promotionalToolsService } from "../services/promotionalToolsService.js";
 import { db } from "../db";
 import { posts, socialAutopilotContent } from "@shared/schema";
 import { eq, count, lt, gte, gt, min, desc, and, isNotNull, sql } from "drizzle-orm";
@@ -322,31 +321,14 @@ router.post("/start", requireAuth, async (req, res) => {
 
     await storage.saveAutopilotConfig(userId, config);
 
-    setImmediate(async () => {
-      try {
-        const engine = promotionalToolsService?.getAutopilotForUser(userId);
-        await engine?.configure({
-          enabled: true,
-          platforms: config.platforms || ["instagram", "twitter"],
-          postingFrequency: config.postingFrequency || "daily",
-          brandVoice: config.brandVoice || "professional",
-          contentTypes: config.contentTypes || ["tips", "insights"],
-          autoPublish: config.autoPublish || false,
-        });
-        logger.info(`✅ Autopilot engine started for user ${userId}`);
-      } catch (err) {
-        logger.warn(
-          { err: err },
-          `⚠️ Autopilot engine start failed for user ${userId}:`,
-        );
-      }
-    });
-
-    logger.info(`✅ Autopilot started for user ${userId}`);
+    // The persistent publisher is the only execution path. Starting the legacy
+    // in-memory AutopilotEngine here bypassed durable queue idempotency and could
+    // publish the same account's content twice when the publisher tick ran.
+    logger.info(`✅ Autopilot enabled for user ${userId}`);
 
     res.json({
       success: true,
-      message: "Autopilot activated",
+      message: "Autopilot configuration saved for scheduled processing",
       config,
     });
   } catch (error) {
@@ -366,24 +348,13 @@ router.post("/stop", requireAuth, async (req, res) => {
       await storage.saveAutopilotConfig(userId, config);
     }
 
-    setImmediate(async () => {
-      try {
-        const engine = promotionalToolsService?.getAutopilotForUser(userId);
-        await engine?.configure({ enabled: false });
-        logger.info(`⏸️ Autopilot engine stopped for user ${userId}`);
-      } catch (err) {
-        logger.warn(
-          { err: err },
-          `⚠️ Autopilot engine stop failed for user ${userId}:`,
-        );
-      }
-    });
-
-    logger.info(`⏸️ Autopilot stopped for user ${userId}`);
+    // The durable publisher reads this account-scoped flag each cycle, and the
+    // queue worker rechecks auto-publish consent immediately before dispatch.
+    logger.info(`⏸️ Autopilot disabled for user ${userId}`);
 
     res.json({
       success: true,
-      message: "Autopilot paused",
+      message: "Autopilot disabled",
     });
   } catch (error) {
     logger.warn({ err: error }, "Failed to stop autopilot:");
@@ -398,27 +369,6 @@ router.post("/configure", requireAuth, async (req, res) => {
     const config = autopilotConfigSchema?.parse(req.body);
 
     await storage.saveAutopilotConfig(userId, config);
-
-    if (config?.enabled) {
-      setImmediate(async () => {
-        try {
-          const engine = promotionalToolsService?.getAutopilotForUser(userId);
-          await engine?.configure({
-            enabled: config.enabled,
-            platforms: config.platforms || [],
-            postingFrequency: config.postingFrequency || "daily",
-            brandVoice: config.brandVoice || "professional",
-            contentTypes: config.contentTypes || [],
-            autoPublish: config.autoPublish || false,
-          });
-        } catch (err) {
-          logger.warn(
-            { err: err },
-            `⚠️ Autopilot engine configure failed for user ${userId}:`,
-          );
-        }
-      });
-    }
 
     logger.info(`⚙️ Autopilot configured for user ${userId}`);
 

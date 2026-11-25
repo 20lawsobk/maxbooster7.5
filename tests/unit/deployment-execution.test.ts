@@ -63,6 +63,7 @@ describe("deployment execution", () => {
       await buildServerBundles(root);
       expect(fs.readdirSync(path.join(root, "dist")).sort()).toEqual(["deployment", ...Object.keys(SERVER_ENTRIES).map(n => `${n}.mjs`)].sort());
       expect(fs.existsSync(path.join(root, "dist/deployment/executive.mjs"))).toBe(true);
+      expect(fs.existsSync(path.join(root, "dist/deployment/sequential-build.mjs"))).toBe(false);
       expect(fs.existsSync(path.join(root, "dist/deployment/restore-one.mjs"))).toBe(true);
       expect(execFileSync(process.execPath, [path.join(root, "dist/deployment/check-port-contract.mjs")], {
         cwd: root, encoding: "utf8", env: { PATH: process.env.PATH },

@@ -32,6 +32,10 @@ class LiveServingModel:
             raise ValueError("Live serving requires a verified certified or reviewed adapter")
         self._active = (adapter, dict(status))
 
+    def clear(self):
+        """Stop serving a release whose current selection evidence is invalid."""
+        self._active = None
+
     @property
     def available(self):
         return self._active is not None
@@ -42,8 +46,9 @@ class LiveServingModel:
             "requested": "live-awareness", "active": None,
             "candidate_quality": "awaiting_operational_public_live_candidate",
             "unavailable_reason": "no_operationally_capable_certified_public_live_candidate",
-            "review_required": False,
+            "review_required": True,
             "backend_exclusive": "not_verified",
+            "trained_checkpoint_loaded": False,
         }
 
     @contextmanager
@@ -81,6 +86,7 @@ class LiveLearningLoop:
     def __init__(self, engine_factory, model, state_dir, *, notify=None,
                  interval=900, poll=30, steps=4, context_tokens=1024,
                  trainer=None, loader=None, clock=time.time, peak_content=True,
+                 internal_source=None,
                  model_config=None, bootstrap_steps=16, bootstrap_cooldown=300,
                  bootstrap_window=3600, bootstrap_max_runs=12, worker_timeout=120):
         if not 60 <= interval <= 86400 or not 1 <= poll <= 300:
@@ -102,6 +108,7 @@ class LiveLearningLoop:
         self.bootstrap_window, self.bootstrap_max_runs = bootstrap_window, bootstrap_max_runs
         self.worker_timeout = worker_timeout
         self.engine_factory, self.model = engine_factory, model
+        self.internal_source = internal_source
         self.directory = Path(state_dir)
         self.directory.mkdir(parents=True, exist_ok=True, mode=0o700)
         if self.directory.is_symlink() or self.directory.resolve() != self.directory:
@@ -110,21 +117,75 @@ class LiveLearningLoop:
         self.steps, self.context_tokens = steps, context_tokens
         self.trainer, self.loader, self.clock = trainer, loader, clock
         self._stop = threading.Event()
+        self._wake = threading.Event()
         self._thread = None
         self._guard = threading.Lock()
+        self._usage_lock = threading.Lock()
+        self._awareness_endpoint_uses = 0
+        self._learning_check_signals = 0
+        self._last_awareness_use_at = None
+        self._last_learning_signal_at = None
+        self._learning_signal_min_interval = 5
         self._status = {"training": "waiting_for_observations", "serving": "waiting_for_candidate"}
 
     def status(self):
-        return {**self._status, "interval_seconds": self.interval,
+        with self._usage_lock:
+            endpoint_usage = {
+                "uses": self._awareness_endpoint_uses,
+                "last_used_at": self._last_awareness_use_at,
+                "learning_check_signals": self._learning_check_signals,
+                "last_learning_signal_at": self._last_learning_signal_at,
+                "signal_min_interval_seconds": self._learning_signal_min_interval,
+            }
+        return {**self._status, "running": bool(self._thread and self._thread.is_alive()),
+                "awareness_endpoint_usage": endpoint_usage,
+                "interval_seconds": self.interval,
                 "reload_seconds": self.poll, "steps": self.steps,
-                "context_tokens": self.context_tokens, "review_required": False,
-                "learning_policy": "public-peak-shortform-v1" if self.peak_content else "legacy-context-v1",
+                "context_tokens": self.context_tokens, "review_required": True,
+                 "learning_policy": (
+                     "signed-owner-and-dual-track-simulation-v1"
+                     if self.internal_source else
+                     ("public-peak-shortform-v1" if self.peak_content else "legacy-context-v1")
+                 ),
                 "model_config": self.model_config,
+                "training_admission": {
+                    "policy": "source-specific-rights-v1",
+                    "public_visibility_authorizes_training": False,
+                    "rights_manifest_state": (
+                        "configured_unverified"
+                        if os.environ.get("MAXCORE_TEXT_TRAINING_RIGHTS_MANIFEST")
+                        and os.environ.get("MAXCORE_TEXT_TRAINING_RIGHTS_SHA256")
+                        else "missing_or_incomplete"
+                    ),
+                    "independent_review_required": True,
+                    "signature_free_live_promotion": False,
+                },
                 "bootstrap_steps": self.bootstrap_steps,
                 "bootstrap_cooldown_seconds": self.bootstrap_cooldown,
                 "bootstrap_window_seconds": self.bootstrap_window,
                 "bootstrap_max_runs": self.bootstrap_max_runs,
                 "worker_timeout_seconds": self.worker_timeout}
+
+    def request_learning_check(self):
+        """Wake the existing learner from awareness use without doing work inline.
+
+        Requests are coalesced to one wake signal per five seconds. The learner's
+        persisted cooldown, observation fingerprint, rights checks, worker lock,
+        and candidate review requirements remain authoritative.
+        """
+        now = self.clock()
+        should_signal = False
+        with self._usage_lock:
+            self._awareness_endpoint_uses += 1
+            self._last_awareness_use_at = now
+            previous = self._last_learning_signal_at
+            if previous is None or now - previous >= self._learning_signal_min_interval:
+                self._last_learning_signal_at = now
+                self._learning_check_signals += 1
+                should_signal = True
+        if should_signal and not self._stop.is_set():
+            self._wake.set()
+        return should_signal
 
     def _read_state(self):
         path = self.directory / "live-learning.json"
@@ -169,24 +230,51 @@ class LiveLearningLoop:
                 raise AwarenessUnavailable("Fresh public awareness required for live release admission")
             load_release = True
             selected_checkpoint = None
+            release_mode = "live-or-trained"
             if self.loader is None:
                 from ai_model.training.auto_selection import auto_select
-                selection_options = {"learning_policy": "public-peak-shortform-v1"} if self.peak_content else {}
-                selection = auto_select(**selection_options)
+                selection = auto_select()
                 self._status = {**self._status, "selection": selection}
-                if (selection.get("state") in {"selected", "retained"}
-                        and (not self.peak_content or (
-                            selection.get("validated_selected") is True
-                            and selection.get("learning_policy") == "public-peak-shortform-v1"))):
+                if selection.get("selected_candidate_invalid") is True:
+                    self.model.clear()
+                reviewed_training = (
+                    selection.get("eligibility_policy") == "signed-review-v1"
+                    and selection.get("trained_checkpoint_loaded") is True
+                    and selection.get("release_source") in {
+                        "owner_and_simulation", "reviewed_live_observations",
+                    }
+                )
+                public_live = (
+                    selection.get("policy") == "certified-public-live-v1"
+                    and selection.get("validated_selected") is True
+                    and selection.get("learning_policy") == "public-peak-shortform-v1"
+                )
+                if selection.get("state") in {"selected", "retained"} and (
+                    reviewed_training or public_live
+                ):
                     selected_checkpoint = selection.get("checkpoint_sha256")
-                if self.peak_content and not selected_checkpoint:
+                    release_mode = "live-or-trained" if reviewed_training else "live-awareness"
+                if (
+                    self.model.available
+                    and not selected_checkpoint
+                    and selection.get("state") not in {
+                        "disabled", "another_selector_running",
+                    }
+                ):
+                    selection = {
+                        **selection,
+                        "selected_candidate_invalid": True,
+                    }
+                    self._status = {**self._status, "selection": selection}
+                    self.model.clear()
+                if not selected_checkpoint:
                     # A historical context pointer is never a peak release.
                     load_release = False
                 if selected_checkpoint and selected_checkpoint == self.model.status().get("checkpoint_sha256"):
                     # Selection has just validated immutable runtime evidence;
                     # retain the pinned RAM adapter without rerunning probes.
                     load_release = False
-            adapter, status = ((self.loader or load_selected_release)("live-awareness")
+            adapter, status = ((self.loader or load_selected_release)(release_mode)
                                if load_release else (None, {}))
             if selected_checkpoint and adapter is not None and status.get("checkpoint_sha256") != selected_checkpoint:
                 raise ValueError("Selected checkpoint changed before live release load")
@@ -196,10 +284,24 @@ class LiveLearningLoop:
                 self._status = {**self._status, "serving": "active", "release_error": None,
                                 "unavailable_reason": None}
             else:
-                self._status = {**self._status, "serving": "active" if self.model.available else "waiting_for_candidate",
-                                "release_error": None,
-                                "unavailable_reason": (None if self.model.available else
-                                                       self.model.status().get("unavailable_reason"))}
+                invalid_selected = (
+                    self._status.get("selection", {}).get("selected_candidate_invalid") is True
+                )
+                self._status = {
+                    **self._status,
+                    "serving": (
+                        "blocked_release" if invalid_selected else
+                        "active" if self.model.available else
+                        "waiting_for_candidate"
+                    ),
+                    "release_error": "SelectedCandidateInvalid" if invalid_selected else None,
+                    "unavailable_reason": (
+                        "Selected candidate failed current evidence validation"
+                        if invalid_selected else
+                        None if self.model.available else
+                        self.model.status().get("unavailable_reason")
+                    ),
+                }
         except Exception as exc:
             # A rejected update must not replace a previously loaded good model.
             self._status = {**self._status, "serving": "active" if self.model.available else "blocked_release",
@@ -227,6 +329,21 @@ class LiveLearningLoop:
                     return self.status()
                 state = self._read_state()
                 now = self.clock()
+                internal_bundle = None
+                if self.internal_source is not None:
+                    try:
+                        internal_bundle = self.internal_source()
+                        if isinstance(internal_bundle, dict):
+                            self._status = {
+                                **self._status,
+                                "internal_source": internal_bundle.get("source_status", {}),
+                                "internal_source_error": None,
+                            }
+                    except Exception as exc:
+                        self._status = {
+                            **self._status,
+                            "internal_source_error": type(exc).__name__,
+                        }
                 if state.get("last_result"):
                     restored = state["last_result"]
                     if restored == "running":
@@ -236,9 +353,15 @@ class LiveLearningLoop:
                                     "next_training_at": state.get("next_training_at")}
                 if now < state.get("next_training_at", 0):
                     return self.status()
-                from ai_model.training.live_learning import execute, eligible_records, Blocked
+                from ai_model.training.live_learning import (
+                    execute, eligible_records, eligible_internal_bundle, Blocked,
+                )
                 engine = self.engine_factory()
-                if self.peak_content:
+                internal_training = internal_bundle is not None
+                if internal_training:
+                    observations = internal_bundle
+                    records, _holdout = eligible_internal_bundle(observations)
+                elif self.peak_content:
                     from ai_model.training.public_curriculum import PEAK_POLICY
                     try:
                         observations = engine.peak_training_observations()
@@ -248,14 +371,21 @@ class LiveLearningLoop:
                         raise Blocked("waiting_for_public_peak_content", "Public peak-content policy required", 503)
                 else:
                     observations = engine.training_observations()
-                eligible_records(observations)
+                    records, _excluded = eligible_records(observations)
+                if not internal_training and self.peak_content:
+                    eligible_records(observations)
                 # Refresh timestamps alone must not repeatedly retrain the same
                 # content. Store only this fingerprint, never source text.
-                content = [{k: row[k] for k in ("source", "domain", "text", "citation", "value", "metric")}
-                           for row in observations["records"]]
-                content.sort(key=lambda row: json.dumps(row, sort_keys=True))
+                if internal_training:
+                    content = sorted(
+                        row["internal_provenance"]["text_sha256"] for row in records
+                    )
+                else:
+                    content = [{k: row[k] for k in ("source", "domain", "text", "citation", "value", "metric")}
+                               for row in observations["records"]]
+                    content.sort(key=lambda row: json.dumps(row, sort_keys=True))
                 identity = hashlib.sha256(json.dumps(content, sort_keys=True).encode()).hexdigest()
-                bootstrap = self.peak_content and not self.model.available
+                bootstrap = (self.peak_content or internal_training) and not self.model.available
                 if identity == state.get("trained_content_sha256") and not bootstrap:
                     self._status = {**self._status, "training": "unchanged_observations"}
                     return self.status()
@@ -280,8 +410,12 @@ class LiveLearningLoop:
                 if self._stop.is_set():
                     return self.status()
                 self._status = {**self._status, "training": "running", "training_error": None}
-                options = {"context_tokens": self.context_tokens, "peak_content": self.peak_content}
-                if self.peak_content:
+                options = {"context_tokens": self.context_tokens,
+                           "peak_content": self.peak_content and not internal_training}
+                if internal_training:
+                    options.update(internal_bundle=observations,
+                                   worker_timeout=self.worker_timeout)
+                elif self.peak_content:
                     options.update(model_config=self.model_config, worker_timeout=self.worker_timeout)
                 try:
                     result = (self.trainer or execute)(
@@ -313,12 +447,15 @@ class LiveLearningLoop:
         self._stop.clear()
         def run():
             while not self._stop.is_set():
+                self._wake.clear()
                 self.tick()
-                self._stop.wait(self.poll)
+                if not self._stop.is_set():
+                    self._wake.wait(self.poll)
         self._thread = threading.Thread(target=run, name="live-awareness-learning", daemon=True)
         self._thread.start()
 
     def stop(self):
         self._stop.set()
+        self._wake.set()
         if self._thread:
             self._thread.join(timeout=3)

@@ -65,6 +65,9 @@ code coverage, builds a source register of pages, API handlers and UI controls,
 and produces a prioritized [fix checklist](remediation.md). The actual generated
 tasks are in `reports/test-verification/remediation.md`; the platform register is
 `reports/test-verification/platform-register.md`.
+The focused `npm run test:runtime-contracts` lane caps Node test-file concurrency
+at two because several cases inventory the full repository; this avoids
+resource contention that previously timed out read-only Git probes.
 
 The current [completion plan](completion-execution-plan.md) orders remaining
 work. The [complete platform work ledger](platform-completion-plan.md) includes
@@ -74,6 +77,373 @@ Its generated page ledgers and machine inventory retain every item rather than
 sampling a few areas. [Launch gates](global-launch-readiness.md), [release rehearsal](release-rehearsal.md)
 and the [migration procedure](storage-release-runbook.md) distinguish source
 verification from deployment and global-capacity evidence.
+
+## Bounded repository verification
+
+`npm run dev` first runs the bounded `dev` mode in
+`scripts/testing/repository-verification.mjs`. It performs the repository
+preflight, then runs source-bound completion learning, the bounded repository
+understanding dossier, and the checked-in Atlas policy before starting the
+existing `scripts/start-dev.sh` launcher. The dossier and Atlas reports are
+advisory and do not edit source or change readiness; a failed preflight still
+prevents the launcher from starting.
+The preflight inventories every Git-tracked path, records file type and
+lifecycle, hashes source/configuration/test inputs, checks the startup contract
+and required local tools, and verifies that inputs did not drift while it ran.
+The static understanding and Atlas stages use the existing file and byte
+bounds; they do not read credential values, contact providers or production,
+apply migrations, build artifacts, or repair files. Learning persistence may
+write only to its configured private App Storage namespace and reports
+unavailable durability explicitly.
+Clean tracked inputs are bound to their Git object IDs, while modified and
+untracked input bytes receive SHA-256 hashes; the complete inventory and report
+also have SHA-256 receipts.
+
+The standalone `preflight` mode remains available for checks without the
+additional analysis. Reports and the full machine-readable inventory are retained in a unique
+`.local/repository-verification/runs/` directory. Each report has a SHA-256
+integrity receipt and separate source-revision, full-inventory, behavior-input,
+and dirty-input identities. Source files and tests are explicitly marked
+`UNVERIFIED` by inventory alone; generated files, archives, reports, and docs
+remain separate lifecycle categories with a reason when behavior testing does
+not apply. No prior result is reused as current evidence.
+
+To run the existing comprehensive local groups explicitly, use:
+
+```sh
+npm run verify:repository
+```
+
+This wraps `scripts/testing/run-all.py`, which runs its selected groups
+sequentially with its existing per-command deadlines and retained output. It
+then runs `scripts/testing/launch-readiness-audit.py` against that run's fresh
+register and plan in the same isolated output directory. The controller applies
+a four-hour test-run bound plus a three-minute audit bound, terminates the owned
+process group on timeout/interruption, records every group result, and checks
+the relevant source identity before and after execution. This command is
+intentionally not part of `npm run dev`.
+
+Provider, destructive, specialized-hardware/device, and production/deployment
+acceptance is never inferred or silently included. Those checks remain
+explicitly `BLOCKED` until separately authorized and run against owned,
+isolated resources. A passing finite report means only that its listed checks
+passed for the recorded inputs; overall product readiness remains
+`UNVERIFIED`, not a percentage or production certification.
+
+### Applying a bounded completion fix plan
+
+Both `npm run dev` and `npm run completion:execute` use the same
+`scripts/testing/repository-verification.mjs` controller: dev uses its bounded
+`dev` mode, while the completion command selects explicit plan execution.
+Starting the app never applies source edits.
+
+The completion runner can apply an explicitly prepared, source-bound patch
+manifest and then run its allowlisted local checks. It does **not** translate
+free-form remediation prose into code, mark unrelated work complete, or claim
+whole-product readiness. A human or a separately reviewed implementation
+process must first create the exact patch manifest.
+
+Plan schema version 1 requires the exact Git revision and behavior-input hashes,
+one or more `replace` or `add` file changes with before/after SHA-256 values
+and complete replacement text, and at least one local check from `check:server`,
+`check:client`, `lint`, `test:runtime-contracts`, `test:unit` or `test:ci`.
+Plans are limited to 50 files and 10 MiB. They cannot target secrets, generated
+directories or symlinks, use path traversal, include credential-like material,
+delete files, or execute arbitrary shell commands.
+
+A dry run validates plan structure, repository identity and target hashes
+without editing files:
+
+```sh
+npm run completion:execute -- --plan .local/completion-fix-plan.json
+```
+
+Applying requires a clean worktree, an exact source match, and the SHA-256 of
+the reviewed plan:
+
+```sh
+sha256sum .local/completion-fix-plan.json
+npm run completion:execute -- \
+  --plan .local/completion-fix-plan.json \
+  --plan-sha256 <reviewed-plan-sha256> \
+  --apply
+```
+
+The executor backs up replaced files, journals each change, applies the patch
+set, and keeps it only when every required command passes and all result hashes
+remain unchanged. A failed or interrupted verification triggers hash-guarded
+rollback; incomplete rollback is reported rather than hidden. Backups, logs,
+journal and integrity-sealed report are stored under the ignored
+`.local/repository-verification/completion-runs/` directory. Local verification
+is reported as `APPLIED_VERIFIED`, never as `productionReady`; providers,
+deployment, hardware, real-account journeys and work omitted from the plan
+remain unverified or blocked.
+
+### Cross-run completion learning
+
+Every preflight, full verification and completion-plan result is passed to the
+proposal-first learner. It stores a compact, integrity-sealed local observation
+under `.local/repository-verification/learning/observations/` and writes a
+`learning.json` beside that run's report. The dev controller attempts to persist
+observations in a dedicated `completion-learning-v1` namespace under the
+configured private App Storage bucket, separate from PDIM's own namespace. It
+reports `VERIFIED` only after authenticated write and recovery readback succeed.
+Writes use the generation-fenced PDIM journal, immutable
+SHA-256-addressed objects, bounded backfill, checkpointing, and full recovery
+readback before the report says `VERIFIED`. A storage or readback failure stays
+visible as `BLOCKED` or `DEGRADED`; the local record remains usable, but is not
+described as durable across workspace loss. The durable store keeps at most
+2,000 active observations and preserves an explicit truncation flag.
+
+It learns recurring failing check families and remembers exact plans whose
+named local checks passed. For a full run, it imports detailed remediation items
+only when the launch audit reports fresh source evidence, the runner confirms
+its inputs did not change, and the remediation artifact's recorded hash matches
+that run's platform register. It surfaces source-bound steps as review proposals
+and points to the complete remediation artifact; a prior verified plan is never
+replayed automatically.
+
+### Repository understanding and failure context
+
+`npm run completion:understand` builds a bounded local dossier of source hashes,
+static TypeScript/JavaScript imports and exports, conservative Python import and
+route references, literal HTTP route candidates, package-script entrypoints,
+direct test references, and context for non-passing verification checks. It
+records impact and coverage candidates with their exact source evidence,
+confidence, and uncertainty. The dossier is written with private permissions
+only under `.local/repository-verification/understanding/`; its compact index
+points to hash-listed module-detail shards so large repositories stay within
+bounded report sizes. Source text, raw logs, and credentials are not written or
+sent to a model or external service.
+
+Both `npm run dev` and an explicit `npm run verify:repository` full run create
+and bind this dossier to the same Git revision and source-input identity before
+adding its evidence to proposal-first learning. If sources drift or the report
+cannot be matched, the dossier is blocked or marked stale and is not used to
+rank proposals. Static import/route/test references are candidates, not proof of
+runtime reachability or executed coverage. Truncation and parser errors lower
+the dossier's completeness and candidate confidence.
+
+The dossier improves reading and analysis; it does not edit application files.
+Accepted findings remain review packets. All source writes still require a
+separately authored, source-hash-pinned plan through
+`npm run completion:execute`, its allowlisted verification checks, and its
+rollback journal.
+
+### Atlas repository operating language
+
+`npm run atlas -- run atlas/production.atlas` executes a local, bounded
+repository-audit plan. Atlas treats the repository as the subject and supports
+static scan, component-signal discovery, dependency and feature-path mapping,
+missing/unfinished candidates, intent heuristics, subsystem checks, and
+measurable policy rules. `read file "path"` and `read symbol "name"` return
+hash-bound declarations, imports, routes, relationships, and test references;
+they do not copy source bodies into reports. `draft repair plans` produces
+private packets with evidence, uncertainty, impact rank, related tests, and
+the exact proposal identifiers used by completion review. These packets have
+empty executable changes and cannot edit the app. The checked-in
+`atlas/production.atlas` plan requests two source-hash comparisons and stops
+early when the repository input manifest is stable.
+
+Atlas is a restricted declarative language, not a shell or general-purpose
+programming language. Its files cannot execute commands, mutate application
+source, or trigger fixes. It writes private reports only under
+`.local/repository-verification/atlas/`. Static function/call/route and path
+links include evidence and uncertainty; path groups are not treated as
+authoritative product features. A policy metric without a fresh measured value
+is `UNVERIFIED`, never a guessed pass. In particular, broad coverage,
+documentation, security, and performance percentages require dedicated
+measured evidence before `ProductionReady` can pass. Source repairs remain
+proposal-first: accept a proposal with `npm run completion:review -- decide`,
+prepare its non-executable packet with `npm run completion:review -- prepare`,
+then submit an authored, reviewed, source-hash-pinned plan to
+`npm run completion:execute`. Atlas never approves proposals or generates
+application-file patches by itself.
+
+### Competitor benchmark evidence
+
+`docs/testing/competitor-evidence.json` contains a dated public-source snapshot
+for studio, songwriting, distribution, social publishing, outreach,
+advertising, and dashboard/analytics. It records first-party claims from
+BandLab, Hookpad, LANDR, Buffer, Mailchimp, Google Ads, and Chartmetric. These
+are marketing statements, not independent product tests. DistroKid was not
+included because its public page presented a bot challenge; no claim was
+inferred from that response.
+
+A full audit can attach source-bound measurements to a check using
+`benchmarkAreaIds` and `benchmarkMeasurements`. A comparison is accepted only
+when a passing current-run check provides the same metric identifier, unit, and
+scope as the reference. A feature check alone cannot establish superiority.
+Missing or stale evidence becomes a `NEEDS_REVIEW` proposal, and the learner
+never changes source or claims Max Booster is production-ready. The search and
+scrape callbacks returned HTTP 402 during this snapshot, so only directly
+reachable official pages were used. The snapshot expires after 30 days and
+must be refreshed before it can support current comparisons.
+
+The learner does not retain raw command output or logs, does not modify source,
+and does not change the app's readiness state. The `dev` mode performs finite,
+bounded analysis on startup; it is not an infinite repair loop. Corrupt,
+oversized, stale, or unavailable history is surfaced explicitly rather than
+silently treated as complete. `npm run dev` runs that bounded analysis before
+the application launcher; it does not start the continuous loop or edit files
+during startup. History reads
+are bounded to 2,000 records and 64 MiB, with an 8 MiB per-record limit. The
+learner retains at most 2,000 failing checks and 5,000 remediation references
+per event, emits at most 500 check proposals plus 200 detailed remediation
+proposals, and reports omitted counts. Benchmark gap proposals are separate.
+
+### Continuous production-readiness loop
+
+`npm run completion:loop` runs only against a worktree explicitly marked as an
+isolated copy. Initialize the existing isolated worktree once, then start the
+loop from the primary checkout:
+
+```sh
+npm run completion:loop -- --initialize-isolated \
+  --root .local/isolated-dev-20261117T144245Z --source-root "$PWD"
+npm run completion:loop -- --root .local/isolated-dev-20261117T144245Z
+```
+
+The default loop runs the full local verification and repeats every 15 minutes
+until a fresh full report and its matching learning report pass every gate, or
+the operator cancels with SIGINT/SIGTERM. State and cycle receipts are retained
+under the isolated worktree's ignored `.local/repository-verification/completion-loop/`
+directory; rerunning resumes the recorded cycle count and re-verifies before
+accepting readiness. A concurrent loop is rejected. `--max-cycles N` is
+available for controlled tests and exits with `LIMIT_REACHED`, never success,
+when readiness remains unverified. Development mode is allowed only with a
+finite cycle limit.
+
+The loop derives its separate readiness result from the sealed full report and
+matching learning summary; it does not trust the reports' legacy
+`productionReady: false` / `UNVERIFIED` fields as inputs to that calculation,
+and it never rewrites those reports. The derived gate requires a clean
+source-drift receipt, a complete successful full runner, every check and
+external prerequisite passing, no skipped checks, a complete source-bound
+dossier and passing Atlas policy, current remediation with no unresolved items,
+and no open or omitted proposals. It launches no application services and
+receives no application credentials. This separate command is intentionally
+not wired into `npm run dev`, so an incomplete readiness audit cannot prevent
+the app from starting.
+
+The loop uses the existing `completion-executor.mjs` as its only source writer.
+It can apply a deterministic patch only when a registered rule proves an exact
+source mismatch, binds the rule to a current integrity-verified report and
+learning record, runs the named failing test, and emits a source-hash-pinned
+executor plan. The initial rule corrects the known stale `npm run dev` contract
+assertion; it changes no application behavior. The executor still enforces its
+path/check allowlists, clean-worktree requirement, byte backups, write
+readback, verification, and rollback. Each evidence identity is attempted at
+most once, including after a restart. Unsupported or ambiguous findings remain
+proposals; free-form instructions are never converted into code. A dirty
+worktree blocks application rather than being overwritten.
+
+### Rule-based local code audit and repair
+
+`npm run code:audit` runs the deterministic production audit plus a versioned
+capability registry. The registry lists the checks and their language/path
+scope, evidence, repair status, and required verification. Audit findings show
+safe evidence fingerprints and source identities rather than raw source
+diagnostics. Semantic correctness, data/control flow, concurrency, compiler
+and framework checks, dependency advisories, and runtime/provider/deployment
+behavior are explicitly unsupported; this is not an exhaustive programming
+audit.
+
+Run the workflow only in a worktree marked by the existing isolated-copy
+initializer. From the primary checkout:
+
+```sh
+mkdir -p .local
+git worktree add --detach .local/code-audit-worktree HEAD
+npm run completion:loop -- --initialize-isolated \
+  --root "$PWD/.local/code-audit-worktree" --source-root "$PWD"
+npm run code:audit -- --root "$PWD/.local/code-audit-worktree"
+```
+
+The report, targeted-test evidence, and any generated plan are stored privately
+under `.local/repository-verification/rule-based-audit/` inside that worktree.
+Only one exact registered repair currently exists: synchronizing a stale
+development-launcher assertion when its uniquely matched targeted test proves
+the mismatch. Other findings require review. To apply that plan, use the exact
+SHA-256 reported by the audit:
+
+```sh
+npm run code:audit -- --root "$PWD/.local/code-audit-worktree" \
+  --apply --plan-sha256 <reviewed-plan-sha256>
+```
+
+The command re-runs the audit and targeted test, rejects dirty or changed
+source, and delegates the patch to `completion-executor.mjs`. The executor
+requires an allowlisted passing check and handles backups, replay, and
+rollback. The audit workflow makes no model or network calls and never writes
+application source itself. It does not assess production readiness.
+
+For a separately reviewed proposal plan, supply its exact plan hash to the loop:
+
+```sh
+npm run completion:loop -- --root .local/isolated-dev-20261117T144245Z \
+  --approved-plan .local/repository-verification/plan-drafts/<run>/<plan>.json \
+  --plan-sha256 <reviewed-plan-sha256>
+```
+
+Prepared schemaVersion 0 drafts are not executable. The supplied manifest must
+be a complete schemaVersion 1 plan with a current accepted-proposal link. It is
+applied once through the same executor, then the loop runs fresh verification.
+
+### Reviewing completion proposals
+
+Review decisions can be listed and recorded against one integrity-verified run:
+
+```sh
+npm run completion:review -- list --run-dir .local/repository-verification/runs/<run-id>
+npm run completion:review -- decide \
+  --run-dir .local/repository-verification/runs/<run-id> \
+  --proposal-id <proposal-id> \
+  --decision accept-for-plan
+```
+
+Supported decisions are `accept-for-plan`, `defer`, `reject`, and `reopen`.
+They are immutable, integrity-sealed, bound to the exact report and source
+identity, and mirrored locally with private permissions. When the configured
+private App Storage bucket is available, a decision is acknowledged only after
+its isolated generation-fenced journal has committed and recovery readback
+verifies it. The journal has its own
+`completion-proposal-decisions-v1` namespace; it does not write PDIM's HEAD or
+data namespace. If configured storage cannot be verified, no approval is
+acknowledged or written as local-only. Without a configured bucket, the CLI
+labels decisions `LOCAL_ONLY`, and they are not durable across workspace loss.
+Bucket recovery restores decision records, but linked execution still requires
+the original verified run report and proposal summary to be present locally;
+missing evidence blocks the approval rather than being reconstructed.
+A decision applies only while that complete source identity remains unchanged.
+Conflicting, incomplete, or branched chains degrade feedback and block linked
+execution. `accept-for-plan` means
+only that a non-executable review packet may be prepared:
+
+```sh
+npm run completion:review -- prepare \
+  --run-dir .local/repository-verification/runs/<run-id> \
+  --proposal-id <proposal-id>
+```
+
+The packet has `schemaVersion: 0`, empty changes/checks, and cannot be passed as
+an executable plan. It preserves the accepted proposal's source evidence and
+includes the exact `proposalLink` object the executor will validate if the
+reference is added to an authored plan. The executor rejects superseded,
+missing, or source-mismatched approvals before changing files. Only an
+integrity-sealed executor report with every named change present and every
+required check passing is recorded as a verified resolution; failed or rolled
+back attempts remain unresolved. It never writes application source or runs
+the executor. Bucket-backed history is recovered and checked on subsequent
+workflow starts; the local mirror is not treated as the durable authority.
+
+Internal whole-product readiness remains based on the current full-run audit.
+Competitor evidence status is deliberately separate from product readiness.
+The current snapshot provides a dated reference set, but no current Max Booster
+source-bound measurements have been attached, so the current overall result is
+`EVIDENCE_GAPS`, not a head-to-head win. Public webpages are not treated as
+product-training permission, and passing a local subset never means Max
+Booster is production-ready.
 
 The [seven-level critical path](launch-critical-path.md) extends that plan;
 the [launch audit](launch-readiness-audit.md) supplies the complete status,

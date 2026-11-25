@@ -1475,7 +1475,7 @@ class ArtistProfileService {
               updatedAt: new Date(),
             })
             .returning();
-          await tx.execute(sql`INSERT INTO integration_catalog_jobs (profile_id, user_id)
+          await tx.execute(sql`INSERT INTO public.integration_catalog_jobs (profile_id, user_id)
             VALUES (${created.id}, ${created.userId})`);
           return created;
         });

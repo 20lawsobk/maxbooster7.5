@@ -180,6 +180,7 @@ describe("direct generation preserves caller authority over posting metadata", (
         goal: "conversions",
         style_tags: [],
       }),
+      "eng-user-authority",
     );
   });
 
@@ -210,6 +211,7 @@ describe("direct generation preserves caller authority over posting metadata", (
         goal: "awareness",
         style_tags: ["promotional"],
       }),
+      "fmt-user-authority",
     );
   });
 });

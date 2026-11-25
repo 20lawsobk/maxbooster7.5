@@ -1,0 +1,8 @@
+JUNIT report written to /tmp/c5-bound-zwdklavp/evidence/root/coverage-unit.junit.xml
+ % Coverage report from v8
+------------|---------|----------|---------|---------|-------------------
+File        | % Stmts | % Branch | % Funcs | % Lines | Uncovered Line #s 
+------------|---------|----------|---------|---------|-------------------
+All files   |       0 |        0 |       0 |       0 |                   
+ subject.ts |       0 |        0 |       0 |       0 | 2-3               
+------------|---------|----------|---------|---------|-------------------

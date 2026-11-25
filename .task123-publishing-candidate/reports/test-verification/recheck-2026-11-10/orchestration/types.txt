@@ -1,0 +1,4 @@
+
+> max-booster@3.0.0 check
+> node --max-old-space-size=4096 node_modules/typescript/bin/tsc -p tsconfig.server.json && node --max-old-space-size=4096 node_modules/typescript/bin/tsc -p tsconfig.client.json
+

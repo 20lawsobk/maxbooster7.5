@@ -1,0 +1,15 @@
+{
+  "scope": "Read-only peer review report received from child map_control_review; machine validation is separately retained in validation.json",
+  "reportedChecksPassed": 94,
+  "reportedChecksFailed": 0,
+  "findings": [
+    "Nine source/code/map hash identities match.",
+    "All27 persisted complete maps equal both retained historical baselines.",
+    "Every control counter is integerzero; no application subject is imported or executed by the diagnostic recipes.",
+    "No old V8offsets are supplied to reconstructed controls.",
+    "The original rawEqual flags need explicit typed observations before attributing every discrepancy."
+  ],
+  "resolution": "Independent fresh bounded typed replay now records7434positiveInfinity/null and3080undefined/missing fields, no prototype/otherdifferences.",
+  "productionReady": false,
+  "mergedIntoGlobalCoverage": false
+}

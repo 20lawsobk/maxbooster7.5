@@ -6,6 +6,7 @@ import { readFileSync } from 'node:fs';
 import vm from 'node:vm';
 import ts from 'typescript';
 import { responseHarness } from './helpers-inbound.mjs';
+import { isAdminOnlyMode } from '../../shared/adminAccessPolicy.mjs';
 
 // Execute the exact registered handler, without booting workers or providers.
 function preferenceHandler(method, url, dependencies, file = 'server/routes.ts', receiver = 'app') {
@@ -29,7 +30,7 @@ function preferenceHandler(method, url, dependencies, file = 'server/routes.ts',
     .map(declaration => `const ${declaration.getText(source)};`).join('\n');
   return vm.runInNewContext(ts.transpile(`${declarations}\nconst handler = ${handler}; handler;`, {
     target: ts.ScriptTarget.ES2022, module: ts.ModuleKind.None,
-  }), { publicPaymentPreferences, hasBankCredentials, ...dependencies });
+  }), { publicPaymentPreferences, hasBankCredentials, isAdminOnlyMode, ...dependencies });
 }
 
 test('registered generic preference routes reject bank writes and redact historical credentials', async () => {

@@ -1,0 +1,11 @@
+packages:
+  "framer-motion": "For sleek entry animations and transitions"
+  "date-fns": "For formatting timestamps"
+  "clsx": "For conditional class joining"
+  "tailwind-merge": "For merging tailwind classes"
+  "lucide-react": "For crisp icons"
+
+notes:
+  - API base path is /api/redis/instances
+  - Needs Bearer token auth per instance
+  - UI strictly styled for a developer/terminal aesthetic

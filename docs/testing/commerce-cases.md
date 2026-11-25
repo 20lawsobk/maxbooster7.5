@@ -10,18 +10,9 @@ Run each source file with the instructions in [commerce.md](commerce.md). The of
 python3 scripts/testing/run-commerce.py --only beat-loop-lifecycle-postgres.test
 ```
 
-Command: **passed**; exit 0.
+Command: **failed**; exit 1.
 
-- PASSED: concurrent initialization creates exactly one paused state row
-- PASSED: generates decoded audio, a shorter private preview, awareness artwork, atomic listing and royalty ownership
-- PASSED: a second replica cannot run or orphan an active cycle while its database lock is held
-- PASSED: only a completed marketplace settlement marks sold; replay does not duplicate seller earnings
-- PASSED: zero published posts is reported honestly while retaining the payable listing
-- PASSED: concurrent manual requests cannot overlap and pause clears queued cycles
-- PASSED: listing failure rolls back beat and royalty rows and removes public/audio uploads
-- PASSED: silent audio is rejected before listing even without renderer quality metadata
-- PASSED: renderer failure lists nothing, releases the slot and records backoff
-- PASSED: real Python ASGI synthesizes and delivers beat audio and poster into the SQL listing without a checkpoint
+- FAILED: Beat Money Loop lifecycle on a disposable PostgreSQL database
 
 ## `tests/payment-processing/business-integrity-postgres.test.mjs`
 
@@ -92,9 +83,9 @@ Command: **passed**; exit 0.
 python3 scripts/testing/run-commerce.py --only inbound-billing.test
 ```
 
-Command: **passed**; exit 0.
+Command: **failed**; exit 1.
 
-- PASSED: billing transaction routes execute cancellation, payment setup, portal, invoice, retry, refund, 3DS, and dispute contracts
+- FAILED: billing transaction routes execute cancellation, payment setup, portal, invoice, retry, refund, 3DS, and dispute contracts
 
 ## `tests/payment-processing/inbound-commerce.test.mjs`
 
@@ -102,13 +93,13 @@ Command: **passed**; exit 0.
 python3 scripts/testing/run-commerce.py --only inbound-commerce.test
 ```
 
-Command: **passed**; exit 0.
+Command: **failed**; exit 1.
 
 - PASSED: marketplace checkout freezes database pricing, metadata identity, and provider idempotency
 - PASSED: merchant checkout enforces buyer ownership, trusts reserved cents, and settles only paid matching sessions
 - PASSED: growth merchandise checkout validates shipping and immutable subtotal before provider create
 - PASSED: growth merchandise reservation prices from catalog, fences command replay, and applies verified payment events once
-- PASSED: billing create-checkout route executes canonical price catalog and rejects caller-supplied prices
+- FAILED: billing create-checkout route executes canonical price catalog and rejects caller-supplied prices
 
 ## `tests/payment-processing/inbound-known-failures.mjs`
 
@@ -116,13 +107,13 @@ Command: **passed**; exit 0.
 python3 scripts/testing/run-commerce.py --only inbound-known-failures
 ```
 
-Command: **passed**; exit 0.
+Command: **failed**; exit 1.
 
-- PASSED: billing checkout retries reuse the durable session for the same command
-- PASSED: storefront cart retries reuse one session and one set of pending orders
+- FAILED: billing checkout retries reuse the durable session for the same command
+- FAILED: storefront cart retries reuse one session and one set of pending orders
 - PASSED: beat purchase completion verifies the payment before recording a sale
 - PASSED: beat purchase completion grants a sale only with the verified charge amount
-- PASSED: Stripe beat-payment verification rejects unpaid, mispriced, and misattributed intents
+- FAILED: Stripe beat-payment verification rejects unpaid, mispriced, and misattributed intents
 
 ## `tests/payment-processing/inbound-legacy-services.test.mjs`
 
@@ -130,11 +121,11 @@ Command: **passed**; exit 0.
 python3 scripts/testing/run-commerce.py --only inbound-legacy-services.test
 ```
 
-Command: **passed**; exit 0.
+Command: **failed**; exit 1.
 
-- PASSED: actual storefront membership service prices tiers, subscribes, and cancels with customer ownership
-- PASSED: legacy marketplace service delegates frozen checkout and creates/reuses Connect onboarding accounts
-- PASSED: legacy StripeService and BeatService execute subscription/payment-intent purchase functions
+- FAILED: actual storefront membership service prices tiers, subscribes, and cancels with customer ownership
+- FAILED: legacy marketplace service delegates frozen checkout and creates/reuses Connect onboarding accounts
+- FAILED: legacy StripeService and BeatService execute subscription/payment-intent purchase functions
 
 ## `tests/payment-processing/inbound-registration.test.mjs`
 
@@ -142,9 +133,9 @@ Command: **passed**; exit 0.
 python3 scripts/testing/run-commerce.py --only inbound-registration.test
 ```
 
-Command: **passed**; exit 0.
+Command: **failed**; exit 1.
 
-- PASSED: registration checkout, verification, and account creation execute payment/plan gates before any account write
+- FAILED: registration checkout, verification, and account creation execute payment/plan gates before any account write
 
 ## `tests/payment-processing/inbound-storefront.test.mjs`
 
@@ -152,9 +143,19 @@ Command: **passed**; exit 0.
 python3 scripts/testing/run-commerce.py --only inbound-storefront.test
 ```
 
+Command: **failed**; exit 1.
+
+- FAILED: storefront cart executes auth, ownership, catalog pricing, amount, metadata, and order creation contracts
+
+## `tests/payment-processing/maxcore-cognitive-registry-migration.test.mjs`
+
+```sh
+python3 scripts/testing/run-commerce.py --only maxcore-cognitive-registry-migration.test
+```
+
 Command: **passed**; exit 0.
 
-- PASSED: storefront cart executes auth, ownership, catalog pricing, amount, metadata, and order creation contracts
+- PASSED: MaxCore cognitive registry migration installs owner-isolated graph constraints
 
 ## `tests/payment-processing/outbound-commerce.mjs`
 
@@ -188,11 +189,11 @@ Command: **passed**; exit 0.
 python3 scripts/testing/run-commerce.py --only outbound-services-webhooks
 ```
 
-Command: **passed**; exit 0.
+Command: **failed**; exit 1.
 
 - PASSED: StripeService refunds enforce buyer scope and pass validated exact cents and stable key to commerce
 - PASSED: refund request orchestration persists one idempotent operation and leaves failed execution retryable
-- PASSED: Connect onboarding creates an Express account with requested capabilities and exact return URLs
+- FAILED: Connect onboarding creates an Express account with requested capabilities and exact return URLs
 - PASSED: charge refund/dispute reconciliation sums provider states, releases won holds, and writes operation identities
 - PASSED: actual webhook signature middleware preserves raw-byte signature boundary and rejects invalid, missing, or unconfigured signatures
 - PASSED: webhook receipt transaction retries failed settlement and ignores a successfully replayed duplicate
@@ -288,24 +289,24 @@ Command: **passed**; exit 0.
 python3 scripts/testing/run-commerce.py --only subscription-authority-postgres.test
 ```
 
-Command: **passed**; exit 0.
+Command: **failed**; exit 1.
 
-- PASSED: discovers existing monthly/yearly catalog prices using actual amount, currency and interval policy
-- PASSED: monthly catalog identity overrides stale event and contradictory provider metadata
-- PASSED: yearly catalog identity overrides stale event and contradictory provider metadata
-- PASSED: valid legacy inline monthly/yearly metadata remains supported
+- FAILED: discovers existing monthly/yearly catalog prices using actual amount, currency and interval policy
+- FAILED: monthly catalog identity overrides stale event and contradictory provider metadata
+- FAILED: yearly catalog identity overrides stale event and contradictory provider metadata
+- FAILED: valid legacy inline monthly/yearly metadata remains supported
 - PASSED: a delayed older event cannot supersede the current newer subscription
 - PASSED: a newer inactive subscription cannot replace an existing paid subscription
-- PASSED: a validated newer active subscription atomically advances only the observed pointer
+- FAILED: a validated newer active subscription atomically advances only the observed pointer
 - PASSED: lifetime entitlement is never downgraded by a recurring event
 - PASSED: unknown and ambiguously linked customers fail without changing SQL
 - PASSED: provider retrieval failure for sub_incoming preserves pointer and entitlement
 - PASSED: provider retrieval failure for sub_current preserves pointer and entitlement
-- PASSED: invalid newer recurring plan unsupported is rejected before pointer mutation
-- PASSED: invalid newer recurring plan lifetime is rejected before pointer mutation
+- FAILED: invalid newer recurring plan unsupported is rejected before pointer mutation
+- FAILED: invalid newer recurring plan lifetime is rejected before pointer mutation
 - PASSED: mismatched provider subscription or customer identity is rejected before SQL mutation
-- PASSED: concurrent newer pointer during provider refresh wins over a stale admission
-- PASSED: concurrent lifetime upgrade during provider refresh wins over a stale admission
+- FAILED: concurrent newer pointer during provider refresh wins over a stale admission
+- FAILED: concurrent lifetime upgrade during provider refresh wins over a stale admission
 
 ## `tests/unit/beat-sale-money-loop.test.ts`
 
@@ -313,22 +314,8 @@ Command: **passed**; exit 0.
 python3 scripts/testing/run-commerce.py --only legacy-beat
 ```
 
-Command: **passed**; exit 0.
+Command: **failed**; exit 1.
 
-- PASSED: A. Royalty split ledger > writes a royalty_transactions row with the correct amount
-- PASSED: A. Royalty split ledger > increments royalty_splits.total_earned and pending_payout
-- PASSED: A. Royalty split ledger > does NOT double-credit on a second call (idempotency)
-- PASSED: B. Revenue events > records a revenue_events row with source='marketplace'
-- PASSED: B. Revenue events > ON CONFLICT: a second revenue_events insert is a no-op
-- PASSED: C. Sale notifications — confirmed payment idempotency > processPayment on completed order delivers beat_sold + beat_purchased notifications
-- PASSED: C. Sale notifications — confirmed payment idempotency > replay — second processPayment call produces no additional notifications
-- PASSED: C. Sale notifications — confirmed payment idempotency > concurrent calls — only one delivery wins; exactly one notification per recipient
-- PASSED: C. Sale notifications — confirmed payment idempotency > failure resets notifStatus so the next retry can re-attempt delivery
-- PASSED: C. Sale notifications — confirmed payment idempotency > no beat_sold notification from initiation-time route send
-- PASSED: D. Content-dispatch — beat-loop posts > beat-loop post was inserted with _beatMoneyLoop marker and overdue scheduledAt
-- PASSED: D. Content-dispatch — beat-loop posts > runContentDispatch query selects the overdue beat-loop post
-- PASSED: D. Content-dispatch — beat-loop posts > publishToPlatform enqueues a job without throwing
-- PASSED: D. Content-dispatch — beat-loop posts > post transitions to published after successful dispatch
 
 ## `tests/payment-processing/real-stripe-api.mjs`
 

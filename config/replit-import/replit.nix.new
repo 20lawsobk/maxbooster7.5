@@ -3,7 +3,7 @@
   # import-time dependency parser. Node's normal command is `node`.
   deps = [
     pkgs.python311
-    pkgs.nodejs_22
+    pkgs.nodejs_24
     pkgs.nix
     pkgs.postgresql_17
     pkgs.curl

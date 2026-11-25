@@ -8,6 +8,7 @@ import { createRequire } from "node:module";
 import { createServer } from "node:http";
 import { once } from "node:events";
 import { pathToFileURL } from "node:url";
+import { findChromiumExecutable } from "./helpers-chromium.mjs";
 
 const scriptsRequire = createRequire(new URL("../external/maxcore/scripts/package.json", import.meta.url));
 const puppeteerRequire = createRequire(scriptsRequire.resolve("puppeteer-core"));
@@ -85,8 +86,8 @@ test("actual TypeDoc Markdown preserves normal rendering and bounds six advisory
 });
 
 test("actual upgraded Puppeteer drives configured Chromium through owned loopback CDP", { timeout: 45000 }, async t => {
-  const executablePath = process.env.REPLIT_PLAYWRIGHT_CHROMIUM_EXECUTABLE;
-  assert.ok(executablePath && fs.existsSync(executablePath), "Configured real Chromium is required");
+  const executablePath = findChromiumExecutable();
+  assert.ok(executablePath, "Actual Chromium is required; missing browser is not a pass");
   const server = createServer((request, response) => {
     response.setHeader("content-type", "text/html; charset=utf-8");
     response.end('<!doctype html><meta charset="utf-8"><title>Owned browser fixture</title><button id="run">東京 🎵</button><output id="value">idle</output><script>document.querySelector("#run").onclick=()=>document.querySelector("#value").textContent="مرحبا 🎹"</script>');

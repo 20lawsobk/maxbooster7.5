@@ -1,13 +1,17 @@
 // @ts-nocheck
 import { Resend } from "resend";
 import { db } from "../db";
-import { notifications, users } from "@shared/schema";
+import { notifications, systemSettings, users } from "@shared/schema";
 import { eq } from "drizzle-orm";
 import { logger } from "../logger.js";
 import { webPushService } from "./webPushService.js";
 import { buildPushPayload } from "./pushNotificationTypes.js";
 import { env } from "../config/env.js";
-import { notificationAllowed } from "./notificationPreferences.js";
+import {
+  notificationAllowed,
+  notificationCategory,
+  platformEmailNotificationAllowed,
+} from "./notificationPreferences.js";
 import { sendSmsNotification } from "./smsNotificationService.js";
 import { randomUUID } from "node:crypto";
 import { enqueueNotificationDigest } from "./notificationDigestService.js";
@@ -47,6 +51,26 @@ class NotificationService {
     }
   }
 
+  private async isPlatformEmailNotificationsEnabled(): Promise<boolean> {
+    try {
+      const [setting] = await db
+        .select({ value: systemSettings.value })
+        .from(systemSettings)
+        .where(eq(systemSettings.key, "platform.emailNotifications"))
+        .limit(1);
+      if (!setting) return true;
+
+      const value =
+        typeof setting.value === "string"
+          ? JSON.parse(setting.value)
+          : setting.value;
+      return typeof value === "boolean" ? value : false;
+    } catch (error) {
+      logger.warn({ err: error }, "Could not read platform email-notification policy");
+      return false;
+    }
+  }
+
   // Returns whether a notification was actually persisted/delivered so
   // callers (e.g. the automation workflow engine) can distinguish a real
   // delivery from a silent no-op (unknown user, disabled preferences).
@@ -71,7 +95,18 @@ class NotificationService {
         return { delivered: false, emailSent: false, browserSent: false, reason: "user not found" };
       }
 
-      const shouldSendEmail = notificationAllowed(user.notificationSettings, type, "email");
+      const userAllowsEmail = notificationAllowed(
+        user.notificationSettings,
+        type,
+        "email",
+      );
+      const platformEmailEnabled =
+        !userAllowsEmail ||
+        notificationCategory(type) === "account_security" ||
+        (await this.isPlatformEmailNotificationsEnabled());
+      const shouldSendEmail =
+        userAllowsEmail &&
+        platformEmailNotificationAllowed(platformEmailEnabled, type);
       const shouldSendBrowser = notificationAllowed(user.notificationSettings, type, "push");
       const shouldPersist = notificationAllowed(user.notificationSettings, type, "inApp");
       const digestQueued = await enqueueNotificationDigest(

@@ -1,0 +1,39 @@
+{
+  "scope": "Read-only review of repeat-safe nonce path and exact timestamp delta only; no repository writes or global coverage credit",
+  "observedAt": "2026-10-29T23:17:20.229521+00:00",
+  "status": "PRODUCT_DELTA_NO_MATERIAL_DEFECT_FOUND_WITH_TEST_EVIDENCE_CORRECTION_TRACKED",
+  "sourceSha256": {
+    "parent/candidate/scripts/testing/run-all.py": "b64f351c43a24f5e61fea8130baecba352e0fa2036c9b96f8ed2123b630a44d7",
+    "reporter/scripts/testing/coverage-outcome-reporter.mjs": "0c59c00b83bfb763de13a827f86ad8ee67a7999e781a9fdc4044be2f8a42a119",
+    "parent/candidate/tests/testing/test_coverage_command_binding.py": "fcaac833ae622278364e95e797eae3a5638b92541326e2adbbdac6158f1cedd5",
+    "reporter/tests/testing/coverage-outcome-reporter.test.mjs": "771a49c1781cda29e7e816c3f9973dc61b30e949d53c83f427736037f7653067"
+  },
+  "checks": {
+    "parentNonceCreatedBeforeSelectingArtifactPath": true,
+    "parentExistingNoncePathRejectedBeforeChild": true,
+    "reporterRequiresExactNonceSpecificPath": true,
+    "reporterNeverOverwritesExistingOutcome": true,
+    "existingAncestorSymlinkGuardsPreserved": true,
+    "datetimeToNanosecondsUsesIntegerArithmetic": true,
+    "sameFixtureRepeatTestPreservesFirstOutcomeBytes": true,
+    "realChildExitStatusUnchanged": true
+  },
+  "findings": [
+    {
+      "severity": "test-evidence correctness",
+      "file": "reporter/tests/testing/coverage-outcome-reporter.test.mjs",
+      "lines": [
+        48,
+        55,
+        64
+      ],
+      "detail": "The repeat fixture reads and copies shared junit.xml after the second command, then records that hash in a receipt carrying the first command window. It preserves the first outcome correctly, but the first receipt JUnit bytes describe the second invocation.",
+      "requiredAction": "Capture firstJUnit bytes/hash before the second command; retain separate first/second JUnit bytes and receipt association, or explicitly label the fixture receipt as spanning both commands."
+    }
+  ],
+  "limits": [
+    "No independent rerun of already passing tests.",
+    "Producer foundation still requires downstream admission to verify threshold-only failure and full raw/global provenance."
+  ],
+  "changesMade": []
+}

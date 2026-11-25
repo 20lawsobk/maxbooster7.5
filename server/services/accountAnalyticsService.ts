@@ -174,4 +174,40 @@ export function createAccountAnalyticsService(dependencies: Dependencies) {
   };
 }
 
+export function toDashboardInsightsEnvelope(result: {
+  status: "ready" | "insufficient_history";
+  insight: string;
+  generatedAt: string;
+  dataWindow: Record<string, unknown>;
+  metrics: Record<string, unknown>;
+  comparison: Record<string, unknown>;
+  method: Record<string, unknown>;
+}) {
+  const hasHistory = result.status === "ready";
+  return {
+    success: true,
+    data: {
+      insights: [
+        {
+          type: hasHistory ? "trend" : "information",
+          title: hasHistory
+            ? "Recorded account activity"
+            : "Analytics history not yet available",
+          description: result.insight,
+          metric: "account_activity",
+          impact: "low",
+          actionable: !hasHistory,
+          source: "maxcore_account_analytics",
+          status: result.status,
+          generatedAt: result.generatedAt,
+          dataWindow: result.dataWindow,
+          metrics: result.metrics,
+          comparison: result.comparison,
+          method: result.method,
+        },
+      ],
+    },
+  };
+}
+
 export const accountAnalyticsService = createAccountAnalyticsService({ database: db, transport: maxCoreControlTransport, now: () => new Date() });

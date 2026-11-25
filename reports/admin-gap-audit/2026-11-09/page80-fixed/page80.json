@@ -1,0 +1,68 @@
+{
+  "generatedAt": "2026-11-09T00:42:44.986Z",
+  "startedAt": "2026-11-09T00:42:36.403Z",
+  "decision": "FAIL",
+  "command": "env -i PATH=\"$PATH\" HOME=/tmp node scripts/testing/page80-acceptance.mjs",
+  "artifactLabel": "sealed non-ML source application acceptance; not full-stack or packed acceptance",
+  "extendedRunnerSha256": "292b68adee7fff90b182cdd630e2538da54f4437e086f4d78b6e9b1eb3262947",
+  "sourceRevision": "88e89addf77bb794ff97836efab786fe1106b983",
+  "sourceFileDigestsSha256": {
+    "scripts/testing/page80-acceptance.mjs": "292b68adee7fff90b182cdd630e2538da54f4437e086f4d78b6e9b1eb3262947",
+    "scripts/readiness-egress-guard.mjs": "69e4bd4cf4dcc884936c61d4e902a8f23dfb1a4a524a51268b0a487a7e673b03",
+    "scripts/lib/isolated-acceptance-readiness.mjs": "45ca9b377e3104635c665509c2f94e85f9792cc2db2ccdec0117cf1740f85f03",
+    "server/index.ts": "362bbbd8db67d1205785a93f39689341a3730b0bd22ce28743c3a942505d57ad",
+    "server/routes.ts": "37f53c0271247245151ee8bcd54c5a20596301530e670fbcd9b9cca45c59fb83",
+    "server/middleware/csrf.ts": "cbd3e78834ba27cf086091017ba03411f998218ab0550b2d66a9d65df731393f",
+    "client/src/App.tsx": "ad5062daf95f0af3fcba6b63d1732c00e60968c2bab83796ba8d131f63f182a5",
+    "client/src/pages/Storefront.tsx": "5ee9e44d59a9fc54a71f80edf87c5b63111d12d0d97aa25e1daa7bbc950fc29c",
+    "client/src/pages/Royalties.tsx": "96cca1cb3babed5a868052143146045bb74494cee8d4f0fdf3a9f39e8874d63f",
+    "client/src/pages/Shows.tsx": "6c1a47cc691a46ff5d72414545033b63dfff2bfdd1d5830548390acafd88712e",
+    "client/src/pages/SyncLicensing.tsx": "5cc23b2ef1d4570cfa94a591b8672916a4a7b95a567df6cb138c82104af6cc7a",
+    "client/src/pages/MerchStore.tsx": "15f245bbca16fb89ba14ed00c43a1ef69fee2a4f785c308974133b85f6e6b402",
+    "shared/schema.ts": "ce79392f833de48cc9bf3fe1ab6f158558b64824ccdcecce03ba277713bb1411"
+  },
+  "safety": {
+    "inheritedSecretNamesRejected": true,
+    "database": "ephemeral local PostgreSQL containing generated synthetic empty schema only",
+    "network": "child preloader permits loopback TCP/Unix sockets only; rejects wrapper and direct-socket external TCP, UDP, and child processes",
+    "pdim": "local imported PDIM on an ephemeral loopback port with disposable state; no production Redis credential or non-loopback endpoint is available",
+    "maxCore": "not started; loopback port 9 is a closed sentinel and no model is loaded",
+    "providerCredentialsPresent": false,
+    "productionDataPresent": false,
+    "disposableWorkingDirectory": true
+  },
+  "evidence": {
+    "capacityAdmission": "not_run",
+    "schemaGeneration": "pass",
+    "postgres": "pass",
+    "appProcess": "started",
+    "health": {
+      "status": 200,
+      "contentType": "application/json; charset=utf-8"
+    },
+    "readiness": "not_run",
+    "frontend": {
+      "status": 200,
+      "contentType": "text/html; charset=utf-8",
+      "bytes": 16152,
+      "sha256": "772aa5ebac7ccb92a49cd773f459c398b1886bd9d9dcf4d4b9b1e636935e911c"
+    },
+    "authHttp": "not_run",
+    "httpLoad": "not_requested",
+    "browser": "not_run",
+    "egressGuard": "pass (external net.connect, direct Socket.connect, UDP, and child processes denied in preflight)",
+    "cleanup": "pass"
+  },
+  "failures": [
+    "registration contract failed with HTTP 500"
+  ],
+  "observations": [],
+  "untested": [
+    "authenticated business journeys beyond login/session/logout, project CRUD, preferences persistence, workspace ownership/list rendering, and press-kit form/publish/cache/unpublish checks",
+    "provider sandbox delivery, OAuth, webhooks, messaging, push, email, social posting, and DSP contracts",
+    "real-money payment, payout, refund, royalty, and financial reconciliation",
+    "production-source restore/upgrade/rollback and durable backup recovery",
+    "local MaxCore inference/model behavior (the only MaxCore implementation; intentionally not started in this bounded non-ML drill)",
+    "Redis/PDIM loss recovery, load/soak, multi-worker clustering, DNS/TLS, and packed cold-image startup"
+  ]
+}

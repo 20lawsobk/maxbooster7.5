@@ -1,47 +1,42 @@
 # Publishing build authorization
 
-## Active historical configuration
+## Active Replit publishing configuration
 
-At the user's request, publishing currently uses the unmodified August 26
-historical scripts against the current application:
+The tracked `.replit` file uses the package scripts as the single publishing
+entrypoint:
 
 ```
-build: bash build.sh
-run:   bash start.sh
+build: npm run deployment:build
+run:   npm run deployment:start
 ```
 
-**The historical build is destructive and has no disposable-root CLI guard.
-Never execute it in the working checkout.** It is configured for the publishing
-copy only. The newer script set is preserved under
-`tests/fixtures/deployment-versions/current/`; the historical originals are under
-`tests/fixtures/deployment-versions/historical/`.
+The build alias invokes the guarded bootstrap and sequential phase runner,
+prepares and verifies portable runtimes, packages capsules, and applies
+integrity and image-size gates. The runtime package script delegates to
+`bash start.sh`, which restores verified
+capsules before launching the application. Replit invokes build and run
+separately and in order; they must not be joined with `&&` or replaced with the
+ordinary unpacked-production scripts.
 
-The historical set has not been verified end-to-end with the current app.
-See that archive's README for comparison and switch-back instructions.
+**Packing is destructive to the publishing copy. Never execute the complete
+publishing build in the working checkout.** The historical and comparison
+script versions are archived under `tests/fixtures/deployment-versions/`.
 
-## Preserved newer flow (inactive)
+## Legacy recovery helper (not the Replit publish command)
 
-The newer command was:
+An older direct shell invocation is not accepted by the current `build.sh` and
+must not be used as a publication command:
 
 ```
 bash build.sh --publish-disposable-copy .
 ```
 
-**Destructive command: use only in the disposable publishing build copy. Never
-run this command in the working checkout.** It authorizes packing and physical
-removal of build inputs in the copy. The August 26 publishing scaffold now
-compiles the current application, prepares portable runtimes and the native
-sidecar, validates dependencies/model, and packs the runtime capsules.
-No `.prepared-release` is required.
+The legacy recovery helper still supports isolated disposable-copy fixtures:
 
-The shell entrypoint invokes the dependency-free recovery/authorization helper:
-
-```
 node script/lib/deploymentPackRecovery.mjs --publish-disposable-copy .
-```
 
-A local full-path test requires a separate
-disposable copy and verified scratch capacity first.
+Use it only from the dedicated fixture harness with a disposable copy and
+verified scratch capacity; it is not a second production deployment path.
 
 Replit documentation describes `REPLIT_DEPLOYMENT=1` on running published apps;
 it does not guarantee that indicator during build. Neither it nor
@@ -87,8 +82,9 @@ The entry-point fixture uses real npm, recovery, capsule packing and cleanup,
 with a tiny build script instead of the full application. It is not evidence
 of a successful full application build or publication.
 
-The wiring regression reads `deployment.build` directly from `.replit` and checks
-the build-free installer command. Separate installer fixtures exercise verified
+The wiring regression reads both deployment commands from `.replit`, verifies
+the direct build script and runtime npm-script delegate, and checks the
+build-free installer command. Separate installer fixtures exercise verified
 payload replacement and rejection before mutation. Packing regressions derive
 the preparation command from its real implementation and execute it only inside
 disposable fixtures. They verify one npm build per preparation invocation, the canonical root context, absent

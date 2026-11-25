@@ -73,12 +73,11 @@ export async function installPreparedRelease(
     for (const name of names.filter(name => name !== ".cache")) {
       fs.rmSync(path.join(root, name), { recursive: true, force: true });
     }
-    if (names.includes(".cache") || fs.existsSync(path.join(root, ".cache"))) {
-      fs.rmSync(path.join(root, ".cache"), { recursive: true, force: true });
-    }
     fs.cpSync(path.join(temporary, "payload"), root, { recursive: true, dereference: false });
     assertPublishingPayloadClean(root, policy);
-    assertInventory(manifest.payload, await inventory(root), "Installed artifacts");
+    const installed = await inventory(root, relative =>
+      relative !== ".cache" && !relative.startsWith(".cache/"));
+    assertInventory(manifest.payload, installed, "Installed artifacts");
     console.log(`[release] Verified release ${manifest.createdAt} installed; no application build or package installation ran.`);
   } finally {
     fs.rmSync(temporary, { recursive: true, force: true });

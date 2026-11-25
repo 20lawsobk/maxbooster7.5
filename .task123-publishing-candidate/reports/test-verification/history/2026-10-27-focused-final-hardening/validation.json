@@ -1,0 +1,624 @@
+{
+  "copiedArtifactCount": 112,
+  "bytes": 5691389,
+  "jsonParsed": 42,
+  "xmlParsed": 28,
+  "junitFiles": [
+    {
+      "path": "critical-coverage-vitest-final.xml",
+      "rootElement": "testsuites",
+      "reportedSuiteCounts": [
+        {
+          "name": "tests/coverage/hybrid-storage-live-repository.test.ts",
+          "timestamp": "2026-10-27T05:04:25.029Z",
+          "hostname": "2fc971e77ddd",
+          "tests": "8",
+          "failures": "0",
+          "errors": "0",
+          "skipped": "0",
+          "time": "2.648249719"
+        },
+        {
+          "name": "tests/coverage/social-media-jobs-live-repository.test.ts",
+          "timestamp": "2026-10-27T05:04:25.031Z",
+          "hostname": "2fc971e77ddd",
+          "tests": "16",
+          "failures": "0",
+          "errors": "0",
+          "skipped": "0",
+          "time": "0.919084727"
+        }
+      ],
+      "leafCases": 24,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    {
+      "path": "fabric-migration-canonical-unit.xml",
+      "rootElement": "testsuites",
+      "reportedSuiteCounts": [
+        {
+          "name": "tests/unit/pdim-canonical-owner.test.ts",
+          "timestamp": "2026-10-27T10:02:07.970Z",
+          "hostname": "2fc971e77ddd",
+          "tests": "7",
+          "failures": "0",
+          "errors": "0",
+          "skipped": "0",
+          "time": "0.046211089"
+        }
+      ],
+      "leafCases": 7,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    {
+      "path": "fabric-migration-final/node.xml",
+      "rootElement": "testsuites",
+      "reportedSuiteCounts": [
+        {
+          "name": "fabric migration journals recover physical I/O and accounting across process restarts",
+          "time": "11.562192",
+          "disabled": "0",
+          "errors": "0",
+          "tests": "12",
+          "failures": "0",
+          "skipped": "0",
+          "timestamp": "2026-10-27T10:07:39.880Z",
+          "hostname": "2fc971e77ddd"
+        }
+      ],
+      "leafCases": 15,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    {
+      "path": "fabric-migration-rotation-final/node.xml",
+      "rootElement": "testsuites",
+      "reportedSuiteCounts": [
+        {
+          "name": "fabric migration journals recover physical I/O and accounting across process restarts",
+          "time": "12.392393",
+          "disabled": "0",
+          "errors": "0",
+          "tests": "14",
+          "failures": "0",
+          "skipped": "0",
+          "timestamp": "2026-10-27T10:12:00.504Z",
+          "hostname": "2fc971e77ddd"
+        }
+      ],
+      "leafCases": 17,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    {
+      "path": "fabric-migration-rotation-final/unit.xml",
+      "rootElement": "testsuites",
+      "reportedSuiteCounts": [
+        {
+          "name": "tests/unit/pdim-canonical-owner.test.ts",
+          "timestamp": "2026-10-27T10:13:12.505Z",
+          "hostname": "2fc971e77ddd",
+          "tests": "7",
+          "failures": "0",
+          "errors": "0",
+          "skipped": "0",
+          "time": "0.061940666"
+        }
+      ],
+      "leafCases": 7,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    {
+      "path": "final-unit-contract-rechecks.xml",
+      "rootElement": "testsuites",
+      "reportedSuiteCounts": [
+        {
+          "name": "tests/unit/beat-audio-generation-owner.test.ts",
+          "timestamp": "2026-10-27T04:48:55.491Z",
+          "hostname": "2fc971e77ddd",
+          "tests": "7",
+          "failures": "0",
+          "errors": "0",
+          "skipped": "0",
+          "time": "1.501743265"
+        },
+        {
+          "name": "tests/unit/social-url-maxcore-contract.test.ts",
+          "timestamp": "2026-10-27T04:48:55.493Z",
+          "hostname": "2fc971e77ddd",
+          "tests": "11",
+          "failures": "0",
+          "errors": "0",
+          "skipped": "0",
+          "time": "0.453263253"
+        }
+      ],
+      "leafCases": 18,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    {
+      "path": "http-final-tightened/integration.junit.xml",
+      "rootElement": "testsuites",
+      "reportedSuiteCounts": [
+        {
+          "name": "tests/ai-analytics-integration.test.ts",
+          "timestamp": "2026-10-27T05:03:46.627Z",
+          "hostname": "2fc971e77ddd",
+          "tests": "14",
+          "failures": "0",
+          "errors": "0",
+          "skipped": "0",
+          "time": "1.633324546"
+        },
+        {
+          "name": "tests/critical-paths.test.ts",
+          "timestamp": "2026-10-27T05:03:46.661Z",
+          "hostname": "2fc971e77ddd",
+          "tests": "50",
+          "failures": "0",
+          "errors": "0",
+          "skipped": "3",
+          "time": "4.190002511"
+        }
+      ],
+      "leafCases": 64,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 3
+    },
+    {
+      "path": "hybrid-coverage-closure-final/node.xml",
+      "rootElement": "testsuites",
+      "reportedSuiteCounts": [
+        {
+          "name": "hybrid metadata is shared across independent services without lost updates",
+          "time": "3.402276",
+          "disabled": "0",
+          "errors": "0",
+          "tests": "22",
+          "failures": "0",
+          "skipped": "0",
+          "hostname": "2fc971e77ddd"
+        }
+      ],
+      "leafCases": 22,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    {
+      "path": "hybrid-coverage-closure-final/vitest.xml",
+      "rootElement": "testsuites",
+      "reportedSuiteCounts": [
+        {
+          "name": "tests/coverage/hybrid-storage-live-repository.test.ts",
+          "timestamp": "2026-10-27T09:56:09.083Z",
+          "hostname": "2fc971e77ddd",
+          "tests": "22",
+          "failures": "0",
+          "errors": "0",
+          "skipped": "0",
+          "time": "3.362080101"
+        },
+        {
+          "name": "tests/unit/hybrid-storage-index-recovery.test.ts",
+          "timestamp": "2026-10-27T09:56:09.089Z",
+          "hostname": "2fc971e77ddd",
+          "tests": "7",
+          "failures": "0",
+          "errors": "0",
+          "skipped": "0",
+          "time": "0.241077563"
+        }
+      ],
+      "leafCases": 29,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    {
+      "path": "master-integrity-recheck/results.xml",
+      "rootElement": "testsuites",
+      "reportedSuiteCounts": [
+        {
+          "name": "pytest",
+          "errors": "0",
+          "failures": "0",
+          "skipped": "0",
+          "tests": "12",
+          "time": "0.291",
+          "timestamp": "2026-10-27T09:55:58.275575+00:00",
+          "hostname": "2fc971e77ddd"
+        }
+      ],
+      "leafCases": 12,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    {
+      "path": "media-coverage-reviewed/node.txt",
+      "rootElement": "testsuites",
+      "reportedSuiteCounts": [
+        {
+          "name": "social media jobs share PostgreSQL status and fence interrupted render workers",
+          "time": "0.871727",
+          "disabled": "0",
+          "errors": "0",
+          "tests": "15",
+          "failures": "0",
+          "skipped": "0",
+          "hostname": "2fc971e77ddd"
+        },
+        {
+          "name": "scene validation releases actual owned staged uploads on every early 400 branch",
+          "time": "0.033504",
+          "disabled": "0",
+          "errors": "0",
+          "tests": "6",
+          "failures": "0",
+          "skipped": "0",
+          "hostname": "2fc971e77ddd"
+        }
+      ],
+      "leafCases": 21,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    {
+      "path": "media-coverage-reviewed/vitest.xml",
+      "rootElement": "testsuites",
+      "reportedSuiteCounts": [
+        {
+          "name": "tests/coverage/social-media-jobs-live-repository.test.ts",
+          "timestamp": "2026-10-27T09:53:37.884Z",
+          "hostname": "2fc971e77ddd",
+          "tests": "21",
+          "failures": "0",
+          "errors": "0",
+          "skipped": "0",
+          "time": "0.85026261"
+        }
+      ],
+      "leafCases": 21,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    {
+      "path": "public-social-contract-recheck/external__maxcore__artifacts__ai-training-server__ai_model__awareness__test_engine.xml",
+      "rootElement": "testsuites",
+      "reportedSuiteCounts": [
+        {
+          "name": "pytest",
+          "errors": "0",
+          "failures": "0",
+          "skipped": "0",
+          "tests": "26",
+          "time": "4.328",
+          "timestamp": "2026-10-27T04:54:28.011610+00:00",
+          "hostname": "2fc971e77ddd"
+        }
+      ],
+      "leafCases": 26,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    {
+      "path": "public-social-contract-recheck/external__maxcore__artifacts__ai-training-server__ai_model__awareness__test_sources.xml",
+      "rootElement": "testsuites",
+      "reportedSuiteCounts": [
+        {
+          "name": "pytest",
+          "errors": "0",
+          "failures": "0",
+          "skipped": "0",
+          "tests": "29",
+          "time": "0.181",
+          "timestamp": "2026-10-27T04:54:28.003841+00:00",
+          "hostname": "2fc971e77ddd"
+        }
+      ],
+      "leafCases": 20,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    {
+      "path": "release-scratch-filter/node.xml",
+      "rootElement": "testsuites",
+      "reportedSuiteCounts": [],
+      "leafCases": 2,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    {
+      "path": "release-scratch-filter/unit.xml",
+      "rootElement": "testsuites",
+      "reportedSuiteCounts": [
+        {
+          "name": "tests/unit/production-simulation-copy.test.ts",
+          "timestamp": "2026-10-27T09:54:48.728Z",
+          "hostname": "2fc971e77ddd",
+          "tests": "3",
+          "failures": "0",
+          "errors": "0",
+          "skipped": "0",
+          "time": "0.067631729"
+        }
+      ],
+      "leafCases": 3,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    {
+      "path": "security-alert-existing-unit.xml",
+      "rootElement": "testsuites",
+      "reportedSuiteCounts": [
+        {
+          "name": "tests/unit/selfHealingSecurityEngine.test.ts",
+          "timestamp": "2026-10-27T04:56:53.533Z",
+          "hostname": "2fc971e77ddd",
+          "tests": "29",
+          "failures": "0",
+          "errors": "0",
+          "skipped": "0",
+          "time": "0.104539261"
+        }
+      ],
+      "leafCases": 29,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    {
+      "path": "security-alert-recipients-postgres.xml",
+      "rootElement": "testsuites",
+      "reportedSuiteCounts": [
+        {
+          "name": "security alerts use real administrator recipients and retain honest delivery outcomes",
+          "time": "1.097953",
+          "disabled": "0",
+          "errors": "0",
+          "tests": "4",
+          "failures": "0",
+          "skipped": "0",
+          "hostname": "2fc971e77ddd"
+        }
+      ],
+      "leafCases": 4,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    {
+      "path": "security-coverage-baseline.xml",
+      "rootElement": "testsuites",
+      "reportedSuiteCounts": [
+        {
+          "name": "tests/unit/selfHealingSecurityEngine.test.ts",
+          "timestamp": "2026-10-27T09:53:02.754Z",
+          "hostname": "2fc971e77ddd",
+          "tests": "29",
+          "failures": "0",
+          "errors": "0",
+          "skipped": "0",
+          "time": "0.158753705"
+        }
+      ],
+      "leafCases": 29,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    {
+      "path": "security-coverage-closure.xml",
+      "rootElement": "testsuites",
+      "reportedSuiteCounts": [
+        {
+          "name": "tests/unit/selfHealingSecurityEngine.test.ts",
+          "timestamp": "2026-10-27T09:56:15.370Z",
+          "hostname": "2fc971e77ddd",
+          "tests": "46",
+          "failures": "0",
+          "errors": "0",
+          "skipped": "0",
+          "time": "1.4957425"
+        }
+      ],
+      "leafCases": 46,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    {
+      "path": "security-history-after.xml",
+      "rootElement": "testsuites",
+      "reportedSuiteCounts": [
+        {
+          "name": "tests/unit/selfHealingSecurityEngine.test.ts",
+          "timestamp": "2026-10-27T09:58:24.208Z",
+          "hostname": "2fc971e77ddd",
+          "tests": "47",
+          "failures": "0",
+          "errors": "0",
+          "skipped": "0",
+          "time": "1.598087598"
+        }
+      ],
+      "leafCases": 47,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    {
+      "path": "security-history-before.xml",
+      "rootElement": "testsuites",
+      "reportedSuiteCounts": [
+        {
+          "name": "tests/unit/selfHealingSecurityEngine.test.ts",
+          "timestamp": "2026-10-27T09:58:00.092Z",
+          "hostname": "2fc971e77ddd",
+          "tests": "47",
+          "failures": "1",
+          "errors": "0",
+          "skipped": "46",
+          "time": "0.0205138"
+        }
+      ],
+      "leafCases": 47,
+      "failures": 1,
+      "errors": 0,
+      "skipped": 46
+    },
+    {
+      "path": "studio-loader-after.xml",
+      "rootElement": "testsuites",
+      "reportedSuiteCounts": [
+        {
+          "name": "tests/unit/studio-loader-browser.test.ts",
+          "timestamp": "2026-10-27T09:56:38.939Z",
+          "hostname": "2fc971e77ddd",
+          "tests": "1",
+          "failures": "1",
+          "errors": "0",
+          "skipped": "0",
+          "time": "18.085195692"
+        }
+      ],
+      "leafCases": 1,
+      "failures": 1,
+      "errors": 0,
+      "skipped": 0
+    },
+    {
+      "path": "studio-loader-before.xml",
+      "rootElement": "testsuites",
+      "reportedSuiteCounts": [
+        {
+          "name": "tests/unit/studio-loader-browser.test.ts",
+          "timestamp": "2026-10-27T09:55:47.690Z",
+          "hostname": "2fc971e77ddd",
+          "tests": "1",
+          "failures": "1",
+          "errors": "0",
+          "skipped": "0",
+          "time": "25.108494738"
+        }
+      ],
+      "leafCases": 1,
+      "failures": 1,
+      "errors": 0,
+      "skipped": 0
+    },
+    {
+      "path": "studio-loader-final-valid.xml",
+      "rootElement": "testsuites",
+      "reportedSuiteCounts": [
+        {
+          "name": "tests/unit/studio-loader-browser.test.ts",
+          "timestamp": "2026-10-27T10:05:33.070Z",
+          "hostname": "2fc971e77ddd",
+          "tests": "1",
+          "failures": "1",
+          "errors": "0",
+          "skipped": "0",
+          "time": "43.870337445"
+        }
+      ],
+      "leafCases": 1,
+      "failures": 1,
+      "errors": 0,
+      "skipped": 0
+    },
+    {
+      "path": "studio-loader-instrumented-final.xml",
+      "rootElement": "testsuites",
+      "reportedSuiteCounts": [
+        {
+          "name": "tests/unit/studio-loader-browser.test.ts",
+          "timestamp": "2026-10-27T09:59:21.455Z",
+          "hostname": "2fc971e77ddd",
+          "tests": "1",
+          "failures": "1",
+          "errors": "0",
+          "skipped": "0",
+          "time": "0.876422849"
+        }
+      ],
+      "leafCases": 1,
+      "failures": 1,
+      "errors": 0,
+      "skipped": 0
+    },
+    {
+      "path": "studio-loader-instrumented.xml",
+      "rootElement": "testsuites",
+      "reportedSuiteCounts": [
+        {
+          "name": "tests/unit/studio-loader-browser.test.ts",
+          "timestamp": "2026-10-27T09:59:04.476Z",
+          "hostname": "2fc971e77ddd",
+          "tests": "1",
+          "failures": "1",
+          "errors": "0",
+          "skipped": "0",
+          "time": "29.427276257"
+        }
+      ],
+      "leafCases": 1,
+      "failures": 1,
+      "errors": 0,
+      "skipped": 0
+    },
+    {
+      "path": "studio-loader-node22-final.xml",
+      "rootElement": "testsuites",
+      "reportedSuiteCounts": [
+        {
+          "name": "tests/unit/studio-loader-browser.test.ts",
+          "timestamp": "2026-10-27T10:11:14.238Z",
+          "hostname": "2fc971e77ddd",
+          "tests": "1",
+          "failures": "0",
+          "errors": "0",
+          "skipped": "0",
+          "time": "59.609057111"
+        }
+      ],
+      "leafCases": 1,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    }
+  ],
+  "configuredSecretExactMatchCounts": {
+    "DATABASE_URL": 0,
+    "STRIPE_WEBHOOK_SECRET": 0,
+    "MAXCORE_ADMIN_KEY": 0,
+    "STRIPE_SECRET_KEY": 0,
+    "STRIPE_TEST_SECRET": 0,
+    "STRIPE_TEST_CLIENT": 0,
+    "SESSION_SECRET": 0
+  },
+  "patternMatchCounts": {
+    "provider_secret_key": 0,
+    "postgres_authority": 0,
+    "authorization_bearer": 0
+  },
+  "secretScanScope": "Only the explicitly named application/provider credential values present in this process and the listed credential patterns; no credential values recorded. Absence of a value is not claimed as proof about unknown credentials."
+}

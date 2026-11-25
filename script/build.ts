@@ -4,6 +4,8 @@ import fs from "fs";
 import path from "path";
 import { fileURLToPath } from "url";
 import { publishCapsule } from "./publish-capsules.js";
+import { precompressPublicAssets } from "./lib/precompress-public-assets.mjs";
+import { provisionPortablePython } from "./lib/provisionPortablePython.mjs";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const root = path.resolve(__dirname, "..");
@@ -46,6 +48,10 @@ async function main() {
   execSync("node node_modules/vite/bin/vite.js build", { cwd: root, stdio: "inherit" });
   console.log("   ✅ Vite build complete → dist/public/");
 
+  console.log("==> Precompressing immutable public assets...");
+  const compression = await precompressPublicAssets(root);
+  console.log(`   ✅ Verified ${compression.sourceFiles} source assets; wrote ${compression.filesWritten} variants`);
+
   console.log("==> Bundling all runtime entries (server, cluster, gateway, sizing, recovery)...");
   await buildServerBundles(root);
   writeBuildContract(root, inputs);
@@ -83,35 +89,13 @@ async function main() {
   // dist/pdim-restore.mjs already restores it and start.sh/pythonPath.ts
   // already prefer ./python_runtime/bin/python3.
   if (isDeployBuild) {
-    const pyDir = path.resolve(root, "python_runtime");
-    const pyBin = path.join(pyDir, "bin", "python3");
-    const PYVER = "3.12.13";
-    const PYDATE = "20260325";
-    const PYURL = `https://github.com/astral-sh/python-build-standalone/releases/download/${PYDATE}/cpython-${PYVER}%2B${PYDATE}-x86_64-unknown-linux-gnu-install_only.tar.gz`;
     try {
-      if (!fs.existsSync(pyBin)) {
-        console.log(`\n==> Downloading portable Python ${PYVER} (x86_64-linux-gnu)...`);
-        fs.mkdirSync(pyDir, { recursive: true });
-        execSync(
-          `set -o pipefail; curl -fSL --retry 2 --connect-timeout 15 --max-time 180 ${JSON.stringify(PYURL)} | tar xz --strip-components=1 -C ${JSON.stringify(pyDir)} python/`,
-          { cwd: root, stdio: "inherit", shell: "/bin/bash" },
-        );
-      }
-      execSync(`${JSON.stringify(pyBin)} --version`, { stdio: "inherit" });
-      console.log("   Installing Python deps (numpy, pillow, scipy, fastapi, uvicorn, pydantic)...");
-      execSync(
-        `${JSON.stringify(pyBin)} -I -B script/lib/installPortablePythonDependencies.py ${JSON.stringify(pyDir)}`,
-        { cwd: root, stdio: "inherit", shell: "/bin/bash" },
-      );
-      execSync(
-        `${JSON.stringify(pyBin)} -I -c "import numpy, PIL, scipy, fastapi, uvicorn, pydantic, urllib3, fsspec; assert tuple(map(int, urllib3.__version__.split('.'))) >= (2,8,0); assert tuple(map(int, fsspec.__version__.split('.'))) >= (2026,6,0)"`,
-        { stdio: "inherit", shell: "/bin/bash" },
-      );
-      console.log("   ✅ Portable Python runtime ready → python_runtime/");
+      provisionPortablePython(root);
     } catch (e) {
-      // Local MaxCore/Digital GPU is required. Do not silently package a
-      // degraded release, or delete an existing runtime after a failed install.
-      throw new Error("Required portable Python runtime provisioning failed; existing runtime preserved", { cause: e });
+      throw new Error(
+        "Required portable Python runtime provisioning failed; an existing runtime was preserved",
+        { cause: e },
+      );
     }
   }
 

@@ -8,8 +8,11 @@ import fs from "node:fs/promises";
 import path from "node:path";
 import crypto from "node:crypto";
 
-const NEON_URL = process.env.NEON_DATABASE_URL!;
-if (!NEON_URL) throw new Error("NEON_DATABASE_URL not set");
+const NEON_URL =
+  process.env.NEON_PRIMARY_URL ||
+  process.env.NEON_DATABASE_URL ||
+  process.env.DATABASE_URL;
+if (!NEON_URL) throw new Error("No application database URL configured");
 const sql = neon(NEON_URL);
 
 const MAXCORE_BASE = (

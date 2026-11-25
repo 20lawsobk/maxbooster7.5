@@ -1,0 +1,23 @@
+{
+  "at": "2026-10-28T13:27:12.526341+00:00",
+  "source": "e512441913599fd7f1a4f1e62f74e5da745e94df",
+  "scope": "Explicit early cancellation of owned master to fix duplicate Node-run evidence ambiguity; not a test assertion failure",
+  "masterPid": 208393,
+  "ownedPids": [
+    208393,
+    208773,
+    208803,
+    209216,
+    209224,
+    215621,
+    215642
+  ],
+  "ownedChildGroups": [
+    208773
+  ],
+  "remainingOwnedLivePids": [],
+  "scopeVerifiedExclusiveLiveMembers": true,
+  "initialCleanupRefusal": "First attempt stopped master and refused a group containing reparented zombies; no group was signalled before that refusal. Retry verified all LIVE members owned, ignoring terminated zombies.",
+  "currentStage": "root ci after passed build",
+  "completedFullMaster": false
+}

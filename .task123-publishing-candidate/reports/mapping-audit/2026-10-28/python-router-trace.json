@@ -1,0 +1,1781 @@
+{
+  "schemaVersion": 1,
+  "createdAt": "2026-10-28T12:09:41.116344+00:00",
+  "scope": "Read-only exact nineteen Python unknown-mount source traces; no imports/models/network or application mutations",
+  "sourceRevision": "a1603b13b6352a978e3877a2f43f1ccd98a98a18",
+  "sourceRegisterSha256": "bcbd296699404b04c4355247edbaede57a76ecd812f7667338f49f2655023618",
+  "platformSourceDigest": "7845665111f1ef5a5fcfe2850234c2901d03ef115b655554531f5e9344a14b20",
+  "productionReady": false,
+  "summary": {
+    "entries": 19,
+    "unconditionalSourceMounts": 13,
+    "conditionalSourceMounts": 6,
+    "behavioralChecksClosed": 0,
+    "affectedCurrentRegisterPageAssociations": 0
+  },
+  "sourceHashes": {
+    "external/maxcore/artifacts/ai-training-server/ai_model/analytics.py": "6e20ef9133b98c809f20d346f4062e86f38267cb19c53a70eec98f6a9ec4891e",
+    "external/maxcore/artifacts/ai-training-server/ai_model/director/api.py": "e8e521f2687494182b26d12ed923b38ad9d492f7e6fdaa8ab7acb5e296c58455",
+    "external/maxcore/artifacts/ai-training-server/ai_model/native_analysis/api.py": "f3dd08a61af873f2a1f676d607c6e0f6e347be61e1342c818536c35d513bf36d",
+    "external/maxcore/artifacts/ai-training-server/ai_model/training/live_learning.py": "9a4d3f49284502bdb07a0431a6670b834fed8fb8befe14afed3073a6cd3a68ab",
+    "external/maxcore/artifacts/ai-training-server/ai_model/training/media_learning.py": "6e6df9a614d15251798e7dac63e6ec3e92a3bc9737455213b730d656202ee359",
+    "external/maxcore/artifacts/ai-training-server/server.py": "9c892a5bdbc677c441a09964dd6a94c0b12b86731a3792f5367413732fce26b2",
+    "scripts/testing/platform-register.py": "25bf59e91f237d3f256d26bf046e6b3d42c43d3c67863bdb21c88f27f5b457d1"
+  },
+  "entries": [
+    {
+      "unknownIndex": 111,
+      "originalUnknownEntry": {
+        "kind": "unverified-route-mount",
+        "subjectId": "api-e8e4a036051eff3f",
+        "file": "external/maxcore/artifacts/ai-training-server/ai_model/analytics.py",
+        "line": 255,
+        "declaredPath": "/capability"
+      },
+      "backendSubjectId": "api-e8e4a036051eff3f",
+      "method": "GET",
+      "handler": "capability",
+      "handlerLine": 256,
+      "factory": "create_router",
+      "factoryLine": 252,
+      "declaredPath": "/capability",
+      "routerPrefix": "/api/analytics",
+      "includeRouterPrefix": "",
+      "staticallyResolvedPath": "/api/analytics/capability",
+      "canonicalProcess": "local MaxCore Python ASGI server: external/maxcore/artifacts/ai-training-server/server.py::app",
+      "status": "STATIC_FACTORY_MOUNT_TRACE",
+      "behaviorAcceptance": "UNVERIFIED",
+      "productionReady": false,
+      "rootCause": "The Python source scanner extracts decorator literals and APIRouter names but does not retain factory ownership, constructor prefix, imported factory alias, or canonical include_router edges. Its per-file declared-only row loses the mounted process and composed prefix.",
+      "mountConditional": false,
+      "availabilityCondition": "Canonical source unconditionally calls include_router with this factory; actual startup/import/dependency success remains a runtime prerequisite.",
+      "authSourceTrace": "require_scope(\"generate\") supplied to factory; router Depends(require_generation) and finite-number JSON dependency",
+      "sourceCitations": [
+        {
+          "file": "external/maxcore/artifacts/ai-training-server/ai_model/analytics.py",
+          "line": 255,
+          "endLine": 256,
+          "snippet": "    @router.get(\"/capability\")\n    def capability():"
+        },
+        {
+          "file": "external/maxcore/artifacts/ai-training-server/ai_model/analytics.py",
+          "line": 252,
+          "endLine": 257,
+          "snippet": "def create_router(require_generation: Callable, snapshot_getter: Callable[[], Any]) -> APIRouter:\n    router = APIRouter(prefix=\"/api/analytics\", dependencies=[Depends(require_generation), Depends(_finite_json)])\n\n    @router.get(\"/capability\")\n    def capability():\n        return {\"available\": True, \"capability\": \"account-analytics\", \"version\": 1, \"trainedModelRequired\": False,"
+        },
+        {
+          "file": "external/maxcore/artifacts/ai-training-server/ai_model/analytics.py",
+          "line": 253,
+          "endLine": 253,
+          "snippet": "    router = APIRouter(prefix=\"/api/analytics\", dependencies=[Depends(require_generation), Depends(_finite_json)])"
+        },
+        {
+          "file": "external/maxcore/artifacts/ai-training-server/server.py",
+          "line": 1244,
+          "endLine": 1244,
+          "snippet": "from ai_model.analytics import create_router as _account_analytics_router"
+        },
+        {
+          "file": "external/maxcore/artifacts/ai-training-server/server.py",
+          "line": 1250,
+          "endLine": 1250,
+          "snippet": "app.include_router(_account_analytics_router(require_scope(\"generate\"), _account_analytics_snapshot))"
+        },
+        {
+          "file": "scripts/testing/platform-register.py",
+          "line": 234,
+          "endLine": 251,
+          "snippet": "            for decorator in node.decorator_list:\n                if not isinstance(decorator, ast.Call) or not isinstance(decorator.func, ast.Attribute): continue\n                owner = decorator.func.value.id if isinstance(decorator.func.value, ast.Name) else \"unresolved\"\n                if owner not in owners: continue\n                method = decorator.func.attr\n                if method not in METHODS | {\"api_route\", \"route\", \"websocket\"}: continue\n                arg = decorator.args[0] if decorator.args else None\n                path = arg.value if isinstance(arg, ast.Constant) and isinstance(arg.value, str) else None\n                methods = [method.upper()] if method in METHODS else [\"WEBSOCKET\" if method == \"websocket\" else \"UNRESOLVED\"]\n                for keyword in decorator.keywords:\n                    if keyword.arg == \"methods\":\n                        try: methods = [str(item).upper() for item in ast.literal_eval(keyword.value)]\n                        except (ValueError, TypeError): pass\n                for verb in methods:\n                    rows.append({\"file\": file, \"line\": decorator.lineno, \"method\": verb, \"path\": path,\n                                 \"processScope\": \"python-declared:\" + file, \"confidence\": \"declared-only; mount prefix unverified\",\n                                 \"receiver\": owner, \"handler\": node.name, \"mountResolved\": owners[owner] in (\"FastAPI\", \"Flask\")})\n    return rows, unknown"
+        }
+      ],
+      "affectedCurrentRegisteredPageIds": [],
+      "affectedCurrentFrontendContractIds": [],
+      "pageImpactLimit": "No current page/frontend association is not proof of no consumers. These Python endpoints sit behind Node/MaxCore proxy and service calls; preserve the cross-process binding task when composing mounted paths.",
+      "requiredFix": "Extend bounded Python AST inventory to record APIRouter constructor prefixes and defining factory identity, resolve canonical imported factory aliases and include_router calls (including assigned router variables), compose route/router/include prefixes, and preserve try/None conditions instead of assuming runtime availability.",
+      "dependencies": [
+        "Exact imported-module resolution and factory return identity",
+        "APIRouter prefix and include_router prefix composition",
+        "Conditional mount metadata and process identity",
+        "Stable old-to-new subject/reference migration without losing a declaration",
+        "Owned FastAPI fixture proving exact methods/paths and declared auth failure behavior"
+      ],
+      "orderOfExecution": 4,
+      "risk": "P1 evidence/topology correctness; runtime feature behavior remains unverified",
+      "validationCriteria": [
+        "All nineteen exact declarations survive one-to-one with method and handler identity retained.",
+        "Constructor and include_router prefixes compose to this row's staticallyResolvedPath; no raw /predict, /image or /campaign is assigned as its final canonical route.",
+        "Import/factory/None/error conditions remain explicit and must be observed in an owned runtime fixture.",
+        "Current registered checks and page/contract references are remapped explicitly; source-trace correction never grants behavioral PASS."
+      ],
+      "productionAcceptanceCriteria": [
+        "A current-source canonical or tightly bounded real FastAPI fixture exposes the exact expected route method/path and rejects absent/wrong declared authorization without side effects.",
+        "Successful, invalid/oversized input, ownership, dependency failure and output/durability behavior satisfy every existing required check for this endpoint.",
+        "Separate deployed identity/startup/readiness and applicable provider or generation output acceptance remains required."
+      ],
+      "behaviorMeaning": "Source trace identifies declared routing only; actual capability/output/availability must be exercised in its owned fixture."
+    },
+    {
+      "unknownIndex": 112,
+      "originalUnknownEntry": {
+        "kind": "unverified-route-mount",
+        "subjectId": "api-a1f340f59332d78e",
+        "file": "external/maxcore/artifacts/ai-training-server/ai_model/analytics.py",
+        "line": 262,
+        "declaredPath": "/predict"
+      },
+      "backendSubjectId": "api-a1f340f59332d78e",
+      "method": "POST",
+      "handler": "prediction_endpoint",
+      "handlerLine": 263,
+      "factory": "create_router",
+      "factoryLine": 252,
+      "declaredPath": "/predict",
+      "routerPrefix": "/api/analytics",
+      "includeRouterPrefix": "",
+      "staticallyResolvedPath": "/api/analytics/predict",
+      "canonicalProcess": "local MaxCore Python ASGI server: external/maxcore/artifacts/ai-training-server/server.py::app",
+      "status": "STATIC_FACTORY_MOUNT_TRACE",
+      "behaviorAcceptance": "UNVERIFIED",
+      "productionReady": false,
+      "rootCause": "The Python source scanner extracts decorator literals and APIRouter names but does not retain factory ownership, constructor prefix, imported factory alias, or canonical include_router edges. Its per-file declared-only row loses the mounted process and composed prefix.",
+      "mountConditional": false,
+      "availabilityCondition": "Canonical source unconditionally calls include_router with this factory; actual startup/import/dependency success remains a runtime prerequisite.",
+      "authSourceTrace": "require_scope(\"generate\") supplied to factory; router Depends(require_generation) and finite-number JSON dependency",
+      "sourceCitations": [
+        {
+          "file": "external/maxcore/artifacts/ai-training-server/ai_model/analytics.py",
+          "line": 262,
+          "endLine": 263,
+          "snippet": "    @router.post(\"/predict\")\n    def prediction_endpoint(request: PredictionRequest):"
+        },
+        {
+          "file": "external/maxcore/artifacts/ai-training-server/ai_model/analytics.py",
+          "line": 252,
+          "endLine": 257,
+          "snippet": "def create_router(require_generation: Callable, snapshot_getter: Callable[[], Any]) -> APIRouter:\n    router = APIRouter(prefix=\"/api/analytics\", dependencies=[Depends(require_generation), Depends(_finite_json)])\n\n    @router.get(\"/capability\")\n    def capability():\n        return {\"available\": True, \"capability\": \"account-analytics\", \"version\": 1, \"trainedModelRequired\": False,"
+        },
+        {
+          "file": "external/maxcore/artifacts/ai-training-server/ai_model/analytics.py",
+          "line": 253,
+          "endLine": 253,
+          "snippet": "    router = APIRouter(prefix=\"/api/analytics\", dependencies=[Depends(require_generation), Depends(_finite_json)])"
+        },
+        {
+          "file": "external/maxcore/artifacts/ai-training-server/server.py",
+          "line": 1244,
+          "endLine": 1244,
+          "snippet": "from ai_model.analytics import create_router as _account_analytics_router"
+        },
+        {
+          "file": "external/maxcore/artifacts/ai-training-server/server.py",
+          "line": 1250,
+          "endLine": 1250,
+          "snippet": "app.include_router(_account_analytics_router(require_scope(\"generate\"), _account_analytics_snapshot))"
+        },
+        {
+          "file": "scripts/testing/platform-register.py",
+          "line": 234,
+          "endLine": 251,
+          "snippet": "            for decorator in node.decorator_list:\n                if not isinstance(decorator, ast.Call) or not isinstance(decorator.func, ast.Attribute): continue\n                owner = decorator.func.value.id if isinstance(decorator.func.value, ast.Name) else \"unresolved\"\n                if owner not in owners: continue\n                method = decorator.func.attr\n                if method not in METHODS | {\"api_route\", \"route\", \"websocket\"}: continue\n                arg = decorator.args[0] if decorator.args else None\n                path = arg.value if isinstance(arg, ast.Constant) and isinstance(arg.value, str) else None\n                methods = [method.upper()] if method in METHODS else [\"WEBSOCKET\" if method == \"websocket\" else \"UNRESOLVED\"]\n                for keyword in decorator.keywords:\n                    if keyword.arg == \"methods\":\n                        try: methods = [str(item).upper() for item in ast.literal_eval(keyword.value)]\n                        except (ValueError, TypeError): pass\n                for verb in methods:\n                    rows.append({\"file\": file, \"line\": decorator.lineno, \"method\": verb, \"path\": path,\n                                 \"processScope\": \"python-declared:\" + file, \"confidence\": \"declared-only; mount prefix unverified\",\n                                 \"receiver\": owner, \"handler\": node.name, \"mountResolved\": owners[owner] in (\"FastAPI\", \"Flask\")})\n    return rows, unknown"
+        }
+      ],
+      "affectedCurrentRegisteredPageIds": [],
+      "affectedCurrentFrontendContractIds": [],
+      "pageImpactLimit": "No current page/frontend association is not proof of no consumers. These Python endpoints sit behind Node/MaxCore proxy and service calls; preserve the cross-process binding task when composing mounted paths.",
+      "requiredFix": "Extend bounded Python AST inventory to record APIRouter constructor prefixes and defining factory identity, resolve canonical imported factory aliases and include_router calls (including assigned router variables), compose route/router/include prefixes, and preserve try/None conditions instead of assuming runtime availability.",
+      "dependencies": [
+        "Exact imported-module resolution and factory return identity",
+        "APIRouter prefix and include_router prefix composition",
+        "Conditional mount metadata and process identity",
+        "Stable old-to-new subject/reference migration without losing a declaration",
+        "Owned FastAPI fixture proving exact methods/paths and declared auth failure behavior"
+      ],
+      "orderOfExecution": 4,
+      "risk": "P1 evidence/topology correctness; runtime feature behavior remains unverified",
+      "validationCriteria": [
+        "All nineteen exact declarations survive one-to-one with method and handler identity retained.",
+        "Constructor and include_router prefixes compose to this row's staticallyResolvedPath; no raw /predict, /image or /campaign is assigned as its final canonical route.",
+        "Import/factory/None/error conditions remain explicit and must be observed in an owned runtime fixture.",
+        "Current registered checks and page/contract references are remapped explicitly; source-trace correction never grants behavioral PASS."
+      ],
+      "productionAcceptanceCriteria": [
+        "A current-source canonical or tightly bounded real FastAPI fixture exposes the exact expected route method/path and rejects absent/wrong declared authorization without side effects.",
+        "Successful, invalid/oversized input, ownership, dependency failure and output/durability behavior satisfy every existing required check for this endpoint.",
+        "Separate deployed identity/startup/readiness and applicable provider or generation output acceptance remains required."
+      ],
+      "behaviorMeaning": "Source trace identifies declared routing only; actual capability/output/availability must be exercised in its owned fixture."
+    },
+    {
+      "unknownIndex": 113,
+      "originalUnknownEntry": {
+        "kind": "unverified-route-mount",
+        "subjectId": "api-4f9324aca2b97b4b",
+        "file": "external/maxcore/artifacts/ai-training-server/ai_model/analytics.py",
+        "line": 266,
+        "declaredPath": "/insights"
+      },
+      "backendSubjectId": "api-4f9324aca2b97b4b",
+      "method": "POST",
+      "handler": "insights_endpoint",
+      "handlerLine": 267,
+      "factory": "create_router",
+      "factoryLine": 252,
+      "declaredPath": "/insights",
+      "routerPrefix": "/api/analytics",
+      "includeRouterPrefix": "",
+      "staticallyResolvedPath": "/api/analytics/insights",
+      "canonicalProcess": "local MaxCore Python ASGI server: external/maxcore/artifacts/ai-training-server/server.py::app",
+      "status": "STATIC_FACTORY_MOUNT_TRACE",
+      "behaviorAcceptance": "UNVERIFIED",
+      "productionReady": false,
+      "rootCause": "The Python source scanner extracts decorator literals and APIRouter names but does not retain factory ownership, constructor prefix, imported factory alias, or canonical include_router edges. Its per-file declared-only row loses the mounted process and composed prefix.",
+      "mountConditional": false,
+      "availabilityCondition": "Canonical source unconditionally calls include_router with this factory; actual startup/import/dependency success remains a runtime prerequisite.",
+      "authSourceTrace": "require_scope(\"generate\") supplied to factory; router Depends(require_generation) and finite-number JSON dependency",
+      "sourceCitations": [
+        {
+          "file": "external/maxcore/artifacts/ai-training-server/ai_model/analytics.py",
+          "line": 266,
+          "endLine": 267,
+          "snippet": "    @router.post(\"/insights\")\n    def insights_endpoint(request: InsightsRequest):"
+        },
+        {
+          "file": "external/maxcore/artifacts/ai-training-server/ai_model/analytics.py",
+          "line": 252,
+          "endLine": 257,
+          "snippet": "def create_router(require_generation: Callable, snapshot_getter: Callable[[], Any]) -> APIRouter:\n    router = APIRouter(prefix=\"/api/analytics\", dependencies=[Depends(require_generation), Depends(_finite_json)])\n\n    @router.get(\"/capability\")\n    def capability():\n        return {\"available\": True, \"capability\": \"account-analytics\", \"version\": 1, \"trainedModelRequired\": False,"
+        },
+        {
+          "file": "external/maxcore/artifacts/ai-training-server/ai_model/analytics.py",
+          "line": 253,
+          "endLine": 253,
+          "snippet": "    router = APIRouter(prefix=\"/api/analytics\", dependencies=[Depends(require_generation), Depends(_finite_json)])"
+        },
+        {
+          "file": "external/maxcore/artifacts/ai-training-server/server.py",
+          "line": 1244,
+          "endLine": 1244,
+          "snippet": "from ai_model.analytics import create_router as _account_analytics_router"
+        },
+        {
+          "file": "external/maxcore/artifacts/ai-training-server/server.py",
+          "line": 1250,
+          "endLine": 1250,
+          "snippet": "app.include_router(_account_analytics_router(require_scope(\"generate\"), _account_analytics_snapshot))"
+        },
+        {
+          "file": "scripts/testing/platform-register.py",
+          "line": 234,
+          "endLine": 251,
+          "snippet": "            for decorator in node.decorator_list:\n                if not isinstance(decorator, ast.Call) or not isinstance(decorator.func, ast.Attribute): continue\n                owner = decorator.func.value.id if isinstance(decorator.func.value, ast.Name) else \"unresolved\"\n                if owner not in owners: continue\n                method = decorator.func.attr\n                if method not in METHODS | {\"api_route\", \"route\", \"websocket\"}: continue\n                arg = decorator.args[0] if decorator.args else None\n                path = arg.value if isinstance(arg, ast.Constant) and isinstance(arg.value, str) else None\n                methods = [method.upper()] if method in METHODS else [\"WEBSOCKET\" if method == \"websocket\" else \"UNRESOLVED\"]\n                for keyword in decorator.keywords:\n                    if keyword.arg == \"methods\":\n                        try: methods = [str(item).upper() for item in ast.literal_eval(keyword.value)]\n                        except (ValueError, TypeError): pass\n                for verb in methods:\n                    rows.append({\"file\": file, \"line\": decorator.lineno, \"method\": verb, \"path\": path,\n                                 \"processScope\": \"python-declared:\" + file, \"confidence\": \"declared-only; mount prefix unverified\",\n                                 \"receiver\": owner, \"handler\": node.name, \"mountResolved\": owners[owner] in (\"FastAPI\", \"Flask\")})\n    return rows, unknown"
+        }
+      ],
+      "affectedCurrentRegisteredPageIds": [],
+      "affectedCurrentFrontendContractIds": [],
+      "pageImpactLimit": "No current page/frontend association is not proof of no consumers. These Python endpoints sit behind Node/MaxCore proxy and service calls; preserve the cross-process binding task when composing mounted paths.",
+      "requiredFix": "Extend bounded Python AST inventory to record APIRouter constructor prefixes and defining factory identity, resolve canonical imported factory aliases and include_router calls (including assigned router variables), compose route/router/include prefixes, and preserve try/None conditions instead of assuming runtime availability.",
+      "dependencies": [
+        "Exact imported-module resolution and factory return identity",
+        "APIRouter prefix and include_router prefix composition",
+        "Conditional mount metadata and process identity",
+        "Stable old-to-new subject/reference migration without losing a declaration",
+        "Owned FastAPI fixture proving exact methods/paths and declared auth failure behavior"
+      ],
+      "orderOfExecution": 4,
+      "risk": "P1 evidence/topology correctness; runtime feature behavior remains unverified",
+      "validationCriteria": [
+        "All nineteen exact declarations survive one-to-one with method and handler identity retained.",
+        "Constructor and include_router prefixes compose to this row's staticallyResolvedPath; no raw /predict, /image or /campaign is assigned as its final canonical route.",
+        "Import/factory/None/error conditions remain explicit and must be observed in an owned runtime fixture.",
+        "Current registered checks and page/contract references are remapped explicitly; source-trace correction never grants behavioral PASS."
+      ],
+      "productionAcceptanceCriteria": [
+        "A current-source canonical or tightly bounded real FastAPI fixture exposes the exact expected route method/path and rejects absent/wrong declared authorization without side effects.",
+        "Successful, invalid/oversized input, ownership, dependency failure and output/durability behavior satisfy every existing required check for this endpoint.",
+        "Separate deployed identity/startup/readiness and applicable provider or generation output acceptance remains required."
+      ],
+      "behaviorMeaning": "Source trace identifies declared routing only; actual capability/output/availability must be exercised in its owned fixture."
+    },
+    {
+      "unknownIndex": 114,
+      "originalUnknownEntry": {
+        "kind": "unverified-route-mount",
+        "subjectId": "api-9299cfd1c947a1a4",
+        "file": "external/maxcore/artifacts/ai-training-server/ai_model/director/api.py",
+        "line": 174,
+        "declaredPath": "/campaign"
+      },
+      "backendSubjectId": "api-9299cfd1c947a1a4",
+      "method": "POST",
+      "handler": "run_campaign",
+      "handlerLine": 175,
+      "factory": "create_director_router",
+      "factoryLine": 152,
+      "declaredPath": "/campaign",
+      "routerPrefix": "",
+      "includeRouterPrefix": "/api/director",
+      "staticallyResolvedPath": "/api/director/campaign",
+      "canonicalProcess": "local MaxCore Python ASGI server: external/maxcore/artifacts/ai-training-server/server.py::app",
+      "status": "STATIC_CONDITIONAL_FACTORY_MOUNT_TRACE",
+      "behaviorAcceptance": "UNVERIFIED",
+      "productionReady": false,
+      "rootCause": "The Python source scanner extracts decorator literals and APIRouter names but does not retain factory ownership, constructor prefix, imported factory alias, or canonical include_router edges. Its per-file declared-only row loses the mounted process and composed prefix.",
+      "mountConditional": true,
+      "availabilityCondition": "Director import and factory construction must succeed; factory returns None if FastAPI unavailable; canonical server catches construction exceptions and can omit the entire director router.",
+      "authSourceTrace": "require_scope(\"generate\") supplied to factory and endpoint _check_auth dependency; rate limiter also applies",
+      "sourceCitations": [
+        {
+          "file": "external/maxcore/artifacts/ai-training-server/ai_model/director/api.py",
+          "line": 174,
+          "endLine": 175,
+          "snippet": "    @router.post(\"/campaign\", response_model=CampaignResponse)\n    async def run_campaign("
+        },
+        {
+          "file": "external/maxcore/artifacts/ai-training-server/ai_model/director/api.py",
+          "line": 152,
+          "endLine": 157,
+          "snippet": "def create_director_router(auth_dependency: Optional[Callable] = None):\n    \"\"\"Create the Director router with auth and rate limiting.\n\n    auth_dependency: e.g. require_scope(\"generate\") from server.py.\n    If None, endpoints are unauthenticated (dev only).\n    \"\"\""
+        },
+        {
+          "file": "external/maxcore/artifacts/ai-training-server/ai_model/director/api.py",
+          "line": 161,
+          "endLine": 161,
+          "snippet": "    router = APIRouter(tags=[\"director\"])"
+        },
+        {
+          "file": "external/maxcore/artifacts/ai-training-server/server.py",
+          "line": 1254,
+          "endLine": 1261,
+          "snippet": "try:\n    from ai_model.director.api import create_director_router\n    _director_router = create_director_router(require_scope(\"generate\"))\n    if _director_router is not None:\n        app.include_router(_director_router, prefix=\"/api/director\")\n        print(\"[Server] Director API mounted at /api/director\")\nexcept Exception as e:\n    print(f\"[Server] Director API not mounted: {e}\")"
+        },
+        {
+          "file": "external/maxcore/artifacts/ai-training-server/ai_model/director/api.py",
+          "line": 152,
+          "endLine": 161,
+          "snippet": "def create_director_router(auth_dependency: Optional[Callable] = None):\n    \"\"\"Create the Director router with auth and rate limiting.\n\n    auth_dependency: e.g. require_scope(\"generate\") from server.py.\n    If None, endpoints are unauthenticated (dev only).\n    \"\"\"\n    if not _HAS_FASTAPI:\n        return None\n\n    router = APIRouter(tags=[\"director\"])"
+        },
+        {
+          "file": "scripts/testing/platform-register.py",
+          "line": 234,
+          "endLine": 251,
+          "snippet": "            for decorator in node.decorator_list:\n                if not isinstance(decorator, ast.Call) or not isinstance(decorator.func, ast.Attribute): continue\n                owner = decorator.func.value.id if isinstance(decorator.func.value, ast.Name) else \"unresolved\"\n                if owner not in owners: continue\n                method = decorator.func.attr\n                if method not in METHODS | {\"api_route\", \"route\", \"websocket\"}: continue\n                arg = decorator.args[0] if decorator.args else None\n                path = arg.value if isinstance(arg, ast.Constant) and isinstance(arg.value, str) else None\n                methods = [method.upper()] if method in METHODS else [\"WEBSOCKET\" if method == \"websocket\" else \"UNRESOLVED\"]\n                for keyword in decorator.keywords:\n                    if keyword.arg == \"methods\":\n                        try: methods = [str(item).upper() for item in ast.literal_eval(keyword.value)]\n                        except (ValueError, TypeError): pass\n                for verb in methods:\n                    rows.append({\"file\": file, \"line\": decorator.lineno, \"method\": verb, \"path\": path,\n                                 \"processScope\": \"python-declared:\" + file, \"confidence\": \"declared-only; mount prefix unverified\",\n                                 \"receiver\": owner, \"handler\": node.name, \"mountResolved\": owners[owner] in (\"FastAPI\", \"Flask\")})\n    return rows, unknown"
+        }
+      ],
+      "affectedCurrentRegisteredPageIds": [],
+      "affectedCurrentFrontendContractIds": [],
+      "pageImpactLimit": "No current page/frontend association is not proof of no consumers. These Python endpoints sit behind Node/MaxCore proxy and service calls; preserve the cross-process binding task when composing mounted paths.",
+      "requiredFix": "Extend bounded Python AST inventory to record APIRouter constructor prefixes and defining factory identity, resolve canonical imported factory aliases and include_router calls (including assigned router variables), compose route/router/include prefixes, and preserve try/None conditions instead of assuming runtime availability.",
+      "dependencies": [
+        "Exact imported-module resolution and factory return identity",
+        "APIRouter prefix and include_router prefix composition",
+        "Conditional mount metadata and process identity",
+        "Stable old-to-new subject/reference migration without losing a declaration",
+        "Owned FastAPI fixture proving exact methods/paths and declared auth failure behavior"
+      ],
+      "orderOfExecution": 4,
+      "risk": "P1 evidence/topology correctness; runtime feature behavior remains unverified",
+      "validationCriteria": [
+        "All nineteen exact declarations survive one-to-one with method and handler identity retained.",
+        "Constructor and include_router prefixes compose to this row's staticallyResolvedPath; no raw /predict, /image or /campaign is assigned as its final canonical route.",
+        "Import/factory/None/error conditions remain explicit and must be observed in an owned runtime fixture.",
+        "Current registered checks and page/contract references are remapped explicitly; source-trace correction never grants behavioral PASS."
+      ],
+      "productionAcceptanceCriteria": [
+        "A current-source canonical or tightly bounded real FastAPI fixture exposes the exact expected route method/path and rejects absent/wrong declared authorization without side effects.",
+        "Successful, invalid/oversized input, ownership, dependency failure and output/durability behavior satisfy every existing required check for this endpoint.",
+        "Separate deployed identity/startup/readiness and applicable provider or generation output acceptance remains required."
+      ],
+      "behaviorMeaning": "Source trace identifies declared routing only; actual capability/output/availability must be exercised in its owned fixture."
+    },
+    {
+      "unknownIndex": 115,
+      "originalUnknownEntry": {
+        "kind": "unverified-route-mount",
+        "subjectId": "api-2f285e0c500f8b0f",
+        "file": "external/maxcore/artifacts/ai-training-server/ai_model/director/api.py",
+        "line": 222,
+        "declaredPath": "/feedback"
+      },
+      "backendSubjectId": "api-2f285e0c500f8b0f",
+      "method": "POST",
+      "handler": "submit_feedback",
+      "handlerLine": 223,
+      "factory": "create_director_router",
+      "factoryLine": 152,
+      "declaredPath": "/feedback",
+      "routerPrefix": "",
+      "includeRouterPrefix": "/api/director",
+      "staticallyResolvedPath": "/api/director/feedback",
+      "canonicalProcess": "local MaxCore Python ASGI server: external/maxcore/artifacts/ai-training-server/server.py::app",
+      "status": "STATIC_CONDITIONAL_FACTORY_MOUNT_TRACE",
+      "behaviorAcceptance": "UNVERIFIED",
+      "productionReady": false,
+      "rootCause": "The Python source scanner extracts decorator literals and APIRouter names but does not retain factory ownership, constructor prefix, imported factory alias, or canonical include_router edges. Its per-file declared-only row loses the mounted process and composed prefix.",
+      "mountConditional": true,
+      "availabilityCondition": "Director import and factory construction must succeed; factory returns None if FastAPI unavailable; canonical server catches construction exceptions and can omit the entire director router.",
+      "authSourceTrace": "require_scope(\"generate\") supplied to factory and endpoint _check_auth dependency; rate limiter also applies",
+      "sourceCitations": [
+        {
+          "file": "external/maxcore/artifacts/ai-training-server/ai_model/director/api.py",
+          "line": 222,
+          "endLine": 223,
+          "snippet": "    @router.post(\"/feedback\")\n    async def submit_feedback("
+        },
+        {
+          "file": "external/maxcore/artifacts/ai-training-server/ai_model/director/api.py",
+          "line": 152,
+          "endLine": 157,
+          "snippet": "def create_director_router(auth_dependency: Optional[Callable] = None):\n    \"\"\"Create the Director router with auth and rate limiting.\n\n    auth_dependency: e.g. require_scope(\"generate\") from server.py.\n    If None, endpoints are unauthenticated (dev only).\n    \"\"\""
+        },
+        {
+          "file": "external/maxcore/artifacts/ai-training-server/ai_model/director/api.py",
+          "line": 161,
+          "endLine": 161,
+          "snippet": "    router = APIRouter(tags=[\"director\"])"
+        },
+        {
+          "file": "external/maxcore/artifacts/ai-training-server/server.py",
+          "line": 1254,
+          "endLine": 1261,
+          "snippet": "try:\n    from ai_model.director.api import create_director_router\n    _director_router = create_director_router(require_scope(\"generate\"))\n    if _director_router is not None:\n        app.include_router(_director_router, prefix=\"/api/director\")\n        print(\"[Server] Director API mounted at /api/director\")\nexcept Exception as e:\n    print(f\"[Server] Director API not mounted: {e}\")"
+        },
+        {
+          "file": "external/maxcore/artifacts/ai-training-server/ai_model/director/api.py",
+          "line": 152,
+          "endLine": 161,
+          "snippet": "def create_director_router(auth_dependency: Optional[Callable] = None):\n    \"\"\"Create the Director router with auth and rate limiting.\n\n    auth_dependency: e.g. require_scope(\"generate\") from server.py.\n    If None, endpoints are unauthenticated (dev only).\n    \"\"\"\n    if not _HAS_FASTAPI:\n        return None\n\n    router = APIRouter(tags=[\"director\"])"
+        },
+        {
+          "file": "scripts/testing/platform-register.py",
+          "line": 234,
+          "endLine": 251,
+          "snippet": "            for decorator in node.decorator_list:\n                if not isinstance(decorator, ast.Call) or not isinstance(decorator.func, ast.Attribute): continue\n                owner = decorator.func.value.id if isinstance(decorator.func.value, ast.Name) else \"unresolved\"\n                if owner not in owners: continue\n                method = decorator.func.attr\n                if method not in METHODS | {\"api_route\", \"route\", \"websocket\"}: continue\n                arg = decorator.args[0] if decorator.args else None\n                path = arg.value if isinstance(arg, ast.Constant) and isinstance(arg.value, str) else None\n                methods = [method.upper()] if method in METHODS else [\"WEBSOCKET\" if method == \"websocket\" else \"UNRESOLVED\"]\n                for keyword in decorator.keywords:\n                    if keyword.arg == \"methods\":\n                        try: methods = [str(item).upper() for item in ast.literal_eval(keyword.value)]\n                        except (ValueError, TypeError): pass\n                for verb in methods:\n                    rows.append({\"file\": file, \"line\": decorator.lineno, \"method\": verb, \"path\": path,\n                                 \"processScope\": \"python-declared:\" + file, \"confidence\": \"declared-only; mount prefix unverified\",\n                                 \"receiver\": owner, \"handler\": node.name, \"mountResolved\": owners[owner] in (\"FastAPI\", \"Flask\")})\n    return rows, unknown"
+        }
+      ],
+      "affectedCurrentRegisteredPageIds": [],
+      "affectedCurrentFrontendContractIds": [],
+      "pageImpactLimit": "No current page/frontend association is not proof of no consumers. These Python endpoints sit behind Node/MaxCore proxy and service calls; preserve the cross-process binding task when composing mounted paths.",
+      "requiredFix": "Extend bounded Python AST inventory to record APIRouter constructor prefixes and defining factory identity, resolve canonical imported factory aliases and include_router calls (including assigned router variables), compose route/router/include prefixes, and preserve try/None conditions instead of assuming runtime availability.",
+      "dependencies": [
+        "Exact imported-module resolution and factory return identity",
+        "APIRouter prefix and include_router prefix composition",
+        "Conditional mount metadata and process identity",
+        "Stable old-to-new subject/reference migration without losing a declaration",
+        "Owned FastAPI fixture proving exact methods/paths and declared auth failure behavior"
+      ],
+      "orderOfExecution": 4,
+      "risk": "P1 evidence/topology correctness; runtime feature behavior remains unverified",
+      "validationCriteria": [
+        "All nineteen exact declarations survive one-to-one with method and handler identity retained.",
+        "Constructor and include_router prefixes compose to this row's staticallyResolvedPath; no raw /predict, /image or /campaign is assigned as its final canonical route.",
+        "Import/factory/None/error conditions remain explicit and must be observed in an owned runtime fixture.",
+        "Current registered checks and page/contract references are remapped explicitly; source-trace correction never grants behavioral PASS."
+      ],
+      "productionAcceptanceCriteria": [
+        "A current-source canonical or tightly bounded real FastAPI fixture exposes the exact expected route method/path and rejects absent/wrong declared authorization without side effects.",
+        "Successful, invalid/oversized input, ownership, dependency failure and output/durability behavior satisfy every existing required check for this endpoint.",
+        "Separate deployed identity/startup/readiness and applicable provider or generation output acceptance remains required."
+      ],
+      "behaviorMeaning": "Source trace identifies declared routing only; actual capability/output/availability must be exercised in its owned fixture."
+    },
+    {
+      "unknownIndex": 116,
+      "originalUnknownEntry": {
+        "kind": "unverified-route-mount",
+        "subjectId": "api-b0620d2505196b4d",
+        "file": "external/maxcore/artifacts/ai-training-server/ai_model/director/api.py",
+        "line": 248,
+        "declaredPath": "/platforms"
+      },
+      "backendSubjectId": "api-b0620d2505196b4d",
+      "method": "GET",
+      "handler": "list_platforms",
+      "handlerLine": 249,
+      "factory": "create_director_router",
+      "factoryLine": 152,
+      "declaredPath": "/platforms",
+      "routerPrefix": "",
+      "includeRouterPrefix": "/api/director",
+      "staticallyResolvedPath": "/api/director/platforms",
+      "canonicalProcess": "local MaxCore Python ASGI server: external/maxcore/artifacts/ai-training-server/server.py::app",
+      "status": "STATIC_CONDITIONAL_FACTORY_MOUNT_TRACE",
+      "behaviorAcceptance": "UNVERIFIED",
+      "productionReady": false,
+      "rootCause": "The Python source scanner extracts decorator literals and APIRouter names but does not retain factory ownership, constructor prefix, imported factory alias, or canonical include_router edges. Its per-file declared-only row loses the mounted process and composed prefix.",
+      "mountConditional": true,
+      "availabilityCondition": "Director import and factory construction must succeed; factory returns None if FastAPI unavailable; canonical server catches construction exceptions and can omit the entire director router.",
+      "authSourceTrace": "require_scope(\"generate\") supplied to factory and endpoint _check_auth dependency; rate limiter also applies",
+      "sourceCitations": [
+        {
+          "file": "external/maxcore/artifacts/ai-training-server/ai_model/director/api.py",
+          "line": 248,
+          "endLine": 249,
+          "snippet": "    @router.get(\"/platforms\")\n    async def list_platforms("
+        },
+        {
+          "file": "external/maxcore/artifacts/ai-training-server/ai_model/director/api.py",
+          "line": 152,
+          "endLine": 157,
+          "snippet": "def create_director_router(auth_dependency: Optional[Callable] = None):\n    \"\"\"Create the Director router with auth and rate limiting.\n\n    auth_dependency: e.g. require_scope(\"generate\") from server.py.\n    If None, endpoints are unauthenticated (dev only).\n    \"\"\""
+        },
+        {
+          "file": "external/maxcore/artifacts/ai-training-server/ai_model/director/api.py",
+          "line": 161,
+          "endLine": 161,
+          "snippet": "    router = APIRouter(tags=[\"director\"])"
+        },
+        {
+          "file": "external/maxcore/artifacts/ai-training-server/server.py",
+          "line": 1254,
+          "endLine": 1261,
+          "snippet": "try:\n    from ai_model.director.api import create_director_router\n    _director_router = create_director_router(require_scope(\"generate\"))\n    if _director_router is not None:\n        app.include_router(_director_router, prefix=\"/api/director\")\n        print(\"[Server] Director API mounted at /api/director\")\nexcept Exception as e:\n    print(f\"[Server] Director API not mounted: {e}\")"
+        },
+        {
+          "file": "external/maxcore/artifacts/ai-training-server/ai_model/director/api.py",
+          "line": 152,
+          "endLine": 161,
+          "snippet": "def create_director_router(auth_dependency: Optional[Callable] = None):\n    \"\"\"Create the Director router with auth and rate limiting.\n\n    auth_dependency: e.g. require_scope(\"generate\") from server.py.\n    If None, endpoints are unauthenticated (dev only).\n    \"\"\"\n    if not _HAS_FASTAPI:\n        return None\n\n    router = APIRouter(tags=[\"director\"])"
+        },
+        {
+          "file": "scripts/testing/platform-register.py",
+          "line": 234,
+          "endLine": 251,
+          "snippet": "            for decorator in node.decorator_list:\n                if not isinstance(decorator, ast.Call) or not isinstance(decorator.func, ast.Attribute): continue\n                owner = decorator.func.value.id if isinstance(decorator.func.value, ast.Name) else \"unresolved\"\n                if owner not in owners: continue\n                method = decorator.func.attr\n                if method not in METHODS | {\"api_route\", \"route\", \"websocket\"}: continue\n                arg = decorator.args[0] if decorator.args else None\n                path = arg.value if isinstance(arg, ast.Constant) and isinstance(arg.value, str) else None\n                methods = [method.upper()] if method in METHODS else [\"WEBSOCKET\" if method == \"websocket\" else \"UNRESOLVED\"]\n                for keyword in decorator.keywords:\n                    if keyword.arg == \"methods\":\n                        try: methods = [str(item).upper() for item in ast.literal_eval(keyword.value)]\n                        except (ValueError, TypeError): pass\n                for verb in methods:\n                    rows.append({\"file\": file, \"line\": decorator.lineno, \"method\": verb, \"path\": path,\n                                 \"processScope\": \"python-declared:\" + file, \"confidence\": \"declared-only; mount prefix unverified\",\n                                 \"receiver\": owner, \"handler\": node.name, \"mountResolved\": owners[owner] in (\"FastAPI\", \"Flask\")})\n    return rows, unknown"
+        }
+      ],
+      "affectedCurrentRegisteredPageIds": [],
+      "affectedCurrentFrontendContractIds": [],
+      "pageImpactLimit": "No current page/frontend association is not proof of no consumers. These Python endpoints sit behind Node/MaxCore proxy and service calls; preserve the cross-process binding task when composing mounted paths.",
+      "requiredFix": "Extend bounded Python AST inventory to record APIRouter constructor prefixes and defining factory identity, resolve canonical imported factory aliases and include_router calls (including assigned router variables), compose route/router/include prefixes, and preserve try/None conditions instead of assuming runtime availability.",
+      "dependencies": [
+        "Exact imported-module resolution and factory return identity",
+        "APIRouter prefix and include_router prefix composition",
+        "Conditional mount metadata and process identity",
+        "Stable old-to-new subject/reference migration without losing a declaration",
+        "Owned FastAPI fixture proving exact methods/paths and declared auth failure behavior"
+      ],
+      "orderOfExecution": 4,
+      "risk": "P1 evidence/topology correctness; runtime feature behavior remains unverified",
+      "validationCriteria": [
+        "All nineteen exact declarations survive one-to-one with method and handler identity retained.",
+        "Constructor and include_router prefixes compose to this row's staticallyResolvedPath; no raw /predict, /image or /campaign is assigned as its final canonical route.",
+        "Import/factory/None/error conditions remain explicit and must be observed in an owned runtime fixture.",
+        "Current registered checks and page/contract references are remapped explicitly; source-trace correction never grants behavioral PASS."
+      ],
+      "productionAcceptanceCriteria": [
+        "A current-source canonical or tightly bounded real FastAPI fixture exposes the exact expected route method/path and rejects absent/wrong declared authorization without side effects.",
+        "Successful, invalid/oversized input, ownership, dependency failure and output/durability behavior satisfy every existing required check for this endpoint.",
+        "Separate deployed identity/startup/readiness and applicable provider or generation output acceptance remains required."
+      ],
+      "behaviorMeaning": "Source trace identifies declared routing only; actual capability/output/availability must be exercised in its owned fixture."
+    },
+    {
+      "unknownIndex": 117,
+      "originalUnknownEntry": {
+        "kind": "unverified-route-mount",
+        "subjectId": "api-41570e3eb2bd2da3",
+        "file": "external/maxcore/artifacts/ai-training-server/ai_model/director/api.py",
+        "line": 260,
+        "declaredPath": "/config"
+      },
+      "backendSubjectId": "api-41570e3eb2bd2da3",
+      "method": "GET",
+      "handler": "get_config",
+      "handlerLine": 261,
+      "factory": "create_director_router",
+      "factoryLine": 152,
+      "declaredPath": "/config",
+      "routerPrefix": "",
+      "includeRouterPrefix": "/api/director",
+      "staticallyResolvedPath": "/api/director/config",
+      "canonicalProcess": "local MaxCore Python ASGI server: external/maxcore/artifacts/ai-training-server/server.py::app",
+      "status": "STATIC_CONDITIONAL_FACTORY_MOUNT_TRACE",
+      "behaviorAcceptance": "UNVERIFIED",
+      "productionReady": false,
+      "rootCause": "The Python source scanner extracts decorator literals and APIRouter names but does not retain factory ownership, constructor prefix, imported factory alias, or canonical include_router edges. Its per-file declared-only row loses the mounted process and composed prefix.",
+      "mountConditional": true,
+      "availabilityCondition": "Director import and factory construction must succeed; factory returns None if FastAPI unavailable; canonical server catches construction exceptions and can omit the entire director router.",
+      "authSourceTrace": "require_scope(\"generate\") supplied to factory and endpoint _check_auth dependency; rate limiter also applies",
+      "sourceCitations": [
+        {
+          "file": "external/maxcore/artifacts/ai-training-server/ai_model/director/api.py",
+          "line": 260,
+          "endLine": 261,
+          "snippet": "    @router.get(\"/config\")\n    async def get_config("
+        },
+        {
+          "file": "external/maxcore/artifacts/ai-training-server/ai_model/director/api.py",
+          "line": 152,
+          "endLine": 157,
+          "snippet": "def create_director_router(auth_dependency: Optional[Callable] = None):\n    \"\"\"Create the Director router with auth and rate limiting.\n\n    auth_dependency: e.g. require_scope(\"generate\") from server.py.\n    If None, endpoints are unauthenticated (dev only).\n    \"\"\""
+        },
+        {
+          "file": "external/maxcore/artifacts/ai-training-server/ai_model/director/api.py",
+          "line": 161,
+          "endLine": 161,
+          "snippet": "    router = APIRouter(tags=[\"director\"])"
+        },
+        {
+          "file": "external/maxcore/artifacts/ai-training-server/server.py",
+          "line": 1254,
+          "endLine": 1261,
+          "snippet": "try:\n    from ai_model.director.api import create_director_router\n    _director_router = create_director_router(require_scope(\"generate\"))\n    if _director_router is not None:\n        app.include_router(_director_router, prefix=\"/api/director\")\n        print(\"[Server] Director API mounted at /api/director\")\nexcept Exception as e:\n    print(f\"[Server] Director API not mounted: {e}\")"
+        },
+        {
+          "file": "external/maxcore/artifacts/ai-training-server/ai_model/director/api.py",
+          "line": 152,
+          "endLine": 161,
+          "snippet": "def create_director_router(auth_dependency: Optional[Callable] = None):\n    \"\"\"Create the Director router with auth and rate limiting.\n\n    auth_dependency: e.g. require_scope(\"generate\") from server.py.\n    If None, endpoints are unauthenticated (dev only).\n    \"\"\"\n    if not _HAS_FASTAPI:\n        return None\n\n    router = APIRouter(tags=[\"director\"])"
+        },
+        {
+          "file": "scripts/testing/platform-register.py",
+          "line": 234,
+          "endLine": 251,
+          "snippet": "            for decorator in node.decorator_list:\n                if not isinstance(decorator, ast.Call) or not isinstance(decorator.func, ast.Attribute): continue\n                owner = decorator.func.value.id if isinstance(decorator.func.value, ast.Name) else \"unresolved\"\n                if owner not in owners: continue\n                method = decorator.func.attr\n                if method not in METHODS | {\"api_route\", \"route\", \"websocket\"}: continue\n                arg = decorator.args[0] if decorator.args else None\n                path = arg.value if isinstance(arg, ast.Constant) and isinstance(arg.value, str) else None\n                methods = [method.upper()] if method in METHODS else [\"WEBSOCKET\" if method == \"websocket\" else \"UNRESOLVED\"]\n                for keyword in decorator.keywords:\n                    if keyword.arg == \"methods\":\n                        try: methods = [str(item).upper() for item in ast.literal_eval(keyword.value)]\n                        except (ValueError, TypeError): pass\n                for verb in methods:\n                    rows.append({\"file\": file, \"line\": decorator.lineno, \"method\": verb, \"path\": path,\n                                 \"processScope\": \"python-declared:\" + file, \"confidence\": \"declared-only; mount prefix unverified\",\n                                 \"receiver\": owner, \"handler\": node.name, \"mountResolved\": owners[owner] in (\"FastAPI\", \"Flask\")})\n    return rows, unknown"
+        }
+      ],
+      "affectedCurrentRegisteredPageIds": [],
+      "affectedCurrentFrontendContractIds": [],
+      "pageImpactLimit": "No current page/frontend association is not proof of no consumers. These Python endpoints sit behind Node/MaxCore proxy and service calls; preserve the cross-process binding task when composing mounted paths.",
+      "requiredFix": "Extend bounded Python AST inventory to record APIRouter constructor prefixes and defining factory identity, resolve canonical imported factory aliases and include_router calls (including assigned router variables), compose route/router/include prefixes, and preserve try/None conditions instead of assuming runtime availability.",
+      "dependencies": [
+        "Exact imported-module resolution and factory return identity",
+        "APIRouter prefix and include_router prefix composition",
+        "Conditional mount metadata and process identity",
+        "Stable old-to-new subject/reference migration without losing a declaration",
+        "Owned FastAPI fixture proving exact methods/paths and declared auth failure behavior"
+      ],
+      "orderOfExecution": 4,
+      "risk": "P1 evidence/topology correctness; runtime feature behavior remains unverified",
+      "validationCriteria": [
+        "All nineteen exact declarations survive one-to-one with method and handler identity retained.",
+        "Constructor and include_router prefixes compose to this row's staticallyResolvedPath; no raw /predict, /image or /campaign is assigned as its final canonical route.",
+        "Import/factory/None/error conditions remain explicit and must be observed in an owned runtime fixture.",
+        "Current registered checks and page/contract references are remapped explicitly; source-trace correction never grants behavioral PASS."
+      ],
+      "productionAcceptanceCriteria": [
+        "A current-source canonical or tightly bounded real FastAPI fixture exposes the exact expected route method/path and rejects absent/wrong declared authorization without side effects.",
+        "Successful, invalid/oversized input, ownership, dependency failure and output/durability behavior satisfy every existing required check for this endpoint.",
+        "Separate deployed identity/startup/readiness and applicable provider or generation output acceptance remains required."
+      ],
+      "behaviorMeaning": "Source trace identifies declared routing only; actual capability/output/availability must be exercised in its owned fixture."
+    },
+    {
+      "unknownIndex": 118,
+      "originalUnknownEntry": {
+        "kind": "unverified-route-mount",
+        "subjectId": "api-f51c6acc6ec5dc3a",
+        "file": "external/maxcore/artifacts/ai-training-server/ai_model/director/api.py",
+        "line": 269,
+        "declaredPath": "/metrics"
+      },
+      "backendSubjectId": "api-f51c6acc6ec5dc3a",
+      "method": "GET",
+      "handler": "get_metrics",
+      "handlerLine": 270,
+      "factory": "create_director_router",
+      "factoryLine": 152,
+      "declaredPath": "/metrics",
+      "routerPrefix": "",
+      "includeRouterPrefix": "/api/director",
+      "staticallyResolvedPath": "/api/director/metrics",
+      "canonicalProcess": "local MaxCore Python ASGI server: external/maxcore/artifacts/ai-training-server/server.py::app",
+      "status": "STATIC_CONDITIONAL_FACTORY_MOUNT_TRACE",
+      "behaviorAcceptance": "UNVERIFIED",
+      "productionReady": false,
+      "rootCause": "The Python source scanner extracts decorator literals and APIRouter names but does not retain factory ownership, constructor prefix, imported factory alias, or canonical include_router edges. Its per-file declared-only row loses the mounted process and composed prefix.",
+      "mountConditional": true,
+      "availabilityCondition": "Director import and factory construction must succeed; factory returns None if FastAPI unavailable; canonical server catches construction exceptions and can omit the entire director router.",
+      "authSourceTrace": "require_scope(\"generate\") supplied to factory and endpoint _check_auth dependency; rate limiter also applies",
+      "sourceCitations": [
+        {
+          "file": "external/maxcore/artifacts/ai-training-server/ai_model/director/api.py",
+          "line": 269,
+          "endLine": 270,
+          "snippet": "    @router.get(\"/metrics\")\n    async def get_metrics("
+        },
+        {
+          "file": "external/maxcore/artifacts/ai-training-server/ai_model/director/api.py",
+          "line": 152,
+          "endLine": 157,
+          "snippet": "def create_director_router(auth_dependency: Optional[Callable] = None):\n    \"\"\"Create the Director router with auth and rate limiting.\n\n    auth_dependency: e.g. require_scope(\"generate\") from server.py.\n    If None, endpoints are unauthenticated (dev only).\n    \"\"\""
+        },
+        {
+          "file": "external/maxcore/artifacts/ai-training-server/ai_model/director/api.py",
+          "line": 161,
+          "endLine": 161,
+          "snippet": "    router = APIRouter(tags=[\"director\"])"
+        },
+        {
+          "file": "external/maxcore/artifacts/ai-training-server/server.py",
+          "line": 1254,
+          "endLine": 1261,
+          "snippet": "try:\n    from ai_model.director.api import create_director_router\n    _director_router = create_director_router(require_scope(\"generate\"))\n    if _director_router is not None:\n        app.include_router(_director_router, prefix=\"/api/director\")\n        print(\"[Server] Director API mounted at /api/director\")\nexcept Exception as e:\n    print(f\"[Server] Director API not mounted: {e}\")"
+        },
+        {
+          "file": "external/maxcore/artifacts/ai-training-server/ai_model/director/api.py",
+          "line": 152,
+          "endLine": 161,
+          "snippet": "def create_director_router(auth_dependency: Optional[Callable] = None):\n    \"\"\"Create the Director router with auth and rate limiting.\n\n    auth_dependency: e.g. require_scope(\"generate\") from server.py.\n    If None, endpoints are unauthenticated (dev only).\n    \"\"\"\n    if not _HAS_FASTAPI:\n        return None\n\n    router = APIRouter(tags=[\"director\"])"
+        },
+        {
+          "file": "scripts/testing/platform-register.py",
+          "line": 234,
+          "endLine": 251,
+          "snippet": "            for decorator in node.decorator_list:\n                if not isinstance(decorator, ast.Call) or not isinstance(decorator.func, ast.Attribute): continue\n                owner = decorator.func.value.id if isinstance(decorator.func.value, ast.Name) else \"unresolved\"\n                if owner not in owners: continue\n                method = decorator.func.attr\n                if method not in METHODS | {\"api_route\", \"route\", \"websocket\"}: continue\n                arg = decorator.args[0] if decorator.args else None\n                path = arg.value if isinstance(arg, ast.Constant) and isinstance(arg.value, str) else None\n                methods = [method.upper()] if method in METHODS else [\"WEBSOCKET\" if method == \"websocket\" else \"UNRESOLVED\"]\n                for keyword in decorator.keywords:\n                    if keyword.arg == \"methods\":\n                        try: methods = [str(item).upper() for item in ast.literal_eval(keyword.value)]\n                        except (ValueError, TypeError): pass\n                for verb in methods:\n                    rows.append({\"file\": file, \"line\": decorator.lineno, \"method\": verb, \"path\": path,\n                                 \"processScope\": \"python-declared:\" + file, \"confidence\": \"declared-only; mount prefix unverified\",\n                                 \"receiver\": owner, \"handler\": node.name, \"mountResolved\": owners[owner] in (\"FastAPI\", \"Flask\")})\n    return rows, unknown"
+        }
+      ],
+      "affectedCurrentRegisteredPageIds": [],
+      "affectedCurrentFrontendContractIds": [],
+      "pageImpactLimit": "No current page/frontend association is not proof of no consumers. These Python endpoints sit behind Node/MaxCore proxy and service calls; preserve the cross-process binding task when composing mounted paths.",
+      "requiredFix": "Extend bounded Python AST inventory to record APIRouter constructor prefixes and defining factory identity, resolve canonical imported factory aliases and include_router calls (including assigned router variables), compose route/router/include prefixes, and preserve try/None conditions instead of assuming runtime availability.",
+      "dependencies": [
+        "Exact imported-module resolution and factory return identity",
+        "APIRouter prefix and include_router prefix composition",
+        "Conditional mount metadata and process identity",
+        "Stable old-to-new subject/reference migration without losing a declaration",
+        "Owned FastAPI fixture proving exact methods/paths and declared auth failure behavior"
+      ],
+      "orderOfExecution": 4,
+      "risk": "P1 evidence/topology correctness; runtime feature behavior remains unverified",
+      "validationCriteria": [
+        "All nineteen exact declarations survive one-to-one with method and handler identity retained.",
+        "Constructor and include_router prefixes compose to this row's staticallyResolvedPath; no raw /predict, /image or /campaign is assigned as its final canonical route.",
+        "Import/factory/None/error conditions remain explicit and must be observed in an owned runtime fixture.",
+        "Current registered checks and page/contract references are remapped explicitly; source-trace correction never grants behavioral PASS."
+      ],
+      "productionAcceptanceCriteria": [
+        "A current-source canonical or tightly bounded real FastAPI fixture exposes the exact expected route method/path and rejects absent/wrong declared authorization without side effects.",
+        "Successful, invalid/oversized input, ownership, dependency failure and output/durability behavior satisfy every existing required check for this endpoint.",
+        "Separate deployed identity/startup/readiness and applicable provider or generation output acceptance remains required."
+      ],
+      "behaviorMeaning": "Source trace identifies declared routing only; actual capability/output/availability must be exercised in its owned fixture."
+    },
+    {
+      "unknownIndex": 119,
+      "originalUnknownEntry": {
+        "kind": "unverified-route-mount",
+        "subjectId": "api-9dfbb46d34147f13",
+        "file": "external/maxcore/artifacts/ai-training-server/ai_model/director/api.py",
+        "line": 278,
+        "declaredPath": "/metrics/prometheus"
+      },
+      "backendSubjectId": "api-9dfbb46d34147f13",
+      "method": "GET",
+      "handler": "get_metrics_prometheus",
+      "handlerLine": 279,
+      "factory": "create_director_router",
+      "factoryLine": 152,
+      "declaredPath": "/metrics/prometheus",
+      "routerPrefix": "",
+      "includeRouterPrefix": "/api/director",
+      "staticallyResolvedPath": "/api/director/metrics/prometheus",
+      "canonicalProcess": "local MaxCore Python ASGI server: external/maxcore/artifacts/ai-training-server/server.py::app",
+      "status": "STATIC_CONDITIONAL_FACTORY_MOUNT_TRACE",
+      "behaviorAcceptance": "UNVERIFIED",
+      "productionReady": false,
+      "rootCause": "The Python source scanner extracts decorator literals and APIRouter names but does not retain factory ownership, constructor prefix, imported factory alias, or canonical include_router edges. Its per-file declared-only row loses the mounted process and composed prefix.",
+      "mountConditional": true,
+      "availabilityCondition": "Director import and factory construction must succeed; factory returns None if FastAPI unavailable; canonical server catches construction exceptions and can omit the entire director router.",
+      "authSourceTrace": "require_scope(\"generate\") supplied to factory and endpoint _check_auth dependency; rate limiter also applies",
+      "sourceCitations": [
+        {
+          "file": "external/maxcore/artifacts/ai-training-server/ai_model/director/api.py",
+          "line": 278,
+          "endLine": 279,
+          "snippet": "    @router.get(\"/metrics/prometheus\")\n    async def get_metrics_prometheus("
+        },
+        {
+          "file": "external/maxcore/artifacts/ai-training-server/ai_model/director/api.py",
+          "line": 152,
+          "endLine": 157,
+          "snippet": "def create_director_router(auth_dependency: Optional[Callable] = None):\n    \"\"\"Create the Director router with auth and rate limiting.\n\n    auth_dependency: e.g. require_scope(\"generate\") from server.py.\n    If None, endpoints are unauthenticated (dev only).\n    \"\"\""
+        },
+        {
+          "file": "external/maxcore/artifacts/ai-training-server/ai_model/director/api.py",
+          "line": 161,
+          "endLine": 161,
+          "snippet": "    router = APIRouter(tags=[\"director\"])"
+        },
+        {
+          "file": "external/maxcore/artifacts/ai-training-server/server.py",
+          "line": 1254,
+          "endLine": 1261,
+          "snippet": "try:\n    from ai_model.director.api import create_director_router\n    _director_router = create_director_router(require_scope(\"generate\"))\n    if _director_router is not None:\n        app.include_router(_director_router, prefix=\"/api/director\")\n        print(\"[Server] Director API mounted at /api/director\")\nexcept Exception as e:\n    print(f\"[Server] Director API not mounted: {e}\")"
+        },
+        {
+          "file": "external/maxcore/artifacts/ai-training-server/ai_model/director/api.py",
+          "line": 152,
+          "endLine": 161,
+          "snippet": "def create_director_router(auth_dependency: Optional[Callable] = None):\n    \"\"\"Create the Director router with auth and rate limiting.\n\n    auth_dependency: e.g. require_scope(\"generate\") from server.py.\n    If None, endpoints are unauthenticated (dev only).\n    \"\"\"\n    if not _HAS_FASTAPI:\n        return None\n\n    router = APIRouter(tags=[\"director\"])"
+        },
+        {
+          "file": "scripts/testing/platform-register.py",
+          "line": 234,
+          "endLine": 251,
+          "snippet": "            for decorator in node.decorator_list:\n                if not isinstance(decorator, ast.Call) or not isinstance(decorator.func, ast.Attribute): continue\n                owner = decorator.func.value.id if isinstance(decorator.func.value, ast.Name) else \"unresolved\"\n                if owner not in owners: continue\n                method = decorator.func.attr\n                if method not in METHODS | {\"api_route\", \"route\", \"websocket\"}: continue\n                arg = decorator.args[0] if decorator.args else None\n                path = arg.value if isinstance(arg, ast.Constant) and isinstance(arg.value, str) else None\n                methods = [method.upper()] if method in METHODS else [\"WEBSOCKET\" if method == \"websocket\" else \"UNRESOLVED\"]\n                for keyword in decorator.keywords:\n                    if keyword.arg == \"methods\":\n                        try: methods = [str(item).upper() for item in ast.literal_eval(keyword.value)]\n                        except (ValueError, TypeError): pass\n                for verb in methods:\n                    rows.append({\"file\": file, \"line\": decorator.lineno, \"method\": verb, \"path\": path,\n                                 \"processScope\": \"python-declared:\" + file, \"confidence\": \"declared-only; mount prefix unverified\",\n                                 \"receiver\": owner, \"handler\": node.name, \"mountResolved\": owners[owner] in (\"FastAPI\", \"Flask\")})\n    return rows, unknown"
+        }
+      ],
+      "affectedCurrentRegisteredPageIds": [],
+      "affectedCurrentFrontendContractIds": [],
+      "pageImpactLimit": "No current page/frontend association is not proof of no consumers. These Python endpoints sit behind Node/MaxCore proxy and service calls; preserve the cross-process binding task when composing mounted paths.",
+      "requiredFix": "Extend bounded Python AST inventory to record APIRouter constructor prefixes and defining factory identity, resolve canonical imported factory aliases and include_router calls (including assigned router variables), compose route/router/include prefixes, and preserve try/None conditions instead of assuming runtime availability.",
+      "dependencies": [
+        "Exact imported-module resolution and factory return identity",
+        "APIRouter prefix and include_router prefix composition",
+        "Conditional mount metadata and process identity",
+        "Stable old-to-new subject/reference migration without losing a declaration",
+        "Owned FastAPI fixture proving exact methods/paths and declared auth failure behavior"
+      ],
+      "orderOfExecution": 4,
+      "risk": "P1 evidence/topology correctness; runtime feature behavior remains unverified",
+      "validationCriteria": [
+        "All nineteen exact declarations survive one-to-one with method and handler identity retained.",
+        "Constructor and include_router prefixes compose to this row's staticallyResolvedPath; no raw /predict, /image or /campaign is assigned as its final canonical route.",
+        "Import/factory/None/error conditions remain explicit and must be observed in an owned runtime fixture.",
+        "Current registered checks and page/contract references are remapped explicitly; source-trace correction never grants behavioral PASS."
+      ],
+      "productionAcceptanceCriteria": [
+        "A current-source canonical or tightly bounded real FastAPI fixture exposes the exact expected route method/path and rejects absent/wrong declared authorization without side effects.",
+        "Successful, invalid/oversized input, ownership, dependency failure and output/durability behavior satisfy every existing required check for this endpoint.",
+        "Separate deployed identity/startup/readiness and applicable provider or generation output acceptance remains required."
+      ],
+      "behaviorMeaning": "Source trace identifies declared routing only; actual capability/output/availability must be exercised in its owned fixture."
+    },
+    {
+      "unknownIndex": 120,
+      "originalUnknownEntry": {
+        "kind": "unverified-route-mount",
+        "subjectId": "api-42deb4116b2557e0",
+        "file": "external/maxcore/artifacts/ai-training-server/ai_model/native_analysis/api.py",
+        "line": 159,
+        "declaredPath": "/image"
+      },
+      "backendSubjectId": "api-42deb4116b2557e0",
+      "method": "POST",
+      "handler": "image",
+      "handlerLine": 160,
+      "factory": "create_analysis_router",
+      "factoryLine": 78,
+      "declaredPath": "/image",
+      "routerPrefix": "/api/analysis",
+      "includeRouterPrefix": "",
+      "staticallyResolvedPath": "/api/analysis/image",
+      "canonicalProcess": "local MaxCore Python ASGI server: external/maxcore/artifacts/ai-training-server/server.py::app",
+      "status": "STATIC_FACTORY_MOUNT_TRACE",
+      "behaviorAcceptance": "UNVERIFIED",
+      "productionReady": false,
+      "rootCause": "The Python source scanner extracts decorator literals and APIRouter names but does not retain factory ownership, constructor prefix, imported factory alias, or canonical include_router edges. Its per-file declared-only row loses the mounted process and composed prefix.",
+      "mountConditional": false,
+      "availabilityCondition": "Canonical source unconditionally calls include_router with this factory; actual startup/import/dependency success remains a runtime prerequisite.",
+      "authSourceTrace": "require_scope(\"generate\") supplied to factory and router Depends(require_generation); individual native analysis handlers require trusted gateway owner header",
+      "sourceCitations": [
+        {
+          "file": "external/maxcore/artifacts/ai-training-server/ai_model/native_analysis/api.py",
+          "line": 159,
+          "endLine": 160,
+          "snippet": "    @router.post(\"/image\")\n    async def image(payload: URLInput, owner: str = Depends(_owner)):"
+        },
+        {
+          "file": "external/maxcore/artifacts/ai-training-server/ai_model/native_analysis/api.py",
+          "line": 78,
+          "endLine": 83,
+          "snippet": "def create_analysis_router(\n    require_generation: Callable[..., Any],\n    uploads_root: str | Path,\n) -> APIRouter:\n    router = APIRouter(\n        prefix=\"/api/analysis\","
+        },
+        {
+          "file": "external/maxcore/artifacts/ai-training-server/ai_model/native_analysis/api.py",
+          "line": 82,
+          "endLine": 87,
+          "snippet": "    router = APIRouter(\n        prefix=\"/api/analysis\",\n        tags=[\"native-analysis\"],\n        dependencies=[Depends(require_generation)],\n    )\n    assets = AnalysisAssets(uploads_root)"
+        },
+        {
+          "file": "external/maxcore/artifacts/ai-training-server/server.py",
+          "line": 1239,
+          "endLine": 1239,
+          "snippet": "from ai_model.native_analysis.api import create_analysis_router"
+        },
+        {
+          "file": "external/maxcore/artifacts/ai-training-server/server.py",
+          "line": 1240,
+          "endLine": 1240,
+          "snippet": "app.include_router(create_analysis_router(require_scope(\"generate\"), _UPLOADS_PATH))"
+        },
+        {
+          "file": "scripts/testing/platform-register.py",
+          "line": 234,
+          "endLine": 251,
+          "snippet": "            for decorator in node.decorator_list:\n                if not isinstance(decorator, ast.Call) or not isinstance(decorator.func, ast.Attribute): continue\n                owner = decorator.func.value.id if isinstance(decorator.func.value, ast.Name) else \"unresolved\"\n                if owner not in owners: continue\n                method = decorator.func.attr\n                if method not in METHODS | {\"api_route\", \"route\", \"websocket\"}: continue\n                arg = decorator.args[0] if decorator.args else None\n                path = arg.value if isinstance(arg, ast.Constant) and isinstance(arg.value, str) else None\n                methods = [method.upper()] if method in METHODS else [\"WEBSOCKET\" if method == \"websocket\" else \"UNRESOLVED\"]\n                for keyword in decorator.keywords:\n                    if keyword.arg == \"methods\":\n                        try: methods = [str(item).upper() for item in ast.literal_eval(keyword.value)]\n                        except (ValueError, TypeError): pass\n                for verb in methods:\n                    rows.append({\"file\": file, \"line\": decorator.lineno, \"method\": verb, \"path\": path,\n                                 \"processScope\": \"python-declared:\" + file, \"confidence\": \"declared-only; mount prefix unverified\",\n                                 \"receiver\": owner, \"handler\": node.name, \"mountResolved\": owners[owner] in (\"FastAPI\", \"Flask\")})\n    return rows, unknown"
+        }
+      ],
+      "affectedCurrentRegisteredPageIds": [],
+      "affectedCurrentFrontendContractIds": [],
+      "pageImpactLimit": "No current page/frontend association is not proof of no consumers. These Python endpoints sit behind Node/MaxCore proxy and service calls; preserve the cross-process binding task when composing mounted paths.",
+      "requiredFix": "Extend bounded Python AST inventory to record APIRouter constructor prefixes and defining factory identity, resolve canonical imported factory aliases and include_router calls (including assigned router variables), compose route/router/include prefixes, and preserve try/None conditions instead of assuming runtime availability.",
+      "dependencies": [
+        "Exact imported-module resolution and factory return identity",
+        "APIRouter prefix and include_router prefix composition",
+        "Conditional mount metadata and process identity",
+        "Stable old-to-new subject/reference migration without losing a declaration",
+        "Owned FastAPI fixture proving exact methods/paths and declared auth failure behavior"
+      ],
+      "orderOfExecution": 4,
+      "risk": "P1 evidence/topology correctness; runtime feature behavior remains unverified",
+      "validationCriteria": [
+        "All nineteen exact declarations survive one-to-one with method and handler identity retained.",
+        "Constructor and include_router prefixes compose to this row's staticallyResolvedPath; no raw /predict, /image or /campaign is assigned as its final canonical route.",
+        "Import/factory/None/error conditions remain explicit and must be observed in an owned runtime fixture.",
+        "Current registered checks and page/contract references are remapped explicitly; source-trace correction never grants behavioral PASS."
+      ],
+      "productionAcceptanceCriteria": [
+        "A current-source canonical or tightly bounded real FastAPI fixture exposes the exact expected route method/path and rejects absent/wrong declared authorization without side effects.",
+        "Successful, invalid/oversized input, ownership, dependency failure and output/durability behavior satisfy every existing required check for this endpoint.",
+        "Separate deployed identity/startup/readiness and applicable provider or generation output acceptance remains required."
+      ],
+      "behaviorMeaning": "Source trace identifies declared routing only; actual capability/output/availability must be exercised in its owned fixture."
+    },
+    {
+      "unknownIndex": 121,
+      "originalUnknownEntry": {
+        "kind": "unverified-route-mount",
+        "subjectId": "api-5ff5f045652ab661",
+        "file": "external/maxcore/artifacts/ai-training-server/ai_model/native_analysis/api.py",
+        "line": 163,
+        "declaredPath": "/video"
+      },
+      "backendSubjectId": "api-5ff5f045652ab661",
+      "method": "POST",
+      "handler": "video",
+      "handlerLine": 164,
+      "factory": "create_analysis_router",
+      "factoryLine": 78,
+      "declaredPath": "/video",
+      "routerPrefix": "/api/analysis",
+      "includeRouterPrefix": "",
+      "staticallyResolvedPath": "/api/analysis/video",
+      "canonicalProcess": "local MaxCore Python ASGI server: external/maxcore/artifacts/ai-training-server/server.py::app",
+      "status": "STATIC_FACTORY_MOUNT_TRACE",
+      "behaviorAcceptance": "UNVERIFIED",
+      "productionReady": false,
+      "rootCause": "The Python source scanner extracts decorator literals and APIRouter names but does not retain factory ownership, constructor prefix, imported factory alias, or canonical include_router edges. Its per-file declared-only row loses the mounted process and composed prefix.",
+      "mountConditional": false,
+      "availabilityCondition": "Canonical source unconditionally calls include_router with this factory; actual startup/import/dependency success remains a runtime prerequisite.",
+      "authSourceTrace": "require_scope(\"generate\") supplied to factory and router Depends(require_generation); individual native analysis handlers require trusted gateway owner header",
+      "sourceCitations": [
+        {
+          "file": "external/maxcore/artifacts/ai-training-server/ai_model/native_analysis/api.py",
+          "line": 163,
+          "endLine": 164,
+          "snippet": "    @router.post(\"/video\")\n    async def video(payload: URLInput, owner: str = Depends(_owner)):"
+        },
+        {
+          "file": "external/maxcore/artifacts/ai-training-server/ai_model/native_analysis/api.py",
+          "line": 78,
+          "endLine": 83,
+          "snippet": "def create_analysis_router(\n    require_generation: Callable[..., Any],\n    uploads_root: str | Path,\n) -> APIRouter:\n    router = APIRouter(\n        prefix=\"/api/analysis\","
+        },
+        {
+          "file": "external/maxcore/artifacts/ai-training-server/ai_model/native_analysis/api.py",
+          "line": 82,
+          "endLine": 87,
+          "snippet": "    router = APIRouter(\n        prefix=\"/api/analysis\",\n        tags=[\"native-analysis\"],\n        dependencies=[Depends(require_generation)],\n    )\n    assets = AnalysisAssets(uploads_root)"
+        },
+        {
+          "file": "external/maxcore/artifacts/ai-training-server/server.py",
+          "line": 1239,
+          "endLine": 1239,
+          "snippet": "from ai_model.native_analysis.api import create_analysis_router"
+        },
+        {
+          "file": "external/maxcore/artifacts/ai-training-server/server.py",
+          "line": 1240,
+          "endLine": 1240,
+          "snippet": "app.include_router(create_analysis_router(require_scope(\"generate\"), _UPLOADS_PATH))"
+        },
+        {
+          "file": "scripts/testing/platform-register.py",
+          "line": 234,
+          "endLine": 251,
+          "snippet": "            for decorator in node.decorator_list:\n                if not isinstance(decorator, ast.Call) or not isinstance(decorator.func, ast.Attribute): continue\n                owner = decorator.func.value.id if isinstance(decorator.func.value, ast.Name) else \"unresolved\"\n                if owner not in owners: continue\n                method = decorator.func.attr\n                if method not in METHODS | {\"api_route\", \"route\", \"websocket\"}: continue\n                arg = decorator.args[0] if decorator.args else None\n                path = arg.value if isinstance(arg, ast.Constant) and isinstance(arg.value, str) else None\n                methods = [method.upper()] if method in METHODS else [\"WEBSOCKET\" if method == \"websocket\" else \"UNRESOLVED\"]\n                for keyword in decorator.keywords:\n                    if keyword.arg == \"methods\":\n                        try: methods = [str(item).upper() for item in ast.literal_eval(keyword.value)]\n                        except (ValueError, TypeError): pass\n                for verb in methods:\n                    rows.append({\"file\": file, \"line\": decorator.lineno, \"method\": verb, \"path\": path,\n                                 \"processScope\": \"python-declared:\" + file, \"confidence\": \"declared-only; mount prefix unverified\",\n                                 \"receiver\": owner, \"handler\": node.name, \"mountResolved\": owners[owner] in (\"FastAPI\", \"Flask\")})\n    return rows, unknown"
+        }
+      ],
+      "affectedCurrentRegisteredPageIds": [],
+      "affectedCurrentFrontendContractIds": [],
+      "pageImpactLimit": "No current page/frontend association is not proof of no consumers. These Python endpoints sit behind Node/MaxCore proxy and service calls; preserve the cross-process binding task when composing mounted paths.",
+      "requiredFix": "Extend bounded Python AST inventory to record APIRouter constructor prefixes and defining factory identity, resolve canonical imported factory aliases and include_router calls (including assigned router variables), compose route/router/include prefixes, and preserve try/None conditions instead of assuming runtime availability.",
+      "dependencies": [
+        "Exact imported-module resolution and factory return identity",
+        "APIRouter prefix and include_router prefix composition",
+        "Conditional mount metadata and process identity",
+        "Stable old-to-new subject/reference migration without losing a declaration",
+        "Owned FastAPI fixture proving exact methods/paths and declared auth failure behavior"
+      ],
+      "orderOfExecution": 4,
+      "risk": "P1 evidence/topology correctness; runtime feature behavior remains unverified",
+      "validationCriteria": [
+        "All nineteen exact declarations survive one-to-one with method and handler identity retained.",
+        "Constructor and include_router prefixes compose to this row's staticallyResolvedPath; no raw /predict, /image or /campaign is assigned as its final canonical route.",
+        "Import/factory/None/error conditions remain explicit and must be observed in an owned runtime fixture.",
+        "Current registered checks and page/contract references are remapped explicitly; source-trace correction never grants behavioral PASS."
+      ],
+      "productionAcceptanceCriteria": [
+        "A current-source canonical or tightly bounded real FastAPI fixture exposes the exact expected route method/path and rejects absent/wrong declared authorization without side effects.",
+        "Successful, invalid/oversized input, ownership, dependency failure and output/durability behavior satisfy every existing required check for this endpoint.",
+        "Separate deployed identity/startup/readiness and applicable provider or generation output acceptance remains required."
+      ],
+      "behaviorMeaning": "Source trace identifies declared routing only; actual capability/output/availability must be exercised in its owned fixture."
+    },
+    {
+      "unknownIndex": 122,
+      "originalUnknownEntry": {
+        "kind": "unverified-route-mount",
+        "subjectId": "api-6708a28c5a8d26c0",
+        "file": "external/maxcore/artifacts/ai-training-server/ai_model/native_analysis/api.py",
+        "line": 167,
+        "declaredPath": "/text"
+      },
+      "backendSubjectId": "api-6708a28c5a8d26c0",
+      "method": "POST",
+      "handler": "text",
+      "handlerLine": 168,
+      "factory": "create_analysis_router",
+      "factoryLine": 78,
+      "declaredPath": "/text",
+      "routerPrefix": "/api/analysis",
+      "includeRouterPrefix": "",
+      "staticallyResolvedPath": "/api/analysis/text",
+      "canonicalProcess": "local MaxCore Python ASGI server: external/maxcore/artifacts/ai-training-server/server.py::app",
+      "status": "STATIC_FACTORY_MOUNT_TRACE",
+      "behaviorAcceptance": "UNVERIFIED",
+      "productionReady": false,
+      "rootCause": "The Python source scanner extracts decorator literals and APIRouter names but does not retain factory ownership, constructor prefix, imported factory alias, or canonical include_router edges. Its per-file declared-only row loses the mounted process and composed prefix.",
+      "mountConditional": false,
+      "availabilityCondition": "Canonical source unconditionally calls include_router with this factory; actual startup/import/dependency success remains a runtime prerequisite.",
+      "authSourceTrace": "require_scope(\"generate\") supplied to factory and router Depends(require_generation); individual native analysis handlers require trusted gateway owner header",
+      "sourceCitations": [
+        {
+          "file": "external/maxcore/artifacts/ai-training-server/ai_model/native_analysis/api.py",
+          "line": 167,
+          "endLine": 168,
+          "snippet": "    @router.post(\"/text\")\n    async def text(payload: TextInput, _owner_id: str = Depends(_owner)):"
+        },
+        {
+          "file": "external/maxcore/artifacts/ai-training-server/ai_model/native_analysis/api.py",
+          "line": 78,
+          "endLine": 83,
+          "snippet": "def create_analysis_router(\n    require_generation: Callable[..., Any],\n    uploads_root: str | Path,\n) -> APIRouter:\n    router = APIRouter(\n        prefix=\"/api/analysis\","
+        },
+        {
+          "file": "external/maxcore/artifacts/ai-training-server/ai_model/native_analysis/api.py",
+          "line": 82,
+          "endLine": 87,
+          "snippet": "    router = APIRouter(\n        prefix=\"/api/analysis\",\n        tags=[\"native-analysis\"],\n        dependencies=[Depends(require_generation)],\n    )\n    assets = AnalysisAssets(uploads_root)"
+        },
+        {
+          "file": "external/maxcore/artifacts/ai-training-server/server.py",
+          "line": 1239,
+          "endLine": 1239,
+          "snippet": "from ai_model.native_analysis.api import create_analysis_router"
+        },
+        {
+          "file": "external/maxcore/artifacts/ai-training-server/server.py",
+          "line": 1240,
+          "endLine": 1240,
+          "snippet": "app.include_router(create_analysis_router(require_scope(\"generate\"), _UPLOADS_PATH))"
+        },
+        {
+          "file": "scripts/testing/platform-register.py",
+          "line": 234,
+          "endLine": 251,
+          "snippet": "            for decorator in node.decorator_list:\n                if not isinstance(decorator, ast.Call) or not isinstance(decorator.func, ast.Attribute): continue\n                owner = decorator.func.value.id if isinstance(decorator.func.value, ast.Name) else \"unresolved\"\n                if owner not in owners: continue\n                method = decorator.func.attr\n                if method not in METHODS | {\"api_route\", \"route\", \"websocket\"}: continue\n                arg = decorator.args[0] if decorator.args else None\n                path = arg.value if isinstance(arg, ast.Constant) and isinstance(arg.value, str) else None\n                methods = [method.upper()] if method in METHODS else [\"WEBSOCKET\" if method == \"websocket\" else \"UNRESOLVED\"]\n                for keyword in decorator.keywords:\n                    if keyword.arg == \"methods\":\n                        try: methods = [str(item).upper() for item in ast.literal_eval(keyword.value)]\n                        except (ValueError, TypeError): pass\n                for verb in methods:\n                    rows.append({\"file\": file, \"line\": decorator.lineno, \"method\": verb, \"path\": path,\n                                 \"processScope\": \"python-declared:\" + file, \"confidence\": \"declared-only; mount prefix unverified\",\n                                 \"receiver\": owner, \"handler\": node.name, \"mountResolved\": owners[owner] in (\"FastAPI\", \"Flask\")})\n    return rows, unknown"
+        }
+      ],
+      "affectedCurrentRegisteredPageIds": [],
+      "affectedCurrentFrontendContractIds": [],
+      "pageImpactLimit": "No current page/frontend association is not proof of no consumers. These Python endpoints sit behind Node/MaxCore proxy and service calls; preserve the cross-process binding task when composing mounted paths.",
+      "requiredFix": "Extend bounded Python AST inventory to record APIRouter constructor prefixes and defining factory identity, resolve canonical imported factory aliases and include_router calls (including assigned router variables), compose route/router/include prefixes, and preserve try/None conditions instead of assuming runtime availability.",
+      "dependencies": [
+        "Exact imported-module resolution and factory return identity",
+        "APIRouter prefix and include_router prefix composition",
+        "Conditional mount metadata and process identity",
+        "Stable old-to-new subject/reference migration without losing a declaration",
+        "Owned FastAPI fixture proving exact methods/paths and declared auth failure behavior"
+      ],
+      "orderOfExecution": 4,
+      "risk": "P1 evidence/topology correctness; runtime feature behavior remains unverified",
+      "validationCriteria": [
+        "All nineteen exact declarations survive one-to-one with method and handler identity retained.",
+        "Constructor and include_router prefixes compose to this row's staticallyResolvedPath; no raw /predict, /image or /campaign is assigned as its final canonical route.",
+        "Import/factory/None/error conditions remain explicit and must be observed in an owned runtime fixture.",
+        "Current registered checks and page/contract references are remapped explicitly; source-trace correction never grants behavioral PASS."
+      ],
+      "productionAcceptanceCriteria": [
+        "A current-source canonical or tightly bounded real FastAPI fixture exposes the exact expected route method/path and rejects absent/wrong declared authorization without side effects.",
+        "Successful, invalid/oversized input, ownership, dependency failure and output/durability behavior satisfy every existing required check for this endpoint.",
+        "Separate deployed identity/startup/readiness and applicable provider or generation output acceptance remains required."
+      ],
+      "behaviorMeaning": "Source trace identifies declared routing only; actual capability/output/availability must be exercised in its owned fixture."
+    },
+    {
+      "unknownIndex": 123,
+      "originalUnknownEntry": {
+        "kind": "unverified-route-mount",
+        "subjectId": "api-2c6445d266374190",
+        "file": "external/maxcore/artifacts/ai-training-server/ai_model/native_analysis/api.py",
+        "line": 178,
+        "declaredPath": "/website"
+      },
+      "backendSubjectId": "api-2c6445d266374190",
+      "method": "POST",
+      "handler": "website",
+      "handlerLine": 179,
+      "factory": "create_analysis_router",
+      "factoryLine": 78,
+      "declaredPath": "/website",
+      "routerPrefix": "/api/analysis",
+      "includeRouterPrefix": "",
+      "staticallyResolvedPath": "/api/analysis/website",
+      "canonicalProcess": "local MaxCore Python ASGI server: external/maxcore/artifacts/ai-training-server/server.py::app",
+      "status": "STATIC_FACTORY_MOUNT_TRACE",
+      "behaviorAcceptance": "UNVERIFIED",
+      "productionReady": false,
+      "rootCause": "The Python source scanner extracts decorator literals and APIRouter names but does not retain factory ownership, constructor prefix, imported factory alias, or canonical include_router edges. Its per-file declared-only row loses the mounted process and composed prefix.",
+      "mountConditional": false,
+      "availabilityCondition": "Canonical source unconditionally calls include_router with this factory; actual startup/import/dependency success remains a runtime prerequisite.",
+      "authSourceTrace": "require_scope(\"generate\") supplied to factory and router Depends(require_generation); individual native analysis handlers require trusted gateway owner header",
+      "sourceCitations": [
+        {
+          "file": "external/maxcore/artifacts/ai-training-server/ai_model/native_analysis/api.py",
+          "line": 178,
+          "endLine": 179,
+          "snippet": "    @router.post(\"/website\")\n    async def website(payload: URLInput, _owner_id: str = Depends(_owner)):"
+        },
+        {
+          "file": "external/maxcore/artifacts/ai-training-server/ai_model/native_analysis/api.py",
+          "line": 78,
+          "endLine": 83,
+          "snippet": "def create_analysis_router(\n    require_generation: Callable[..., Any],\n    uploads_root: str | Path,\n) -> APIRouter:\n    router = APIRouter(\n        prefix=\"/api/analysis\","
+        },
+        {
+          "file": "external/maxcore/artifacts/ai-training-server/ai_model/native_analysis/api.py",
+          "line": 82,
+          "endLine": 87,
+          "snippet": "    router = APIRouter(\n        prefix=\"/api/analysis\",\n        tags=[\"native-analysis\"],\n        dependencies=[Depends(require_generation)],\n    )\n    assets = AnalysisAssets(uploads_root)"
+        },
+        {
+          "file": "external/maxcore/artifacts/ai-training-server/server.py",
+          "line": 1239,
+          "endLine": 1239,
+          "snippet": "from ai_model.native_analysis.api import create_analysis_router"
+        },
+        {
+          "file": "external/maxcore/artifacts/ai-training-server/server.py",
+          "line": 1240,
+          "endLine": 1240,
+          "snippet": "app.include_router(create_analysis_router(require_scope(\"generate\"), _UPLOADS_PATH))"
+        },
+        {
+          "file": "scripts/testing/platform-register.py",
+          "line": 234,
+          "endLine": 251,
+          "snippet": "            for decorator in node.decorator_list:\n                if not isinstance(decorator, ast.Call) or not isinstance(decorator.func, ast.Attribute): continue\n                owner = decorator.func.value.id if isinstance(decorator.func.value, ast.Name) else \"unresolved\"\n                if owner not in owners: continue\n                method = decorator.func.attr\n                if method not in METHODS | {\"api_route\", \"route\", \"websocket\"}: continue\n                arg = decorator.args[0] if decorator.args else None\n                path = arg.value if isinstance(arg, ast.Constant) and isinstance(arg.value, str) else None\n                methods = [method.upper()] if method in METHODS else [\"WEBSOCKET\" if method == \"websocket\" else \"UNRESOLVED\"]\n                for keyword in decorator.keywords:\n                    if keyword.arg == \"methods\":\n                        try: methods = [str(item).upper() for item in ast.literal_eval(keyword.value)]\n                        except (ValueError, TypeError): pass\n                for verb in methods:\n                    rows.append({\"file\": file, \"line\": decorator.lineno, \"method\": verb, \"path\": path,\n                                 \"processScope\": \"python-declared:\" + file, \"confidence\": \"declared-only; mount prefix unverified\",\n                                 \"receiver\": owner, \"handler\": node.name, \"mountResolved\": owners[owner] in (\"FastAPI\", \"Flask\")})\n    return rows, unknown"
+        }
+      ],
+      "affectedCurrentRegisteredPageIds": [],
+      "affectedCurrentFrontendContractIds": [],
+      "pageImpactLimit": "No current page/frontend association is not proof of no consumers. These Python endpoints sit behind Node/MaxCore proxy and service calls; preserve the cross-process binding task when composing mounted paths.",
+      "requiredFix": "Extend bounded Python AST inventory to record APIRouter constructor prefixes and defining factory identity, resolve canonical imported factory aliases and include_router calls (including assigned router variables), compose route/router/include prefixes, and preserve try/None conditions instead of assuming runtime availability.",
+      "dependencies": [
+        "Exact imported-module resolution and factory return identity",
+        "APIRouter prefix and include_router prefix composition",
+        "Conditional mount metadata and process identity",
+        "Stable old-to-new subject/reference migration without losing a declaration",
+        "Owned FastAPI fixture proving exact methods/paths and declared auth failure behavior"
+      ],
+      "orderOfExecution": 4,
+      "risk": "P1 evidence/topology correctness; runtime feature behavior remains unverified",
+      "validationCriteria": [
+        "All nineteen exact declarations survive one-to-one with method and handler identity retained.",
+        "Constructor and include_router prefixes compose to this row's staticallyResolvedPath; no raw /predict, /image or /campaign is assigned as its final canonical route.",
+        "Import/factory/None/error conditions remain explicit and must be observed in an owned runtime fixture.",
+        "Current registered checks and page/contract references are remapped explicitly; source-trace correction never grants behavioral PASS."
+      ],
+      "productionAcceptanceCriteria": [
+        "A current-source canonical or tightly bounded real FastAPI fixture exposes the exact expected route method/path and rejects absent/wrong declared authorization without side effects.",
+        "Successful, invalid/oversized input, ownership, dependency failure and output/durability behavior satisfy every existing required check for this endpoint.",
+        "Separate deployed identity/startup/readiness and applicable provider or generation output acceptance remains required."
+      ],
+      "behaviorMeaning": "Source trace identifies declared routing only; actual capability/output/availability must be exercised in its owned fixture."
+    },
+    {
+      "unknownIndex": 124,
+      "originalUnknownEntry": {
+        "kind": "unverified-route-mount",
+        "subjectId": "api-8e623814d5812cf5",
+        "file": "external/maxcore/artifacts/ai-training-server/ai_model/native_analysis/api.py",
+        "line": 201,
+        "declaredPath": "/upload"
+      },
+      "backendSubjectId": "api-8e623814d5812cf5",
+      "method": "POST",
+      "handler": "upload",
+      "handlerLine": 202,
+      "factory": "create_analysis_router",
+      "factoryLine": 78,
+      "declaredPath": "/upload",
+      "routerPrefix": "/api/analysis",
+      "includeRouterPrefix": "",
+      "staticallyResolvedPath": "/api/analysis/upload",
+      "canonicalProcess": "local MaxCore Python ASGI server: external/maxcore/artifacts/ai-training-server/server.py::app",
+      "status": "STATIC_FACTORY_MOUNT_TRACE",
+      "behaviorAcceptance": "UNVERIFIED",
+      "productionReady": false,
+      "rootCause": "The Python source scanner extracts decorator literals and APIRouter names but does not retain factory ownership, constructor prefix, imported factory alias, or canonical include_router edges. Its per-file declared-only row loses the mounted process and composed prefix.",
+      "mountConditional": false,
+      "availabilityCondition": "Canonical source unconditionally calls include_router with this factory; actual startup/import/dependency success remains a runtime prerequisite.",
+      "authSourceTrace": "require_scope(\"generate\") supplied to factory and router Depends(require_generation); individual native analysis handlers require trusted gateway owner header",
+      "sourceCitations": [
+        {
+          "file": "external/maxcore/artifacts/ai-training-server/ai_model/native_analysis/api.py",
+          "line": 201,
+          "endLine": 202,
+          "snippet": "    @router.post(\"/upload\")\n    async def upload("
+        },
+        {
+          "file": "external/maxcore/artifacts/ai-training-server/ai_model/native_analysis/api.py",
+          "line": 78,
+          "endLine": 83,
+          "snippet": "def create_analysis_router(\n    require_generation: Callable[..., Any],\n    uploads_root: str | Path,\n) -> APIRouter:\n    router = APIRouter(\n        prefix=\"/api/analysis\","
+        },
+        {
+          "file": "external/maxcore/artifacts/ai-training-server/ai_model/native_analysis/api.py",
+          "line": 82,
+          "endLine": 87,
+          "snippet": "    router = APIRouter(\n        prefix=\"/api/analysis\",\n        tags=[\"native-analysis\"],\n        dependencies=[Depends(require_generation)],\n    )\n    assets = AnalysisAssets(uploads_root)"
+        },
+        {
+          "file": "external/maxcore/artifacts/ai-training-server/server.py",
+          "line": 1239,
+          "endLine": 1239,
+          "snippet": "from ai_model.native_analysis.api import create_analysis_router"
+        },
+        {
+          "file": "external/maxcore/artifacts/ai-training-server/server.py",
+          "line": 1240,
+          "endLine": 1240,
+          "snippet": "app.include_router(create_analysis_router(require_scope(\"generate\"), _UPLOADS_PATH))"
+        },
+        {
+          "file": "scripts/testing/platform-register.py",
+          "line": 234,
+          "endLine": 251,
+          "snippet": "            for decorator in node.decorator_list:\n                if not isinstance(decorator, ast.Call) or not isinstance(decorator.func, ast.Attribute): continue\n                owner = decorator.func.value.id if isinstance(decorator.func.value, ast.Name) else \"unresolved\"\n                if owner not in owners: continue\n                method = decorator.func.attr\n                if method not in METHODS | {\"api_route\", \"route\", \"websocket\"}: continue\n                arg = decorator.args[0] if decorator.args else None\n                path = arg.value if isinstance(arg, ast.Constant) and isinstance(arg.value, str) else None\n                methods = [method.upper()] if method in METHODS else [\"WEBSOCKET\" if method == \"websocket\" else \"UNRESOLVED\"]\n                for keyword in decorator.keywords:\n                    if keyword.arg == \"methods\":\n                        try: methods = [str(item).upper() for item in ast.literal_eval(keyword.value)]\n                        except (ValueError, TypeError): pass\n                for verb in methods:\n                    rows.append({\"file\": file, \"line\": decorator.lineno, \"method\": verb, \"path\": path,\n                                 \"processScope\": \"python-declared:\" + file, \"confidence\": \"declared-only; mount prefix unverified\",\n                                 \"receiver\": owner, \"handler\": node.name, \"mountResolved\": owners[owner] in (\"FastAPI\", \"Flask\")})\n    return rows, unknown"
+        }
+      ],
+      "affectedCurrentRegisteredPageIds": [],
+      "affectedCurrentFrontendContractIds": [],
+      "pageImpactLimit": "No current page/frontend association is not proof of no consumers. These Python endpoints sit behind Node/MaxCore proxy and service calls; preserve the cross-process binding task when composing mounted paths.",
+      "requiredFix": "Extend bounded Python AST inventory to record APIRouter constructor prefixes and defining factory identity, resolve canonical imported factory aliases and include_router calls (including assigned router variables), compose route/router/include prefixes, and preserve try/None conditions instead of assuming runtime availability.",
+      "dependencies": [
+        "Exact imported-module resolution and factory return identity",
+        "APIRouter prefix and include_router prefix composition",
+        "Conditional mount metadata and process identity",
+        "Stable old-to-new subject/reference migration without losing a declaration",
+        "Owned FastAPI fixture proving exact methods/paths and declared auth failure behavior"
+      ],
+      "orderOfExecution": 4,
+      "risk": "P1 evidence/topology correctness; runtime feature behavior remains unverified",
+      "validationCriteria": [
+        "All nineteen exact declarations survive one-to-one with method and handler identity retained.",
+        "Constructor and include_router prefixes compose to this row's staticallyResolvedPath; no raw /predict, /image or /campaign is assigned as its final canonical route.",
+        "Import/factory/None/error conditions remain explicit and must be observed in an owned runtime fixture.",
+        "Current registered checks and page/contract references are remapped explicitly; source-trace correction never grants behavioral PASS."
+      ],
+      "productionAcceptanceCriteria": [
+        "A current-source canonical or tightly bounded real FastAPI fixture exposes the exact expected route method/path and rejects absent/wrong declared authorization without side effects.",
+        "Successful, invalid/oversized input, ownership, dependency failure and output/durability behavior satisfy every existing required check for this endpoint.",
+        "Separate deployed identity/startup/readiness and applicable provider or generation output acceptance remains required."
+      ],
+      "behaviorMeaning": "Source trace identifies declared routing only; actual capability/output/availability must be exercised in its owned fixture."
+    },
+    {
+      "unknownIndex": 125,
+      "originalUnknownEntry": {
+        "kind": "unverified-route-mount",
+        "subjectId": "api-f0d401be967e7979",
+        "file": "external/maxcore/artifacts/ai-training-server/ai_model/training/live_learning.py",
+        "line": 535,
+        "declaredPath": "/api/training/candidates/live"
+      },
+      "backendSubjectId": "api-f0d401be967e7979",
+      "method": "GET",
+      "handler": "listing",
+      "handlerLine": 536,
+      "factory": "create_router",
+      "factoryLine": 519,
+      "declaredPath": "/api/training/candidates/live",
+      "routerPrefix": "",
+      "includeRouterPrefix": "",
+      "staticallyResolvedPath": "/api/training/candidates/live",
+      "canonicalProcess": "local MaxCore Python ASGI server: external/maxcore/artifacts/ai-training-server/server.py::app",
+      "status": "STATIC_FACTORY_MOUNT_TRACE",
+      "behaviorAcceptance": "UNVERIFIED",
+      "productionReady": false,
+      "rootCause": "The Python source scanner extracts decorator literals and APIRouter names but does not retain factory ownership, constructor prefix, imported factory alias, or canonical include_router edges. Its per-file declared-only row loses the mounted process and composed prefix.",
+      "mountConditional": false,
+      "availabilityCondition": "Canonical source unconditionally calls include_router with this factory; actual startup/import/dependency success remains a runtime prerequisite.",
+      "authSourceTrace": "verify_admin supplied to factory as authorize; individual handler Depends(authorize)",
+      "sourceCitations": [
+        {
+          "file": "external/maxcore/artifacts/ai-training-server/ai_model/training/live_learning.py",
+          "line": 535,
+          "endLine": 536,
+          "snippet": "    @router.get(\"/api/training/candidates/live\")\n    def listing(_admin=Depends(authorize)):"
+        },
+        {
+          "file": "external/maxcore/artifacts/ai-training-server/ai_model/training/live_learning.py",
+          "line": 519,
+          "endLine": 524,
+          "snippet": "def create_router(authorize, engine_factory, *, peak_content=True):\n    from fastapi import APIRouter, Depends\n    from fastapi.responses import JSONResponse\n    from pydantic import BaseModel, ConfigDict, Field\n    from ai_model.awareness.engine import AwarenessUnavailable\n"
+        },
+        {
+          "file": "external/maxcore/artifacts/ai-training-server/ai_model/training/live_learning.py",
+          "line": 529,
+          "endLine": 529,
+          "snippet": "    router = APIRouter()"
+        },
+        {
+          "file": "external/maxcore/artifacts/ai-training-server/server.py",
+          "line": 2614,
+          "endLine": 2614,
+          "snippet": "from ai_model.training.live_learning import create_router as _live_learning_router"
+        },
+        {
+          "file": "external/maxcore/artifacts/ai-training-server/server.py",
+          "line": 2616,
+          "endLine": 2616,
+          "snippet": "app.include_router(_live_learning_router(verify_admin, _live_learning_engine))"
+        },
+        {
+          "file": "scripts/testing/platform-register.py",
+          "line": 234,
+          "endLine": 251,
+          "snippet": "            for decorator in node.decorator_list:\n                if not isinstance(decorator, ast.Call) or not isinstance(decorator.func, ast.Attribute): continue\n                owner = decorator.func.value.id if isinstance(decorator.func.value, ast.Name) else \"unresolved\"\n                if owner not in owners: continue\n                method = decorator.func.attr\n                if method not in METHODS | {\"api_route\", \"route\", \"websocket\"}: continue\n                arg = decorator.args[0] if decorator.args else None\n                path = arg.value if isinstance(arg, ast.Constant) and isinstance(arg.value, str) else None\n                methods = [method.upper()] if method in METHODS else [\"WEBSOCKET\" if method == \"websocket\" else \"UNRESOLVED\"]\n                for keyword in decorator.keywords:\n                    if keyword.arg == \"methods\":\n                        try: methods = [str(item).upper() for item in ast.literal_eval(keyword.value)]\n                        except (ValueError, TypeError): pass\n                for verb in methods:\n                    rows.append({\"file\": file, \"line\": decorator.lineno, \"method\": verb, \"path\": path,\n                                 \"processScope\": \"python-declared:\" + file, \"confidence\": \"declared-only; mount prefix unverified\",\n                                 \"receiver\": owner, \"handler\": node.name, \"mountResolved\": owners[owner] in (\"FastAPI\", \"Flask\")})\n    return rows, unknown"
+        }
+      ],
+      "affectedCurrentRegisteredPageIds": [],
+      "affectedCurrentFrontendContractIds": [],
+      "pageImpactLimit": "No current page/frontend association is not proof of no consumers. These Python endpoints sit behind Node/MaxCore proxy and service calls; preserve the cross-process binding task when composing mounted paths.",
+      "requiredFix": "Extend bounded Python AST inventory to record APIRouter constructor prefixes and defining factory identity, resolve canonical imported factory aliases and include_router calls (including assigned router variables), compose route/router/include prefixes, and preserve try/None conditions instead of assuming runtime availability.",
+      "dependencies": [
+        "Exact imported-module resolution and factory return identity",
+        "APIRouter prefix and include_router prefix composition",
+        "Conditional mount metadata and process identity",
+        "Stable old-to-new subject/reference migration without losing a declaration",
+        "Owned FastAPI fixture proving exact methods/paths and declared auth failure behavior"
+      ],
+      "orderOfExecution": 4,
+      "risk": "P1 evidence/topology correctness; runtime feature behavior remains unverified",
+      "validationCriteria": [
+        "All nineteen exact declarations survive one-to-one with method and handler identity retained.",
+        "Constructor and include_router prefixes compose to this row's staticallyResolvedPath; no raw /predict, /image or /campaign is assigned as its final canonical route.",
+        "Import/factory/None/error conditions remain explicit and must be observed in an owned runtime fixture.",
+        "Current registered checks and page/contract references are remapped explicitly; source-trace correction never grants behavioral PASS."
+      ],
+      "productionAcceptanceCriteria": [
+        "A current-source canonical or tightly bounded real FastAPI fixture exposes the exact expected route method/path and rejects absent/wrong declared authorization without side effects.",
+        "Successful, invalid/oversized input, ownership, dependency failure and output/durability behavior satisfy every existing required check for this endpoint.",
+        "Separate deployed identity/startup/readiness and applicable provider or generation output acceptance remains required."
+      ],
+      "behaviorMeaning": "Admin candidate-learning lifecycle is a separate route family; mounting it does not imply ordinary live-awareness serving requires a promoted trained checkpoint."
+    },
+    {
+      "unknownIndex": 126,
+      "originalUnknownEntry": {
+        "kind": "unverified-route-mount",
+        "subjectId": "api-a2d5112e6f836b75",
+        "file": "external/maxcore/artifacts/ai-training-server/ai_model/training/live_learning.py",
+        "line": 539,
+        "declaredPath": "/api/training/candidates/live/{run_id}"
+      },
+      "backendSubjectId": "api-a2d5112e6f836b75",
+      "method": "GET",
+      "handler": "status",
+      "handlerLine": 540,
+      "factory": "create_router",
+      "factoryLine": 519,
+      "declaredPath": "/api/training/candidates/live/{run_id}",
+      "routerPrefix": "",
+      "includeRouterPrefix": "",
+      "staticallyResolvedPath": "/api/training/candidates/live/{run_id}",
+      "canonicalProcess": "local MaxCore Python ASGI server: external/maxcore/artifacts/ai-training-server/server.py::app",
+      "status": "STATIC_FACTORY_MOUNT_TRACE",
+      "behaviorAcceptance": "UNVERIFIED",
+      "productionReady": false,
+      "rootCause": "The Python source scanner extracts decorator literals and APIRouter names but does not retain factory ownership, constructor prefix, imported factory alias, or canonical include_router edges. Its per-file declared-only row loses the mounted process and composed prefix.",
+      "mountConditional": false,
+      "availabilityCondition": "Canonical source unconditionally calls include_router with this factory; actual startup/import/dependency success remains a runtime prerequisite.",
+      "authSourceTrace": "verify_admin supplied to factory as authorize; individual handler Depends(authorize)",
+      "sourceCitations": [
+        {
+          "file": "external/maxcore/artifacts/ai-training-server/ai_model/training/live_learning.py",
+          "line": 539,
+          "endLine": 540,
+          "snippet": "    @router.get(\"/api/training/candidates/live/{run_id}\")\n    def status(run_id: str, _admin=Depends(authorize)):"
+        },
+        {
+          "file": "external/maxcore/artifacts/ai-training-server/ai_model/training/live_learning.py",
+          "line": 519,
+          "endLine": 524,
+          "snippet": "def create_router(authorize, engine_factory, *, peak_content=True):\n    from fastapi import APIRouter, Depends\n    from fastapi.responses import JSONResponse\n    from pydantic import BaseModel, ConfigDict, Field\n    from ai_model.awareness.engine import AwarenessUnavailable\n"
+        },
+        {
+          "file": "external/maxcore/artifacts/ai-training-server/ai_model/training/live_learning.py",
+          "line": 529,
+          "endLine": 529,
+          "snippet": "    router = APIRouter()"
+        },
+        {
+          "file": "external/maxcore/artifacts/ai-training-server/server.py",
+          "line": 2614,
+          "endLine": 2614,
+          "snippet": "from ai_model.training.live_learning import create_router as _live_learning_router"
+        },
+        {
+          "file": "external/maxcore/artifacts/ai-training-server/server.py",
+          "line": 2616,
+          "endLine": 2616,
+          "snippet": "app.include_router(_live_learning_router(verify_admin, _live_learning_engine))"
+        },
+        {
+          "file": "scripts/testing/platform-register.py",
+          "line": 234,
+          "endLine": 251,
+          "snippet": "            for decorator in node.decorator_list:\n                if not isinstance(decorator, ast.Call) or not isinstance(decorator.func, ast.Attribute): continue\n                owner = decorator.func.value.id if isinstance(decorator.func.value, ast.Name) else \"unresolved\"\n                if owner not in owners: continue\n                method = decorator.func.attr\n                if method not in METHODS | {\"api_route\", \"route\", \"websocket\"}: continue\n                arg = decorator.args[0] if decorator.args else None\n                path = arg.value if isinstance(arg, ast.Constant) and isinstance(arg.value, str) else None\n                methods = [method.upper()] if method in METHODS else [\"WEBSOCKET\" if method == \"websocket\" else \"UNRESOLVED\"]\n                for keyword in decorator.keywords:\n                    if keyword.arg == \"methods\":\n                        try: methods = [str(item).upper() for item in ast.literal_eval(keyword.value)]\n                        except (ValueError, TypeError): pass\n                for verb in methods:\n                    rows.append({\"file\": file, \"line\": decorator.lineno, \"method\": verb, \"path\": path,\n                                 \"processScope\": \"python-declared:\" + file, \"confidence\": \"declared-only; mount prefix unverified\",\n                                 \"receiver\": owner, \"handler\": node.name, \"mountResolved\": owners[owner] in (\"FastAPI\", \"Flask\")})\n    return rows, unknown"
+        }
+      ],
+      "affectedCurrentRegisteredPageIds": [],
+      "affectedCurrentFrontendContractIds": [],
+      "pageImpactLimit": "No current page/frontend association is not proof of no consumers. These Python endpoints sit behind Node/MaxCore proxy and service calls; preserve the cross-process binding task when composing mounted paths.",
+      "requiredFix": "Extend bounded Python AST inventory to record APIRouter constructor prefixes and defining factory identity, resolve canonical imported factory aliases and include_router calls (including assigned router variables), compose route/router/include prefixes, and preserve try/None conditions instead of assuming runtime availability.",
+      "dependencies": [
+        "Exact imported-module resolution and factory return identity",
+        "APIRouter prefix and include_router prefix composition",
+        "Conditional mount metadata and process identity",
+        "Stable old-to-new subject/reference migration without losing a declaration",
+        "Owned FastAPI fixture proving exact methods/paths and declared auth failure behavior"
+      ],
+      "orderOfExecution": 4,
+      "risk": "P1 evidence/topology correctness; runtime feature behavior remains unverified",
+      "validationCriteria": [
+        "All nineteen exact declarations survive one-to-one with method and handler identity retained.",
+        "Constructor and include_router prefixes compose to this row's staticallyResolvedPath; no raw /predict, /image or /campaign is assigned as its final canonical route.",
+        "Import/factory/None/error conditions remain explicit and must be observed in an owned runtime fixture.",
+        "Current registered checks and page/contract references are remapped explicitly; source-trace correction never grants behavioral PASS."
+      ],
+      "productionAcceptanceCriteria": [
+        "A current-source canonical or tightly bounded real FastAPI fixture exposes the exact expected route method/path and rejects absent/wrong declared authorization without side effects.",
+        "Successful, invalid/oversized input, ownership, dependency failure and output/durability behavior satisfy every existing required check for this endpoint.",
+        "Separate deployed identity/startup/readiness and applicable provider or generation output acceptance remains required."
+      ],
+      "behaviorMeaning": "Admin candidate-learning lifecycle is a separate route family; mounting it does not imply ordinary live-awareness serving requires a promoted trained checkpoint."
+    },
+    {
+      "unknownIndex": 127,
+      "originalUnknownEntry": {
+        "kind": "unverified-route-mount",
+        "subjectId": "api-63c25a5b3c0f3b69",
+        "file": "external/maxcore/artifacts/ai-training-server/ai_model/training/live_learning.py",
+        "line": 546,
+        "declaredPath": "/api/training/candidates/live"
+      },
+      "backendSubjectId": "api-63c25a5b3c0f3b69",
+      "method": "POST",
+      "handler": "learn",
+      "handlerLine": 547,
+      "factory": "create_router",
+      "factoryLine": 519,
+      "declaredPath": "/api/training/candidates/live",
+      "routerPrefix": "",
+      "includeRouterPrefix": "",
+      "staticallyResolvedPath": "/api/training/candidates/live",
+      "canonicalProcess": "local MaxCore Python ASGI server: external/maxcore/artifacts/ai-training-server/server.py::app",
+      "status": "STATIC_FACTORY_MOUNT_TRACE",
+      "behaviorAcceptance": "UNVERIFIED",
+      "productionReady": false,
+      "rootCause": "The Python source scanner extracts decorator literals and APIRouter names but does not retain factory ownership, constructor prefix, imported factory alias, or canonical include_router edges. Its per-file declared-only row loses the mounted process and composed prefix.",
+      "mountConditional": false,
+      "availabilityCondition": "Canonical source unconditionally calls include_router with this factory; actual startup/import/dependency success remains a runtime prerequisite.",
+      "authSourceTrace": "verify_admin supplied to factory as authorize; individual handler Depends(authorize)",
+      "sourceCitations": [
+        {
+          "file": "external/maxcore/artifacts/ai-training-server/ai_model/training/live_learning.py",
+          "line": 546,
+          "endLine": 547,
+          "snippet": "    @router.post(\"/api/training/candidates/live\")\n    def learn(body: LearningRequest, _admin=Depends(authorize)):"
+        },
+        {
+          "file": "external/maxcore/artifacts/ai-training-server/ai_model/training/live_learning.py",
+          "line": 519,
+          "endLine": 524,
+          "snippet": "def create_router(authorize, engine_factory, *, peak_content=True):\n    from fastapi import APIRouter, Depends\n    from fastapi.responses import JSONResponse\n    from pydantic import BaseModel, ConfigDict, Field\n    from ai_model.awareness.engine import AwarenessUnavailable\n"
+        },
+        {
+          "file": "external/maxcore/artifacts/ai-training-server/ai_model/training/live_learning.py",
+          "line": 529,
+          "endLine": 529,
+          "snippet": "    router = APIRouter()"
+        },
+        {
+          "file": "external/maxcore/artifacts/ai-training-server/server.py",
+          "line": 2614,
+          "endLine": 2614,
+          "snippet": "from ai_model.training.live_learning import create_router as _live_learning_router"
+        },
+        {
+          "file": "external/maxcore/artifacts/ai-training-server/server.py",
+          "line": 2616,
+          "endLine": 2616,
+          "snippet": "app.include_router(_live_learning_router(verify_admin, _live_learning_engine))"
+        },
+        {
+          "file": "scripts/testing/platform-register.py",
+          "line": 234,
+          "endLine": 251,
+          "snippet": "            for decorator in node.decorator_list:\n                if not isinstance(decorator, ast.Call) or not isinstance(decorator.func, ast.Attribute): continue\n                owner = decorator.func.value.id if isinstance(decorator.func.value, ast.Name) else \"unresolved\"\n                if owner not in owners: continue\n                method = decorator.func.attr\n                if method not in METHODS | {\"api_route\", \"route\", \"websocket\"}: continue\n                arg = decorator.args[0] if decorator.args else None\n                path = arg.value if isinstance(arg, ast.Constant) and isinstance(arg.value, str) else None\n                methods = [method.upper()] if method in METHODS else [\"WEBSOCKET\" if method == \"websocket\" else \"UNRESOLVED\"]\n                for keyword in decorator.keywords:\n                    if keyword.arg == \"methods\":\n                        try: methods = [str(item).upper() for item in ast.literal_eval(keyword.value)]\n                        except (ValueError, TypeError): pass\n                for verb in methods:\n                    rows.append({\"file\": file, \"line\": decorator.lineno, \"method\": verb, \"path\": path,\n                                 \"processScope\": \"python-declared:\" + file, \"confidence\": \"declared-only; mount prefix unverified\",\n                                 \"receiver\": owner, \"handler\": node.name, \"mountResolved\": owners[owner] in (\"FastAPI\", \"Flask\")})\n    return rows, unknown"
+        }
+      ],
+      "affectedCurrentRegisteredPageIds": [],
+      "affectedCurrentFrontendContractIds": [],
+      "pageImpactLimit": "No current page/frontend association is not proof of no consumers. These Python endpoints sit behind Node/MaxCore proxy and service calls; preserve the cross-process binding task when composing mounted paths.",
+      "requiredFix": "Extend bounded Python AST inventory to record APIRouter constructor prefixes and defining factory identity, resolve canonical imported factory aliases and include_router calls (including assigned router variables), compose route/router/include prefixes, and preserve try/None conditions instead of assuming runtime availability.",
+      "dependencies": [
+        "Exact imported-module resolution and factory return identity",
+        "APIRouter prefix and include_router prefix composition",
+        "Conditional mount metadata and process identity",
+        "Stable old-to-new subject/reference migration without losing a declaration",
+        "Owned FastAPI fixture proving exact methods/paths and declared auth failure behavior"
+      ],
+      "orderOfExecution": 4,
+      "risk": "P1 evidence/topology correctness; runtime feature behavior remains unverified",
+      "validationCriteria": [
+        "All nineteen exact declarations survive one-to-one with method and handler identity retained.",
+        "Constructor and include_router prefixes compose to this row's staticallyResolvedPath; no raw /predict, /image or /campaign is assigned as its final canonical route.",
+        "Import/factory/None/error conditions remain explicit and must be observed in an owned runtime fixture.",
+        "Current registered checks and page/contract references are remapped explicitly; source-trace correction never grants behavioral PASS."
+      ],
+      "productionAcceptanceCriteria": [
+        "A current-source canonical or tightly bounded real FastAPI fixture exposes the exact expected route method/path and rejects absent/wrong declared authorization without side effects.",
+        "Successful, invalid/oversized input, ownership, dependency failure and output/durability behavior satisfy every existing required check for this endpoint.",
+        "Separate deployed identity/startup/readiness and applicable provider or generation output acceptance remains required."
+      ],
+      "behaviorMeaning": "Admin candidate-learning lifecycle is a separate route family; mounting it does not imply ordinary live-awareness serving requires a promoted trained checkpoint."
+    },
+    {
+      "unknownIndex": 128,
+      "originalUnknownEntry": {
+        "kind": "unverified-route-mount",
+        "subjectId": "api-dc501135f7da694a",
+        "file": "external/maxcore/artifacts/ai-training-server/ai_model/training/media_learning.py",
+        "line": 201,
+        "declaredPath": "/api/training/media/{modality}/preflight"
+      },
+      "backendSubjectId": "api-dc501135f7da694a",
+      "method": "GET",
+      "handler": "capability",
+      "handlerLine": 202,
+      "factory": "create_router",
+      "factoryLine": 182,
+      "declaredPath": "/api/training/media/{modality}/preflight",
+      "routerPrefix": "",
+      "includeRouterPrefix": "",
+      "staticallyResolvedPath": "/api/training/media/{modality}/preflight",
+      "canonicalProcess": "local MaxCore Python ASGI server: external/maxcore/artifacts/ai-training-server/server.py::app",
+      "status": "STATIC_FACTORY_MOUNT_TRACE",
+      "behaviorAcceptance": "UNVERIFIED",
+      "productionReady": false,
+      "rootCause": "The Python source scanner extracts decorator literals and APIRouter names but does not retain factory ownership, constructor prefix, imported factory alias, or canonical include_router edges. Its per-file declared-only row loses the mounted process and composed prefix.",
+      "mountConditional": false,
+      "availabilityCondition": "Canonical source unconditionally calls include_router with this factory; actual startup/import/dependency success remains a runtime prerequisite.",
+      "authSourceTrace": "verify_admin supplied to factory as authorize; individual handler Depends(authorize)",
+      "sourceCitations": [
+        {
+          "file": "external/maxcore/artifacts/ai-training-server/ai_model/training/media_learning.py",
+          "line": 201,
+          "endLine": 202,
+          "snippet": "    @router.get(\"/api/training/media/{modality}/preflight\")\n    def capability(modality: str, _admin=Depends(authorize)):"
+        },
+        {
+          "file": "external/maxcore/artifacts/ai-training-server/ai_model/training/media_learning.py",
+          "line": 182,
+          "endLine": 187,
+          "snippet": "def create_router(authorize):\n    \"\"\"Admin-only read-only checks. Corpus root is operator-configured, not HTTP input.\"\"\"\n    import os\n    from fastapi import APIRouter, Body, Depends, HTTPException\n    from fastapi.responses import JSONResponse\n"
+        },
+        {
+          "file": "external/maxcore/artifacts/ai-training-server/ai_model/training/media_learning.py",
+          "line": 188,
+          "endLine": 188,
+          "snippet": "    router = APIRouter()"
+        },
+        {
+          "file": "external/maxcore/artifacts/ai-training-server/server.py",
+          "line": 2626,
+          "endLine": 2626,
+          "snippet": "from ai_model.training.media_learning import create_router as _media_learning_router"
+        },
+        {
+          "file": "external/maxcore/artifacts/ai-training-server/server.py",
+          "line": 2627,
+          "endLine": 2627,
+          "snippet": "app.include_router(_media_learning_router(verify_admin))"
+        },
+        {
+          "file": "scripts/testing/platform-register.py",
+          "line": 234,
+          "endLine": 251,
+          "snippet": "            for decorator in node.decorator_list:\n                if not isinstance(decorator, ast.Call) or not isinstance(decorator.func, ast.Attribute): continue\n                owner = decorator.func.value.id if isinstance(decorator.func.value, ast.Name) else \"unresolved\"\n                if owner not in owners: continue\n                method = decorator.func.attr\n                if method not in METHODS | {\"api_route\", \"route\", \"websocket\"}: continue\n                arg = decorator.args[0] if decorator.args else None\n                path = arg.value if isinstance(arg, ast.Constant) and isinstance(arg.value, str) else None\n                methods = [method.upper()] if method in METHODS else [\"WEBSOCKET\" if method == \"websocket\" else \"UNRESOLVED\"]\n                for keyword in decorator.keywords:\n                    if keyword.arg == \"methods\":\n                        try: methods = [str(item).upper() for item in ast.literal_eval(keyword.value)]\n                        except (ValueError, TypeError): pass\n                for verb in methods:\n                    rows.append({\"file\": file, \"line\": decorator.lineno, \"method\": verb, \"path\": path,\n                                 \"processScope\": \"python-declared:\" + file, \"confidence\": \"declared-only; mount prefix unverified\",\n                                 \"receiver\": owner, \"handler\": node.name, \"mountResolved\": owners[owner] in (\"FastAPI\", \"Flask\")})\n    return rows, unknown"
+        },
+        {
+          "file": "external/maxcore/artifacts/ai-training-server/ai_model/training/media_learning.py",
+          "line": 182,
+          "endLine": 209,
+          "snippet": "def create_router(authorize):\n    \"\"\"Admin-only read-only checks. Corpus root is operator-configured, not HTTP input.\"\"\"\n    import os\n    from fastapi import APIRouter, Body, Depends, HTTPException\n    from fastapi.responses import JSONResponse\n\n    router = APIRouter()\n\n    def check(modality, manifest=None):\n        if modality not in (\"audio\", \"video\"):\n            raise HTTPException(status_code=422, detail=\"modality must be audio or video\")\n        root = os.environ.get(\"MAXCORE_MEDIA_LEARNING_CORPUS_ROOT\")\n        report = media_learning_preflight(modality, manifest, root)\n        if manifest is not None and not root:\n            report[\"blockers\"].append(\n                \"Operator must configure MAXCORE_MEDIA_LEARNING_CORPUS_ROOT; HTTP clients cannot choose filesystem roots.\"\n            )\n        return JSONResponse(report, status_code=409)\n\n    @router.get(\"/api/training/media/{modality}/preflight\")\n    def capability(modality: str, _admin=Depends(authorize)):\n        return check(modality)\n\n    @router.post(\"/api/training/media/{modality}/preflight\")\n    def validate_corpus(modality: str, manifest: dict = Body(...), _admin=Depends(authorize)):\n        return check(modality, manifest)\n\n    return router"
+        }
+      ],
+      "affectedCurrentRegisteredPageIds": [],
+      "affectedCurrentFrontendContractIds": [],
+      "pageImpactLimit": "No current page/frontend association is not proof of no consumers. These Python endpoints sit behind Node/MaxCore proxy and service calls; preserve the cross-process binding task when composing mounted paths.",
+      "requiredFix": "Extend bounded Python AST inventory to record APIRouter constructor prefixes and defining factory identity, resolve canonical imported factory aliases and include_router calls (including assigned router variables), compose route/router/include prefixes, and preserve try/None conditions instead of assuming runtime availability.",
+      "dependencies": [
+        "Exact imported-module resolution and factory return identity",
+        "APIRouter prefix and include_router prefix composition",
+        "Conditional mount metadata and process identity",
+        "Stable old-to-new subject/reference migration without losing a declaration",
+        "Owned FastAPI fixture proving exact methods/paths and declared auth failure behavior"
+      ],
+      "orderOfExecution": 4,
+      "risk": "P1 evidence/topology correctness; runtime feature behavior remains unverified",
+      "validationCriteria": [
+        "All nineteen exact declarations survive one-to-one with method and handler identity retained.",
+        "Constructor and include_router prefixes compose to this row's staticallyResolvedPath; no raw /predict, /image or /campaign is assigned as its final canonical route.",
+        "Import/factory/None/error conditions remain explicit and must be observed in an owned runtime fixture.",
+        "Current registered checks and page/contract references are remapped explicitly; source-trace correction never grants behavioral PASS."
+      ],
+      "productionAcceptanceCriteria": [
+        "A current-source canonical or tightly bounded real FastAPI fixture exposes the exact expected route method/path and rejects absent/wrong declared authorization without side effects.",
+        "Successful, invalid/oversized input, ownership, dependency failure and output/durability behavior satisfy every existing required check for this endpoint.",
+        "Separate deployed identity/startup/readiness and applicable provider or generation output acceptance remains required."
+      ],
+      "behaviorMeaning": "Admin-only read-only media-learning preflight deliberately returns a blocked report with HTTP409; invalid modality is422. This source behavior is not evidence that public live awareness or ordinary generation requires a trained checkpoint or manually maintained dataset."
+    },
+    {
+      "unknownIndex": 129,
+      "originalUnknownEntry": {
+        "kind": "unverified-route-mount",
+        "subjectId": "api-46c9778776fd3ea7",
+        "file": "external/maxcore/artifacts/ai-training-server/ai_model/training/media_learning.py",
+        "line": 205,
+        "declaredPath": "/api/training/media/{modality}/preflight"
+      },
+      "backendSubjectId": "api-46c9778776fd3ea7",
+      "method": "POST",
+      "handler": "validate_corpus",
+      "handlerLine": 206,
+      "factory": "create_router",
+      "factoryLine": 182,
+      "declaredPath": "/api/training/media/{modality}/preflight",
+      "routerPrefix": "",
+      "includeRouterPrefix": "",
+      "staticallyResolvedPath": "/api/training/media/{modality}/preflight",
+      "canonicalProcess": "local MaxCore Python ASGI server: external/maxcore/artifacts/ai-training-server/server.py::app",
+      "status": "STATIC_FACTORY_MOUNT_TRACE",
+      "behaviorAcceptance": "UNVERIFIED",
+      "productionReady": false,
+      "rootCause": "The Python source scanner extracts decorator literals and APIRouter names but does not retain factory ownership, constructor prefix, imported factory alias, or canonical include_router edges. Its per-file declared-only row loses the mounted process and composed prefix.",
+      "mountConditional": false,
+      "availabilityCondition": "Canonical source unconditionally calls include_router with this factory; actual startup/import/dependency success remains a runtime prerequisite.",
+      "authSourceTrace": "verify_admin supplied to factory as authorize; individual handler Depends(authorize)",
+      "sourceCitations": [
+        {
+          "file": "external/maxcore/artifacts/ai-training-server/ai_model/training/media_learning.py",
+          "line": 205,
+          "endLine": 206,
+          "snippet": "    @router.post(\"/api/training/media/{modality}/preflight\")\n    def validate_corpus(modality: str, manifest: dict = Body(...), _admin=Depends(authorize)):"
+        },
+        {
+          "file": "external/maxcore/artifacts/ai-training-server/ai_model/training/media_learning.py",
+          "line": 182,
+          "endLine": 187,
+          "snippet": "def create_router(authorize):\n    \"\"\"Admin-only read-only checks. Corpus root is operator-configured, not HTTP input.\"\"\"\n    import os\n    from fastapi import APIRouter, Body, Depends, HTTPException\n    from fastapi.responses import JSONResponse\n"
+        },
+        {
+          "file": "external/maxcore/artifacts/ai-training-server/ai_model/training/media_learning.py",
+          "line": 188,
+          "endLine": 188,
+          "snippet": "    router = APIRouter()"
+        },
+        {
+          "file": "external/maxcore/artifacts/ai-training-server/server.py",
+          "line": 2626,
+          "endLine": 2626,
+          "snippet": "from ai_model.training.media_learning import create_router as _media_learning_router"
+        },
+        {
+          "file": "external/maxcore/artifacts/ai-training-server/server.py",
+          "line": 2627,
+          "endLine": 2627,
+          "snippet": "app.include_router(_media_learning_router(verify_admin))"
+        },
+        {
+          "file": "scripts/testing/platform-register.py",
+          "line": 234,
+          "endLine": 251,
+          "snippet": "            for decorator in node.decorator_list:\n                if not isinstance(decorator, ast.Call) or not isinstance(decorator.func, ast.Attribute): continue\n                owner = decorator.func.value.id if isinstance(decorator.func.value, ast.Name) else \"unresolved\"\n                if owner not in owners: continue\n                method = decorator.func.attr\n                if method not in METHODS | {\"api_route\", \"route\", \"websocket\"}: continue\n                arg = decorator.args[0] if decorator.args else None\n                path = arg.value if isinstance(arg, ast.Constant) and isinstance(arg.value, str) else None\n                methods = [method.upper()] if method in METHODS else [\"WEBSOCKET\" if method == \"websocket\" else \"UNRESOLVED\"]\n                for keyword in decorator.keywords:\n                    if keyword.arg == \"methods\":\n                        try: methods = [str(item).upper() for item in ast.literal_eval(keyword.value)]\n                        except (ValueError, TypeError): pass\n                for verb in methods:\n                    rows.append({\"file\": file, \"line\": decorator.lineno, \"method\": verb, \"path\": path,\n                                 \"processScope\": \"python-declared:\" + file, \"confidence\": \"declared-only; mount prefix unverified\",\n                                 \"receiver\": owner, \"handler\": node.name, \"mountResolved\": owners[owner] in (\"FastAPI\", \"Flask\")})\n    return rows, unknown"
+        },
+        {
+          "file": "external/maxcore/artifacts/ai-training-server/ai_model/training/media_learning.py",
+          "line": 182,
+          "endLine": 209,
+          "snippet": "def create_router(authorize):\n    \"\"\"Admin-only read-only checks. Corpus root is operator-configured, not HTTP input.\"\"\"\n    import os\n    from fastapi import APIRouter, Body, Depends, HTTPException\n    from fastapi.responses import JSONResponse\n\n    router = APIRouter()\n\n    def check(modality, manifest=None):\n        if modality not in (\"audio\", \"video\"):\n            raise HTTPException(status_code=422, detail=\"modality must be audio or video\")\n        root = os.environ.get(\"MAXCORE_MEDIA_LEARNING_CORPUS_ROOT\")\n        report = media_learning_preflight(modality, manifest, root)\n        if manifest is not None and not root:\n            report[\"blockers\"].append(\n                \"Operator must configure MAXCORE_MEDIA_LEARNING_CORPUS_ROOT; HTTP clients cannot choose filesystem roots.\"\n            )\n        return JSONResponse(report, status_code=409)\n\n    @router.get(\"/api/training/media/{modality}/preflight\")\n    def capability(modality: str, _admin=Depends(authorize)):\n        return check(modality)\n\n    @router.post(\"/api/training/media/{modality}/preflight\")\n    def validate_corpus(modality: str, manifest: dict = Body(...), _admin=Depends(authorize)):\n        return check(modality, manifest)\n\n    return router"
+        }
+      ],
+      "affectedCurrentRegisteredPageIds": [],
+      "affectedCurrentFrontendContractIds": [],
+      "pageImpactLimit": "No current page/frontend association is not proof of no consumers. These Python endpoints sit behind Node/MaxCore proxy and service calls; preserve the cross-process binding task when composing mounted paths.",
+      "requiredFix": "Extend bounded Python AST inventory to record APIRouter constructor prefixes and defining factory identity, resolve canonical imported factory aliases and include_router calls (including assigned router variables), compose route/router/include prefixes, and preserve try/None conditions instead of assuming runtime availability.",
+      "dependencies": [
+        "Exact imported-module resolution and factory return identity",
+        "APIRouter prefix and include_router prefix composition",
+        "Conditional mount metadata and process identity",
+        "Stable old-to-new subject/reference migration without losing a declaration",
+        "Owned FastAPI fixture proving exact methods/paths and declared auth failure behavior"
+      ],
+      "orderOfExecution": 4,
+      "risk": "P1 evidence/topology correctness; runtime feature behavior remains unverified",
+      "validationCriteria": [
+        "All nineteen exact declarations survive one-to-one with method and handler identity retained.",
+        "Constructor and include_router prefixes compose to this row's staticallyResolvedPath; no raw /predict, /image or /campaign is assigned as its final canonical route.",
+        "Import/factory/None/error conditions remain explicit and must be observed in an owned runtime fixture.",
+        "Current registered checks and page/contract references are remapped explicitly; source-trace correction never grants behavioral PASS."
+      ],
+      "productionAcceptanceCriteria": [
+        "A current-source canonical or tightly bounded real FastAPI fixture exposes the exact expected route method/path and rejects absent/wrong declared authorization without side effects.",
+        "Successful, invalid/oversized input, ownership, dependency failure and output/durability behavior satisfy every existing required check for this endpoint.",
+        "Separate deployed identity/startup/readiness and applicable provider or generation output acceptance remains required."
+      ],
+      "behaviorMeaning": "Admin-only read-only media-learning preflight deliberately returns a blocked report with HTTP409; invalid modality is422. This source behavior is not evidence that public live awareness or ordinary generation requires a trained checkpoint or manually maintained dataset."
+    }
+  ],
+  "nextProducerTests": [
+    "APIRouter(prefix=\"/api/analytics\") created in a factory aliased on import and passed inline to include_router composes all three endpoints.",
+    "Assigned Director router plus include_router(prefix=\"/api/director\") retains six endpoints and try/None condition metadata.",
+    "Native analysis factory constructor prefix /api/analysis composes all five endpoints.",
+    "Factories using absolute decorator paths and empty constructor/include prefixes retain their three plus two exact training paths.",
+    "Unknown/computed/unresolvable factories remain unresolved; never evaluate source or import full model modules for inventory.",
+    "Cross-process endpoint identity differs from Node public proxy identity; no alias/path cross-certification from a shared handler."
+  ],
+  "limits": [
+    "Static mount traces do not execute factory imports, authenticate a real request or verify endpoint behavior.",
+    "Current register lacks page/contract associations for these nineteen subject IDs; actual main-app/proxy consumption still needs explicit joining.",
+    "No canonical register, plan, source, test, dependency or configuration file was modified."
+  ]
+}

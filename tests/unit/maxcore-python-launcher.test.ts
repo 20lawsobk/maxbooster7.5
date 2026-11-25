@@ -6,6 +6,7 @@ import {
   attachOwnedPythonProcessLifecycle,
   pythonSpawnSpec,
   resolvePythonExecutable,
+  resolvePythonProjectRoot,
 } from "../../external/maxcore/artifacts/api-server/src/python-server.js";
 
 describe("MaxCore production Python launcher", () => {
@@ -22,6 +23,22 @@ describe("MaxCore production Python launcher", () => {
     expect(spec.command).not.toBe("uv");
     expect(spec.args).toHaveLength(1);
     expect(spec.args[0]).toMatch(/artifacts\/ai-training-server\/server\.py$/);
+  });
+
+  it("resolves the workspace Python root from MaxCore's nested server path", () => {
+    const serverScript =
+      "/srv/app/external/maxcore/artifacts/ai-training-server/server.py";
+    const workspace = resolvePythonProjectRoot(serverScript);
+    const packaged = path.resolve(workspace, "python_runtime/bin/python3");
+    const spec = pythonSpawnSpec(
+      { NODE_ENV: "development" },
+      workspace,
+      (candidate) => candidate === packaged,
+    );
+
+    expect(workspace).toBe("/srv/app");
+    expect(spec.command).toBe(packaged);
+    expect(spec.command).not.toBe("python3");
   });
 
   it("honors the startup-validated MAXBOOSTER_PYTHON exactly", () => {

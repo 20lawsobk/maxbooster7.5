@@ -5,7 +5,7 @@ import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
 
-test("real bootstrap verifies the selected toolchain and preserves each package outside cleanup",()=>{
+test("bootstrap verifies compatible package managers without starting a build",()=>{
   let output;
   try {
     output=execFileSync("bash",["script/deployment/bootstrap.sh","--check"],{
@@ -15,21 +15,17 @@ test("real bootstrap verifies the selected toolchain and preserves each package 
     error.message+=`\nBootstrap output:\n${error.stdout??""}\n${error.stderr??""}`;
     throw error;
   }
-  assert.match(output,/\[bootstrap\] Preparing build toolchain/);
+  assert.match(output,/\[bootstrap\] Probing Node:/);
+  assert.match(output,/\[bootstrap\] Resolving compatible npm/);
+  assert.match(output,/\[bootstrap\] Resolving compatible pnpm/);
   for (const manager of ["npm", "pnpm"]) {
-    const preferred = fs.realpathSync(execFileSync("bash", ["-c", 'command -v "$1"', "bootstrap-test", manager], { encoding: "utf8" }).trim());
-    if (preferred.startsWith("/nix/store/")) {
-      assert.match(output, new RegExp(`Using immutable ${manager} package store path`));
-      assert.doesNotMatch(output, new RegExp(`Preserving ${manager} outside workspace`));
-    } else {
-      assert.match(output, new RegExp(`Preserving ${manager} outside workspace`));
-    }
+    const version = JSON.parse(fs.readFileSync("package.json", "utf8"))
+      .packageManager.match(new RegExp(`^${manager}@(\\S+)$`))?.[1];
+    if (version) assert.match(output, new RegExp(`Preserved ${manager} ${version.replaceAll(".", "\\.")}`));
   }
-  assert.match(output,/Verifying preserved npm/);
-  assert.match(output,/Verifying preserved pnpm/);
-  assert.match(output,/Toolchain ready; temporary footprint:/);
-  assert.match(output,/Build toolchain verified outside workspace caches/);
-  assert.doesNotMatch(output,/Handing off/);
+  assert.match(output,/Sequential plan verified; 18 ordered phases; no build phases executed/);
+  assert.match(output,/Toolchain and sequential build plan verified; build not executed/);
+  assert.doesNotMatch(output,/Running dependency-ordered build phases/);
 });
 
 test("bootstrap announces and cleans up a failure before admitting destructive tasks",t=>{
@@ -46,9 +42,14 @@ test("bootstrap announces and cleans up a failure before admitting destructive t
     });
   } catch(error) {failure=error;}
   assert.ok(failure);
-  assert.match(failure.stderr,/No durable npm installation found; refusing cleanup/);
+  assert.match(failure.stderr,/No compatible durable npm installation found/);
   assert.match(failure.stdout,/\[bootstrap\] Resolving compatible npm/);
-  assert.doesNotMatch(failure.stdout,/Handing off/);
-  assert.deepEqual(new Set(fs.readdirSync("/tmp").filter(p=>p.startsWith("deployment-tools."))),before);
+  assert.doesNotMatch(failure.stdout,/Running dependency-ordered build phases/);
+  const after = new Set(fs.readdirSync("/tmp").filter((p) => p.startsWith("deployment-tools.")));
+  assert.deepEqual(
+    [...after].filter((entry) => !before.has(entry)),
+    [],
+    "this failed bootstrap must not leak a new temporary toolchain directory",
+  );
   assert.ok(fs.existsSync(path.join(root,"package.json")));
 });

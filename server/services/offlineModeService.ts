@@ -10,6 +10,10 @@ import * as path from "path";
 import { PocketDimensionManager } from "../pocket-dimension/index.js";
 import { hybridStorageService } from "./hybridStorageService";
 import { createHash } from "node:crypto";
+import {
+  isTransientStorageTransportError,
+  retryTransientStorageOperation,
+} from "../lib/transientStorageRetry.js";
 
 // ── Timeout-guarded fetch: adds a 10s default signal so no outbound HTTP call
 // can hold the event loop indefinitely.  Per-call signal overrides this default.
@@ -122,6 +126,9 @@ class OfflineModeService extends EventEmitter {
   private lastOnlineCheck: Date = new Date();
   private pocket: Record<string, unknown> | null = null;
   private pocketReady: Promise<void>;
+  private pocketInitInProgress = false;
+  private pocketRetryTimer: NodeJS.Timeout | null = null;
+  private pocketRetryDelayMs = 5_000;
   private offlineCapabilities: OfflineCapabilities = {
     projectEditing: true,
     audioPlayback: true,
@@ -143,24 +150,50 @@ class OfflineModeService extends EventEmitter {
   }
 
   private async initPocket(): Promise<void> {
+    if (this.pocket || this.pocketInitInProgress) return;
+    this.pocketInitInProgress = true;
     try {
-      const manager = PocketDimensionManager?.getInstance("./pocket-dimensions");
-      this.pocket = await manager?.openPocket(POCKET_ID, {
-        compressionLevel: 9,
-        enableDeduplication: true,
-        enableVersioning: false,
-        chunkSize: 2 * 1024 * 1024,
-      });
+      const manager = PocketDimensionManager.getInstance("./pocket-dimensions");
+      const pocket = await retryTransientStorageOperation(() =>
+        manager.openPocket(POCKET_ID, {
+          compressionLevel: 9,
+          enableDeduplication: true,
+          enableVersioning: false,
+          chunkSize: 2 * 1024 * 1024,
+        }),
+      );
+      if (!pocket) throw new Error("Pocket Dimension returned no storage handle");
+      this.pocket = pocket;
+      this.pocketRetryDelayMs = 5_000;
+      if (this.pocketRetryTimer) {
+        clearTimeout(this.pocketRetryTimer);
+        this.pocketRetryTimer = null;
+      }
       logger.info(
         "[OfflineCache] Pocket Dimension storage bubble opened (level-9 gzip, dedup)",
       );
       await this.loadCacheIndex();
     } catch (error) {
+      const retryable = isTransientStorageTransportError(error);
       logger.warn(
-        { err: error },
+        { err: error, retrying: retryable },
         "[OfflineCache] Failed to open Pocket Dimension, cache unavailable:",
       );
+      if (retryable) this.schedulePocketRetry();
+    } finally {
+      this.pocketInitInProgress = false;
     }
+  }
+
+  private schedulePocketRetry(): void {
+    if (this.pocket || this.pocketRetryTimer) return;
+    const delayMs = this.pocketRetryDelayMs;
+    this.pocketRetryDelayMs = Math.min(this.pocketRetryDelayMs * 2, 60_000);
+    this.pocketRetryTimer = setTimeout(() => {
+      this.pocketRetryTimer = null;
+      void this.initPocket();
+    }, delayMs);
+    this.pocketRetryTimer.unref?.();
   }
 
   private async loadCacheIndex(): Promise<void> {

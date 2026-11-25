@@ -1,4 +1,6 @@
+/tmp/maxbooster-python312-test-tools/coverage/core.py:108: CoverageWarning: Couldn't import C tracer: No module named 'coverage.tracer' (no-ctracer); see https://coverage.readthedocs.io/en/7.17.2/messages.html#warning-no-ctracer
+  warn(f"Couldn't import C tracer: {IMPORT_ERROR}", slug="no-ctracer", once=True)
 ..........                                                               [100%]
-10 passed in 2.10s
-/workspace/.cloud-python/lib/python3.12/site-packages/coverage/control.py:967: CoverageWarning: No data was collected. (no-data-collected); see https://coverage.readthedocs.io/en/7.17.0/messages.html#warning-no-data-collected
+10 passed in 2.32s
+/tmp/maxbooster-python312-test-tools/coverage/control.py:967: CoverageWarning: No data was collected. (no-data-collected); see https://coverage.readthedocs.io/en/7.17.2/messages.html#warning-no-data-collected
   self._warn("No data was collected.", slug="no-data-collected")

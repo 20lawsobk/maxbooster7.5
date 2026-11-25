@@ -1,8 +1,7 @@
 import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 import { spawn, type ChildProcess } from "node:child_process";
-import { mkdtemp, rm } from "node:fs/promises";
-import { tmpdir } from "node:os";
-import path from "node:path";
+import { randomBytes } from "node:crypto";
+import { createServer } from "node:net";
 import Redis from "ioredis";
 import type { Request, RequestHandler, Response } from "express";
 import { RedisStore } from "../../external/pdim/artifacts/api-server/src/redis/store.js";
@@ -12,9 +11,8 @@ vi.mock("../../server/lib/redisConnectionFactory.js", () => ({ getRedisClient: a
 vi.mock("../../server/logger.js", () => ({ logger: { info: vi.fn(), warn: vi.fn(), error: vi.fn() } }));
 import { billingRateLimiter, loginRateLimiter, registerRateLimiter } from "../../server/middleware/rateLimiter";
 
-let directory: string;
-let process: ChildProcess;
-let exited: Promise<unknown>;
+let redisProcess: ChildProcess | undefined;
+let exited: Promise<unknown> | undefined;
 
 async function request(limiter: RequestHandler, ip: string, userId?: string) {
   const headers = new Map<string, string>();
@@ -30,26 +28,46 @@ async function request(limiter: RequestHandler, ip: string, userId?: string) {
 }
 
 beforeAll(async () => {
-  directory = await mkdtemp(path.join(tmpdir(), "maxbooster-limiter-"));
-  const socket = path.join(directory, "redis.sock");
-  process = spawn("redis-server", ["--port", "0", "--unixsocket", socket, "--save", "", "--appendonly", "no"], { stdio: "ignore" });
-  exited = new Promise(resolve => process.once("exit", resolve));
-  authority.client = new Redis(socket, { retryStrategy: times => times < 50 ? 20 : null });
-  // Initial missing-socket attempts are expected while the owned process boots.
-  authority.client.on("error", () => {});
-  await authority.client.ping();
+  const host = "127.0.0.1";
+  const port = await new Promise<number>((resolve, reject) => {
+    const listener = createServer();
+    listener.once("error", reject);
+    listener.listen(0, host, () => {
+      const address = listener.address();
+      listener.close(() => {
+        if (!address || typeof address === "string") reject(new Error("Could not reserve a Redis port"));
+        else resolve(address.port);
+      });
+    });
+  });
+  const password = randomBytes(24).toString("hex");
+  const child = spawn("redis-server", [
+    "--bind", host, "--port", String(port), "--requirepass", password,
+    "--save", "", "--appendonly", "no",
+  ], { stdio: "ignore" });
+  redisProcess = child;
+  exited = new Promise(resolve => child.once("close", resolve));
+  const client = new Redis({ host, port, password, retryStrategy: times => times < 50 ? 20 : null });
+  authority.client = client;
+  client.on("error", () => {});
+  await Promise.race([
+    client.ping(),
+    new Promise<never>((_, reject) => {
+      child.once("error", reject);
+      child.once("exit", code => reject(new Error(`Fixture Redis exited: ${code}`)));
+    }),
+  ]);
 });
 
 beforeEach(async () => {
   vi.stubEnv("NODE_ENV", "production");
-  await authority.client!.flushdb(); // This Redis has only our unique Unix socket.
+  await authority.client!.flushdb(); // The random password binds this client to its fixture.
 });
 afterEach(() => vi.unstubAllEnvs());
 afterAll(async () => {
-  await authority.client?.quit();
-  if (process?.exitCode === null) process.kill("SIGTERM");
+  authority.client?.disconnect();
+  if (redisProcess?.exitCode === null) redisProcess.kill("SIGTERM");
   await exited;
-  if (directory) await rm(directory, { recursive: true, force: true });
 });
 
 describe("Production authentication admission through internal proxies", () => {

@@ -1,6 +1,8 @@
 import { Pool, PoolClient, PoolConfig } from "pg";
 import { logger } from "../logger.js";
 import { env } from "../config/env.js";
+import { selectApplicationDatabaseUrl } from "../config/databaseTarget.js";
+import { configureApplicationDatabaseSession } from "../lib/databaseSession.js";
 
 interface ReplicaConfig {
   host: string;
@@ -35,6 +37,7 @@ class ReadReplicaPool {
       idleTimeoutMillis: config.idleTimeout,
       connectionTimeoutMillis: config.connectionTimeout,
     });
+    this.configurePoolSchema(this.primaryPool, "primary");
 
     this.primaryPool.on("error", (err: Error) => {
       logger.warn({ err: err }, "Primary pool error:");
@@ -52,6 +55,7 @@ class ReadReplicaPool {
         idleTimeoutMillis: config.idleTimeout,
         connectionTimeoutMillis: config.connectionTimeout,
       });
+      this.configurePoolSchema(pool, `replica-${i}`);
 
       pool?.on("error", (err: Error) => {
         logger.warn({ err: err }, `Replica ${i} pool error:`);
@@ -71,6 +75,17 @@ class ReadReplicaPool {
     );
   }
 
+  private configurePoolSchema(pool: Pool, source: string): void {
+    pool.on("connect", (client: PoolClient) => {
+      void configureApplicationDatabaseSession(client).catch((err: Error) => {
+        logger.error(
+          { source, err: err.message },
+          "Failed to initialize the application database session",
+        );
+      });
+    });
+  }
+
   static getInstance(): ReadReplicaPool {
     if (!ReadReplicaPool?.instance) {
       const config = ReadReplicaPool?.buildConfigFromEnv();
@@ -87,7 +102,7 @@ class ReadReplicaPool {
   }
 
   private static buildConfigFromEnv(): ReadReplicaPoolConfig {
-    const primaryUrl = env?.DATABASE_URL || "";
+    const primaryUrl = selectApplicationDatabaseUrl(env);
     const replicaUrls = (process.env.DATABASE_REPLICA_URLS || "")
       .split(",")
       .filter(Boolean);

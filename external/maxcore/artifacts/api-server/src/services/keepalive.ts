@@ -3,8 +3,10 @@
  *
  * This module is an OBSERVER of the warm-up state — it does NOT trigger the
  * warm pass itself.  The actual POST /api/warm is fired by python-server.ts
- * (fireWarmPass) after waitForModelReady() succeeds.  This service polls
- * GET /api/warm/status to track that progress and exposes it via
+ * (fireWarmPass) after a trained checkpoint is ready. In live-awareness mode,
+ * checkpoint warm-up is intentionally deferred; this service settles on the
+ * serving readiness instead of polling until a false timeout. It polls
+ * GET /api/warm/status and exposes that state via
  * getWarmStatus() / waitUntilWarm() so other modules (e.g. the dashboard
  * readiness endpoint) can query warm-up state without coupling to
  * python-server.ts internals.
@@ -30,7 +32,14 @@ const _statusPool = new Agent({
 
 // ─── State ───────────────────────────────────────────────────────────────────
 
-export type WarmState = "pending" | "polling" | "warm" | "partial" | "timeout";
+export type WarmState =
+  | "pending"
+  | "polling"
+  | "warm"
+  | "partial"
+  | "live_awareness"
+  | "error"
+  | "timeout";
 
 let _state: WarmState = "pending";
 let _warmAt: string | null = null;
@@ -52,11 +61,39 @@ function _makeHeaders(): Record<string, string> {
 }
 
 /**
- * Poll GET /api/warm/status until deep_warm.state is a terminal value
- * (warm | partial | error) or until maxMs elapses.
- * Returns the final state string, or "timeout".
+ * Classify the authoritative Python warm-status contract.
+ * A ready live-awareness service is an active serving mode, not a timed-out
+ * trained-checkpoint warm pass.
  */
-async function _pollWarmStatus(maxMs = 180_000): Promise<string> {
+export function classifyWarmStatusSnapshot(value: unknown): WarmState | null {
+  if (!value || typeof value !== "object" || Array.isArray(value)) return null;
+  const parsed = value as Record<string, unknown>;
+  const deepWarm =
+    parsed.deep_warm && typeof parsed.deep_warm === "object" &&
+    !Array.isArray(parsed.deep_warm)
+      ? parsed.deep_warm as Record<string, unknown>
+      : {};
+  const deepWarmState = deepWarm.state;
+
+  if (deepWarmState === "warm") return "warm";
+  if (deepWarmState === "partial") return "partial";
+  if (deepWarmState === "error") return "error";
+  if (
+    deepWarmState === "pending" &&
+    parsed.model_ready === false &&
+    parsed.awareness_ready === true &&
+    parsed.generation_ready === true
+  ) {
+    return "live_awareness";
+  }
+  return null;
+}
+
+/**
+ * Poll GET /api/warm/status until deep_warm.state is a terminal value
+ * (warm | partial | error), live-awareness serving is ready, or maxMs elapses.
+ */
+async function _pollWarmStatus(maxMs = 180_000): Promise<WarmState> {
   const deadline = Date.now() + maxMs;
   while (Date.now() < deadline) {
     try {
@@ -72,15 +109,21 @@ async function _pollWarmStatus(maxMs = 180_000): Promise<string> {
       );
       const raw = await body.text();
       if (statusCode === 200) {
-        const parsed = JSON.parse(raw) as {
-          deep_warm?: { state?: string; last_warm_at?: string; subsystems?: Record<string, unknown> };
-        };
-        const dw = parsed.deep_warm ?? {};
-        const dwState = dw.state ?? "pending";
-        if (dwState === "warm" || dwState === "partial" || dwState === "error") {
-          _warmAt = dw.last_warm_at ?? new Date().toISOString();
-          _subsystems = dw.subsystems ?? {};
-          return dwState;
+        const parsed = JSON.parse(raw) as Record<string, unknown>;
+        const state = classifyWarmStatusSnapshot(parsed);
+        if (state) {
+          if (state !== "live_awareness") {
+            const deepWarm = parsed.deep_warm as Record<string, unknown>;
+            _warmAt =
+              typeof deepWarm.last_warm_at === "string"
+                ? deepWarm.last_warm_at
+                : new Date().toISOString();
+            _subsystems =
+              deepWarm.subsystems && typeof deepWarm.subsystems === "object"
+                ? deepWarm.subsystems as Record<string, unknown>
+                : {};
+          }
+          return state;
         }
       }
     } catch {
@@ -103,14 +146,18 @@ export function startWarmService(): void {
 
   (async () => {
     try {
-      console.log("[WarmService] Polling /api/warm/status until deep-warm completes…");
+      console.log(
+        "[WarmService] Polling warm status until checkpoint warm-up completes or live awareness is ready…",
+      );
       const finalState = await _pollWarmStatus(180_000);
-      const mapped: WarmState =
-        finalState === "warm" ? "warm"
-        : finalState === "partial" ? "partial"
-        : "timeout";
-      console.log(`[WarmService] Deep-warm settled: ${mapped}`);
-      _settle(mapped);
+      if (finalState === "live_awareness") {
+        console.log(
+          "[WarmService] Live-awareness serving is ready; checkpoint warm-up is deferred",
+        );
+      } else {
+        console.log(`[WarmService] Deep-warm settled: ${finalState}`);
+      }
+      _settle(finalState);
     } catch (err) {
       console.warn(`[WarmService] Unexpected error while polling warm status: ${err}`);
       _settle("timeout");

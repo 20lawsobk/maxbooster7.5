@@ -24,7 +24,7 @@ import {
   membershipTiers,
   customerMemberships,
 } from "@shared/schema";
-import { createStripeClient, hasStripeCredential } from "../lib/stripeClient";
+import { createStripeClient, getStripeSecretKey, hasStripeCredential } from "../lib/stripeClient";
 import { getBaseUrl } from "../config/defaults";
 import { storageService } from "../services/storageService.js";
 import { db, pool } from "../db";
@@ -813,7 +813,7 @@ router.post("/subscribe/:tierId", async (req, res) => {
         .json({ error: "You already have an active membership to this tier" });
     }
 
-    const stripeKey = env?.STRIPE_SECRET_KEY;
+    const stripeKey = getStripeSecretKey();
     if (!hasStripeCredential(stripeKey)) {
       return res
         .status(503)
@@ -1578,7 +1578,7 @@ router.post("/:id/checkout", async (req, res) => {
       return res.json({ checkoutUrl: reservation.result.url });
     }
 
-    const stripeKey = env?.STRIPE_SECRET_KEY;
+    const stripeKey = getStripeSecretKey();
     if (!stripeKey) {
       logger.warn("Stripe secret key is not configured");
       return res

@@ -1,5 +1,6 @@
 import {test} from "node:test";
 import assert from "node:assert/strict";
+import {createHash} from "node:crypto";
 import {spawn, spawnSync} from "node:child_process";
 import fs from "node:fs";
 import os from "node:os";
@@ -56,34 +57,106 @@ test("overlapping publishing is rejected; normal exit releases the lock",async t
   assert.equal(run().status,0);
 });
 
+test("bootstrap signal forwarding waits for the owned runner before the root lock releases", async (t) => {
+  const options = fixture(t);
+  const ready = path.join(options.cwd, "runner.ready");
+  const stopped = path.join(options.cwd, "runner.stopped");
+  const rootHash = createHash("sha256").update(options.cwd).digest("hex");
+  const lock = path.join(os.tmpdir(), `maxbooster-publishing-${rootHash}.lock`);
+  const script = `
+    source "$1"
+    prepare_publishing_context
+    trap 'publishing_handle_signal TERM 143' TERM
+    publishing_run_runner bash -c '
+      trap "printf stopped > \\"$STOPPED_FILE\\"; exit 0" TERM
+      printf ready > "$READY_FILE"
+      while :; do sleep 0.1; done
+    '
+  `;
+  const runner = spawn(
+    "bash",
+    ["-eu", "-c", script, "fixture", helper],
+    {
+      cwd: options.cwd,
+      env: {
+        ...options.env,
+        DEPLOY_PACK: "1",
+        PUBLISH_PAYLOAD_CLEANUP: "1",
+        PUBLISH_BUILD_ROOT: options.cwd,
+        READY_FILE: ready,
+        STOPPED_FILE: stopped,
+      },
+      stdio: "ignore",
+    },
+  );
+  t.after(() => {
+    if (runner.exitCode === null) runner.kill("SIGKILL");
+  });
+
+  for (let attempt = 0; attempt < 100 && !fs.existsSync(ready); attempt++) {
+    await new Promise((resolve) => setTimeout(resolve, 50));
+  }
+  assert.ok(fs.existsSync(ready), "owned runner should start");
+  runner.kill("SIGTERM");
+  let timeout;
+  const [code] = await Promise.race([
+    once(runner, "exit"),
+    new Promise((_, reject) => {
+      timeout = setTimeout(
+        () => reject(new Error("bootstrap did not wait for runner shutdown")),
+        5000,
+      );
+    }),
+  ]).finally(() => clearTimeout(timeout));
+
+  assert.equal(code, 143);
+  assert.ok(fs.existsSync(stopped), "signal must reach runner before bootstrap exits");
+  const lockCheck = spawnSync("flock", ["-n", lock, "-c", "true"], {encoding:"utf8"});
+  assert.equal(lockCheck.status, 0, "a replacement build may claim the lock only after cleanup finishes");
+});
+
 test("actual historical entry hands off once with isolated caches and authorized recovery", {timeout:90000}, t=>{
   const options=fixture(t);
-  for (const file of ["build.sh","script/deployment/bootstrap.sh","script/deployment/publishing-context.sh","script/lib/deploymentPackRecovery.mjs"]) {
+  for (const file of [
+    "build.sh",
+    "script/deployment/bootstrap.sh",
+    "script/deployment/publishing-context.sh",
+    "script/deployment/plans.mjs",
+    "script/deployment/capacity.mjs",
+    "script/deployment/owned-processes.mjs",
+    "script/deployment/sequential-build.mjs",
+    "script/lib/deploymentPackRecovery.mjs",
+  ]) {
     const target=path.join(options.cwd,file);
     fs.mkdirSync(path.dirname(target),{recursive:true});
     fs.copyFileSync(file,target);
   }
   const pkg=JSON.parse(fs.readFileSync("package.json","utf8"));
   fs.writeFileSync(path.join(options.cwd,"package.json"),JSON.stringify({packageManager:pkg.packageManager}));
-  // The real bootstrap and recovery execute; the destructive executive is
-  // replaced by an assertion fixture, not represented as a complete build.
-  fs.writeFileSync(path.join(options.cwd,"script/deployment/executive.mjs"),`
+  // The real bootstrap and recovery execute; the phase runner is replaced by
+  // an assertion fixture, not represented as a complete build.
+  fs.writeFileSync(path.join(options.cwd,"script/deployment/sequential-build.mjs"),`
     import assert from "node:assert/strict";
     import fs from "node:fs";
-    assert.equal(process.argv[2],"build");
     assert.equal(process.env.PUBLISH_BUILD_ROOT,process.cwd());
     assert.equal(process.env.PUBLISH_SHELL_PACKS_CAPSULES,"1");
-    for(const key of ["NODE_COMPILE_CACHE","npm_config_cache","PIP_CACHE_DIR","UV_CACHE_DIR"]) {
+    for(const key of [
+      "NODE_COMPILE_CACHE",
+      "npm_config_cache",
+      "PIP_CACHE_DIR",
+      "UV_CACHE_DIR",
+      "BOOSTERSTATE_PORTABLE_RUST_DIR",
+    ]) {
       assert.ok(process.env[key].startsWith(process.env.DEPLOY_BOOTSTRAP_DIR+"/cache/"));
       fs.mkdirSync(process.env[key],{recursive:true});
       fs.writeFileSync(process.env[key]+"/write","isolated");
     }
     fs.rmSync(".cache",{recursive:true,force:true});
-    console.log("isolated executive handoff verified");
+    console.log("isolated sequential runner handoff verified");
     fs.rmSync(process.env.DEPLOY_BOOTSTRAP_DIR,{recursive:true,force:true});
   `);
   fs.mkdirSync(path.join(options.cwd,".cache"));
   const result=spawnSync("bash",["build.sh"],{...options,timeout:85000});
   assert.equal(result.status,0,result.stderr+"\n"+result.stdout);
-  assert.equal(result.stdout.split("isolated executive handoff verified").length-1,1);
+  assert.equal(result.stdout.split("isolated sequential runner handoff verified").length-1,1);
 });

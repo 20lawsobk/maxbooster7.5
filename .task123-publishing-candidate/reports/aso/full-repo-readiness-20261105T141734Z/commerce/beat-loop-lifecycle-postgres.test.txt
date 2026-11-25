@@ -1,0 +1,100 @@
+TAP version 13
+# Subtest: Beat Money Loop lifecycle on a disposable PostgreSQL database
+    # Subtest: concurrent initialization creates exactly one paused state row
+    ok 1 - concurrent initialization creates exactly one paused state row
+      ---
+      duration_ms: 86.626541
+      type: 'test'
+      ...
+    # Subtest: generates decoded audio, a shorter private preview, awareness artwork, atomic listing and royalty ownership
+    ok 2 - generates decoded audio, a shorter private preview, awareness artwork, atomic listing and royalty ownership
+      ---
+      duration_ms: 1733.263678
+      type: 'test'
+      ...
+    # Subtest: a second replica cannot run or orphan an active cycle while its database lock is held
+    ok 3 - a second replica cannot run or orphan an active cycle while its database lock is held
+      ---
+      duration_ms: 17.76264
+      type: 'test'
+      ...
+    # Subtest: only a completed marketplace settlement marks sold; replay does not duplicate seller earnings
+    ok 4 - only a completed marketplace settlement marks sold; replay does not duplicate seller earnings
+      ---
+      duration_ms: 63.944128
+      type: 'test'
+      ...
+    # Subtest: zero published posts is reported honestly while retaining the payable listing
+    ok 5 - zero published posts is reported honestly while retaining the payable listing
+      ---
+      duration_ms: 1675.944704
+      type: 'test'
+      ...
+    # Subtest: concurrent manual requests cannot overlap and pause clears queued cycles
+    ok 6 - concurrent manual requests cannot overlap and pause clears queued cycles
+      ---
+      duration_ms: 1468.055502
+      type: 'test'
+      ...
+    # Subtest: listing failure rolls back beat and royalty rows and removes public/audio uploads
+    ok 7 - listing failure rolls back beat and royalty rows and removes public/audio uploads
+      ---
+      duration_ms: 1490.611923
+      type: 'test'
+      ...
+    # Subtest: silent audio is rejected before listing even without renderer quality metadata
+    ok 8 - silent audio is rejected before listing even without renderer quality metadata
+      ---
+      duration_ms: 1208.656024
+      type: 'test'
+      ...
+    # Subtest: renderer failure lists nothing, releases the slot and records backoff
+    ok 9 - renderer failure lists nothing, releases the slot and records backoff
+      ---
+      duration_ms: 21.898033
+      type: 'test'
+      ...
+    # Subtest: real Python ASGI synthesizes and delivers beat audio and poster into the SQL listing without a checkpoint
+    not ok 10 - real Python ASGI synthesizes and delivers beat audio and poster into the SQL listing without a checkpoint
+      ---
+      duration_ms: 3356.980688
+      type: 'test'
+      location: '/home/runner/workspace/tests/payment-processing/beat-loop-lifecycle-postgres.test.mjs:222:11'
+      failureType: 'testCodeFailure'
+      error: |-
+        Actual ASGI fixture exited: Traceback (most recent call last):
+          File "/home/runner/workspace/tests/payment-processing/helpers-beat-media-asgi.py", line 24, in <module>
+            from ai_model.generation.live_serving import LiveServingModel
+          File "/home/runner/workspace/external/maxcore/artifacts/ai-training-server/ai_model/generation/__init__.py", line 18, in <module>
+            from .technique import TechniqueProfile, extract_technique
+          File "/home/runner/workspace/external/maxcore/artifacts/ai-training-server/ai_model/generation/technique.py", line 31, in <module>
+            import numpy as np
+        ModuleNotFoundError: No module named 'numpy'
+        
+      code: 'ERR_TEST_FAILURE'
+      stack: |-
+        TestContext.<anonymous> (file:///home/runner/workspace/tests/payment-processing/beat-loop-lifecycle-postgres.test.mjs:239:44)
+        async Test.run (node:internal/test_runner/test:1054:7)
+        async TestContext.<anonymous> (file:///home/runner/workspace/tests/payment-processing/beat-loop-lifecycle-postgres.test.mjs:222:3)
+        async Test.run (node:internal/test_runner/test:1054:7)
+        async startSubtestAfterBootstrap (node:internal/test_runner/harness:296:3)
+      ...
+    1..10
+not ok 1 - Beat Money Loop lifecycle on a disposable PostgreSQL database
+  ---
+  duration_ms: 20955.149232
+  type: 'test'
+  location: '/home/runner/workspace/tests/payment-processing/beat-loop-lifecycle-postgres.test.mjs:14:1'
+  failureType: 'subtestsFailed'
+  error: '1 subtest failed'
+  code: 'ERR_TEST_FAILURE'
+  ...
+1..1
+# tests 11
+# suites 0
+# pass 9
+# fail 2
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 23107.102339

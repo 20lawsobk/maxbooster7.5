@@ -1,0 +1,103 @@
+{
+  "sourceRevision": "d33649d75e7a0dffc80adf40fa410f4ee66b1984",
+  "scope": "Bounded, disposable recovery and read-only retained-evidence verification.",
+  "runs": [
+    {
+      "command": [
+        "/home/runner/workspace/python_runtime/bin/python3",
+        "scripts/testing/platform-register.py",
+        "--self-test"
+      ],
+      "cwd": ".",
+      "startedAt": "2026-11-10T15:50:11.768859+00:00",
+      "durationSeconds": 0.417,
+      "exitCode": 0,
+      "timedOut": false,
+      "status": "passed",
+      "log": "reports/test-verification/recheck-2026-11-10/operations/platform-register.py.txt",
+      "logSha256": "2aa94c04b915cd2c6af508146bdba20cb9ef93945d2cb92ea8e660fc07989a91",
+      "file": "scripts/testing/platform-register.py"
+    },
+    {
+      "command": [
+        "/home/runner/workspace/python_runtime/bin/python3",
+        "scripts/testing/run-engine-load.py",
+        "--python",
+        "/home/runner/workspace/python_runtime/bin/python3",
+        "--output",
+        "/home/runner/workspace/reports/test-verification/recheck-2026-11-10/operations/engine-load"
+      ],
+      "cwd": ".",
+      "startedAt": "2026-11-10T15:50:12.190484+00:00",
+      "durationSeconds": 0.816,
+      "exitCode": 0,
+      "timedOut": false,
+      "status": "passed",
+      "log": "reports/test-verification/recheck-2026-11-10/operations/load_test.py.txt",
+      "logSha256": "92bd7628d63d7d84a124ed10a67103d840713164f3c2a7670b532ff18c26444c",
+      "file": "external/maxcore/artifacts/ai-training-server/ai_model/maxcore/tests/load_test.py",
+      "operationalProfile": "bounded-legacy-digital-gpu-numeric-dedup-v1",
+      "evidence": "/home/runner/workspace/reports/test-verification/recheck-2026-11-10/operations/engine-load/results.json"
+    },
+    {
+      "command": [
+        "/home/runner/workspace/python_runtime/bin/python3",
+        "evaluations/maxcore-quality/verify_types.py"
+      ],
+      "cwd": ".",
+      "startedAt": "2026-11-10T15:50:13.011049+00:00",
+      "durationSeconds": 0.968,
+      "exitCode": 0,
+      "timedOut": false,
+      "status": "passed",
+      "log": "reports/test-verification/recheck-2026-11-10/operations/verify_types.py.txt",
+      "logSha256": "691363e9eab1755dbdd5c05f8f6cdeef85e7c640e0f745e9bd96037266ff67d4",
+      "file": "evaluations/maxcore-quality/verify_types.py"
+    },
+    {
+      "command": [
+        "/home/runner/workspace/python_runtime/bin/python3",
+        "evaluations/maxcore-quality/verify_evidence.py"
+      ],
+      "cwd": ".",
+      "startedAt": "2026-11-10T15:50:13.983473+00:00",
+      "durationSeconds": 0.065,
+      "exitCode": 0,
+      "timedOut": false,
+      "status": "passed",
+      "log": "reports/test-verification/recheck-2026-11-10/operations/verify_evidence.py.txt",
+      "logSha256": "a0f71bf11dda59c66151378bcdc0d7ce48f61c7c6134e3e3594d6808a9337be5",
+      "file": "evaluations/maxcore-quality/verify_evidence.py"
+    },
+    {
+      "command": [
+        "/home/runner/workspace/python_runtime/bin/python3",
+        "scripts/maxcore-isolated-recovery-acceptance.py"
+      ],
+      "cwd": ".",
+      "startedAt": "2026-11-10T15:50:14.052478+00:00",
+      "durationSeconds": 2.176,
+      "exitCode": 1,
+      "timedOut": false,
+      "status": "failed",
+      "log": "reports/test-verification/recheck-2026-11-10/operations/maxcore-isolated-recovery-acceptance.py.txt",
+      "logSha256": "aa0622a6ea649a3a61fd597ca2838dc8018c5cdb42b822e53fedf40ad8db74ad",
+      "file": "scripts/maxcore-isolated-recovery-acceptance.py"
+    },
+    {
+      "command": [
+        "node",
+        "tests/payment-processing/run.mjs"
+      ],
+      "cwd": ".",
+      "startedAt": "2026-11-10T15:50:16.234420+00:00",
+      "durationSeconds": 14.085,
+      "exitCode": 0,
+      "timedOut": false,
+      "status": "passed",
+      "log": "reports/test-verification/recheck-2026-11-10/operations/run.mjs.txt",
+      "logSha256": "66369898803fbbf4c4b96ea99040e6250b4797c52d1bc1d76cf305dca3849e9c",
+      "file": "tests/payment-processing/run.mjs"
+    }
+  ]
+}

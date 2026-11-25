@@ -1,0 +1,21 @@
+{
+  "command": [
+    "node",
+    "--test",
+    "--test-reporter=junit",
+    "tests/qs-security-contract.test.mjs",
+    "tests/legacy-security-update.test.mjs",
+    "tests/http-dependency-consumers.test.mjs",
+    "tests/dependency-security-paths.test.mjs",
+    "tests/dependency-advisories.test.mjs"
+  ],
+  "cwd": ".",
+  "startedAt": "2026-10-27T22:19:46.983118+00:00",
+  "durationSeconds": 3.826,
+  "exitCode": 1,
+  "timedOut": false,
+  "status": "failed",
+  "log": "reports/dependency-hardening/2026-10-27-qs/after-tests-initial-proxy.xml",
+  "logSha256": "944a687a793d22e4c00bfeb69a9f49a7d7d0d95d29e49478687110a3962ac6c8",
+  "diagnosis": "The runner forwarded registry proxy variables to an isolated local Electron fixture. One local HTTP download returned403; rerun with the standard clean owned-fixture environment."
+}

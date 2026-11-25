@@ -1,0 +1,51 @@
+[
+  {
+    "candidate": "coverage-coordinate-contract.mjs",
+    "destination": "scripts/testing/coverage-coordinate-contract.mjs",
+    "candidateSha256": "30c0596394d7dc1d791efc1a672ff242a35e7efd61fdcfd079cc3e2e87956160",
+    "patchSha256": "30c0596394d7dc1d791efc1a672ff242a35e7efd61fdcfd079cc3e2e87956160",
+    "sourceImportAdjustmentOnly": false
+  },
+  {
+    "candidate": "coverage-shared-provider.mjs",
+    "destination": "scripts/testing/coverage-shared-provider.mjs",
+    "candidateSha256": "ecc6a0313bca1e4b55539a56543b180da116b93f98768d1bf2be9844c5f98703",
+    "patchSha256": "ecc6a0313bca1e4b55539a56543b180da116b93f98768d1bf2be9844c5f98703",
+    "sourceImportAdjustmentOnly": false
+  },
+  {
+    "candidate": "coverage-node-vite-entry.mjs",
+    "destination": "scripts/testing/coverage-node-vite-entry.mjs",
+    "candidateSha256": "55408bb72578dd95da299dbcc701362dc19b5b43a785c9d308d882f0ba94f015",
+    "patchSha256": "55408bb72578dd95da299dbcc701362dc19b5b43a785c9d308d882f0ba94f015",
+    "sourceImportAdjustmentOnly": false
+  },
+  {
+    "candidate": "collect-node-coverage.mjs",
+    "destination": "scripts/testing/collect-node-coverage.mjs",
+    "candidateSha256": "ad5be53507e3f6d9b658a01597d34754d3297aca9ae162ecd2d15af789231ed0",
+    "patchSha256": "ad5be53507e3f6d9b658a01597d34754d3297aca9ae162ecd2d15af789231ed0",
+    "sourceImportAdjustmentOnly": false
+  },
+  {
+    "candidate": "coverage-raw-sidecar-reporter.cjs",
+    "destination": "scripts/testing/coverage-raw-sidecar-reporter.cjs",
+    "candidateSha256": "3bee4989bf9c32c0eecd070d4bf042e0bfa0137b9fc5049b1893ea70488a7040",
+    "patchSha256": "3bee4989bf9c32c0eecd070d4bf042e0bfa0137b9fc5049b1893ea70488a7040",
+    "sourceImportAdjustmentOnly": false
+  },
+  {
+    "candidate": "coverage-coordinate-contract.test.mjs",
+    "destination": "tests/testing/coverage-coordinate-contract.test.mjs",
+    "candidateSha256": "68cc30ca3271acd7832298b7af9083004ef8ce76e4f3870b6c50ae9771cdf51a",
+    "patchSha256": "a8ab58ce32ed28bad87e957269b3b68e401b330cb852537d61d3b58574b8c8c0",
+    "sourceImportAdjustmentOnly": true
+  },
+  {
+    "candidate": "vitest.platform.config.ts",
+    "destination": "vitest.platform.config.ts",
+    "candidateSha256": "b76f7ba10df4bc4f434beff4775984865881ea7e756f77673b94f878a658ac48",
+    "patchSha256": "b76f7ba10df4bc4f434beff4775984865881ea7e756f77673b94f878a658ac48",
+    "sourceImportAdjustmentOnly": false
+  }
+]

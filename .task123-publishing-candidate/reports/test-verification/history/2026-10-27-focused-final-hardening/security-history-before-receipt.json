@@ -1,0 +1,19 @@
+{
+  "command": [
+    "node",
+    "node_modules/vitest/vitest.mjs",
+    "run",
+    "tests/unit/selfHealingSecurityEngine.test.ts",
+    "--testNamePattern=immediately inspects subsequent",
+    "--reporter=junit",
+    "--outputFile=/workspace/onboarding-results/security-history-before.xml"
+  ],
+  "cwd": ".",
+  "startedAt": "2026-10-27T09:57:58.659543+00:00",
+  "durationSeconds": 1.475,
+  "exitCode": 1,
+  "timedOut": false,
+  "status": "failed",
+  "log": "/workspace/onboarding-results/security-history-before.txt",
+  "logSha256": "e6cd1ed92d209c98c8275bef150f2c4cbb4bb2812dfaf5ba4e722f73ecc987c3"
+}

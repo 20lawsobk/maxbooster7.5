@@ -18,6 +18,7 @@ var __export = (target, all) => {
 var ports_exports = {};
 __export(ports_exports, {
   defaultPorts: () => defaultPorts,
+  dnsNodeLocalHealthPort: () => dnsNodeLocalHealthPort,
   loopbackUrl: () => loopbackUrl,
   runtimePorts: () => runtimePorts
 });
@@ -53,7 +54,7 @@ function assertUniquePorts(ports) {
 function loopbackUrl(port) {
   return `http://127.0.0.1:${port}`;
 }
-var MIN_PORT, MAX_PORT, defaultPorts, runtimePorts;
+var MIN_PORT, MAX_PORT, defaultPorts, runtimePorts, dnsNodeLocalHealthPort;
 var init_ports = __esm({
   "server/config/ports.ts"() {
     "use strict";
@@ -61,6 +62,9 @@ var init_ports = __esm({
     MAX_PORT = 65535;
     defaultPorts = Object.freeze({
       app: 5e3,
+      dnsAuthority: 53,
+      dnsNodeLocal: 5353,
+      dnsApi: 8080,
       localPdim: 5556,
       diffusionGateway: 8008,
       maxcoreApi: 8090,
@@ -71,6 +75,9 @@ var init_ports = __esm({
     });
     runtimePorts = assertUniquePorts({
       app: readPort("PORT", defaultPorts.app),
+      dnsAuthority: readPort("DNS_AUTHORITY_PORT", defaultPorts.dnsAuthority),
+      dnsNodeLocal: readPort("DNS_NODE_LOCAL_PORT", defaultPorts.dnsNodeLocal),
+      dnsApi: readPort("DNS_API_PORT", defaultPorts.dnsApi),
       localPdim: readPort("LOCAL_PDIM_PORT", defaultPorts.localPdim),
       diffusionGateway: readPort(
         "VIDEO_DIFFUSION_PORT",
@@ -91,6 +98,15 @@ var init_ports = __esm({
       ),
       legacyPythonAi: readPort("PYTHON_AI_PORT", defaultPorts.legacyPythonAi)
     });
+    dnsNodeLocalHealthPort = readPort(
+      "DNS_NODE_LOCAL_HEALTH_PORT",
+      5380
+    );
+    if (Object.values(runtimePorts).includes(dnsNodeLocalHealthPort)) {
+      throw new Error(
+        `[Ports] DNS_NODE_LOCAL_HEALTH_PORT collides with configured service port ${dnsNodeLocalHealthPort}`
+      );
+    }
   }
 });
 
@@ -103,8 +119,9 @@ function fail(message) {
   process.exit(1);
 }
 var runtimePorts2;
+var dnsNodeLocalHealthPort2;
 try {
-  ({ runtimePorts: runtimePorts2 } = await Promise.resolve().then(() => (init_ports(), ports_exports)));
+  ({ runtimePorts: runtimePorts2, dnsNodeLocalHealthPort: dnsNodeLocalHealthPort2 } = await Promise.resolve().then(() => (init_ports(), ports_exports)));
 } catch (err) {
   fail(
     `runtime port contract failed to load: ${err instanceof Error ? err.message : String(err)}`
@@ -155,6 +172,18 @@ for (let i = 0; i < lines.length; i++) {
 if (mappings.length === 0) {
   fail(`.replit has no [[ports]] entries; expected a mapping for the app port`);
 }
+if (process.env.PORT_CONTRACT_REQUIRE_ALL === "1") {
+  const required = new Set(Object.values(runtimePorts2));
+  const allowed = /* @__PURE__ */ new Set([...required, dnsNodeLocalHealthPort2]);
+  const configured = new Set(mappings.map((mapping) => mapping.localPort));
+  const missing = [...required].filter((port) => !configured.has(port));
+  const unexpected = [...configured].filter((port) => !allowed.has(port));
+  if (missing.length || unexpected.length) {
+    fail(
+      `strict port contract mismatch; missing mappings: ${missing.join(", ") || "none"}; unexpected mappings: ${unexpected.join(", ") || "none"}`
+    );
+  }
+}
 var localOwners = /* @__PURE__ */ new Map();
 for (const m of mappings) {
   const existingLine = localOwners.get(m.localPort);
@@ -175,6 +204,20 @@ for (const m of mappings) {
     );
   }
   externalOwners.set(m.externalPort, m.line);
+}
+var unexpectedExternal = mappings.find(
+  (m) => m.externalPort !== void 0 && (m.localPort !== runtimePorts2.app || m.externalPort !== REPLIT_DEFAULT_EXTERNAL_PORT)
+);
+if (unexpectedExternal) {
+  fail(
+    `.replit exposes localPort ${unexpectedExternal.localPort} on externalPort ${unexpectedExternal.externalPort} (line ${unexpectedExternal.line}); only localPort ${runtimePorts2.app} on externalPort ${REPLIT_DEFAULT_EXTERNAL_PORT} is allowed. All other ports must omit externalPort.`
+  );
+}
+var externalMappings = mappings.filter((m) => m.externalPort !== void 0);
+if (externalMappings.length > 1) {
+  fail(
+    `.replit contains ${externalMappings.length} external port mappings; only the app listener (localPort ${runtimePorts2.app} \u2192 externalPort ${REPLIT_DEFAULT_EXTERNAL_PORT}) may be public`
+  );
 }
 var publicMappings = mappings.filter(
   (m) => m.externalPort === REPLIT_DEFAULT_EXTERNAL_PORT
@@ -198,6 +241,7 @@ if (publicMapping.localPort !== runtimePorts2.app) {
 var internalPortSet = new Set(
   Object.entries(runtimePorts2).filter(([name]) => name !== "app").map(([, port]) => port)
 );
+internalPortSet.add(dnsNodeLocalHealthPort2);
 internalPortSet.add(6379);
 var nativeRedisUrl = process.env.REDIS_URL || process.env.NATIVE_REDIS_URL || "";
 try {

@@ -11,11 +11,18 @@ test("billing transaction routes execute cancellation, payment setup, portal, in
     stripe: {
       calls: [],
       subscriptionRows: [{ id: "sub_buyer", status: "active", cancel_at_period_end: false, current_period_end: 2000000000 }],
-      paymentMethods: [{ id: "pm_one", card: { last4: "4242" } }],
+      paymentMethods: [{ id: "pm_one", card: { last4: "4242", exp_month: 12, exp_year: 2030, brand: "visa" } }],
+      paymentMethodListError: null,
+      paymentMethodListResponse: null,
       invoices: [],
+      invoiceListError: null,
+      invoiceListResponse: null,
       paymentIntent: null,
       dispute: null,
       charges: [],
+      chargeListError: null,
+      chargeListResponse: null,
+      disputeRetrieveError: null,
     },
     stripeService: {
       calls: [],
@@ -80,11 +87,21 @@ test("billing transaction routes execute cancellation, payment setup, portal, in
       async cancel(id, input) { records.stripe.calls.push(["subscriptions.cancel", id, input]); return { id, status: "canceled" }; },
     },
     paymentMethods: {
-      async list(input) { records.stripe.calls.push(["paymentMethods.list", input]); return { data: records.stripe.paymentMethods }; },
+      async list(input) {
+        records.stripe.calls.push(["paymentMethods.list", input]);
+        if (records.stripe.paymentMethodListError) throw records.stripe.paymentMethodListError;
+        if (records.stripe.paymentMethodListResponse) return records.stripe.paymentMethodListResponse;
+        return { data: records.stripe.paymentMethods };
+      },
       async detach(id) { records.stripe.calls.push(["paymentMethods.detach", id]); return { id, detached: true }; },
     },
     invoices: {
-      async list(input) { records.stripe.calls.push(["invoices.list", input]); return { data: records.stripe.invoices, has_more: false }; },
+      async list(input) {
+        records.stripe.calls.push(["invoices.list", input]);
+        if (records.stripe.invoiceListError) throw records.stripe.invoiceListError;
+        if (records.stripe.invoiceListResponse) return records.stripe.invoiceListResponse;
+        return { data: records.stripe.invoices, has_more: false };
+      },
       async retrieve(id) {
         records.stripe.calls.push(["invoices.retrieve", id]);
         if (id === "missing") throw Object.assign(new Error("missing"), { code: "resource_missing" });
@@ -104,7 +121,12 @@ test("billing transaction routes execute cancellation, payment setup, portal, in
       },
     },
     charges: {
-      async list(input) { records.stripe.calls.push(["charges.list", input]); return { data: records.stripe.charges }; },
+      async list(input) {
+        records.stripe.calls.push(["charges.list", input]);
+        if (records.stripe.chargeListError) throw records.stripe.chargeListError;
+        if (records.stripe.chargeListResponse) return records.stripe.chargeListResponse;
+        return { data: records.stripe.charges, has_more: false };
+      },
       async retrieve(id) {
         records.stripe.calls.push(["charges.retrieve", id]);
         if (id === "missing") throw Object.assign(new Error("missing"), { code: "resource_missing" });
@@ -112,7 +134,11 @@ test("billing transaction routes execute cancellation, payment setup, portal, in
       },
     },
     disputes: {
-      async retrieve(id) { records.stripe.calls.push(["disputes.retrieve", id]); return records.stripe.dispute; },
+      async retrieve(id) {
+        records.stripe.calls.push(["disputes.retrieve", id]);
+        if (records.stripe.disputeRetrieveError) throw records.stripe.disputeRetrieveError;
+        return records.stripe.dispute;
+      },
       async update(id, input) { records.stripe.calls.push(["disputes.update", id, input]); return { id, ...input }; },
     },
   };
@@ -135,6 +161,20 @@ test("billing transaction routes execute cancellation, payment setup, portal, in
   const listedMethods = await invoke("GET", "/payment-method");
   assert.equal(listedMethods.statusCode, 200);
   assert.deepEqual(records.stripe.calls.at(-1), ["paymentMethods.list", { customer: "cus_buyer", type: "card", limit: 1 }]);
+  records.stripe.paymentMethodListError = new Error("provider outage");
+  const paymentMethodOutage = await invoke("GET", "/payment-method");
+  assert.equal(paymentMethodOutage.statusCode, 502);
+  assert.equal(paymentMethodOutage.body.code, "PAYMENT_METHOD_UNAVAILABLE");
+  assert.equal(paymentMethodOutage.body.last4, undefined);
+  records.stripe.paymentMethodListError = null;
+  records.stripe.paymentMethodListResponse = { data: "invalid" };
+  const malformedPaymentMethods = await invoke("GET", "/payment-method");
+  assert.equal(malformedPaymentMethods.statusCode, 502);
+  records.stripe.paymentMethodListResponse = null;
+  const customerId = records.user.stripeCustomerId;
+  records.user.stripeCustomerId = null;
+  assert.deepEqual((await invoke("GET", "/payment-method")).body, { last4: null, expiry: null, brand: null });
+  records.user.stripeCustomerId = customerId;
 
   const setup = await invoke("POST", "/update-payment");
   assert.equal(setup.body.url, "https://checkout.invalid/setup");
@@ -180,10 +220,45 @@ test("billing transaction routes execute cancellation, payment setup, portal, in
   const history = await invoke("GET", "/history");
   assert.equal(history.statusCode, 200);
   assert.equal(records.stripe.calls.at(-1)[0], "invoices.list");
+  records.stripe.invoiceListError = new Error("provider outage");
+  const historyOutage = await invoke("GET", "/history");
+  assert.equal(historyOutage.statusCode, 502);
+  assert.equal(historyOutage.body.code, "BILLING_HISTORY_UNAVAILABLE");
+  records.stripe.invoiceListError = null;
   const invoices = await invoke("GET", "/invoices", { query: { status: "paid", limit: "10" } });
+  assert.equal(invoices.statusCode, 200);
   assert.equal(invoices.body.invoices[0].amount, 49);
+  assert.equal(invoices.body.invoices[0].dueDate, new Date(2000000000 * 1000).toISOString());
   assert.equal(invoices.body.invoices[0].statusDisplay, "Paid");
   assert.deepEqual(records.stripe.calls.at(-1)[1], { customer: "cus_buyer", limit: 10, status: "paid" });
+  records.stripe.invoices = [];
+  const emptyInvoices = await invoke("GET", "/invoices");
+  assert.equal(emptyInvoices.statusCode, 200);
+  assert.deepEqual(emptyInvoices.body, { invoices: [], hasMore: false });
+  records.stripe.invoices = [baseInvoice];
+  records.stripe.invoiceListError = Object.assign(new Error("provider outage"), { type: "StripeConnectionError" });
+  const invoiceOutage = await invoke("GET", "/invoices");
+  assert.equal(invoiceOutage.statusCode, 502);
+  assert.equal(invoiceOutage.body.code, "INVOICE_HISTORY_UNAVAILABLE");
+  assert.equal(invoiceOutage.body.invoices, undefined, "provider errors must not masquerade as empty results");
+  records.stripe.invoiceListError = null;
+  records.stripe.invoiceListResponse = { data: [baseInvoice] };
+  const malformedInvoices = await invoke("GET", "/invoices");
+  assert.equal(malformedInvoices.statusCode, 502);
+  assert.equal(malformedInvoices.body.code, "INVOICE_HISTORY_UNAVAILABLE");
+  records.stripe.invoiceListResponse = null;
+  assert.equal((await invoke("GET", "/invoices", { query: { limit: "0" } })).statusCode, 400);
+  assert.equal((await invoke("GET", "/invoices", { query: { status: "unknown" } })).statusCode, 400);
+  records.stripe.invoices = [{
+    ...baseInvoice,
+    id: "in_no_due_date",
+    due_date: null,
+    status: "paid",
+  }];
+  const noDueDate = await invoke("GET", "/invoices");
+  assert.equal(noDueDate.statusCode, 200);
+  assert.equal(noDueDate.body.invoices[0].dueDate, null);
+  records.stripe.invoices = [baseInvoice];
   const download = await invoke("GET", "/invoices/:invoiceId/download", { params: { invoiceId: "in_paid" } });
   assert.equal(download.redirectTo, baseInvoice.invoice_pdf);
   records.stripe.invoices.push({ ...baseInvoice, id: "in_other", customer: "cus_someone_else" });
@@ -280,9 +355,27 @@ test("billing transaction routes execute cancellation, payment setup, portal, in
   const refundHistory = await invoke("GET", "/refunds");
   assert.equal(refundHistory.body.refunds[0].statusDisplay, "Completed");
   assert.equal(refundHistory.body.refunds[0].amount, 12);
+  records.stripe.chargeListError = new Error("provider outage");
+  const refundsOutage = await invoke("GET", "/refunds");
+  assert.equal(refundsOutage.statusCode, 502);
+  assert.equal(refundsOutage.body.code, "REFUND_HISTORY_UNAVAILABLE");
+  records.stripe.chargeListError = null;
+  records.stripe.chargeListResponse = { data: null };
+  const malformedRefunds = await invoke("GET", "/refunds");
+  assert.equal(malformedRefunds.statusCode, 502);
+  assert.equal(malformedRefunds.body.code, "REFUND_HISTORY_UNAVAILABLE");
+  records.stripe.chargeListResponse = null;
   const disputes = await invoke("GET", "/disputes");
   assert.equal(disputes.body.disputes[0].id, "dp_1");
   assert.equal(disputes.body.disputes[0].statusDisplay, "Action Required");
+  records.stripe.disputeRetrieveError = new Error("provider outage");
+  const disputesOutage = await invoke("GET", "/disputes");
+  assert.equal(disputesOutage.statusCode, 502);
+  assert.equal(disputesOutage.body.code, "BILLING_DISPUTES_UNAVAILABLE");
+  records.stripe.disputeRetrieveError = null;
+  records.stripe.chargeListError = new Error("provider outage");
+  assert.equal((await invoke("GET", "/disputes")).statusCode, 502);
+  records.stripe.chargeListError = null;
   records.stripe.charge = { id: "ch_1", customer: "cus_buyer" };
   const evidence = await invoke("POST", "/dispute/evidence", {
     body: { disputeId: "dp_1", evidence: { customer_name: "Buyer", product_description: "Monthly plan", submit: true } },

@@ -54,6 +54,7 @@ describe("subprocess safety", () => {
       "postgresql://restore.example/scratch?%64bname=production",
       "postgresql://restore.example/db?port=6432",
       "postgresql://restore.example/db?%70ort=6432",
+      "postgresql://restore.example/db#production",
       "postgresql://restore.example/db%0aPGOPTIONS=evil",
     ]) {
       expect(() => validatePostgresConnectionUrl(url)).toThrow();
@@ -76,6 +77,12 @@ describe("subprocess safety", () => {
       postgresDatabaseIdentity("postgresql://db.example:05432/production"),
     ).toEqual(
       postgresDatabaseIdentity("postgresql://DB.EXAMPLE.:5432/production"),
+    );
+    expect(
+      postgresDatabaseIdentity("postgresql://restore.example/db?port=custom"),
+    ).toEqual({ host: "restore.example", port: "custom", database: "db" });
+    expect(postgresDatabaseIdentity("postgresql://restore-user@restore.example")).toEqual(
+      { host: "restore.example", port: "5432", database: "restore-user" },
     );
     expect(
       isSamePostgresDatabase(

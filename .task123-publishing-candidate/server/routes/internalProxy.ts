@@ -1,0 +1,100 @@
+/**
+ * Internal Proxy Routes
+ *
+ * Exposes internal sidecar services (Python AI, etc.) through the main
+ * application port (PORT) so the entire stack is reachable on one port.
+ *
+ * Security: requests must carry the BOOSTERSTATE_SECRET as a Bearer token.
+ * This stops external callers from using the proxy — only in-process server
+ * code (which reads the same env var) can call these routes.
+ */
+import { Router, Request, Response } from "express";
+import { logger } from "../logger.js";
+import { loopbackUrl, runtimePorts } from "../config/ports.js";
+
+const AI_SERVICE_TARGET = loopbackUrl(runtimePorts.legacyPythonAi);
+const INTERNAL_SECRET = process.env.BOOSTERSTATE_SECRET || "";
+
+function checkInternalSecret(req: Request, res: Response): boolean {
+  const auth = req.headers["authorization"];
+  const provided = auth?.startsWith("Bearer ") ? auth?.slice(7) : "";
+  if (!INTERNAL_SECRET || provided !== INTERNAL_SECRET) {
+    res.status(401).json({ error: "Unauthorized" });
+    return false;
+  }
+  return true;
+}
+
+// Short timeout for health/probe requests — avoids 15 s stall on every health poll.
+const HEALTH_PROBE_TIMEOUT_MS = 2_000;
+// Full timeout for normal inference/data requests.
+const PROXY_TIMEOUT_MS = 15_000;
+
+async function proxyTo(
+  target: string,
+  req: Request,
+  res: Response,
+  label: string,
+): Promise<void> {
+  const isHealthProbe =
+    req.path === "/health" || req.path === "/ping" || req.path === "/ready";
+  const timeoutMs = isHealthProbe ? HEALTH_PROBE_TIMEOUT_MS : PROXY_TIMEOUT_MS;
+
+  const qs = Object.keys(req.query).length
+    ? "?" + new URLSearchParams(req.query as Record<string, string>).toString()
+    : "";
+  const url = `${target}${req.path}${qs}`;
+  try {
+    const headers: Record<string, string> = {
+      "Content-Type": "application/json",
+    };
+    const opts: RequestInit = {
+      method: req.method,
+      headers,
+      signal: AbortSignal.timeout(timeoutMs),
+    };
+    if (req.method !== "GET" && req.method !== "HEAD") {
+      opts.body = JSON.stringify(req.body);
+    }
+    const upstream = await fetch(url, opts);
+    const ct = upstream?.headers.get("content-type") || "application/json";
+    res.status(upstream?.status).setHeader("Content-Type", ct);
+    if (ct?.includes("application/json")) {
+      res.json(await upstream?.json());
+    } else {
+      res.send(await upstream?.text());
+    }
+  } catch (err) {
+    // Health probes must report their real status. A 200 here would tell any
+    // status-code-only consumer (load balancer, uptime monitor) that the
+    // sidecar is fine when it is actually unreachable. The JSON body still
+    // carries the descriptive "degraded" detail for consumers that inspect it.
+    if (isHealthProbe) {
+      logger.debug(
+        `[${label}] sidecar unreachable on health probe — reporting unavailable`,
+      );
+      res
+        .status(503)
+        .json({ status: "degraded", available: false, service: label });
+      return;
+    }
+    logger.debug(`[${label}] proxy → ${url} failed: ${(err as Error).message}`);
+    res.status(503).json({ error: `${label} unavailable` });
+  }
+}
+
+export const aiServiceProxyRouter = Router();
+
+aiServiceProxyRouter?.use((req: Request, res: Response) => {
+  if (!checkInternalSecret(req, res)) return;
+  proxyTo(AI_SERVICE_TARGET, req, res, "PythonAI");
+});
+
+const BOOSTERSTATE_TARGET = loopbackUrl(runtimePorts.boosterState);
+
+export const boosterstateProxyRouter = Router();
+
+boosterstateProxyRouter?.use((req: Request, res: Response) => {
+  if (!checkInternalSecret(req, res)) return;
+  proxyTo(BOOSTERSTATE_TARGET, req, res, "Boosterstate");
+});

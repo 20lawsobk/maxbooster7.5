@@ -23,8 +23,17 @@ describe("MaxCore Node route contracts", () => {
       const url = req.url ?? "";
       if (url === "/health") {
         res.setHeader("Content-Type", "application/json");
-        res.end(JSON.stringify({ model_loaded: true, model_blocked: false,
-          warm_start: { state: "disabled" }, serving_release: { candidate_quality: "not_selected" } }));
+        res.end(JSON.stringify({
+          status: "healthy",
+          model_loaded: false,
+          generation_ready: true,
+          generation_mode: "live_awareness",
+          awareness: { ready: true },
+          live_awareness: { available: true, live_awareness_serving: true },
+          model_blocked: false,
+          warm_start: { state: "disabled" },
+          serving_release: { candidate_quality: "not_selected" },
+        }));
       } else if (url === "/api/warm/status") {
         res.setHeader("Content-Type", "application/json");
         res.end(JSON.stringify({ deep_warm: { state: "partial" } }));
@@ -97,6 +106,11 @@ describe("MaxCore Node route contracts", () => {
     expect(response.status).toBe(200);
     const result = await response.json();
     expect(result.ready).toBe(true);
+    expect(result.generation_ready).toBe(true);
+    expect(result.generation_mode).toBe("live_awareness");
+    expect(result.model_loaded).toBe(false);
+    expect(result.live_awareness.live_awareness_serving).toBe(true);
+    expect(result.awareness.ready).toBe(true);
     expect(result.python.deep_warm_state).toBe("partial");
     expect(result.python.serving_release.candidate_quality).toBe("not_selected");
     nextReady = false;

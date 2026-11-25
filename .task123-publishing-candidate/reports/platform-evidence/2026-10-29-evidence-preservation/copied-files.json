@@ -1,0 +1,796 @@
+{
+  "schemaVersion": 1,
+  "scope": "Byte-for-byte preservation of historical candidate evidence; not a new test execution or acceptance promotion",
+  "copiedAt": "2026-10-29T22:06:40.618522+00:00",
+  "records": [
+    {
+      "cohort": "identity",
+      "source": "/workspace/onboarding-results/case-identity-repairs/reports/platform-evidence/2026-10-28-case-identity-repair-candidate/README.md",
+      "destination": "reports/platform-evidence/2026-10-28-case-identity-repair-candidate/README.md",
+      "bytes": 8623,
+      "sha256": "d2dc82e115c063a1baf175ddf9d827cbf84be073c44ada426b148caa0e38340f"
+    },
+    {
+      "cohort": "identity",
+      "source": "/workspace/onboarding-results/case-identity-repairs/reports/platform-evidence/2026-10-28-case-identity-repair-candidate/baseline-source/scripts/testing/platform-register.py",
+      "destination": "reports/platform-evidence/2026-10-28-case-identity-repair-candidate/baseline-source/scripts/testing/platform-register.py",
+      "bytes": 63626,
+      "sha256": "f8c4e518a50cfb66cce48e4b305b1760df6729ffbacbdaccaddb0708ab106257"
+    },
+    {
+      "cohort": "identity",
+      "source": "/workspace/onboarding-results/case-identity-repairs/reports/platform-evidence/2026-10-28-case-identity-repair-candidate/baseline-source/scripts/testing/summarize-results.py",
+      "destination": "reports/platform-evidence/2026-10-28-case-identity-repair-candidate/baseline-source/scripts/testing/summarize-results.py",
+      "bytes": 26883,
+      "sha256": "a9e5d062edf1f292b5d26212e430e320db6820c3717272e8226ab6a0ed1a9b30"
+    },
+    {
+      "cohort": "identity",
+      "source": "/workspace/onboarding-results/case-identity-repairs/reports/platform-evidence/2026-10-28-case-identity-repair-candidate/baseline-source/tests/testing/test_platform_evidence.py",
+      "destination": "reports/platform-evidence/2026-10-28-case-identity-repair-candidate/baseline-source/tests/testing/test_platform_evidence.py",
+      "bytes": 24976,
+      "sha256": "7cad1816b277bb29e6f1bd43b877ffc98ba3fb92207368df5bd906f65eea7f06"
+    },
+    {
+      "cohort": "identity",
+      "source": "/workspace/onboarding-results/case-identity-repairs/reports/platform-evidence/2026-10-28-case-identity-repair-candidate/baseline-source/tests/testing/test_summary_results.py",
+      "destination": "reports/platform-evidence/2026-10-28-case-identity-repair-candidate/baseline-source/tests/testing/test_summary_results.py",
+      "bytes": 6152,
+      "sha256": "fb5b6359a39d2c46f1bf7f2132f1371bfd246a43dcea1182215aed1c64097bd7"
+    },
+    {
+      "cohort": "identity",
+      "source": "/workspace/onboarding-results/case-identity-repairs/reports/platform-evidence/2026-10-28-case-identity-repair-candidate/baseline-source/tests/unit/auth-page-age-policy.test.ts",
+      "destination": "reports/platform-evidence/2026-10-28-case-identity-repair-candidate/baseline-source/tests/unit/auth-page-age-policy.test.ts",
+      "bytes": 17520,
+      "sha256": "7daa3bc63ae43cba07f130fe4b1092d619c13e3422e70f27fe22cc97cfda8893"
+    },
+    {
+      "cohort": "identity",
+      "source": "/workspace/onboarding-results/case-identity-repairs/reports/platform-evidence/2026-10-28-case-identity-repair-candidate/baseline-source/tests/unit/deployment-small-file-codec.test.ts",
+      "destination": "reports/platform-evidence/2026-10-28-case-identity-repair-candidate/baseline-source/tests/unit/deployment-small-file-codec.test.ts",
+      "bytes": 1826,
+      "sha256": "86152f41af0eaf718e6ba8e62b8a87f9d7f8afdc96be7fa3ff20acbaee84a8bd"
+    },
+    {
+      "cohort": "identity",
+      "source": "/workspace/onboarding-results/case-identity-repairs/reports/platform-evidence/2026-10-28-case-identity-repair-candidate/baseline-source/tests/unit/email-provider-ack.test.ts",
+      "destination": "reports/platform-evidence/2026-10-28-case-identity-repair-candidate/baseline-source/tests/unit/email-provider-ack.test.ts",
+      "bytes": 3145,
+      "sha256": "f0dcae19451dd40cabd6fdfd047140c4c3774b49ed0fabd9c41d1a6c71966322"
+    },
+    {
+      "cohort": "identity",
+      "source": "/workspace/onboarding-results/case-identity-repairs/reports/platform-evidence/2026-10-28-case-identity-repair-candidate/baseline-source/tests/unit/frontend-batch-response-contracts.test.ts",
+      "destination": "reports/platform-evidence/2026-10-28-case-identity-repair-candidate/baseline-source/tests/unit/frontend-batch-response-contracts.test.ts",
+      "bytes": 5806,
+      "sha256": "5e3b278f498917a3b34a2c9b03e0c0a03ff27c178f20f05e76318f044981cf6d"
+    },
+    {
+      "cohort": "identity",
+      "source": "/workspace/onboarding-results/case-identity-repairs/reports/platform-evidence/2026-10-28-case-identity-repair-candidate/baseline-source/tests/unit/marketplace-storefront-page-contracts.test.ts",
+      "destination": "reports/platform-evidence/2026-10-28-case-identity-repair-candidate/baseline-source/tests/unit/marketplace-storefront-page-contracts.test.ts",
+      "bytes": 5240,
+      "sha256": "2b5b251f5e7567a6c14559220d79c35c4d91e49a4f4496c361a8a66e26b45b94"
+    },
+    {
+      "cohort": "identity",
+      "source": "/workspace/onboarding-results/case-identity-repairs/reports/platform-evidence/2026-10-28-case-identity-repair-candidate/baseline-source/tests/unit/password-policy.test.ts",
+      "destination": "reports/platform-evidence/2026-10-28-case-identity-repair-candidate/baseline-source/tests/unit/password-policy.test.ts",
+      "bytes": 1356,
+      "sha256": "4d069984f095d5fa8ac65a6a90fb1956dbf6b376a276aee7213806feb0a2e341"
+    },
+    {
+      "cohort": "identity",
+      "source": "/workspace/onboarding-results/case-identity-repairs/reports/platform-evidence/2026-10-28-case-identity-repair-candidate/baseline-source/tests/unit/registrationCompletion.test.ts",
+      "destination": "reports/platform-evidence/2026-10-28-case-identity-repair-candidate/baseline-source/tests/unit/registrationCompletion.test.ts",
+      "bytes": 3057,
+      "sha256": "0cd757e641827b2e0e49f6a329ae8801cc4b664db3402da2cac01f82eaa235cc"
+    },
+    {
+      "cohort": "identity",
+      "source": "/workspace/onboarding-results/case-identity-repairs/reports/platform-evidence/2026-10-28-case-identity-repair-candidate/baseline-source/tests/unit/registrationCompletionBoundary.test.ts",
+      "destination": "reports/platform-evidence/2026-10-28-case-identity-repair-candidate/baseline-source/tests/unit/registrationCompletionBoundary.test.ts",
+      "bytes": 2500,
+      "sha256": "1701903ddd3b95a85c975c9548ec0cf12389c1a39700e29eb7e50137d19e61a9"
+    },
+    {
+      "cohort": "identity",
+      "source": "/workspace/onboarding-results/case-identity-repairs/reports/platform-evidence/2026-10-28-case-identity-repair-candidate/baseline-source/tests/unit/subscriptionCheckout.test.ts",
+      "destination": "reports/platform-evidence/2026-10-28-case-identity-repair-candidate/baseline-source/tests/unit/subscriptionCheckout.test.ts",
+      "bytes": 3537,
+      "sha256": "3e18dff432215b587e17438f6bc4df47470ec6f23964ff2b1a3d38cfc2df8b4a"
+    },
+    {
+      "cohort": "identity",
+      "source": "/workspace/onboarding-results/case-identity-repairs/reports/platform-evidence/2026-10-28-case-identity-repair-candidate/baseline-source/tests/unit/support-ticket-validation.test.ts",
+      "destination": "reports/platform-evidence/2026-10-28-case-identity-repair-candidate/baseline-source/tests/unit/support-ticket-validation.test.ts",
+      "bytes": 1546,
+      "sha256": "c05ba4430018bcb4f8414ba997e2d7bdbebd512cafaf7952e753ac53d7fe5ae0"
+    },
+    {
+      "cohort": "identity",
+      "source": "/workspace/onboarding-results/case-identity-repairs/reports/platform-evidence/2026-10-28-case-identity-repair-candidate/baseline.json",
+      "destination": "reports/platform-evidence/2026-10-28-case-identity-repair-candidate/baseline.json",
+      "bytes": 3065,
+      "sha256": "2165793dd8bd8d83c264a43981880e1dfac700979f67887498ec07ebd9cfda27"
+    },
+    {
+      "cohort": "identity",
+      "source": "/workspace/onboarding-results/case-identity-repairs/reports/platform-evidence/2026-10-28-case-identity-repair-candidate/manifest.json",
+      "destination": "reports/platform-evidence/2026-10-28-case-identity-repair-candidate/manifest.json",
+      "bytes": 7218,
+      "sha256": "3f5422fc2243aa6995facb71fa8603f83615e50347cd69deba2e1fb9be32950d"
+    },
+    {
+      "cohort": "identity",
+      "source": "/workspace/onboarding-results/case-identity-repairs/reports/platform-evidence/2026-10-28-case-identity-repair-candidate/patch-check.json",
+      "destination": "reports/platform-evidence/2026-10-28-case-identity-repair-candidate/patch-check.json",
+      "bytes": 337,
+      "sha256": "e81376e880baa49dbc62b3414781e0461a092d7a7693f60443673aeed11c6fa6"
+    },
+    {
+      "cohort": "identity",
+      "source": "/workspace/onboarding-results/case-identity-repairs/reports/platform-evidence/2026-10-28-case-identity-repair-candidate/proposed/scripts/testing/junit_evidence.py",
+      "destination": "reports/platform-evidence/2026-10-28-case-identity-repair-candidate/proposed/scripts/testing/junit_evidence.py",
+      "bytes": 1946,
+      "sha256": "2f628127157479063886c0810b6d85dae3b3d1f6b826c43a92a8075c25ec7efb"
+    },
+    {
+      "cohort": "identity",
+      "source": "/workspace/onboarding-results/case-identity-repairs/reports/platform-evidence/2026-10-28-case-identity-repair-candidate/proposed/scripts/testing/platform-register.py",
+      "destination": "reports/platform-evidence/2026-10-28-case-identity-repair-candidate/proposed/scripts/testing/platform-register.py",
+      "bytes": 63585,
+      "sha256": "ef8982d404971acd5d1f0aacf277c0cc51e6c40c54fd7d9ac50d576e561f2d2e"
+    },
+    {
+      "cohort": "identity",
+      "source": "/workspace/onboarding-results/case-identity-repairs/reports/platform-evidence/2026-10-28-case-identity-repair-candidate/proposed/scripts/testing/summarize-results.py",
+      "destination": "reports/platform-evidence/2026-10-28-case-identity-repair-candidate/proposed/scripts/testing/summarize-results.py",
+      "bytes": 26052,
+      "sha256": "4171c579d8cb2d8c60737e3d399e3efc4909471d412fcc930beb6d603b01962e"
+    },
+    {
+      "cohort": "identity",
+      "source": "/workspace/onboarding-results/case-identity-repairs/reports/platform-evidence/2026-10-28-case-identity-repair-candidate/proposed/tests/testing/test_platform_evidence.py",
+      "destination": "reports/platform-evidence/2026-10-28-case-identity-repair-candidate/proposed/tests/testing/test_platform_evidence.py",
+      "bytes": 28515,
+      "sha256": "661ae5f953fc8c84c6e262d255f73b7f73afde2bb57f895435e22a36e2afa84d"
+    },
+    {
+      "cohort": "identity",
+      "source": "/workspace/onboarding-results/case-identity-repairs/reports/platform-evidence/2026-10-28-case-identity-repair-candidate/proposed/tests/testing/test_summary_results.py",
+      "destination": "reports/platform-evidence/2026-10-28-case-identity-repair-candidate/proposed/tests/testing/test_summary_results.py",
+      "bytes": 8189,
+      "sha256": "82ef8c0e5987ba783fdd9eec2d7a578bf222d26309f560e820cf33ddec6f1835"
+    },
+    {
+      "cohort": "identity",
+      "source": "/workspace/onboarding-results/case-identity-repairs/reports/platform-evidence/2026-10-28-case-identity-repair-candidate/proposed/tests/unit/auth-page-age-policy.test.ts",
+      "destination": "reports/platform-evidence/2026-10-28-case-identity-repair-candidate/proposed/tests/unit/auth-page-age-policy.test.ts",
+      "bytes": 17529,
+      "sha256": "22e0024e4084343f602b187c4223183feb4201f507e51611009c9bd4331f4fe5"
+    },
+    {
+      "cohort": "identity",
+      "source": "/workspace/onboarding-results/case-identity-repairs/reports/platform-evidence/2026-10-28-case-identity-repair-candidate/proposed/tests/unit/deployment-small-file-codec.test.ts",
+      "destination": "reports/platform-evidence/2026-10-28-case-identity-repair-candidate/proposed/tests/unit/deployment-small-file-codec.test.ts",
+      "bytes": 1835,
+      "sha256": "6ed70a60ce032f07199006f202562f9d5a0a5e50f989a79eff3b067dddcb2d76"
+    },
+    {
+      "cohort": "identity",
+      "source": "/workspace/onboarding-results/case-identity-repairs/reports/platform-evidence/2026-10-28-case-identity-repair-candidate/proposed/tests/unit/email-provider-ack.test.ts",
+      "destination": "reports/platform-evidence/2026-10-28-case-identity-repair-candidate/proposed/tests/unit/email-provider-ack.test.ts",
+      "bytes": 3163,
+      "sha256": "c5b78d69f2243ef1044b27a735199b8b5c82b276e220854d8c87f417a211718a"
+    },
+    {
+      "cohort": "identity",
+      "source": "/workspace/onboarding-results/case-identity-repairs/reports/platform-evidence/2026-10-28-case-identity-repair-candidate/proposed/tests/unit/frontend-batch-response-contracts.test.ts",
+      "destination": "reports/platform-evidence/2026-10-28-case-identity-repair-candidate/proposed/tests/unit/frontend-batch-response-contracts.test.ts",
+      "bytes": 5815,
+      "sha256": "e0ff62ca2cac6a18bc64478e09904e6116d8930006c2fc6ec722ddd93106436d"
+    },
+    {
+      "cohort": "identity",
+      "source": "/workspace/onboarding-results/case-identity-repairs/reports/platform-evidence/2026-10-28-case-identity-repair-candidate/proposed/tests/unit/marketplace-storefront-page-contracts.test.ts",
+      "destination": "reports/platform-evidence/2026-10-28-case-identity-repair-candidate/proposed/tests/unit/marketplace-storefront-page-contracts.test.ts",
+      "bytes": 5249,
+      "sha256": "9d2177a22d4291da51d326e3706bf50f986aa82ef5c4361c492da1bf74a8ba4a"
+    },
+    {
+      "cohort": "identity",
+      "source": "/workspace/onboarding-results/case-identity-repairs/reports/platform-evidence/2026-10-28-case-identity-repair-candidate/proposed/tests/unit/password-policy.test.ts",
+      "destination": "reports/platform-evidence/2026-10-28-case-identity-repair-candidate/proposed/tests/unit/password-policy.test.ts",
+      "bytes": 1374,
+      "sha256": "71161c56b54c0f12880fdd99e43dc223cbd9258618a2251dbb8ab5f2bcb55da7"
+    },
+    {
+      "cohort": "identity",
+      "source": "/workspace/onboarding-results/case-identity-repairs/reports/platform-evidence/2026-10-28-case-identity-repair-candidate/proposed/tests/unit/registrationCompletion.test.ts",
+      "destination": "reports/platform-evidence/2026-10-28-case-identity-repair-candidate/proposed/tests/unit/registrationCompletion.test.ts",
+      "bytes": 3066,
+      "sha256": "e9e2a92e364daa6a97b175331a232cd55c377e06deeccea0f8e2213d4bd1a649"
+    },
+    {
+      "cohort": "identity",
+      "source": "/workspace/onboarding-results/case-identity-repairs/reports/platform-evidence/2026-10-28-case-identity-repair-candidate/proposed/tests/unit/registrationCompletionBoundary.test.ts",
+      "destination": "reports/platform-evidence/2026-10-28-case-identity-repair-candidate/proposed/tests/unit/registrationCompletionBoundary.test.ts",
+      "bytes": 2509,
+      "sha256": "4a5e097fd4f1f9af3fc9fcc91f05364525829aa0d1404ca12cd210124275d6f5"
+    },
+    {
+      "cohort": "identity",
+      "source": "/workspace/onboarding-results/case-identity-repairs/reports/platform-evidence/2026-10-28-case-identity-repair-candidate/proposed/tests/unit/subscriptionCheckout.test.ts",
+      "destination": "reports/platform-evidence/2026-10-28-case-identity-repair-candidate/proposed/tests/unit/subscriptionCheckout.test.ts",
+      "bytes": 3555,
+      "sha256": "5eb3f59466a40e4423ce77a165704eb82943ea4ab1ab5f0f396a82137a4e6db5"
+    },
+    {
+      "cohort": "identity",
+      "source": "/workspace/onboarding-results/case-identity-repairs/reports/platform-evidence/2026-10-28-case-identity-repair-candidate/proposed/tests/unit/support-ticket-validation.test.ts",
+      "destination": "reports/platform-evidence/2026-10-28-case-identity-repair-candidate/proposed/tests/unit/support-ticket-validation.test.ts",
+      "bytes": 1573,
+      "sha256": "81b7acf28cc1401d2f17d75f966e9d20502d25c1d55819db44dc6244feee26f6"
+    },
+    {
+      "cohort": "identity",
+      "source": "/workspace/onboarding-results/case-identity-repairs/reports/platform-evidence/2026-10-28-case-identity-repair-candidate/raw/framework/framework-sealed-receipt.json",
+      "destination": "reports/platform-evidence/2026-10-28-case-identity-repair-candidate/raw/framework/framework-sealed-receipt.json",
+      "bytes": 2148,
+      "sha256": "df9efa1f39cccfb8ccd45d8884ef24477e9002e5162b8e1434eb72c295019109"
+    },
+    {
+      "cohort": "identity",
+      "source": "/workspace/onboarding-results/case-identity-repairs/reports/platform-evidence/2026-10-28-case-identity-repair-candidate/raw/framework/framework-sealed.junit.xml",
+      "destination": "reports/platform-evidence/2026-10-28-case-identity-repair-candidate/raw/framework/framework-sealed.junit.xml",
+      "bytes": 15397,
+      "sha256": "27ad31f284c29900176c82cc5c45d04bd202eadd1421e36f123b50b03fab2d8f"
+    },
+    {
+      "cohort": "identity",
+      "source": "/workspace/onboarding-results/case-identity-repairs/reports/platform-evidence/2026-10-28-case-identity-repair-candidate/raw/framework/framework-sealed.log",
+      "destination": "reports/platform-evidence/2026-10-28-case-identity-repair-candidate/raw/framework/framework-sealed.log",
+      "bytes": 180,
+      "sha256": "5d3f9b5f1a4cf2eff08010a14be9a587fde39cc6e215450cd5380370768f32d0"
+    },
+    {
+      "cohort": "identity",
+      "source": "/workspace/onboarding-results/case-identity-repairs/reports/platform-evidence/2026-10-28-case-identity-repair-candidate/raw/http-compatibility/case-results.json",
+      "destination": "reports/platform-evidence/2026-10-28-case-identity-repair-candidate/raw/http-compatibility/case-results.json",
+      "bytes": 1903,
+      "sha256": "ca8c5659e580c8fd8f70a82d65b82d052b4926592e2dfe0aa4594cec81af9f1d"
+    },
+    {
+      "cohort": "identity",
+      "source": "/workspace/onboarding-results/case-identity-repairs/reports/platform-evidence/2026-10-28-case-identity-repair-candidate/raw/http-compatibility/integration.junit.xml",
+      "destination": "reports/platform-evidence/2026-10-28-case-identity-repair-candidate/raw/http-compatibility/integration.junit.xml",
+      "bytes": 120892,
+      "sha256": "aab8a623799eb54dc445f5603b86d93f98ede295aeddb28d80664134ca216018"
+    },
+    {
+      "cohort": "identity",
+      "source": "/workspace/onboarding-results/case-identity-repairs/reports/platform-evidence/2026-10-28-case-identity-repair-candidate/raw/independent-review/independent-junit-review.json",
+      "destination": "reports/platform-evidence/2026-10-28-case-identity-repair-candidate/raw/independent-review/independent-junit-review.json",
+      "bytes": 649,
+      "sha256": "0c7760a656ae74d5c4e0acab71d378b42f6b4532195fabc93fa0e75b529f8014"
+    },
+    {
+      "cohort": "identity",
+      "source": "/workspace/onboarding-results/case-identity-repairs/reports/platform-evidence/2026-10-28-case-identity-repair-candidate/raw/independent-review/independent-junit-review.py",
+      "destination": "reports/platform-evidence/2026-10-28-case-identity-repair-candidate/raw/independent-review/independent-junit-review.py",
+      "bytes": 1943,
+      "sha256": "7de7947996aac702e3ff5910c283a53c3a48b24178d2e612d5b4279a6b8d6fd9"
+    },
+    {
+      "cohort": "identity",
+      "source": "/workspace/onboarding-results/case-identity-repairs/reports/platform-evidence/2026-10-28-case-identity-repair-candidate/raw/maxcore/external__maxcore__artifacts__ai-training-server__ai_model__director__test_director.txt",
+      "destination": "reports/platform-evidence/2026-10-28-case-identity-repair-candidate/raw/maxcore/external__maxcore__artifacts__ai-training-server__ai_model__director__test_director.txt",
+      "bytes": 99,
+      "sha256": "f7c0b4fd95db0cf73439a22b6459470b6772cbc015691d64b6cc2d269362a6ad"
+    },
+    {
+      "cohort": "identity",
+      "source": "/workspace/onboarding-results/case-identity-repairs/reports/platform-evidence/2026-10-28-case-identity-repair-candidate/raw/maxcore/external__maxcore__artifacts__ai-training-server__ai_model__director__test_director.xml",
+      "destination": "reports/platform-evidence/2026-10-28-case-identity-repair-candidate/raw/maxcore/external__maxcore__artifacts__ai-training-server__ai_model__director__test_director.xml",
+      "bytes": 1820,
+      "sha256": "aa3cbd541b8a7606c70412bd59e67c864a1e3b81e98702c4fc364432ee71251f"
+    },
+    {
+      "cohort": "identity",
+      "source": "/workspace/onboarding-results/case-identity-repairs/reports/platform-evidence/2026-10-28-case-identity-repair-candidate/raw/maxcore/external__maxcore__artifacts__ai-training-server__ai_model__gpu__tests__test_digital_gpu_comprehensive.txt",
+      "destination": "reports/platform-evidence/2026-10-28-case-identity-repair-candidate/raw/maxcore/external__maxcore__artifacts__ai-training-server__ai_model__gpu__tests__test_digital_gpu_comprehensive.txt",
+      "bytes": 180,
+      "sha256": "f6f849a456008343d3f60005daf546d40d5952cf387daa93c1f032156bf5dab3"
+    },
+    {
+      "cohort": "identity",
+      "source": "/workspace/onboarding-results/case-identity-repairs/reports/platform-evidence/2026-10-28-case-identity-repair-candidate/raw/maxcore/external__maxcore__artifacts__ai-training-server__ai_model__gpu__tests__test_digital_gpu_comprehensive.xml",
+      "destination": "reports/platform-evidence/2026-10-28-case-identity-repair-candidate/raw/maxcore/external__maxcore__artifacts__ai-training-server__ai_model__gpu__tests__test_digital_gpu_comprehensive.xml",
+      "bytes": 20040,
+      "sha256": "4b8aa7d4d8922d1a533ef971497dd07fa7278d2a35ca4f0b957c37feb897dd72"
+    },
+    {
+      "cohort": "identity",
+      "source": "/workspace/onboarding-results/case-identity-repairs/reports/platform-evidence/2026-10-28-case-identity-repair-candidate/raw/maxcore/receipt.json",
+      "destination": "reports/platform-evidence/2026-10-28-case-identity-repair-candidate/raw/maxcore/receipt.json",
+      "bytes": 120957,
+      "sha256": "e49ea0f4e7f9eacbce6e6aa69ebe82b7ddde6a206806e02ecda530d5c0d2a8b8"
+    },
+    {
+      "cohort": "identity",
+      "source": "/workspace/onboarding-results/case-identity-repairs/reports/platform-evidence/2026-10-28-case-identity-repair-candidate/raw/vitest/after.junit.xml",
+      "destination": "reports/platform-evidence/2026-10-28-case-identity-repair-candidate/raw/vitest/after.junit.xml",
+      "bytes": 41324,
+      "sha256": "ee368c018de01481a618e7824a69816aa4aed4e7016a1c24d59c1f2341257804"
+    },
+    {
+      "cohort": "identity",
+      "source": "/workspace/onboarding-results/case-identity-repairs/reports/platform-evidence/2026-10-28-case-identity-repair-candidate/raw/vitest/after.log",
+      "destination": "reports/platform-evidence/2026-10-28-case-identity-repair-candidate/raw/vitest/after.log",
+      "bytes": 27171,
+      "sha256": "90e76b22e9013e56a76fc7746e1571402b0ed160f6e7dfdcefaf740b0683e967"
+    },
+    {
+      "cohort": "identity",
+      "source": "/workspace/onboarding-results/case-identity-repairs/reports/platform-evidence/2026-10-28-case-identity-repair-candidate/raw/vitest/before.junit.xml",
+      "destination": "reports/platform-evidence/2026-10-28-case-identity-repair-candidate/raw/vitest/before.junit.xml",
+      "bytes": 40649,
+      "sha256": "bb3a4b44a781c42e710b81e85be26d599ff8457406f078a86a0157c46c24fc91"
+    },
+    {
+      "cohort": "identity",
+      "source": "/workspace/onboarding-results/case-identity-repairs/reports/platform-evidence/2026-10-28-case-identity-repair-candidate/raw/vitest/before.log",
+      "destination": "reports/platform-evidence/2026-10-28-case-identity-repair-candidate/raw/vitest/before.log",
+      "bytes": 26503,
+      "sha256": "2ee8355debaa5bae100215675f502d678d5d859895f304fdf103dc47aad75d35"
+    },
+    {
+      "cohort": "identity",
+      "source": "/workspace/onboarding-results/case-identity-repairs/reports/platform-evidence/2026-10-28-case-identity-repair-candidate/raw/vitest/config-runner-attempt-receipt.json",
+      "destination": "reports/platform-evidence/2026-10-28-case-identity-repair-candidate/raw/vitest/config-runner-attempt-receipt.json",
+      "bytes": 1301,
+      "sha256": "febdd4700e89c14e50a57009ed7ff501a6977294f54cd9fa3b9a2ab2afb7a7a6"
+    },
+    {
+      "cohort": "identity",
+      "source": "/workspace/onboarding-results/case-identity-repairs/reports/platform-evidence/2026-10-28-case-identity-repair-candidate/raw/vitest/config-runner-attempt.log",
+      "destination": "reports/platform-evidence/2026-10-28-case-identity-repair-candidate/raw/vitest/config-runner-attempt.log",
+      "bytes": 1415,
+      "sha256": "d73fd0703c4a718b7208843c3986b98502233c930fadb8d5609e0dabfea4375d"
+    },
+    {
+      "cohort": "identity",
+      "source": "/workspace/onboarding-results/case-identity-repairs/reports/platform-evidence/2026-10-28-case-identity-repair-candidate/raw/vitest/receipts.json",
+      "destination": "reports/platform-evidence/2026-10-28-case-identity-repair-candidate/raw/vitest/receipts.json",
+      "bytes": 2516,
+      "sha256": "c6bcc20f3c842ee1845d61f1d3962051ad2d9ce2374578d5dcb0b7f285508abd"
+    },
+    {
+      "cohort": "identity",
+      "source": "/workspace/onboarding-results/case-identity-repairs/reports/platform-evidence/2026-10-28-case-identity-repair-candidate/raw/vitest/selected-files.json",
+      "destination": "reports/platform-evidence/2026-10-28-case-identity-repair-candidate/raw/vitest/selected-files.json",
+      "bytes": 500,
+      "sha256": "ce4233982d4b0a1ae3f2bc487e0f937257c1d3c6498426e61a7982ffe3d50276"
+    },
+    {
+      "cohort": "identity",
+      "source": "/workspace/onboarding-results/case-identity-repairs/reports/platform-evidence/2026-10-28-case-identity-repair-candidate/raw/vitest/sites.json",
+      "destination": "reports/platform-evidence/2026-10-28-case-identity-repair-candidate/raw/vitest/sites.json",
+      "bytes": 8902,
+      "sha256": "b4c31b9884090230e25774f8a63286d1a5172a916b8c968f1c59dc17902572ff"
+    },
+    {
+      "cohort": "identity",
+      "source": "/workspace/onboarding-results/case-identity-repairs/reports/platform-evidence/2026-10-28-case-identity-repair-candidate/source-hashes.json",
+      "destination": "reports/platform-evidence/2026-10-28-case-identity-repair-candidate/source-hashes.json",
+      "bytes": 4284,
+      "sha256": "8d3752eca8bdccf0a50b9c1510bf80bb33aeae30629f06856b17f5efd2b2ac77"
+    },
+    {
+      "cohort": "identity",
+      "source": "/workspace/onboarding-results/case-identity-repairs/reports/platform-evidence/2026-10-28-case-identity-repair-candidate/source.patch",
+      "destination": "reports/platform-evidence/2026-10-28-case-identity-repair-candidate/source.patch",
+      "bytes": 23021,
+      "sha256": "42e3e063155227a4695989f6426e8bfd0e9f69256a92802854c98a1df0d8c6a2"
+    },
+    {
+      "cohort": "identity",
+      "source": "/workspace/onboarding-results/case-identity-repairs/reports/platform-evidence/2026-10-28-case-identity-repair-candidate/toolchain.json",
+      "destination": "reports/platform-evidence/2026-10-28-case-identity-repair-candidate/toolchain.json",
+      "bytes": 309,
+      "sha256": "499564f4d215d54fede30fb13b7d93c8e91f5638803e71f7da496becf7ae5721"
+    },
+    {
+      "cohort": "identity",
+      "source": "/workspace/onboarding-results/case-identity-repairs/reports/platform-evidence/2026-10-28-case-identity-repair-candidate/validate.py",
+      "destination": "reports/platform-evidence/2026-10-28-case-identity-repair-candidate/validate.py",
+      "bytes": 8292,
+      "sha256": "7d291019285d3afaa4c4af6b3910e7214a264ba6abaa21fc6d541897e333b830"
+    },
+    {
+      "cohort": "identity",
+      "source": "/workspace/onboarding-results/case-identity-repairs/reports/platform-evidence/2026-10-28-case-identity-repair-candidate/validation-results.json",
+      "destination": "reports/platform-evidence/2026-10-28-case-identity-repair-candidate/validation-results.json",
+      "bytes": 17998,
+      "sha256": "0a34f540aa088b67da6b3f677967a83e7ee38cd097a459345614c8da860f891b"
+    },
+    {
+      "cohort": "commerce",
+      "source": "/workspace/onboarding-results/commerce-catalog-repairs/README.md",
+      "destination": "reports/platform-evidence/2026-10-29-commerce-catalog-repairs/README.md",
+      "bytes": 11744,
+      "sha256": "bb62b3635a399762d81df3451bf73f0038cc6873d754d90ab9216b4e8335d9aa"
+    },
+    {
+      "cohort": "commerce",
+      "source": "/workspace/onboarding-results/commerce-catalog-repairs/candidate/scripts/testing/commerce-legacy-fixture.mjs",
+      "destination": "reports/platform-evidence/2026-10-29-commerce-catalog-repairs/candidate/scripts/testing/commerce-legacy-fixture.mjs",
+      "bytes": 9471,
+      "sha256": "035f06113c85eeb27f2fcae51719de68ddb5c00512ae3cd774ba68ad093fc6ee"
+    },
+    {
+      "cohort": "commerce",
+      "source": "/workspace/onboarding-results/commerce-catalog-repairs/candidate/scripts/testing/generate-catalog.py",
+      "destination": "reports/platform-evidence/2026-10-29-commerce-catalog-repairs/candidate/scripts/testing/generate-catalog.py",
+      "bytes": 29427,
+      "sha256": "e83b2f217d5d29c9c2d04406b6881ae8fab392d116337b28e8b7fbe77fc14ef3"
+    },
+    {
+      "cohort": "commerce",
+      "source": "/workspace/onboarding-results/commerce-catalog-repairs/candidate/scripts/testing/run-commerce.py",
+      "destination": "reports/platform-evidence/2026-10-29-commerce-catalog-repairs/candidate/scripts/testing/run-commerce.py",
+      "bytes": 6929,
+      "sha256": "3f28e1853e0f2b39e3008e801829a267ca7333baeb603871e4147dff319c2479"
+    },
+    {
+      "cohort": "commerce",
+      "source": "/workspace/onboarding-results/commerce-catalog-repairs/candidate/tests/testing/test_catalog_snapshot_ownership.py",
+      "destination": "reports/platform-evidence/2026-10-29-commerce-catalog-repairs/candidate/tests/testing/test_catalog_snapshot_ownership.py",
+      "bytes": 10988,
+      "sha256": "ab062f6aba7079b7b2bf87f74ffdbf534d5a4efb45b4ff9b12964add2bca5883"
+    },
+    {
+      "cohort": "commerce",
+      "source": "/workspace/onboarding-results/commerce-catalog-repairs/candidate/tests/testing/test_commerce_subject_selector.py",
+      "destination": "reports/platform-evidence/2026-10-29-commerce-catalog-repairs/candidate/tests/testing/test_commerce_subject_selector.py",
+      "bytes": 14550,
+      "sha256": "53bb5f75f101a39dc40e2eb412520a2d1eefd82db46fac0b399d3fc14e70dff7"
+    },
+    {
+      "cohort": "commerce",
+      "source": "/workspace/onboarding-results/commerce-catalog-repairs/catalog/README.md",
+      "destination": "reports/platform-evidence/2026-10-29-commerce-catalog-repairs/catalog/README.md",
+      "bytes": 8124,
+      "sha256": "e24ae4e9cbcda9a3c4d1f02a0e7fcfb619f77128430d005975d0123b8ef63278"
+    },
+    {
+      "cohort": "commerce",
+      "source": "/workspace/onboarding-results/commerce-catalog-repairs/catalog/candidate/scripts/testing/generate-catalog.py",
+      "destination": "reports/platform-evidence/2026-10-29-commerce-catalog-repairs/catalog/candidate/scripts/testing/generate-catalog.py",
+      "bytes": 29427,
+      "sha256": "e83b2f217d5d29c9c2d04406b6881ae8fab392d116337b28e8b7fbe77fc14ef3"
+    },
+    {
+      "cohort": "commerce",
+      "source": "/workspace/onboarding-results/commerce-catalog-repairs/catalog/candidate/tests/testing/test_catalog_snapshot_ownership.py",
+      "destination": "reports/platform-evidence/2026-10-29-commerce-catalog-repairs/catalog/candidate/tests/testing/test_catalog_snapshot_ownership.py",
+      "bytes": 10988,
+      "sha256": "ab062f6aba7079b7b2bf87f74ffdbf534d5a4efb45b4ff9b12964add2bca5883"
+    },
+    {
+      "cohort": "commerce",
+      "source": "/workspace/onboarding-results/commerce-catalog-repairs/catalog/catalog-repair.patch",
+      "destination": "reports/platform-evidence/2026-10-29-commerce-catalog-repairs/catalog/catalog-repair.patch",
+      "bytes": 11747,
+      "sha256": "fe7e0c6efe32a1316675f756453b9a1550aec6a05e1ed255a24073270296eb56"
+    },
+    {
+      "cohort": "commerce",
+      "source": "/workspace/onboarding-results/commerce-catalog-repairs/catalog/catalog-source.patch",
+      "destination": "reports/platform-evidence/2026-10-29-commerce-catalog-repairs/catalog/catalog-source.patch",
+      "bytes": 481,
+      "sha256": "1cc0f998410d7fc430069ced17fe4a184985761e35a4783b00c4cf6af1c1891b"
+    },
+    {
+      "cohort": "commerce",
+      "source": "/workspace/onboarding-results/commerce-catalog-repairs/catalog/catalog-tests.patch",
+      "destination": "reports/platform-evidence/2026-10-29-commerce-catalog-repairs/catalog/catalog-tests.patch",
+      "bytes": 11266,
+      "sha256": "d6f2ebae013aa9f964c1d033d2b67c479148c827d107cec7ee5131bffbdff2df"
+    },
+    {
+      "cohort": "commerce",
+      "source": "/workspace/onboarding-results/commerce-catalog-repairs/catalog/manifest.json",
+      "destination": "reports/platform-evidence/2026-10-29-commerce-catalog-repairs/catalog/manifest.json",
+      "bytes": 2136,
+      "sha256": "78b62a6c781d412e6b1fc97d86ec6817a1fffc08893d40ad12f86f6b7a7799b4"
+    },
+    {
+      "cohort": "commerce",
+      "source": "/workspace/onboarding-results/commerce-catalog-repairs/catalog/receipts/actual-census.json",
+      "destination": "reports/platform-evidence/2026-10-29-commerce-catalog-repairs/catalog/receipts/actual-census.json",
+      "bytes": 11013,
+      "sha256": "ab62783f1ad690874a5ee0886db77f8853b43544349147eb972a68caa3b4bc1c"
+    },
+    {
+      "cohort": "commerce",
+      "source": "/workspace/onboarding-results/commerce-catalog-repairs/catalog/receipts/actual-node-current-selectors.json",
+      "destination": "reports/platform-evidence/2026-10-29-commerce-catalog-repairs/catalog/receipts/actual-node-current-selectors.json",
+      "bytes": 5556,
+      "sha256": "fc52799128332f25eadebb1f539b9bdb2d91f7dc5d48d1213f291b5899839038"
+    },
+    {
+      "cohort": "commerce",
+      "source": "/workspace/onboarding-results/commerce-catalog-repairs/catalog/receipts/actual-node-report-selector.txt",
+      "destination": "reports/platform-evidence/2026-10-29-commerce-catalog-repairs/catalog/receipts/actual-node-report-selector.txt",
+      "bytes": 251,
+      "sha256": "505a1229283900008d9d788337c69504a9d1aa078ca0c941805ba3aac2a7612a"
+    },
+    {
+      "cohort": "commerce",
+      "source": "/workspace/onboarding-results/commerce-catalog-repairs/catalog/receipts/baseline-regressions.txt",
+      "destination": "reports/platform-evidence/2026-10-29-commerce-catalog-repairs/catalog/receipts/baseline-regressions.txt",
+      "bytes": 6832,
+      "sha256": "6f4713080154e2a80c00cd0d62afbdf7d380aba58080c14783a282cc283154cf"
+    },
+    {
+      "cohort": "commerce",
+      "source": "/workspace/onboarding-results/commerce-catalog-repairs/catalog/receipts/candidate-regressions.txt",
+      "destination": "reports/platform-evidence/2026-10-29-commerce-catalog-repairs/catalog/receipts/candidate-regressions.txt",
+      "bytes": 1244,
+      "sha256": "38167449fc9809c8eadbd47fa41ffee62d74b1d84a32e99422387fbf418ec2ef"
+    },
+    {
+      "cohort": "commerce",
+      "source": "/workspace/onboarding-results/commerce-catalog-repairs/catalog/receipts/protected-sha256-after.json",
+      "destination": "reports/platform-evidence/2026-10-29-commerce-catalog-repairs/catalog/receipts/protected-sha256-after.json",
+      "bytes": 189819,
+      "sha256": "53992be7f6997ba1e5e53bf823d0866e0c75487213dabb3bcb254bce51cd463d"
+    },
+    {
+      "cohort": "commerce",
+      "source": "/workspace/onboarding-results/commerce-catalog-repairs/catalog/receipts/protected-sha256-before.json",
+      "destination": "reports/platform-evidence/2026-10-29-commerce-catalog-repairs/catalog/receipts/protected-sha256-before.json",
+      "bytes": 189819,
+      "sha256": "53992be7f6997ba1e5e53bf823d0866e0c75487213dabb3bcb254bce51cd463d"
+    },
+    {
+      "cohort": "commerce",
+      "source": "/workspace/onboarding-results/commerce-catalog-repairs/catalog/receipts/regressions.json",
+      "destination": "reports/platform-evidence/2026-10-29-commerce-catalog-repairs/catalog/receipts/regressions.json",
+      "bytes": 9375,
+      "sha256": "fa3a48dd3a93eb50e5bfd6742f4c29a576a2b939f28b1fbd14eed1ec02999a3f"
+    },
+    {
+      "cohort": "commerce",
+      "source": "/workspace/onboarding-results/commerce-catalog-repairs/catalog/verify_candidate.py",
+      "destination": "reports/platform-evidence/2026-10-29-commerce-catalog-repairs/catalog/verify_candidate.py",
+      "bytes": 8153,
+      "sha256": "7d455c0929ae6f1a26c77635d256117ff43fc3a935104404c2311b3d6420bcac"
+    },
+    {
+      "cohort": "commerce",
+      "source": "/workspace/onboarding-results/commerce-catalog-repairs/manifest.json",
+      "destination": "reports/platform-evidence/2026-10-29-commerce-catalog-repairs/manifest.json",
+      "bytes": 2906,
+      "sha256": "13c802402a0455611046bd5fc77781b244ba8da0b0dd7a3633726a8a030d180d"
+    },
+    {
+      "cohort": "commerce",
+      "source": "/workspace/onboarding-results/commerce-catalog-repairs/package.py",
+      "destination": "reports/platform-evidence/2026-10-29-commerce-catalog-repairs/package.py",
+      "bytes": 4127,
+      "sha256": "40077861bb67a1db243e3ae08653eb07bcaca334533469c884e2f13ee3874031"
+    },
+    {
+      "cohort": "commerce",
+      "source": "/workspace/onboarding-results/commerce-catalog-repairs/parent-landing-notice.json",
+      "destination": "reports/platform-evidence/2026-10-29-commerce-catalog-repairs/parent-landing-notice.json",
+      "bytes": 723,
+      "sha256": "c0f9538a933099a1575bb42384c4b23279230967bf5d5b0a1a9a111342a0b0fb"
+    },
+    {
+      "cohort": "commerce",
+      "source": "/workspace/onboarding-results/commerce-catalog-repairs/patch-check.txt",
+      "destination": "reports/platform-evidence/2026-10-29-commerce-catalog-repairs/patch-check.txt",
+      "bytes": 29,
+      "sha256": "94d5186eeab5b46f6472315985011589d96e943e1e23b45327da53c6b013ccb6"
+    },
+    {
+      "cohort": "commerce",
+      "source": "/workspace/onboarding-results/commerce-catalog-repairs/selector/candidate/scripts/testing/commerce-legacy-fixture.mjs",
+      "destination": "reports/platform-evidence/2026-10-29-commerce-catalog-repairs/selector/candidate/scripts/testing/commerce-legacy-fixture.mjs",
+      "bytes": 9471,
+      "sha256": "035f06113c85eeb27f2fcae51719de68ddb5c00512ae3cd774ba68ad093fc6ee"
+    },
+    {
+      "cohort": "commerce",
+      "source": "/workspace/onboarding-results/commerce-catalog-repairs/selector/candidate/scripts/testing/run-commerce.py",
+      "destination": "reports/platform-evidence/2026-10-29-commerce-catalog-repairs/selector/candidate/scripts/testing/run-commerce.py",
+      "bytes": 6929,
+      "sha256": "3f28e1853e0f2b39e3008e801829a267ca7333baeb603871e4147dff319c2479"
+    },
+    {
+      "cohort": "commerce",
+      "source": "/workspace/onboarding-results/commerce-catalog-repairs/selector/candidate/tests/testing/test_commerce_subject_selector.py",
+      "destination": "reports/platform-evidence/2026-10-29-commerce-catalog-repairs/selector/candidate/tests/testing/test_commerce_subject_selector.py",
+      "bytes": 14550,
+      "sha256": "53bb5f75f101a39dc40e2eb412520a2d1eefd82db46fac0b399d3fc14e70dff7"
+    },
+    {
+      "cohort": "commerce",
+      "source": "/workspace/onboarding-results/commerce-catalog-repairs/selector/implement.py",
+      "destination": "reports/platform-evidence/2026-10-29-commerce-catalog-repairs/selector/implement.py",
+      "bytes": 4966,
+      "sha256": "11a9864d8aa18674fdf196371ef08e8d4c6caa78035173afc4a1be4eb542daaa"
+    },
+    {
+      "cohort": "commerce",
+      "source": "/workspace/onboarding-results/commerce-catalog-repairs/selector/receipts/framework-baseline.pytest.txt",
+      "destination": "reports/platform-evidence/2026-10-29-commerce-catalog-repairs/selector/receipts/framework-baseline.pytest.txt",
+      "bytes": 25767,
+      "sha256": "3ddcc4dc21ac89e5f17d4fa955dd694b3a0851f788fc4ea03b216f256e32f42d"
+    },
+    {
+      "cohort": "commerce",
+      "source": "/workspace/onboarding-results/commerce-catalog-repairs/selector/receipts/framework-baseline.txt",
+      "destination": "reports/platform-evidence/2026-10-29-commerce-catalog-repairs/selector/receipts/framework-baseline.txt",
+      "bytes": 30008,
+      "sha256": "15e2341134ada946951d7cb13321cb8829572da47751172a9a16fb2566bf1acd"
+    },
+    {
+      "cohort": "commerce",
+      "source": "/workspace/onboarding-results/commerce-catalog-repairs/selector/receipts/framework-baseline.xml",
+      "destination": "reports/platform-evidence/2026-10-29-commerce-catalog-repairs/selector/receipts/framework-baseline.xml",
+      "bytes": 37078,
+      "sha256": "7572cd8bb06f6c2f8b475c4c6c14b22a997c540384c4da7e2113e761d7121300"
+    },
+    {
+      "cohort": "commerce",
+      "source": "/workspace/onboarding-results/commerce-catalog-repairs/selector/receipts/framework-candidate.pytest.txt",
+      "destination": "reports/platform-evidence/2026-10-29-commerce-catalog-repairs/selector/receipts/framework-candidate.pytest.txt",
+      "bytes": 109,
+      "sha256": "dd9e141cc85901fb10175abc207988e3f4aa5c23dfbd3caf34a8645e81b32b77"
+    },
+    {
+      "cohort": "commerce",
+      "source": "/workspace/onboarding-results/commerce-catalog-repairs/selector/receipts/framework-candidate.txt",
+      "destination": "reports/platform-evidence/2026-10-29-commerce-catalog-repairs/selector/receipts/framework-candidate.txt",
+      "bytes": 1731,
+      "sha256": "43ff7dbaf682efbc3b72021675030540324eaf2fd238358d1681304152b07203"
+    },
+    {
+      "cohort": "commerce",
+      "source": "/workspace/onboarding-results/commerce-catalog-repairs/selector/receipts/framework-candidate.xml",
+      "destination": "reports/platform-evidence/2026-10-29-commerce-catalog-repairs/selector/receipts/framework-candidate.xml",
+      "bytes": 2319,
+      "sha256": "e3fde793e963e99d0f30a317494b56a69a1801933f946df71ad3497e917014ca"
+    },
+    {
+      "cohort": "commerce",
+      "source": "/workspace/onboarding-results/commerce-catalog-repairs/selector/receipts/framework-first.txt",
+      "destination": "reports/platform-evidence/2026-10-29-commerce-catalog-repairs/selector/receipts/framework-first.txt",
+      "bytes": 1731,
+      "sha256": "6dac15473cfdb47bbe015b7db29e8c9670532cc925c8e50d0f88620d2882add7"
+    },
+    {
+      "cohort": "commerce",
+      "source": "/workspace/onboarding-results/commerce-catalog-repairs/selector/receipts/verification.json",
+      "destination": "reports/platform-evidence/2026-10-29-commerce-catalog-repairs/selector/receipts/verification.json",
+      "bytes": 6262,
+      "sha256": "c0851daf21f7b208bc734a156eee4fe74281fdbaa0d99673e3675ded54a194a4"
+    },
+    {
+      "cohort": "commerce",
+      "source": "/workspace/onboarding-results/commerce-catalog-repairs/selector/verify.py",
+      "destination": "reports/platform-evidence/2026-10-29-commerce-catalog-repairs/selector/verify.py",
+      "bytes": 4371,
+      "sha256": "995486005ba8dd5042c8c887959d91423bf477727ad6acbfefccb7f186382e28"
+    },
+    {
+      "cohort": "commerce",
+      "source": "/workspace/onboarding-results/commerce-catalog-repairs/source.patch",
+      "destination": "reports/platform-evidence/2026-10-29-commerce-catalog-repairs/source.patch",
+      "bytes": 34897,
+      "sha256": "538665930f6000027a104167dfce59dcd73170e4ed53c0fcc23e88ddf9c66093"
+    },
+    {
+      "cohort": "access",
+      "source": "/workspace/onboarding-results/access-policy-candidate/README.md",
+      "destination": "reports/platform-evidence/2026-10-29-access-policy-candidate/README.md",
+      "bytes": 4203,
+      "sha256": "f55f989e232eb32dbb50ed4b1110b02dc8c71be0a04596e8c69e3b1800c7d30d"
+    },
+    {
+      "cohort": "access",
+      "source": "/workspace/onboarding-results/access-policy-candidate/candidate.json",
+      "destination": "reports/platform-evidence/2026-10-29-access-policy-candidate/candidate.json",
+      "bytes": 1497,
+      "sha256": "8ad0812a98d601667699c5a0062d622f9f6add0bfaed496e28f54d39ece2f663"
+    },
+    {
+      "cohort": "access",
+      "source": "/workspace/onboarding-results/access-policy-candidate/helper-sql-acceptance.json",
+      "destination": "reports/platform-evidence/2026-10-29-access-policy-candidate/helper-sql-acceptance.json",
+      "bytes": 1726,
+      "sha256": "7e0bee684a4438f24445c8f2039d8b867b8f994958d0282c7df66cda0193840b"
+    },
+    {
+      "cohort": "access",
+      "source": "/workspace/onboarding-results/access-policy-candidate/helper-sql-acceptance.log",
+      "destination": "reports/platform-evidence/2026-10-29-access-policy-candidate/helper-sql-acceptance.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "cohort": "access",
+      "source": "/workspace/onboarding-results/access-policy-candidate/helper-sql-acceptance.mjs",
+      "destination": "reports/platform-evidence/2026-10-29-access-policy-candidate/helper-sql-acceptance.mjs",
+      "bytes": 5349,
+      "sha256": "a705797401af60e462935bd51ce6e723b7891a707afdc097343b70d123953f63"
+    },
+    {
+      "cohort": "access",
+      "source": "/workspace/onboarding-results/access-policy-candidate/manifest.json",
+      "destination": "reports/platform-evidence/2026-10-29-access-policy-candidate/manifest.json",
+      "bytes": 1695,
+      "sha256": "0520769127bef4540fec6fd126366b82233896813d27165632e41c9ff9e47ab3"
+    },
+    {
+      "cohort": "access",
+      "source": "/workspace/onboarding-results/access-policy-candidate/source.patch",
+      "destination": "reports/platform-evidence/2026-10-29-access-policy-candidate/source.patch",
+      "bytes": 15598,
+      "sha256": "fca1d17050777b0e99a5fd90471b94da954a7fd88d3f7d4bcce4e8b73b97c11c"
+    },
+    {
+      "cohort": "access",
+      "source": "/workspace/onboarding-results/access-policy-candidate/tests/billing-lifecycle.test.ts",
+      "destination": "reports/platform-evidence/2026-10-29-access-policy-candidate/tests/billing-lifecycle.test.ts",
+      "bytes": 17322,
+      "sha256": "b2dbe3b7c35982649dbaa513d06c6601e8bda3924dcfe3b8fa8e292a51a39421"
+    },
+    {
+      "cohort": "access",
+      "source": "/workspace/onboarding-results/access-policy-candidate/tests/file-management.test.ts",
+      "destination": "reports/platform-evidence/2026-10-29-access-policy-candidate/tests/file-management.test.ts",
+      "bytes": 13670,
+      "sha256": "fa745d1c3d803967c4594c7b672ff9990d8d825834fb31d58405fd609805c392"
+    },
+    {
+      "cohort": "access",
+      "source": "/workspace/onboarding-results/access-policy-candidate/tests/helpers-http-fixture.ts",
+      "destination": "reports/platform-evidence/2026-10-29-access-policy-candidate/tests/helpers-http-fixture.ts",
+      "bytes": 5761,
+      "sha256": "040ef393ee8d1122815424be716794c3b57331521420a4131afd93a0f2824837"
+    },
+    {
+      "cohort": "access",
+      "source": "/workspace/onboarding-results/access-policy-candidate/tests/platform-acceptance-map.json",
+      "destination": "reports/platform-evidence/2026-10-29-access-policy-candidate/tests/platform-acceptance-map.json",
+      "bytes": 8798,
+      "sha256": "fdf034abff7cd2d870cae58f4ed49ee46d9d889772f9e324cf6d9998d3b56553"
+    }
+  ],
+  "exclusions": [
+    {
+      "cohort": "commerce",
+      "path": "selector/candidate/tests/testing/__pycache__/test_commerce_subject_selector.cpython-312-pytest-9.1.1.pyc",
+      "reason": "dependency/cache excluded"
+    },
+    {
+      "cohort": "access",
+      "path": "node_modules",
+      "reason": "symlink/dependency excluded"
+    }
+  ],
+  "configuredCredentialScan": {
+    "configuredValuesCompared": 8,
+    "matches": 0,
+    "valuesRetained": false
+  },
+  "originalManifestMembersVerified": 89,
+  "sourceManifestsUntouched": true
+}

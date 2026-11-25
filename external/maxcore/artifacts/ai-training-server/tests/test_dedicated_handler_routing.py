@@ -11,6 +11,13 @@ import pytest
 from fastapi import HTTPException
 
 
+def assert_account_curriculum_unavailable(handler, request):
+    with pytest.raises(HTTPException) as err:
+        asyncio.run(handler.__wrapped__(request, _key={}))
+    assert err.value.status_code == 503
+    assert "account curriculum is unavailable" in err.value.detail.lower()
+
+
 @pytest.fixture(autouse=True)
 def immutable_public_plan():
     from ai_model.awareness import bind
@@ -35,8 +42,14 @@ def test_ads_meta_uses_social_awareness_but_keeps_network_identity(monkeypatch):
 
     monkeypatch.setattr(storage_client, "get_ads_client", lambda: Ads())
     monkeypatch.setattr(server, "_model_ready", True)
+    curriculum_reads = []
+
+    def top_performers(user_id, **kwargs):
+        curriculum_reads.append((user_id, kwargs.get("platform")))
+        return [{"style_tags": ["story", "video"]}]
+
     monkeypatch.setattr(storage_client, "get_curriculum_client",
-                        lambda: SimpleNamespace(get_top_performers=lambda *a, **k: []))
+                        lambda: SimpleNamespace(get_top_performers=top_performers))
     seen = []
 
     async def creative(**kwargs):
@@ -56,11 +69,227 @@ def test_ads_meta_uses_social_awareness_but_keeps_network_identity(monkeypatch):
     )
     result = asyncio.run(server.ads_generate(req, _key={}))
     assert result["platform"] == "meta"
+    assert curriculum_reads == [
+        ("artist", "facebook"),
+        ("artist", "instagram"),
+    ]
     assert [c["content_type"] for c in result["creatives"]] == [
         "video", "audio", "text", "image"]
+    assert all(c["curriculum_tags"] == ["story", "video"] for c in seen)
     assert all("social=facebook" in c["awareness"] and
                "quiet harbor" in c["awareness"] for c in seen)
     assert "platform_benchmarks" not in result
+
+
+def test_social_autopilot_conditions_base_model_on_requested_account_curriculum(
+    monkeypatch,
+):
+    import server
+    import storage_client
+
+    curriculum_reads = []
+    script_requests = []
+
+    def top_performers(user_id, **kwargs):
+        curriculum_reads.append(user_id)
+        return [{
+            "style_tags": ["story"],
+            "content_type": "video",
+            "engagement_rate": 6.0,
+        }]
+
+    class ScriptAgent:
+        def run(self, request):
+            script_requests.append(request)
+            return SimpleNamespace(
+                hook="A story from the studio",
+                cta="Watch the clip",
+                source="model",
+            )
+
+    class DistributionAgent:
+        def run(self, request):
+            return SimpleNamespace(posting_time="2026-11-18T18:00:00Z")
+
+    async def in_thread(fn):
+        return fn()
+
+    async def ready():
+        return None
+
+    monkeypatch.setattr(
+        storage_client,
+        "get_curriculum_client",
+        lambda: SimpleNamespace(
+            get_top_performers=top_performers,
+            get_user_stats=lambda _user_id: {},
+        ),
+    )
+    monkeypatch.setattr(server, "_model_ready", True)
+    monkeypatch.setattr(server, "_wait_for_model_ready", ready)
+    monkeypatch.setattr(server, "_script_agent", ScriptAgent())
+    monkeypatch.setattr(server, "_distribution_agent", DistributionAgent())
+    monkeypatch.setattr(server, "_in_thread", in_thread)
+    monkeypatch.setattr(server, "_effective_awareness", lambda _platform, _text: "")
+    monkeypatch.setattr(server, "_merged_awareness_for", lambda _req: "")
+
+    request = server.PlatformAutopilotRequest(
+        user_id="admin-owner",
+        platform="instagram",
+        recent_posts=[],
+    )
+    result = asyncio.run(server.platform_social_autopilot(request, _key={}))
+
+    assert curriculum_reads == ["admin-owner"]
+    assert script_requests
+    assert script_requests[0].idea == "story"
+    assert result["user_id"] == "admin-owner"
+    assert result["model_powered"] is True
+    assert result["recommendations"]["style_focus"] == ["story"]
+
+
+def test_social_autopilot_does_not_hide_account_curriculum_storage_failure(
+    monkeypatch,
+):
+    import server
+    import storage_client
+
+    def unavailable():
+        raise RuntimeError("curriculum storage unavailable")
+
+    monkeypatch.setattr(storage_client, "get_curriculum_client", unavailable)
+    request = server.PlatformAutopilotRequest(
+        user_id="admin-owner",
+        platform="instagram",
+        recent_posts=[],
+    )
+
+    with pytest.raises(HTTPException) as err:
+        asyncio.run(server.platform_social_autopilot.__wrapped__(request, _key={}))
+
+    assert err.value.status_code == 503
+    assert "account curriculum is unavailable" in err.value.detail.lower()
+
+
+def test_ads_generation_does_not_hide_account_curriculum_storage_failure(
+    monkeypatch,
+):
+    import server
+    import storage_client
+
+    monkeypatch.setattr(
+        storage_client,
+        "get_ads_client",
+        lambda: SimpleNamespace(get_winning_formula=lambda *_args: None),
+    )
+    monkeypatch.setattr(
+        storage_client,
+        "get_curriculum_client",
+        lambda: (_ for _ in ()).throw(RuntimeError("curriculum storage unavailable")),
+    )
+    request = server.AdGenerateRequest(
+        user_id="admin-owner",
+        product="release",
+        platform="meta",
+    )
+
+    with pytest.raises(HTTPException) as err:
+        asyncio.run(server.ads_generate.__wrapped__(request, _key={}))
+
+    assert err.value.status_code == 503
+    assert "account curriculum is unavailable" in err.value.detail.lower()
+
+
+def test_social_generation_does_not_silently_use_base_tone_when_curriculum_fails(
+    monkeypatch,
+):
+    import server
+    import storage_client
+
+    monkeypatch.setattr(
+        storage_client,
+        "get_curriculum_client",
+        lambda: (_ for _ in ()).throw(RuntimeError("curriculum storage unavailable")),
+    )
+    request = server.PlatformSocialRequest(
+        user_id="creator-1",
+        platform="instagram",
+        topic="new single release",
+    )
+
+    assert_account_curriculum_unavailable(server.platform_social_generate, request)
+
+
+def test_video_generation_does_not_silently_use_base_tone_when_curriculum_fails(
+    monkeypatch,
+):
+    import server
+    import storage_client
+
+    monkeypatch.setattr(
+        storage_client,
+        "get_curriculum_client",
+        lambda: (_ for _ in ()).throw(RuntimeError("curriculum storage unavailable")),
+    )
+    request = server.PlatformVideoRequest(
+        user_id="creator-1",
+        topic="new single release",
+        platform="instagram",
+    )
+
+    assert_account_curriculum_unavailable(server.platform_video_generate, request)
+
+
+def test_ads_autopilot_does_not_generate_from_cold_audience_after_curriculum_failure(
+    monkeypatch,
+):
+    import server
+    import storage_client
+
+    class Ads:
+        def analyse_portfolio(self, *_args, **_kwargs):
+            return {}
+
+        def get_peak_performers(self, *_args, **_kwargs):
+            return []
+
+    monkeypatch.setattr(storage_client, "get_ads_client", lambda: Ads())
+    monkeypatch.setattr(
+        storage_client,
+        "get_curriculum_client",
+        lambda: (_ for _ in ()).throw(RuntimeError("curriculum storage unavailable")),
+    )
+    request = server.AdAutopilotRequest(
+        user_id="creator-1",
+        platform="meta",
+    )
+
+    assert_account_curriculum_unavailable(server.ads_autopilot, request)
+
+
+def test_ads_audience_does_not_return_cold_segments_after_curriculum_failure(
+    monkeypatch,
+):
+    import server
+    import storage_client
+
+    class Ads:
+        def get_peak_performers(self, *_args, **_kwargs):
+            return []
+
+    monkeypatch.setattr(storage_client, "get_ads_client", lambda: Ads())
+    monkeypatch.setattr(
+        storage_client,
+        "get_curriculum_client",
+        lambda: (_ for _ in ()).throw(RuntimeError("curriculum storage unavailable")),
+    )
+    request = server.AdAudienceRequest(
+        user_id="creator-1",
+        platform="meta",
+        product="release",
+    )
+
+    assert_account_curriculum_unavailable(server.ads_audience, request)
 
 
 def test_ad_script_uses_agent_run_and_exposes_source(monkeypatch):
@@ -69,6 +298,7 @@ def test_ad_script_uses_agent_run_and_exposes_source(monkeypatch):
     class Agent:
         def run(self, request):
             assert request.platform == "facebook"
+            assert "account-specific measured style themes: story, video" in request.idea
             assert "quiet harbor" in request.awareness
             return SimpleNamespace(hook="Lanterns on the water",
                                    body="A mellow instrumental by June",
@@ -86,7 +316,8 @@ def test_ad_script_uses_agent_run_and_exposes_source(monkeypatch):
     monkeypatch.setattr(server, "_in_thread", in_thread)
     result = asyncio.run(server._generate_ad_creative(
         "meta", "video", "Paper Lanterns", "streams", None,
-        "June", "hip-hop", 0, awareness="quiet harbor"))
+        "June", "hip-hop", 0, awareness="quiet harbor",
+        curriculum_tags=["story", "video"]))
     assert result["source"] == "model"
     assert result["asset_status"] == "spec_only"
     assert result["hook"] == "Lanterns on the water"
@@ -421,7 +652,7 @@ def test_alias_media_bodies_mark_asset_identifiers_as_specs(monkeypatch):
         assert result["outputs"][0]["url"].startswith("asset://")
 
 
-def test_unavailable_model_media_routes_never_enter_legacy_render_or_create_jobs(monkeypatch):
+def test_live_awareness_media_routes_reject_ownerless_jobs_before_rendering(monkeypatch):
     import server
     import inspect
     from fastapi import Request
@@ -441,8 +672,8 @@ def test_unavailable_model_media_routes_never_enter_legacy_render_or_create_jobs
                      "client": ("127.0.0.1", 1)})} if "request" in inspect.signature(handler).parameters else {}
         with pytest.raises(HTTPException) as error:
             asyncio.run(handler(request, _key={}, **transport))
-        assert error.value.status_code == 503
-        assert error.value.detail == "Selected model unavailable"
+        assert error.value.status_code == 403
+        assert error.value.detail == "Authenticated private owner required for generated media"
 
 
 def test_audio_explicit_direction_reaches_synth_and_avoids_genre_pool(monkeypatch, tmp_path):

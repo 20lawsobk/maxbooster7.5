@@ -1,0 +1,50 @@
+/home/runner/workspace/.pythonlibs/lib/python3.12/site-packages/pytest_asyncio/plugin.py:300: PytestDeprecationWarning: The configuration option "asyncio_default_fixture_loop_scope" is unset.
+The event loop scope for asynchronous fixtures will default to the "fixture" caching scope. Future versions of pytest-asyncio will default the loop scope for asynchronous fixtures to "function" scope. Set the default fixture loop scope explicitly in order to avoid unexpected behavior in the future. Valid fixture loop scopes are: "function", "class", "module", "package", "session"
+
+  warnings.warn(PytestDeprecationWarning(_DEFAULT_FIXTURE_LOOP_SCOPE_UNSET))
+........F............                                                    [100%]
+=================================== FAILURES ===================================
+________ test_page_readiness_loop_is_bounded_and_uses_verified_repairs _________
+
+    def test_page_readiness_loop_is_bounded_and_uses_verified_repairs():
+        result = subprocess.run(
+            [
+                sys.executable,
+                "scripts/testing/page-readiness-loop.py",
+                "--plan",
+                "--scope",
+                "page-certification",
+                "--max-cycles",
+                "4",
+            ],
+            cwd=ROOT,
+            check=False,
+            capture_output=True,
+            text=True,
+            timeout=30,
+        )
+    
+        assert result.returncode == 0, result.stderr
+        plan = json.loads(result.stdout)
+        assert plan["maxCycles"] == 4
+        assert plan["scope"] == "page-certification"
+        assert plan["cycle"][0][4:6] == ["--group", "page-certification"]
+        assert plan["cycle"][1][1] == "scripts/testing/apply-page-remediations.py"
+        assert plan["pythonPreflight"]["status"] == "passed"
+>       assert Path(plan["pythonPreflight"]["executable"]).resolve() == (ROOT / "python_runtime/bin/python3").resolve()
+E       AssertionError: assert PosixPath('/nix/store/h097imm3w6dpx10qynrd2sz9fks2wbq8-python3-3.12.11/bin/python3.12') == PosixPath('/home/runner/workspace/python_runtime/bin/python3.12')
+E        +  where PosixPath('/nix/store/h097imm3w6dpx10qynrd2sz9fks2wbq8-python3-3.12.11/bin/python3.12') = resolve()
+E        +    where resolve = PosixPath('/nix/store/h097imm3w6dpx10qynrd2sz9fks2wbq8-python3-3.12.11/bin/python3.12').resolve
+E        +      where PosixPath('/nix/store/h097imm3w6dpx10qynrd2sz9fks2wbq8-python3-3.12.11/bin/python3.12') = Path('/nix/store/h097imm3w6dpx10qynrd2sz9fks2wbq8-python3-3.12.11/bin/python3.12')
+E        +  and   PosixPath('/home/runner/workspace/python_runtime/bin/python3.12') = resolve()
+E        +    where resolve = (PosixPath('/home/runner/workspace') / 'python_runtime/bin/python3').resolve
+
+tests/testing/test_page_certification_runner.py:84: AssertionError
+=========================== short test summary info ============================
+FAILED tests/testing/test_page_certification_runner.py::test_page_readiness_loop_is_bounded_and_uses_verified_repairs - AssertionError: assert PosixPath('/nix/store/h097imm3w6dpx10qynrd2sz9fks2wbq8-python3-3.12.11/bin/python3.12') == PosixPath('/home/runner/workspace/python_runtime/bin/python3.12')
+ +  where PosixPath('/nix/store/h097imm3w6dpx10qynrd2sz9fks2wbq8-python3-3.12.11/bin/python3.12') = resolve()
+ +    where resolve = PosixPath('/nix/store/h097imm3w6dpx10qynrd2sz9fks2wbq8-python3-3.12.11/bin/python3.12').resolve
+ +      where PosixPath('/nix/store/h097imm3w6dpx10qynrd2sz9fks2wbq8-python3-3.12.11/bin/python3.12') = Path('/nix/store/h097imm3w6dpx10qynrd2sz9fks2wbq8-python3-3.12.11/bin/python3.12')
+ +  and   PosixPath('/home/runner/workspace/python_runtime/bin/python3.12') = resolve()
+ +    where resolve = (PosixPath('/home/runner/workspace') / 'python_runtime/bin/python3').resolve
+1 failed, 20 passed in 31.19s

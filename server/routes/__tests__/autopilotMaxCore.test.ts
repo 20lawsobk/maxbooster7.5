@@ -16,6 +16,8 @@ const mocks = vi.hoisted(() => {
     requireAuth: vi.fn(),
     requireAdmin: vi.fn(),
     getAutopilotConfig: vi.fn(),
+    saveAutopilotConfig: vi.fn(),
+    getAutopilotForUser: vi.fn(),
     getRecentAnalyzedContent: vi.fn(),
     getRecommendations: vi.fn(),
     predictEngagement: vi.fn(),
@@ -33,6 +35,7 @@ vi.mock("../../middleware/auth.js", () => ({
 vi.mock("../../storage.js", () => ({
   storage: {
     getAutopilotConfig: mocks.getAutopilotConfig,
+    saveAutopilotConfig: mocks.saveAutopilotConfig,
     getRecentAnalyzedContent: mocks.getRecentAnalyzedContent,
   },
 }));
@@ -54,7 +57,9 @@ vi.mock("../../services/maxcoreControlTransport.js", () => ({
   maxCoreControlTransport: { request: mocks.maxCoreRequest },
 }));
 vi.mock("../../services/promotionalToolsService.js", () => ({
-  promotionalToolsService: {},
+  promotionalToolsService: {
+    getAutopilotForUser: mocks.getAutopilotForUser,
+  },
 }));
 vi.mock("../../db", () => ({ db: {} }));
 vi.mock("@shared/schema", () => ({ socialAutopilotContent: {} }));
@@ -84,7 +89,75 @@ describe("autopilot MaxCore routes", () => {
   beforeEach(() => {
     vi.resetAllMocks();
     mocks.getAutopilotConfig.mockResolvedValue(null);
+    mocks.saveAutopilotConfig.mockResolvedValue(undefined);
     mocks.getRecentAnalyzedContent.mockResolvedValue([]);
+  });
+
+  it("persists an account-scoped enabled state for the durable publisher", async () => {
+    const res = makeResponse();
+
+    await getHandler("/start")({ user: { id: "creator-1" } }, res);
+
+    expect(mocks.saveAutopilotConfig).toHaveBeenCalledWith(
+      "creator-1",
+      expect.objectContaining({ enabled: true, autoPublish: false }),
+    );
+    expect(mocks.getAutopilotForUser).not.toHaveBeenCalled();
+    expect(res.status).not.toHaveBeenCalled();
+    expect(res.json).toHaveBeenCalledWith({
+      success: true,
+      message: "Autopilot configuration saved for scheduled processing",
+      config: expect.objectContaining({ enabled: true }),
+    });
+  });
+
+  it("disables the account config without starting a second in-memory publisher", async () => {
+    mocks.getAutopilotConfig.mockResolvedValue({
+      enabled: true,
+      autoPublish: false,
+    });
+    const res = makeResponse();
+
+    await getHandler("/stop")({ user: { id: "creator-1" } }, res);
+
+    expect(mocks.saveAutopilotConfig).toHaveBeenCalledWith(
+      "creator-1",
+      expect.objectContaining({ enabled: false }),
+    );
+    expect(mocks.getAutopilotForUser).not.toHaveBeenCalled();
+    expect(res.status).not.toHaveBeenCalled();
+    expect(res.json).toHaveBeenCalledWith({
+      success: true,
+      message: "Autopilot disabled",
+    });
+  });
+
+  it("updates config without starting the legacy in-memory publisher", async () => {
+    const config = {
+      enabled: true,
+      platforms: ["instagram"],
+      postingFrequency: "daily",
+      brandVoice: "professional",
+      contentTypes: ["tips"],
+      autoPublish: false,
+      useMultimodalAnalysis: true,
+      autoAnalyzeBeforePosting: true,
+      minConfidenceThreshold: 0.7,
+    };
+    const res = makeResponse();
+
+    await getHandler("/configure")(
+      { user: { id: "creator-2" }, body: config },
+      res,
+    );
+
+    expect(mocks.saveAutopilotConfig).toHaveBeenCalledWith("creator-2", config);
+    expect(mocks.getAutopilotForUser).not.toHaveBeenCalled();
+    expect(res.json).toHaveBeenCalledWith({
+      success: true,
+      message: "Configuration updated",
+      config,
+    });
   });
 
   it("does not report a fake untrained state when MaxCore status is unavailable", async () => {
@@ -131,6 +204,30 @@ describe("autopilot MaxCore routes", () => {
       success: true,
       recommendations,
       usedMultimodal: true,
+    });
+  });
+
+  it("preserves MaxCore's curriculum-unavailable status for social recommendations", async () => {
+    mocks.getRecommendations.mockRejectedValue(
+      new mocks.MockMaxCoreControlError(
+        "MaxCore account curriculum is unavailable for social autopilot",
+        503,
+        { detail: "MaxCore account curriculum is unavailable for social autopilot" },
+      ),
+    );
+    const res = makeResponse();
+
+    await getHandler("/recommend")(
+      {
+        user: { id: "creator-1" },
+        body: { platform: "instagram", contentType: "video" },
+      },
+      res,
+    );
+
+    expect(res.status).toHaveBeenCalledWith(503);
+    expect(res.json).toHaveBeenCalledWith({
+      detail: "MaxCore account curriculum is unavailable for social autopilot",
     });
   });
 

@@ -16,8 +16,12 @@ import {
 } from "../services/unifiedAIController.js";
 import { aiRateLimiter } from "../middleware/rateLimiter.js";
 import { AIUnavailableError } from "../lib/aiSource.js";
+import { AppError } from "../lib/AppError.js";
 import { MaxCoreControlError } from "../services/maxcoreControlTransport.js";
-import { accountAnalyticsService } from "../services/accountAnalyticsService.js";
+import {
+  accountAnalyticsService,
+  toDashboardInsightsEnvelope,
+} from "../services/accountAnalyticsService.js";
 import { notificationService } from "../services/notificationService.js";
 import { loopbackUrl, runtimePorts } from "../config/ports.js";
 
@@ -837,20 +841,27 @@ router.post(
   },
 );
 
-router.get("/insights", requireAuth, async (_req: Request, res: Response) => {
+router.get("/insights", requireAuth, async (req: Request, res: Response) => {
   try {
-    const insights = await unifiedAIController?.generateInsights();
-
-    res.json({
-      success: true,
-      data: insights,
-    });
+    const insights = await accountAnalyticsService.insights(
+      req.user!.id,
+      req.query.range ?? "30d",
+    );
+    res.json(toDashboardInsightsEnvelope(insights));
   } catch (error) {
+    if (error instanceof AppError) {
+      return res.status(error.statusCode).json({ error: error.message });
+    }
     if (error instanceof AIUnavailableError) {
       return res.status(error.statusCode).json({ error: error.message });
     }
+    if (error instanceof MaxCoreControlError) {
+      return res
+        .status(error.status)
+        .json({ error: "Account analytics is temporarily unavailable" });
+    }
     logger.warn({ err: error }, "Generate insights route error:");
-    res.status(500).json({ error: "Failed to generate insights" });
+    res.status(500).json({ error: "Failed to load account analytics" });
   }
 });
 

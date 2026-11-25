@@ -11,6 +11,39 @@ sys.path.insert(0, str(ROOT / "scripts/testing"))
 
 
 class SuiteDiscovery(unittest.TestCase):
+    def test_python_runner_defaults_to_packaged_application_runtime(self):
+        spec = importlib.util.spec_from_file_location(
+            "python_runner", ROOT / "scripts/testing/run-python-suites.py"
+        )
+        module = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(module)
+        with tempfile.TemporaryDirectory(prefix="python-runtime-default-") as temporary:
+            fixture = Path(temporary)
+            module.ROOT = fixture
+            packaged = fixture / "python_runtime/bin/python3"
+            packaged.parent.mkdir(parents=True)
+            packaged.write_text("#!/bin/sh\nexit 0\n")
+            packaged.chmod(0o755)
+            self.assertEqual(module.default_interpreter(), str(packaged))
+            packaged.unlink()
+            self.assertEqual(module.default_interpreter(), sys.executable)
+
+    def test_python_test_children_receive_only_matching_runtime_and_test_packages(self):
+        spec = importlib.util.spec_from_file_location(
+            "python_runner_packages", ROOT / "scripts/testing/run-python-suites.py"
+        )
+        module = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(module)
+        version = f"{sys.version_info.major}.{sys.version_info.minor}"
+        with tempfile.TemporaryDirectory(prefix="python-package-paths-") as temporary:
+            fixture = Path(temporary)
+            runtime = fixture / "python_runtime/lib" / f"python{version}" / "site-packages"
+            test_packages = fixture / ".pythonlibs/lib" / f"python{version}" / "site-packages"
+            runtime.mkdir(parents=True)
+            test_packages.mkdir(parents=True)
+            paths = module.python_package_paths(sys.executable, str(fixture))
+            self.assertEqual(paths, (str(runtime), str(test_packages)))
+
     def check_discovery(self, script, extension, body, python=False, catalog=False, directory="tests"):
         spec = importlib.util.spec_from_file_location("discovery_candidate", ROOT / "scripts/testing" / script)
         module = importlib.util.module_from_spec(spec)

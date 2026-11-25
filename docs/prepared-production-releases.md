@@ -1,8 +1,9 @@
 # Optional prepared-release inspection tools
 
-The configured Replit publishing path in `.replit` is `bash build.sh`, then
-`bash start.sh`. Its guarded build/pack and restore/start executive does not
-require or consume `.prepared-release`. See [DEPLOYMENT.md](DEPLOYMENT.md) and
+The configured Replit publishing path in `.replit` is
+`npm run deployment:build`, then `npm run deployment:start`. These aliases
+delegate to the guarded `build.sh` and restore/start `start.sh` flow; it does
+not require or consume `.prepared-release`. See [DEPLOYMENT.md](DEPLOYMENT.md) and
 [publishing-build-authorization.md](publishing-build-authorization.md).
 
 For an explicitly selected isolated preparation rehearsal:

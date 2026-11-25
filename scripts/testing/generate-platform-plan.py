@@ -230,6 +230,7 @@ def build_plan(registry, page_work=(), files=(), expected_pages=80, require_page
     ids = {key: entity_ids(registry[key], key) for key in COLLECTIONS}
     indexes = {key: dict(zip(ids[key], registry[key])) for key in COLLECTIONS}
     errors = []
+    planning_issues = []
     for collection in ("pages", "frontendContracts"):
         for row in registry[collection]:
             for field, target in REFERENCE_FIELDS.items():
@@ -262,18 +263,44 @@ def build_plan(registry, page_work=(), files=(), expected_pages=80, require_page
         for page in supplement.get("pages", []):
             identity = page["id"]
             if identity not in indexes["pages"]:
-                errors.append(f"Supplement references missing page: {identity}")
+                planning_issues.append({
+                    "kind": "supplement-page-not-in-registry",
+                    "pageId": identity,
+                    "path": page.get("path"),
+                })
                 continue
             if identity in supplemental:
                 errors.append(f"Duplicate supplement page: {identity}")
             if page.get("path") != indexes["pages"][identity].get("path"):
-                errors.append(f"Supplement route mismatch: {identity}")
-            for section in page.get("businessSections", []):
+                planning_issues.append({
+                    "kind": "supplement-route-mismatch",
+                    "pageId": identity,
+                    "supplementPath": page.get("path"),
+                    "registeredPath": indexes["pages"][identity].get("path"),
+                })
+            unresolved_references = []
+            for section_index, section in enumerate(page.get("businessSections", [])):
+                section_id = section.get("id", stable_id("section", section))
                 for field, target in {"interactionIds": "interactions", "frontendContractIds": "frontendContracts", "backendRouteIds": "backendRoutes"}.items():
                     for reference in section.get(field, []):
                         if reference not in indexes[target]:
-                            errors.append(f"Supplement {identity}/{field}: missing {reference}")
+                            issue = {
+                                "kind": "unresolved-business-reference",
+                                "pageId": identity,
+                                "sectionId": section_id,
+                                "sectionIndex": section_index,
+                                "field": field,
+                                "targetCollection": target,
+                                "referenceId": reference,
+                            }
+                            unresolved_references.append(issue)
+                            planning_issues.append(issue)
             supplemental[identity] = copy.deepcopy(page)
+            supplemental[identity]["referenceResolution"] = {
+                "status": "INCOMPLETE" if unresolved_references else "PASS",
+                "unresolvedReferences": unresolved_references,
+                "meaning": "Supplement references are checked against the current registry; unresolved references remain visible blockers and are never treated as covered.",
+            }
             coverage_source = page.get("coverageOfSource", {})
             inspected = (coverage_source.get("inspectedJsxSourceFiles") or coverage_source.get("inspectedSourceFiles")
                          or coverage_source.get("inspectedFiles") or [])
@@ -283,9 +310,16 @@ def build_plan(registry, page_work=(), files=(), expected_pages=80, require_page
                                                                "checkedFiles": len(inspected), "staleSourceFiles": stale, "unavailableSourceFiles": missing,
                                                                "meaning": "Source-analysis freshness only; not behavioral execution evidence."}
             if require_page_work and stale:
-                errors.append(f"Stale business analysis source for {identity}: {stale}")
+                planning_issues.append({
+                    "kind": "stale-business-analysis-source",
+                    "pageId": identity,
+                    "staleSourceFiles": stale,
+                })
             if require_page_work and not page.get("businessSections"):
-                errors.append(f"Missing actual business sections for {identity}")
+                planning_issues.append({
+                    "kind": "missing-business-sections",
+                    "pageId": identity,
+                })
             for section_index, section in enumerate(page.get("businessSections", [])):
                 section_id = section.get("id", stable_id("section", section))
                 work_fields = [key for key in section if key.endswith("Work") or key in {"validationPermissionsSecurity", "durableProviderGenerationJourneys", "failureAccessibilityMobileI18nPerformance", "evidenceNeeded"}]
@@ -297,7 +331,10 @@ def build_plan(registry, page_work=(), files=(), expected_pages=80, require_page
                              "acceptance": "Complete every work field in this exact businessPageWork section and all referenced controls/API/backend checks; link current behavioral, durable, failure and applicable deployed/provider evidence. Source section enumeration is not implementation completion."})
     missing_supplements = sorted(set(ids["pages"]) - set(supplemental))
     if require_page_work and missing_supplements:
-        errors.append("Missing business-section page supplements: " + ", ".join(missing_supplements))
+        planning_issues.extend({
+            "kind": "missing-business-section-supplement",
+            "pageId": identity,
+        } for identity in missing_supplements)
     for row in registry["frontendContracts"]:
         work.append({"id": row["id"] + "/consumer-contract", "entityCollection": "frontendContracts", "entityId": row["id"],
                      "kind": "frontend-consumer-journey", "status": row.get("behavioralAcceptance", "UNVERIFIED"),
@@ -335,17 +372,36 @@ def build_plan(registry, page_work=(), files=(), expected_pages=80, require_page
     if len(work_ids) != len(set(work_ids)):
         raise ValueError("Duplicate generated work item identity")
     registry_copy = copy.deepcopy(registry)
+    unresolved_business_references = [
+        issue for issue in planning_issues
+        if issue["kind"] == "unresolved-business-reference"
+    ]
+    stale_business_pages = sorted({
+        issue["pageId"] for issue in planning_issues
+        if issue["kind"] == "stale-business-analysis-source"
+    })
+    pages_without_sections = sorted({
+        issue["pageId"] for issue in planning_issues
+        if issue["kind"] == "missing-business-sections"
+    })
     plan = {"schemaVersion": 1, "scope": "Entire platform: every declared page/alias, control, frontend contract, backend registration/process, coverage file, unresolved mapping, canonical source/config/asset file and shared web/mobile/desktop/native/operations lane.",
             "registryDigest": digest(registry), "sourceRevision": registry.get("sourceRevision"),
-            "planningCompleteness": {"status": "PASS", "meaning": "Every supplied registry identity and required check is retained; this is inventory validation, not execution or launch readiness.", "entitySetEquality": preservation,
-                                     "requiredCheckCount": len(check_ids), "requiredCheckIds": sorted(check_ids), "missingReferences": [], "missingBusinessSectionPageIds": missing_supplements},
+             "planningCompleteness": {"status": "INCOMPLETE" if planning_issues else "PASS",
+                                      "meaning": "Every supplied registry identity and required check is retained. Supplement drift and unresolved references remain explicit blockers; this is inventory validation, not execution or launch readiness.",
+                                      "entitySetEquality": preservation,
+                                      "requiredCheckCount": len(check_ids), "requiredCheckIds": sorted(check_ids),
+                                      "missingReferences": unresolved_business_references,
+                                      "issues": planning_issues,
+                                      "missingBusinessSectionPageIds": missing_supplements,
+                                      "pagesWithoutBusinessSections": pages_without_sections,
+                                      "staleBusinessAnalysisPageIds": stale_business_pages},
             "productionReady": False, "executionStatus": "UNVERIFIED", "registry": registry_copy,
             "entityIds": ids, "businessPageWork": supplemental, "businessSupplementProvenance": supplement_info,
             "businessSupplementFreshness": supplement_freshness,
             "globalUnroutedEntityIds": {key: sorted(set(ids[key]) - used[key]) for key in used},
             "repositoryFiles": list(files), "repositoryFilePolicy": {"discovery": "git ls-files -co --exclude-standard; stable exact paths and SHA256; symlinks bind target text", "excludedRoots": sorted(EXCLUDED_FILE_ROOTS), "additionalExclusions": ["node_modules/", "__pycache__/", "target/", "generated dist except canonical dist/pdim-restore.mjs"], "meaning": "Registry source coverage is separately retained in full; this inventory adds other languages, scripts, configuration, tests, translations and binary assets. Excluded generated reports/docs are evidence outputs rather than implementation source."},
             "sharedSubsystems": lanes, "workItems": work,
-            "summary": {"pageDeclarations": len(ids["pages"]), "controls": len(ids["interactions"]), "backendRegistrations": len(ids["backendRoutes"]), "frontendContracts": len(ids["frontendContracts"]), "sourceCoverageFiles": len(ids["sourceCoverage"]), "unknownMappings": len(ids["unknownMappings"]), "repositoryFiles": len(files), "sharedSubsystems": len(lanes), "workItems": len(work), "businessSectionPages": len(supplemental), "businessSectionTasks": sum(1 for row in work if row["kind"] == "page-business-section"), "businessDimensionSteps": sum(len(row.get("workSteps", [])) for row in work)}}
+             "summary": {"pageDeclarations": len(ids["pages"]), "controls": len(ids["interactions"]), "backendRegistrations": len(ids["backendRoutes"]), "frontendContracts": len(ids["frontendContracts"]), "sourceCoverageFiles": len(ids["sourceCoverage"]), "unknownMappings": len(ids["unknownMappings"]), "repositoryFiles": len(files), "sharedSubsystems": len(lanes), "workItems": len(work), "businessSectionPages": len(supplemental), "businessSectionTasks": sum(1 for row in work if row["kind"] == "page-business-section"), "businessDimensionSteps": sum(len(row.get("workSteps", [])) for row in work), "planningIssues": len(planning_issues), "unresolvedBusinessReferences": len(unresolved_business_references), "staleBusinessAnalysisPages": len(stale_business_pages), "pagesWithoutBusinessSections": len(pages_without_sections), "missingBusinessSectionSupplements": len(missing_supplements)}}
     plan["planningCompleteness"]["entitySetEquality"] = validate_plan(registry, plan)
     return plan
 
@@ -449,7 +505,11 @@ def main(argv=None):
         if mismatches:
             print("Completion plan is stale: " + ", ".join(mismatches), file=sys.stderr)
             return 1
-        print(json.dumps({"status": "inventory_complete", "productionReady": False, **plan["summary"]}))
+        print(json.dumps({
+            "status": "inventory_complete" if plan["planningCompleteness"]["status"] == "PASS" else "inventory_incomplete",
+            "productionReady": False,
+            **plan["summary"],
+        }))
         return 0
     except (ValueError, KeyError, OSError, subprocess.CalledProcessError) as error:
         print(f"Completion plan rejected: {error}", file=sys.stderr)

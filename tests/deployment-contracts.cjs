@@ -229,3 +229,100 @@ test("build verifies dependencies without fetching package managers; explicit sy
   assert.match(script, /command -v pnpm/);
   assert.match(script, /CI=true run_pnpm install --offline --frozen-lockfile --ignore-scripts/);
 });
+
+test("capsule --verify checks all build archives read-only and rejects corrupt bytes", t => {
+  const os = require("node:os");
+  const path = require("node:path");
+  const crypto = require("node:crypto");
+  const { execFileSync, spawnSync } = require("node:child_process");
+  const root = fs.mkdtempSync(path.join(os.tmpdir(), "pdim-readonly-verify-"));
+  t.after(() => fs.rmSync(root, { recursive: true, force: true }));
+  const dist = path.join(root, "dist");
+  fs.mkdirSync(dist);
+  const restoreScript = path.join(dist, "pdim-restore.mjs");
+  fs.copyFileSync("dist/pdim-restore.mjs", restoreScript);
+
+  const capsules = [
+    ["app_remainder.pdim", "app_remainder.manifest.json", "app-remainder"],
+    ["node_modules.pdim", "node_modules.manifest.json", "node_modules"],
+    ["python_runtime.pdim", "python_runtime.manifest.json", "python_runtime"],
+    ["external_maxcore.pdim", "external_maxcore.manifest.json", "external/maxcore"],
+    ["external_pdim.pdim", "external_pdim.manifest.json", "external/pdim"],
+  ];
+  const inputs = path.join(root, "fixture-input");
+  for (const [capsule, manifest, member] of capsules) {
+    const payload = path.join(inputs, member);
+    fs.mkdirSync(payload, { recursive: true });
+    fs.writeFileSync(path.join(payload, "payload.txt"), capsule);
+    if (capsule === "node_modules.pdim") {
+      for (let index = 0; index < 500; index++) {
+        fs.writeFileSync(path.join(payload, `entry-${index}.txt`), "fixture");
+      }
+    }
+    const archive = path.join(root, capsule);
+    execFileSync("tar", ["-czf", archive, "-C", inputs, member], { cwd: root });
+    const sha256 = crypto.createHash("sha256").update(fs.readFileSync(archive)).digest("hex");
+    fs.writeFileSync(path.join(root, manifest), JSON.stringify({ sha256, compression: "gzip-9" }));
+  }
+
+  function snapshot(directory) {
+    const result = [];
+    function walk(current) {
+      for (const entry of fs.readdirSync(current, { withFileTypes: true })) {
+        const absolute = path.join(current, entry.name);
+        const relative = path.relative(directory, absolute);
+        if (entry.isDirectory()) {
+          result.push(`${relative}/`);
+          walk(absolute);
+        } else {
+          result.push(`${relative}:${crypto.createHash("sha256").update(fs.readFileSync(absolute)).digest("hex")}`);
+        }
+      }
+    }
+    walk(directory);
+    return result.sort();
+  }
+
+  const before = snapshot(root);
+  const verified = spawnSync(process.execPath, [restoreScript, "--verify"], {
+    cwd: root, encoding: "utf8", timeout: 30_000,
+  });
+  assert.equal(verified.status, 0, verified.stderr + verified.stdout);
+  assert.match(verified.stdout, /Read-only verification passed for 5 capsules/);
+  assert.deepEqual(snapshot(root), before, "verification must not create, remove, or alter files");
+
+  fs.appendFileSync(path.join(root, capsules[0][0]), "corruption");
+  const corrupt = spawnSync(process.execPath, [restoreScript, "--verify"], {
+    cwd: root, encoding: "utf8", timeout: 30_000,
+  });
+  assert.equal(corrupt.status, 1, corrupt.stderr + corrupt.stdout);
+  assert.match(corrupt.stderr, /Checksum mismatch for app_remainder\.pdim/);
+  for (const target of ["node_modules", "python_runtime", "external", ".pdim-restored-app"]) {
+    assert.equal(fs.existsSync(path.join(root, target)), false, `${target} must not be restored`);
+  }
+});
+
+test("unknown capsule restore modes fail closed instead of restoring everything", t => {
+  const os = require("node:os");
+  const path = require("node:path");
+  const { spawnSync } = require("node:child_process");
+  const root = fs.mkdtempSync(path.join(os.tmpdir(), "pdim-unknown-mode-"));
+  t.after(() => fs.rmSync(root, { recursive: true, force: true }));
+  fs.mkdirSync(path.join(root, "dist"));
+  const restoreScript = path.join(root, "dist", "pdim-restore.mjs");
+  fs.copyFileSync("dist/pdim-restore.mjs", restoreScript);
+  const result = spawnSync(process.execPath, [restoreScript, "--unknown"], {
+    cwd: root, encoding: "utf8", timeout: 30_000,
+  });
+  assert.equal(result.status, 2, result.stderr + result.stdout);
+  assert.match(result.stderr, /Unknown mode: --unknown/);
+  assert.deepEqual(fs.readdirSync(root).sort(), ["dist"]);
+});
+
+test("deployment finalization invokes read-only capsule verification", () => {
+  const build = fs.readFileSync("build.sh", "utf8");
+  const finalize = build.split("phase_finalize() {")[1]?.split("\n}")[0];
+  assert.ok(finalize, "phase_finalize must exist");
+  assert.match(finalize, /require_file dist\/pdim-restore\.mjs/);
+  assert.match(finalize, /node dist\/pdim-restore\.mjs --verify/);
+});

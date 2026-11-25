@@ -26,7 +26,7 @@ export async function enqueueNotificationDigest(input: {
   const width = frequency === "weekly" ? 7 * 86400000 : 86400000;
   const due = new Date((Math.floor(Date.now() / width) + 1) * width);
   await pool.query(
-    `INSERT INTO integration_notification_digest
+    `INSERT INTO public.integration_notification_digest
      (id,user_id,type,title,message,link,frequency,due_at,state)
      VALUES($1,$2,$3,$4,$5,$6,$7,$8,'pending')`,
     [randomUUID(), input.userId, input.type, input.title, input.message, input.link ?? null, frequency, due],
@@ -45,35 +45,35 @@ export async function runNotificationDigestBatch(): Promise<void> {
   try {
     await client.query("BEGIN");
     const first = await client.query(
-      `SELECT user_id FROM integration_notification_digest
+      `SELECT user_id FROM public.integration_notification_digest
        WHERE state='pending' AND due_at<=now() ORDER BY due_at,id
        FOR UPDATE SKIP LOCKED LIMIT 1`,
     );
     if (!first.rows.length) { await client.query("COMMIT"); return; }
     const userId = first.rows[0].user_id;
     const user = (await client.query(
-      `SELECT email,notification_settings FROM users WHERE id=$1`, [userId],
+      `SELECT email,notification_settings FROM public.users WHERE id=$1`, [userId],
     )).rows[0];
     const pending = (await client.query(
-      `SELECT * FROM integration_notification_digest WHERE user_id=$1
+      `SELECT * FROM public.integration_notification_digest WHERE user_id=$1
        AND state='pending' AND due_at<=now() ORDER BY due_at,id
        FOR UPDATE SKIP LOCKED LIMIT 100`, [userId],
     )).rows;
     for (const entry of pending) {
       const prefs = user?.notification_settings;
       if (!user?.email || !digestAllowed(prefs, entry.type)) {
-        await client.query(`UPDATE integration_notification_digest SET state='suppressed',updated_at=now() WHERE id=$1`, [entry.id]);
+        await client.query(`UPDATE public.integration_notification_digest SET state='suppressed',updated_at=now() WHERE id=$1`, [entry.id]);
       } else if (digestAllowed(prefs, entry.type, new Date(), true)) {
         entries.push(entry);
       } else {
         // Quiet hours defer instead of dropping mail or starving other users.
-        await client.query(`UPDATE integration_notification_digest SET due_at=now()+interval '15 minutes',updated_at=now() WHERE id=$1`, [entry.id]);
+        await client.query(`UPDATE public.integration_notification_digest SET due_at=now()+interval '15 minutes',updated_at=now() WHERE id=$1`, [entry.id]);
       }
     }
     email = user?.email;
     if (entries.length) {
       await client.query(
-        `UPDATE integration_notification_digest SET state='started',owner=$1,updated_at=now()
+        `UPDATE public.integration_notification_digest SET state='started',owner=$1,updated_at=now()
          WHERE id=ANY($2::uuid[])`, [owner, entries.map(entry => entry.id)],
       );
     }
@@ -88,7 +88,7 @@ export async function runNotificationDigestBatch(): Promise<void> {
   // A missing sender is an explicit deployment error, never a fabricated sender.
   const sender = process.env.SENDGRID_FROM_EMAIL;
   if (!sender) {
-    await pool.query(`UPDATE integration_notification_digest SET state='rejected',error=$2,updated_at=now() WHERE owner=$1`,
+    await pool.query(`UPDATE public.integration_notification_digest SET state='rejected',error=$2,updated_at=now() WHERE owner=$1`,
       [owner, "Notification digest sender is not configured"]);
     throw new Error("Notification digest sender is not configured");
   }
@@ -98,7 +98,7 @@ export async function runNotificationDigestBatch(): Promise<void> {
     text: entries.map(entry => `${entry.title}\n${entry.message}${entry.link ? `\n${entry.link}` : ""}`).join("\n\n"),
   });
   await pool.query(
-    `UPDATE integration_notification_digest SET state=$2,provider_id=$3,error=$4,updated_at=now() WHERE owner=$1`,
+    `UPDATE public.integration_notification_digest SET state=$2,provider_id=$3,error=$4,updated_at=now() WHERE owner=$1`,
     [owner, result.status, result.status === "accepted" ? result.messageId : null,
       result.status === "accepted" ? null : result.error],
   );

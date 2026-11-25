@@ -60,6 +60,10 @@ export const MAXCORE_CAPSULE_EXCLUDE_PATHS = [
   "**/*.pyc",
   // Exclude runtime images/audio/video and staging, preserving sibling source,
   // first-party assets and explicitly named fixture trees.
+  // Workspace-only virtualenv/cache are not portable runtime inputs; Python is
+  // supplied by the separately verified python_runtime capsule.
+  "artifacts/ai-training-server/.venv",
+  "artifacts/ai-training-server/.pytest_cache",
   "artifacts/ai-training-server/uploads",
   "artifacts/ai-training-server/ai_model/training_data",
   "artifacts/ai-training-server/ai_model/training/candidate_runs",
@@ -342,6 +346,8 @@ export function packCapsule({
 export interface PackCapsuleMembersOptions {
   preserveSource?: boolean;
   outputRoot?: string;
+  /** Source paths intentionally omitted from an explicit source capsule. */
+  excludePaths?: string[];
   /** Absolute path to the root every path below is relative to. */
   root: string;
   /**
@@ -381,6 +387,7 @@ export function packCapsuleMembers({
   root,
   members,
   capsule,
+  excludePaths = [],
   threads = 0,
   compressionLevel = CAPSULE_COMPRESSION_LEVEL,
   preserveSource = false,
@@ -389,6 +396,7 @@ export function packCapsuleMembers({
   const compression = `zstd-${compressionLevel}`;
   const compressArgs = zstdCompressArgs(threads, compressionLevel);
   return new Promise((resolveOne, rejectOne) => {
+    const normalizedExcludePaths = normalizeExcludePaths(excludePaths);
     // Enforce this at the destructive packing boundary too: a caller supplying
     // its own member list must not bypass the scanner's bootstrap exclusions.
     const protectedPaths = new Set(
@@ -402,9 +410,18 @@ export function packCapsuleMembers({
         `Refusing to capsule deployment control file: ${protectedMember}`,
       ));
     }
-    const existingMembers = members.filter((m) =>
-      fs.existsSync(path.resolve(root, m)),
-    );
+    const existingMembers: string[] = [];
+    let rawBytes = 0;
+    for (const member of members) {
+      try {
+        const entry = fs.lstatSync(path.resolve(root, member));
+        if (entry.isSymbolicLink()) fs.statSync(path.resolve(root, member));
+        existingMembers.push(member);
+        if (!entry.isDirectory()) rawBytes += entry.size;
+      } catch (error) {
+        if ((error as NodeJS.ErrnoException).code !== "ENOENT") throw error;
+      }
+    }
     if (existingMembers.length === 0) return resolveOne(null);
 
     const capsulePath = path.resolve(outputRoot, capsule);
@@ -481,6 +498,8 @@ export function packCapsuleMembers({
             sha256,
             dir: "<multiple>",
             memberCount: existingMembers.length,
+            rawBytes,
+            excludePaths: normalizedExcludePaths,
           },
           null,
           2,

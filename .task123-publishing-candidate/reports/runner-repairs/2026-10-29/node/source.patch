@@ -1,0 +1,69 @@
+--- a/scripts/testing/run-node-suites.py
++++ b/scripts/testing/run-node-suites.py
+@@ -15,6 +15,10 @@
+                      "tests/unit/generated-pdim-isolated.mjs", "scripts/test-data-runtime.mjs",
+                      "scripts/test-fabric-deletion.mjs"}
+ 
++# Imports node:test lifecycle hooks but has no standalone assertions. The parent
++# collector supplies the exact target, private output and producer identity.
++PARENT_OWNED_SUPPORT = {"scripts/testing/coverage-node-vite-entry.mjs"}
++
+ 
+ def discover():
+     paths = subprocess.check_output(["git", "ls-files"], cwd=ROOT, text=True).splitlines()
+@@ -22,7 +26,7 @@
+     for file in paths:
+         if not file.startswith(("tests/", "script/", "scripts/", "server/", "evaluations/")):
+             continue
+-        if file in BROWSER or file.startswith("tests/payment-processing/") or "/fixtures/" in file:
++        if file in BROWSER or file in PARENT_OWNED_SUPPORT or file.startswith("tests/payment-processing/") or "/fixtures/" in file:
+             continue
+         if Path(file).suffix not in (".mjs", ".cjs", ".ts"):
+             continue
+--- a/tests/testing/test_catalog_snapshot_ownership.py
++++ b/tests/testing/test_catalog_snapshot_ownership.py
+@@ -133,7 +133,8 @@
+ 
+     def test_actual_node_builder_admits_generated_commands_and_rejects_report_selectors(self):
+         current = ("tests/current.test.mjs", "tests/current-contract.test.ts", "scripts/test-data-runtime.mjs")
+-        separately_owned = ("tests/studio-plugin-audio-browser.test.mjs", "tests/payment-processing/pay.test.mjs")
++        separately_owned = ("tests/studio-plugin-audio-browser.test.mjs", "tests/payment-processing/pay.test.mjs",
++                            "scripts/testing/coverage-node-vite-entry.mjs")
+         historical = ("reports/cohort/test-before.mjs", "reports/cohort/.snapshots/test-before.mjs")
+         for name in (*current, *separately_owned, *historical):
+             self.put(name, NODE_TEST)
+@@ -146,6 +147,9 @@
+             canonical = {row["path"] for row in data["entries"] if row["group"] == "root-node"}
+             self.assertEqual(canonical, discovered)
+             self.assertEqual(canonical, set(current))
++            helper = self.rows(data)["scripts/testing/coverage-node-vite-entry.mjs"]
++            self.assertEqual((helper["category"], helper["group"], helper["command"]),
++                             ("support", "runner-support", None))
+             for name in canonical:
+                 command = shlex.split(self.rows(data)[name]["command"])
+                 self.assertEqual(command, ["python3", "scripts/testing/run-node-suites.py", "--file", name])
+@@ -153,7 +157,7 @@
+                 with patch.object(sys, "argv", [str(NODE_SOURCE), "--file", name, "--list", "--output", str(output)]), redirect_stdout(out):
+                     self.assertEqual(runner.main(), 0)
+                 self.assertEqual(json.loads(out.getvalue()), [name])
+-            for name in historical:
++            for name in (*historical, "scripts/testing/coverage-node-vite-entry.mjs"):
+                 error = io.StringIO()
+                 with patch.object(sys, "argv", [str(NODE_SOURCE), "--file", name, "--list", "--output", str(output)]), redirect_stderr(error):
+                     with self.assertRaises(SystemExit) as rejected:
+--- a/docs/testing/node-coverage-producer.md
++++ b/docs/testing/node-coverage-producer.md
+@@ -45,6 +45,13 @@
+ argument must be exactly `tests/fabric-replica-generation.test.mjs`, the single
+ proven in-process `node:test` suite admitted by this P1 command. Other suites,
+ including PostgreSQL fixtures, are rejected before execution or output creation.
++The child `scripts/testing/coverage-node-vite-entry.mjs` is parent-owned support,
++not a standalone test suite. Its `node:test` import registers lifecycle cleanup;
++the collector supplies the exact target, private output and producer identity.
++The canonical Node runner keeps it out of standalone discovery and rejects an
++explicit `--file` selector for it. The existing two-assertion suite remains a
++canonical Node test and also runs through this collector.
++
+ It executes through public Vite ModuleRunner APIs and an observed VM wrapper,
+ one test worker, a two-minute timeout and a
+ small explicitly constructed environment. It does not inherit application

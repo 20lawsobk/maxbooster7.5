@@ -14,6 +14,9 @@ vi.mock("../../server/services/maxcoreConnector.js", () => ({
   getMaxcoreGenerationHeaders: () => ({ Authorization: "Bearer owned-awareness-key" }),
   getMaxcoreAdminHeaders: () => ({}),
 }));
+vi.mock("../../server/services/cognitiveGenerationContext.js", () => ({
+  prepareCognitiveGenerationRequest: async (body: Record<string, unknown>) => body,
+}));
 
 type ClientState = { _inFlight: number; _cbProbing: boolean; _cbOpenUntil: number };
 const methods = ["generate", "infer"] as const;

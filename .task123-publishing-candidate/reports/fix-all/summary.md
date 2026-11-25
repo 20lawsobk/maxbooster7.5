@@ -1,0 +1,22 @@
+# Fix-All Summary
+
+Generated: 2026-08-07T11:41:22.440Z
+
+- **ts-server** — applied (2026-08-07T11:34:23.322Z): native fixed=0 skipped=295; external=fix-params-string.mjs,fix-params-string2.mjs,fix-table-optional-chain.mjs,fix-singleton-optional-chain.mjs,fix-ts2724-underscore.mjs,fix-ts2551-rename-back.mjs,fix-ts2769.mjs,fix-ts2345.mjs,fix-ts2339-cast.mjs; syntax-restored=1
+- **verify-server** — measured (2026-08-07T11:35:49.773Z): 1705 → 1701 errors (parser: 0); top: TS2322:307 TS2345:217 TS2769:206 TS6133:166 TS2339:153 TS2353:100 TS2365:58 TS2571:56 TS18046:52 TS2349:42
+- **imports** — applied (2026-08-07T11:36:15.500Z): rewritten=0 ambiguous=0 (bare-module diags left to policy) syntax-restored=0
+- **schema** — measured (2026-08-07T11:36:15.330Z): pairs=115 inDb=0 removalCandidates=68 latentReads=123 (report-only — no code edited)
+- **runtime** — passed (2026-08-07T11:40:37.845Z): /api/ready:200 /:200 /api/auth/user:404
+- **audit** — measured (2026-08-07T11:40:39.702Z): critical=0 high=2 moderate=0 low=0 (report-only; installs are managed manually in this repo)
+- **lint** — measured (2026-08-07T11:41:12.364Z): errors=896; top rules: no-unsafe-optional-chaining:432 no-division-by-zero/no-division-by-zero:393 @typescript-eslint/no-non-null-asserted-optional-chain:44 @typescript-eslint/no-unused-expressions:24 no-dupe-else-if:1 no-self-assign:1 no-script-url:1
+
+TypeScript server: **1701 errors** (parser: 0) as of 2026-08-07T11:35:49.772Z
+TypeScript client: not yet measured
+
+OUTSTANDING WORK REMAINS — 2 categories are not clean. This pipeline does not claim success until they are.
+---
+## Correction (2026-08-11)
+The earlier "1701 → 0 errors" verify-server reading was INVALID — produced with stale incremental tsbuildinfo. `tc-server-final.txt` (a stale artifact) has been removed.
+
+Authoritative measurement (scripts/typecheck-sections.sh, incremental OFF, 17 sections covering ALL of server/, shared/, and root *.ts, deduped across sections): **2,648 errors**.
+Per-section own-file breakdown: routes 771+517+533, services 153+90+94+99, top-level server 59, middleware 33, lib 19, workers/realtime/infra 21, modules 10, pocket-dimension/subatomic/storage 14, misc 25, tests/sims 8, shared+root 7.

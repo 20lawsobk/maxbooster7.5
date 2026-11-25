@@ -1,0 +1,8 @@
+(node:36) [DEP0174] DeprecationWarning: Calling promisify on a function that returns a Promise is likely a mistake.
+(Use `node22 --trace-deprecation ...` to show where the warning was created)
+Warning: Detected unsettled top-level await at file:///project/scripts/testing/electron-asar-module-acceptance.mjs:52
+  await asar.createPackageWithOptions(source, archive, { unpack: "**/dist/index.mjs" });
+  ^
+
+
+

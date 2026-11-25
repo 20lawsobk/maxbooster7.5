@@ -1,18 +1,24 @@
 entrypoint = "server/index.ts"
-modules = ["nodejs-22", "python-3.11"]
+modules = ["nodejs-24", "python-3.12", "dotnet-10.0"]
 run = "npm run dev"
 
 [gitHubImport]
 requiredFiles = [".replit", "replit.nix"]
 
 [deployment]
-build = ["bash", "build.sh"]
-run = ["bash", "start.sh"]
+build = ["npm", "run", "deployment:build"]
+run = ["npm", "run", "deployment:start"]
 ignorePorts = false
+deploymentTarget = "gce"
 
 [env]
 NODE_ENV = "development"
 PORT = "5000"
+DNS_AUTHORITY_PORT = "1053"
+DNS_NODE_LOCAL_PORT = "5353"
+DNS_NODE_LOCAL = "1"
+DNS_NODE_LOCAL_HEALTH_PORT = "5380"
+DNS_API_PORT = "8080"
 LOCAL_PDIM_PORT = "5556"
 VIDEO_DIFFUSION_PORT = "8008"
 MAXCORE_LOCAL_PORT = "8090"
@@ -20,45 +26,52 @@ BOOSTERSTATE_SIDECAR_PORT = "9877"
 MODEL_API_PORT = "9878"
 MODEL_API_HEALTH_PORT = "9879"
 PYTHON_AI_PORT = "9880"
+ENABLE_LEGACY_AI_SIDECAR = "1"
 MAXCORE_LOCAL = "1"
 PDIM_FORCE_REMOTE = "0"
 MAXCORE_SERVING_RELEASE = "live-awareness"
 STRIPE_ALLOW_CATALOG_PROVISIONING = "0"
 
 [[ports]]
+localPort = 1053
+
+[[ports]]
 localPort = 5000
 externalPort = 80
 
 [[ports]]
+localPort = 5353
+
+[[ports]]
+localPort = 5380
+
+[[ports]]
 localPort = 5556
-exposeLocalhost = false
 
 [[ports]]
 localPort = 8008
-exposeLocalhost = false
+
+[[ports]]
+localPort = 8080
 
 [[ports]]
 localPort = 8090
-exposeLocalhost = false
 
 [[ports]]
 localPort = 9877
-exposeLocalhost = false
 
 [[ports]]
 localPort = 9878
-exposeLocalhost = false
 
 [[ports]]
 localPort = 9879
-exposeLocalhost = false
 
 [[ports]]
 localPort = 9880
-exposeLocalhost = false
 
 [nix]
 channel = "stable-25_05"
+packages = ["cacert", "freetype", "lcms2", "libimagequant", "libjpeg", "libtiff", "libwebp", "libxcrypt", "openjpeg", "pkg-config", "tcl", "tk", "xsimd", "zlib"]
 
 [workflows]
 runButton = "Project"
@@ -83,3 +96,25 @@ waitForPort = 5000
 
 [workflows.workflow.metadata]
 outputType = "webview"
+
+[postMerge]
+path = "scripts/post-merge.sh"
+timeoutMs = 600000
+
+[userenv]
+
+[userenv.development]
+MAXCORE_AWARENESS_PLATFORM_DISCOVERY = "1"
+MAXCORE_AWARENESS_PLATFORM_DISCOVERY_PROVIDER = "exa"
+TOOLOST_ENVIRONMENT = "sandbox"
+MAXBOOSTER_REGULAR_E2E_ACCESS_ENABLED = "true"
+MAXBOOSTER_REGULAR_E2E_REGISTRATION_ENABLED = "false"
+MAXBOOSTER_REGULAR_E2E_LOGIN_USERNAME = "regular_e2e_test"
+MAXBOOSTER_REGULAR_E2E_ACCESS_USER_ID = "43cdb660-848a-4d99-9a3b-b9f0dfcac64d"
+
+[userenv.production]
+MAXCORE_AWARENESS_PLATFORM_DISCOVERY = "1"
+MAXCORE_AWARENESS_PLATFORM_DISCOVERY_PROVIDER = "exa"
+
+[objectStorage]
+defaultBucketID = "replit-objstore-dff07b1e-3724-424b-9a40-6603b5908003"

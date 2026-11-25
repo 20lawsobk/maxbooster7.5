@@ -1,0 +1,976 @@
+{
+  "schemaVersion": 1,
+  "historyWindow": {
+    "start": "2026-08-01T00:00:00Z",
+    "endExclusive": "2026-09-01T00:00:00Z"
+  },
+  "sourceRefs": "all refs present in this checkout at export time",
+  "commitCount": 428,
+  "archivedVariantCount": 68,
+  "activeFileHashes": {
+    ".replit": "cb8dc52a590c10c97762a897ad160c408636bdd9f023aa966d89e716680dd270",
+    "package.json": "93048337252fd009be9956de141c160cc53a62eb9910ea0f6b192a50dd261eef",
+    "build.sh": "59122d69c534ab6071538fa521805487835f0fb7aed673dbbb90d621a9af259d",
+    "start.sh": "7476f723251450e5fef7fdcd5f7c2a4d4b4c54fef34149ff8bd977933f05e1a3",
+    "scripts/start-production.sh": "41ccdf570d722335e1573ec3c240d98f0edef52db838179f65f06a90210c4c10",
+    "scripts/start-production.mjs": "60b256b4a94ea8a0031467acd0160ea437575fd9f0b24418383160e181243867",
+    "scripts/start-dev.sh": "ab1015a5c0763a12a1cb0c60ff8c37272017a8ec70c1c26c49ee3e45c100f348",
+    "Dockerfile": "40d7880d48b52aa5867fe4665e9f44cd05a721b67dc435e7f7b6c56be34384d1",
+    "Dockerfile.prod": "f5db6103004f8a6e573316cab418ae4a24ed3bdcadc1a3864e2e56194990ed66",
+    "deploy-gcp.sh": "55f301b0aae632cc883bd91cfea54ef2f34886a4f5d07d9272a71285bf80947c"
+  },
+  "files": [
+    {
+      "sourcePath": ".agents/memory/capsule-compression-codec-choice.md",
+      "archivedPath": "history/documentation/.agents/memory/capsule-compression-codec-choice.md/capsule-compression-codec-choice--621c66bb2044.md",
+      "category": "documentation",
+      "gitBlobSha": "6b65dca52484270337095d7c774b5efa2821df95",
+      "sha256": "621c66bb204432b677adcaee6fd1e2b3c8db21513e8ea4b9198d42ca16740e08",
+      "bytes": 4191,
+      "originalMode": "100644",
+      "observedAtCommit": {
+        "hash": "ad3f5f9f981fb366eefb8bc5236e3519907d90bd",
+        "authorDate": "2026-08-31T19:45:47Z",
+        "subject": "Bump actions/setup-java from 4 to 6"
+      }
+    },
+    {
+      "sourcePath": ".agents/memory/deploy-8gb-live-footprint.md",
+      "archivedPath": "history/documentation/.agents/memory/deploy-8gb-live-footprint.md/deploy-8gb-live-footprint--1e19fb8a966c.md",
+      "category": "documentation",
+      "gitBlobSha": "e01f3bee589143c49652dfd6d8995beda62ad27e",
+      "sha256": "1e19fb8a966cc5eb52a10ec415c1204b4850b0b2adff64702e8f57d3e7ced414",
+      "bytes": 1947,
+      "originalMode": "100644",
+      "observedAtCommit": {
+        "hash": "ad3f5f9f981fb366eefb8bc5236e3519907d90bd",
+        "authorDate": "2026-08-31T19:45:47Z",
+        "subject": "Bump actions/setup-java from 4 to 6"
+      }
+    },
+    {
+      "sourcePath": ".agents/memory/deploy-8gb-live-footprint.md",
+      "archivedPath": "history/documentation/.agents/memory/deploy-8gb-live-footprint.md/deploy-8gb-live-footprint--2c9f7ae81ce1.md",
+      "category": "documentation",
+      "gitBlobSha": "b4e3b07760272ca3c5c4321fd8cad2d282d54af5",
+      "sha256": "2c9f7ae81ce113d9f7d7b131a9952a46de0d816260d8b0d22e71c04e7b6ef2c3",
+      "bytes": 1582,
+      "originalMode": "100644",
+      "observedAtCommit": {
+        "hash": "54021673e6139a542c0ee07e86d748258dadf38c",
+        "authorDate": "2026-08-14T04:07:18Z",
+        "subject": "Update build process and deployment memory footprint documentation"
+      }
+    },
+    {
+      "sourcePath": ".agents/memory/deploy-8gb-live-footprint.md",
+      "archivedPath": "history/documentation/.agents/memory/deploy-8gb-live-footprint.md/deploy-8gb-live-footprint--7dca6dd60d99.md",
+      "category": "documentation",
+      "gitBlobSha": "35624df53aedb569c5df18078676f115df038ee7",
+      "sha256": "7dca6dd60d9969b77a870c277af8b93e36b6b0779b11cc4b1a85901685974829",
+      "bytes": 1411,
+      "originalMode": "100644",
+      "observedAtCommit": {
+        "hash": "503d24a23e3268abbf58f4a6bf05fe224a633fbb",
+        "authorDate": "2026-08-14T03:47:16Z",
+        "subject": "Update memory logs and document deployment footprint"
+      }
+    },
+    {
+      "sourcePath": ".agents/memory/deploy-autofix-coverage-gaps.md",
+      "archivedPath": "history/documentation/.agents/memory/deploy-autofix-coverage-gaps.md/deploy-autofix-coverage-gaps--1ffbf61a1bfa.md",
+      "category": "documentation",
+      "gitBlobSha": "e1f610bf0b7cd921a1ed13c8291223ba415032f9",
+      "sha256": "1ffbf61a1bfa529cd3dbaec653f85130fe2475b5dcc83bda95795cadbdf876f1",
+      "bytes": 3149,
+      "originalMode": "100644",
+      "observedAtCommit": {
+        "hash": "fac78aab31a6aa82c3b9cdcef1f02185d21e4a27",
+        "authorDate": "2026-08-29T18:36:50Z",
+        "subject": "Update build script and capsule pack logic"
+      }
+    },
+    {
+      "sourcePath": ".agents/memory/deploy-autofix-coverage-gaps.md",
+      "archivedPath": "history/documentation/.agents/memory/deploy-autofix-coverage-gaps.md/deploy-autofix-coverage-gaps--6997d11611e7.md",
+      "category": "documentation",
+      "gitBlobSha": "4efae0372ddfe3ba36890d273adb6f45b419208d",
+      "sha256": "6997d11611e7aba7072208554644b1e75f2df07a8690cc101e60d9e2765eab6c",
+      "bytes": 3652,
+      "originalMode": "100644",
+      "observedAtCommit": {
+        "hash": "0d3611c36e562a22f0fea3c295d0e6fd6cf4f8ca",
+        "authorDate": "2026-08-29T17:56:42Z",
+        "subject": "Add documentation for deploying autofix coverage gaps"
+      }
+    },
+    {
+      "sourcePath": ".agents/memory/deploy-autofix-coverage-gaps.md",
+      "archivedPath": "history/documentation/.agents/memory/deploy-autofix-coverage-gaps.md/deploy-autofix-coverage-gaps--a4ac0200498e.md",
+      "category": "documentation",
+      "gitBlobSha": "d13d8034d7b6ef4c3b3a894e9d417b4a02680bfe",
+      "sha256": "a4ac0200498eb868a7d4a985608eaeaffb33db85f0e65b3cc9d4eae2623e4aa3",
+      "bytes": 3173,
+      "originalMode": "100644",
+      "observedAtCommit": {
+        "hash": "ad3f5f9f981fb366eefb8bc5236e3519907d90bd",
+        "authorDate": "2026-08-31T19:45:47Z",
+        "subject": "Bump actions/setup-java from 4 to 6"
+      }
+    },
+    {
+      "sourcePath": ".agents/memory/deploy-boot-stub-port-gap.md",
+      "archivedPath": "history/documentation/.agents/memory/deploy-boot-stub-port-gap.md/deploy-boot-stub-port-gap--0d38c1bb7c39.md",
+      "category": "documentation",
+      "gitBlobSha": "faf593e0c90ae78704d66c3db23df0c33b97e1dc",
+      "sha256": "0d38c1bb7c39764b79d91bde8702e29a56db33e4c0f3ed324df2b2ab338450e4",
+      "bytes": 2417,
+      "originalMode": "100644",
+      "observedAtCommit": {
+        "hash": "ad3f5f9f981fb366eefb8bc5236e3519907d90bd",
+        "authorDate": "2026-08-31T19:45:47Z",
+        "subject": "Bump actions/setup-java from 4 to 6"
+      }
+    },
+    {
+      "sourcePath": ".agents/memory/deploy-runtime-helper-packaging.md",
+      "archivedPath": "history/documentation/.agents/memory/deploy-runtime-helper-packaging.md/deploy-runtime-helper-packaging--6b344095a38f.md",
+      "category": "documentation",
+      "gitBlobSha": "7bffe55063e99e174e7a984f29ba75b94df2c36a",
+      "sha256": "6b344095a38fae73c9967f92a1627e3d3509a4ca1a7631c9c7c5327c34112db4",
+      "bytes": 1014,
+      "originalMode": "100644",
+      "observedAtCommit": {
+        "hash": "ad3f5f9f981fb366eefb8bc5236e3519907d90bd",
+        "authorDate": "2026-08-31T19:45:47Z",
+        "subject": "Bump actions/setup-java from 4 to 6"
+      }
+    },
+    {
+      "sourcePath": ".agents/memory/replit-nix-feeds-deploy-closure.md",
+      "archivedPath": "history/documentation/.agents/memory/replit-nix-feeds-deploy-closure.md/replit-nix-feeds-deploy-closure--18d61d7b4c50.md",
+      "category": "documentation",
+      "gitBlobSha": "f08a7f7b8b66bc5285ba04a8ea32c44408858685",
+      "sha256": "18d61d7b4c50ad9726939c99d7e1e6e5bc1e9dd41421cbbc0017a0f33ad8ac34",
+      "bytes": 2093,
+      "originalMode": "100644",
+      "observedAtCommit": {
+        "hash": "ad3f5f9f981fb366eefb8bc5236e3519907d90bd",
+        "authorDate": "2026-08-31T19:45:47Z",
+        "subject": "Bump actions/setup-java from 4 to 6"
+      }
+    },
+    {
+      "sourcePath": "docs/DEPLOYMENT.md",
+      "archivedPath": "history/documentation/docs/DEPLOYMENT.md/DEPLOYMENT--980462e3b739.md",
+      "category": "documentation",
+      "gitBlobSha": "3927174a200004f145b20ea73040dcdb94b41133",
+      "sha256": "980462e3b739465ad4b7ea2f17a6fd749af6fc75b71ca768329087aaec459a58",
+      "bytes": 7397,
+      "originalMode": "100644",
+      "observedAtCommit": {
+        "hash": "ad3f5f9f981fb366eefb8bc5236e3519907d90bd",
+        "authorDate": "2026-08-31T19:45:47Z",
+        "subject": "Bump actions/setup-java from 4 to 6"
+      }
+    },
+    {
+      "sourcePath": "docs/PRODUCTION_GRADE_LAUNCH_BLUEPRINT.md",
+      "archivedPath": "history/documentation/docs/PRODUCTION_GRADE_LAUNCH_BLUEPRINT.md/PRODUCTION_GRADE_LAUNCH_BLUEPRINT--2951a929ac6f.md",
+      "category": "documentation",
+      "gitBlobSha": "32a0301c39ee1c69105ad2273a0509cb6e270410",
+      "sha256": "2951a929ac6f634f49505c4b85f4dcdd80be8e9032842cf4f3179041c2a20bcf",
+      "bytes": 22417,
+      "originalMode": "100644",
+      "observedAtCommit": {
+        "hash": "ad3f5f9f981fb366eefb8bc5236e3519907d90bd",
+        "authorDate": "2026-08-31T19:45:47Z",
+        "subject": "Bump actions/setup-java from 4 to 6"
+      }
+    },
+    {
+      "sourcePath": "PRODUCTION_READINESS.md",
+      "archivedPath": "history/documentation/PRODUCTION_READINESS.md/PRODUCTION_READINESS--0541123efcff.md",
+      "category": "documentation",
+      "gitBlobSha": "4ff6684364f93511f3010d84319635bbb32c39f3",
+      "sha256": "0541123efcff26027766f00c12625b0c282cd9ba891822276804510b7c9af9a9",
+      "bytes": 5136,
+      "originalMode": "100644",
+      "observedAtCommit": {
+        "hash": "95feefe935eb26a0376acfa8d686b9e21da126ef",
+        "authorDate": "2026-08-20T10:58:04Z",
+        "subject": "Add final production readiness baseline report"
+      }
+    },
+    {
+      "sourcePath": "PRODUCTION_READINESS.md",
+      "archivedPath": "history/documentation/PRODUCTION_READINESS.md/PRODUCTION_READINESS--343b44c43680.md",
+      "category": "documentation",
+      "gitBlobSha": "988e068876af6bfde19c7331e5c53529e6bc76df",
+      "sha256": "343b44c436802e68911553d400924acd63495c9a431547c772590d729ccb54ce",
+      "bytes": 9844,
+      "originalMode": "100644",
+      "observedAtCommit": {
+        "hash": "06afe735f5ab0b410974d5699323c16cbf2852d7",
+        "authorDate": "2026-08-20T11:16:31Z",
+        "subject": "Update production readiness documentation and improve security hardening tests"
+      }
+    },
+    {
+      "sourcePath": "PRODUCTION_READINESS.md",
+      "archivedPath": "history/documentation/PRODUCTION_READINESS.md/PRODUCTION_READINESS--677ef4bb0fc6.md",
+      "category": "documentation",
+      "gitBlobSha": "78bd22bb03d3bd1831f33fc6959cda8085395b84",
+      "sha256": "677ef4bb0fc6dd245ab86acf48f50a3f4d1a4e3162c1009d4a0fca5e2ed2e676",
+      "bytes": 12235,
+      "originalMode": "100644",
+      "observedAtCommit": {
+        "hash": "ad3f5f9f981fb366eefb8bc5236e3519907d90bd",
+        "authorDate": "2026-08-31T19:45:47Z",
+        "subject": "Bump actions/setup-java from 4 to 6"
+      }
+    },
+    {
+      "sourcePath": "PRODUCTION_READINESS.md",
+      "archivedPath": "history/documentation/PRODUCTION_READINESS.md/PRODUCTION_READINESS--7f6a76482fbe.md",
+      "category": "documentation",
+      "gitBlobSha": "936b67d1fc18f3b8181ee0d21303fbdf548961e9",
+      "sha256": "7f6a76482fbe2a9702dd0043f8eb60024a9130bf440652d0ef241ec22795bc6a",
+      "bytes": 8288,
+      "originalMode": "100644",
+      "observedAtCommit": {
+        "hash": "fbab2e84ed34d4d9b2d52bb6e79b4e335d602770",
+        "authorDate": "2026-08-20T11:12:05Z",
+        "subject": "Update production readiness documentation and finalize billing webhook implementation"
+      }
+    },
+    {
+      "sourcePath": "PRODUCTION_READINESS.md",
+      "archivedPath": "history/documentation/PRODUCTION_READINESS.md/PRODUCTION_READINESS--f8f0400bc64c.md",
+      "category": "documentation",
+      "gitBlobSha": "238f4c2be44e93fa3764fab26c910ac82ca5cdf8",
+      "sha256": "f8f0400bc64c56a497712d83404432eae08818db8a5c8f09df056a09f7a9831f",
+      "bytes": 10379,
+      "originalMode": "100644",
+      "observedAtCommit": {
+        "hash": "04dd560aef4ca18e00f1ddbf24b0af3fd37bc096",
+        "authorDate": "2026-08-20T11:31:25Z",
+        "subject": "Add production readiness feature matrix and update dependencies and components"
+      }
+    },
+    {
+      "sourcePath": ".replit",
+      "archivedPath": "history/launch-config/replit-deployment--0436da87820a.json",
+      "category": "launch-config",
+      "gitBlobSha": "ad18f407b0995066206a21ef6f73825ccf288ec0",
+      "sha256": "0436da87820ab22958d8cf2fc2d9dae1774043d1f3143e1fe8dbe3d8bf0846f9",
+      "bytes": 275,
+      "originalMode": "100644",
+      "observedAtCommit": {
+        "hash": "740d812cd8bec447d626df7fa832594c0a7aa389",
+        "authorDate": "2026-08-05T04:08:48Z",
+        "subject": "Full codebase snapshot — production-ready auto-resolver, watchdog scripts, OOM fixes"
+      }
+    },
+    {
+      "sourcePath": "package.json",
+      "archivedPath": "history/npm-scripts/package-scripts--3b6907605e75.json",
+      "category": "npm-scripts",
+      "gitBlobSha": "98fd151d7af894ffe578adb73670b9d5abb07ad3",
+      "sha256": "3b6907605e75afdfef2edfcf7eaad62874217980b4118c894bcf99ec12e2098a",
+      "bytes": 337,
+      "originalMode": "100644",
+      "observedAtCommit": {
+        "hash": "740d812cd8bec447d626df7fa832594c0a7aa389",
+        "authorDate": "2026-08-05T04:08:48Z",
+        "subject": "Full codebase snapshot — production-ready auto-resolver, watchdog scripts, OOM fixes"
+      }
+    },
+    {
+      "sourcePath": "package.json",
+      "archivedPath": "history/npm-scripts/package-scripts--b4c111b502a8.json",
+      "category": "npm-scripts",
+      "gitBlobSha": "17a92ab6bcbba63e6082a6792e42da4803cdf592",
+      "sha256": "b4c111b502a8cafd633c720004e7a64785f2271578a30f3d1a823a5ddba65c3d",
+      "bytes": 1199,
+      "originalMode": "100644",
+      "observedAtCommit": {
+        "hash": "ad3f5f9f981fb366eefb8bc5236e3519907d90bd",
+        "authorDate": "2026-08-31T19:45:47Z",
+        "subject": "Bump actions/setup-java from 4 to 6"
+      }
+    },
+    {
+      "sourcePath": "package.json",
+      "archivedPath": "history/npm-scripts/package-scripts--f53cc9b576ce.json",
+      "category": "npm-scripts",
+      "gitBlobSha": "5c9ddaa98a78355daf6cf6d2fff7b6d860cdc572",
+      "sha256": "f53cc9b576ce38beba5fce8f09042ddcac94b4e9aacdc6abc5c349be03d8235f",
+      "bytes": 1138,
+      "originalMode": "100644",
+      "observedAtCommit": {
+        "hash": "34dfcfa2a915b0a73340361d541e6749b396bf3e",
+        "authorDate": "2026-08-20T11:19:25Z",
+        "subject": "Update production readiness documentation and add local PDIM report files"
+      }
+    },
+    {
+      "sourcePath": "artifacts/ai-training-server/start.sh",
+      "archivedPath": "history/scripts-and-config/artifacts/ai-training-server/start.sh/start--1f816eabe6e9.sh",
+      "category": "scripts-and-config",
+      "gitBlobSha": "ab6e73e2771eafa85484e4fa3562c0c8118361c9",
+      "sha256": "1f816eabe6e982df3fde1d4fe03c551c333f5b1cc36a6905f9f81ddd08773bec",
+      "bytes": 430,
+      "originalMode": "100644",
+      "observedAtCommit": {
+        "hash": "740d812cd8bec447d626df7fa832594c0a7aa389",
+        "authorDate": "2026-08-05T04:08:48Z",
+        "subject": "Full codebase snapshot — production-ready auto-resolver, watchdog scripts, OOM fixes"
+      }
+    },
+    {
+      "sourcePath": "build.sh",
+      "archivedPath": "history/scripts-and-config/build.sh/build--57484a92b1cb.sh",
+      "category": "scripts-and-config",
+      "gitBlobSha": "dc30f574f2958246ad31197d186092c2a1a85449",
+      "sha256": "57484a92b1cb4cb6f003f6fdb98786f394c722603529893434833f7be321af0c",
+      "bytes": 28954,
+      "originalMode": "100755",
+      "observedAtCommit": {
+        "hash": "ad3f5f9f981fb366eefb8bc5236e3519907d90bd",
+        "authorDate": "2026-08-31T19:45:47Z",
+        "subject": "Bump actions/setup-java from 4 to 6"
+      }
+    },
+    {
+      "sourcePath": "build.sh",
+      "archivedPath": "history/scripts-and-config/build.sh/build--66cb62501643.sh",
+      "category": "scripts-and-config",
+      "gitBlobSha": "d1254f7ca25a742cdc4ba3eb92fbb1ec3ef98fba",
+      "sha256": "66cb62501643f0d2a094d72771bdde3234dec1a15fcaa287a7989546704095b1",
+      "bytes": 28929,
+      "originalMode": "100755",
+      "observedAtCommit": {
+        "hash": "431a9bbf2e480ac45c0cb46ed27f9e09d7898cab",
+        "authorDate": "2026-08-22T04:51:45Z",
+        "subject": "Remove replitAuth server module"
+      }
+    },
+    {
+      "sourcePath": "build.sh",
+      "archivedPath": "history/scripts-and-config/build.sh/build--d8375b13ce80.sh",
+      "category": "scripts-and-config",
+      "gitBlobSha": "520d3ac5621b57346b864f474b38dbd257d96bc2",
+      "sha256": "d8375b13ce809253ac9aa98e416eca687e69e876ab471589cb039d41a4a84ef6",
+      "bytes": 27600,
+      "originalMode": "100755",
+      "observedAtCommit": {
+        "hash": "260bd153a974e52a9fa419ec21e7f16fc4e90360",
+        "authorDate": "2026-08-13T12:22:32Z",
+        "subject": "Implement the capsule build process and associated unit tests."
+      }
+    },
+    {
+      "sourcePath": "deploy-gcp.sh",
+      "archivedPath": "history/scripts-and-config/deploy-gcp.sh/deploy-gcp--1a98e2328256.sh",
+      "category": "scripts-and-config",
+      "gitBlobSha": "ddc76dbfa396ac0fdb3e4326190d39c58eeb2777",
+      "sha256": "1a98e2328256c6381d08849651cb7640e8b677d426159df7e9c9a60cc667a6bb",
+      "bytes": 13958,
+      "originalMode": "100755",
+      "observedAtCommit": {
+        "hash": "4f0981c31cce0b12359a804a09d81e23f80f15e8",
+        "authorDate": "2026-08-21T09:47:51Z",
+        "subject": "Update build artifacts in dist directory"
+      }
+    },
+    {
+      "sourcePath": "deploy-gcp.sh",
+      "archivedPath": "history/scripts-and-config/deploy-gcp.sh/deploy-gcp--47c46d0cee32.sh",
+      "category": "scripts-and-config",
+      "gitBlobSha": "62ef2f9678db35080f4cd7910e26ecedc1c508ad",
+      "sha256": "47c46d0cee32541fa60bab1de8e43699e2bac50da86a4db143fe62325115954b",
+      "bytes": 14228,
+      "originalMode": "100755",
+      "observedAtCommit": {
+        "hash": "ad3f5f9f981fb366eefb8bc5236e3519907d90bd",
+        "authorDate": "2026-08-31T19:45:47Z",
+        "subject": "Bump actions/setup-java from 4 to 6"
+      }
+    },
+    {
+      "sourcePath": "digital gpu/server/services/diffusion/start_api.sh",
+      "archivedPath": "history/scripts-and-config/digital gpu/server/services/diffusion/start_api.sh/start_api--c1e80a19859e.sh",
+      "category": "scripts-and-config",
+      "gitBlobSha": "f9da7a1bc1b810bc58de7b774e74e938a3fc8f87",
+      "sha256": "c1e80a19859e9a8306eb8cb205ac635610389b2097690239266dff69d0af01c6",
+      "bytes": 1304,
+      "originalMode": "100644",
+      "observedAtCommit": {
+        "hash": "dc70c834ccaa297241e578c101df307573343290",
+        "authorDate": "2026-08-22T12:24:47Z",
+        "subject": "Published your App"
+      }
+    },
+    {
+      "sourcePath": "docker/docker-entrypoint.sh",
+      "archivedPath": "history/scripts-and-config/docker/docker-entrypoint.sh/docker-entrypoint--e1be8f6ee5f2.sh",
+      "category": "scripts-and-config",
+      "gitBlobSha": "2c621cb9856bdc8146a976c54004b4def40e2c4a",
+      "sha256": "e1be8f6ee5f2e3b78c7b8462c9f1766a56048607e2e2b074dedf084049e74307",
+      "bytes": 3035,
+      "originalMode": "100644",
+      "observedAtCommit": {
+        "hash": "ad3f5f9f981fb366eefb8bc5236e3519907d90bd",
+        "authorDate": "2026-08-31T19:45:47Z",
+        "subject": "Bump actions/setup-java from 4 to 6"
+      }
+    },
+    {
+      "sourcePath": "docker/Dockerfile",
+      "archivedPath": "history/scripts-and-config/docker/Dockerfile/Dockerfile--2385521efb04",
+      "category": "scripts-and-config",
+      "gitBlobSha": "32b15529ffc12c122d6ac2a0ff46fc172d0969ca",
+      "sha256": "2385521efb0414029805e734a36a9910b56f1b2178b940733e69abd1d047b6b0",
+      "bytes": 2790,
+      "originalMode": "100644",
+      "observedAtCommit": {
+        "hash": "ad3f5f9f981fb366eefb8bc5236e3519907d90bd",
+        "authorDate": "2026-08-31T19:45:47Z",
+        "subject": "Bump actions/setup-java from 4 to 6"
+      }
+    },
+    {
+      "sourcePath": "Dockerfile",
+      "archivedPath": "history/scripts-and-config/Dockerfile/Dockerfile--40d7880d48b5",
+      "category": "scripts-and-config",
+      "gitBlobSha": "2e71b42dad326722a011e32503150a2510c06dd9",
+      "sha256": "40d7880d48b52aa5867fe4665e9f44cd05a721b67dc435e7f7b6c56be34384d1",
+      "bytes": 534,
+      "originalMode": "100644",
+      "observedAtCommit": {
+        "hash": "ad3f5f9f981fb366eefb8bc5236e3519907d90bd",
+        "authorDate": "2026-08-31T19:45:47Z",
+        "subject": "Bump actions/setup-java from 4 to 6"
+      }
+    },
+    {
+      "sourcePath": "Dockerfile",
+      "archivedPath": "history/scripts-and-config/Dockerfile/Dockerfile--f508dffa7462",
+      "category": "scripts-and-config",
+      "gitBlobSha": "34b963efb55a14c9f8a57ab5220b5647323b817a",
+      "sha256": "f508dffa7462a05b7e88e02550039cb8b9be237da4437933f2aa9a37c26c9c2a",
+      "bytes": 502,
+      "originalMode": "100644",
+      "observedAtCommit": {
+        "hash": "ab30ebcf78c13cd47eae034740a870324238b447",
+        "authorDate": "2026-08-26T00:00:13Z",
+        "subject": "Published your App"
+      }
+    },
+    {
+      "sourcePath": "Dockerfile.prod",
+      "archivedPath": "history/scripts-and-config/Dockerfile.prod/Dockerfile--12698cee7b2d.prod",
+      "category": "scripts-and-config",
+      "gitBlobSha": "6e6f095ccc4e87c91f4a59bd481919a1dfaa8a88",
+      "sha256": "12698cee7b2da2e325c6cfb05385fe7f3084955217c6beecd154f3c2ff583562",
+      "bytes": 1588,
+      "originalMode": "100644",
+      "observedAtCommit": {
+        "hash": "ad3f5f9f981fb366eefb8bc5236e3519907d90bd",
+        "authorDate": "2026-08-31T19:45:47Z",
+        "subject": "Bump actions/setup-java from 4 to 6"
+      }
+    },
+    {
+      "sourcePath": "Dockerfile.prod",
+      "archivedPath": "history/scripts-and-config/Dockerfile.prod/Dockerfile--2363c71a554b.prod",
+      "category": "scripts-and-config",
+      "gitBlobSha": "979946ad4dae422b1f53478f07321180676c0b10",
+      "sha256": "2363c71a554b42d2801beabc1eec1aa8e271f39a8c08b69ec05887125572f141",
+      "bytes": 1556,
+      "originalMode": "100644",
+      "observedAtCommit": {
+        "hash": "ab30ebcf78c13cd47eae034740a870324238b447",
+        "authorDate": "2026-08-26T00:00:13Z",
+        "subject": "Published your App"
+      }
+    },
+    {
+      "sourcePath": "external/maxcore/artifacts/ai-training-server/start.sh",
+      "archivedPath": "history/scripts-and-config/external/maxcore/artifacts/ai-training-server/start.sh/start--1f816eabe6e9.sh",
+      "category": "scripts-and-config",
+      "gitBlobSha": "ab6e73e2771eafa85484e4fa3562c0c8118361c9",
+      "sha256": "1f816eabe6e982df3fde1d4fe03c551c333f5b1cc36a6905f9f81ddd08773bec",
+      "bytes": 430,
+      "originalMode": "100644",
+      "observedAtCommit": {
+        "hash": "b4b9c93589c4ccb0246e8a79639f993b19162e03",
+        "authorDate": "2026-08-29T22:32:36Z",
+        "subject": "Remove chip-design/CUDA toolchain from replit.nix's persistent deps (available on-demand via a nix-shell wrapper instead), and fix the Nix closure preflight to drop stale/nonexistent env-var store paths and directly measure on-disk paths absent from the Nix registration DB, so every real root is accounted for and publishing succeeds."
+      }
+    },
+    {
+      "sourcePath": "external/maxcore/scripts/start-production.sh",
+      "archivedPath": "history/scripts-and-config/external/maxcore/scripts/start-production.sh/start-production--fa8ba1998b1d.sh",
+      "category": "scripts-and-config",
+      "gitBlobSha": "88dcb51db5b0a302961aae552494d86449cfa6f6",
+      "sha256": "fa8ba1998b1d4f597d4e44daf0b494200fab73fa6e1478f01b49f28a5482e307",
+      "bytes": 587,
+      "originalMode": "100755",
+      "observedAtCommit": {
+        "hash": "b4b9c93589c4ccb0246e8a79639f993b19162e03",
+        "authorDate": "2026-08-29T22:32:36Z",
+        "subject": "Remove chip-design/CUDA toolchain from replit.nix's persistent deps (available on-demand via a nix-shell wrapper instead), and fix the Nix closure preflight to drop stale/nonexistent env-var store paths and directly measure on-disk paths absent from the Nix registration DB, so every real root is accounted for and publishing succeeds."
+      }
+    },
+    {
+      "sourcePath": "Procfile",
+      "archivedPath": "history/scripts-and-config/Procfile/Procfile--145de4d2e402",
+      "category": "scripts-and-config",
+      "gitBlobSha": "0a76c25b1d0ce35272fc4e04a0586d305624d38a",
+      "sha256": "145de4d2e4024c327d56b8c0f03f37a6d6fa07c4a404f19f93bdecd0ad92791e",
+      "bytes": 51,
+      "originalMode": "100644",
+      "observedAtCommit": {
+        "hash": "740d812cd8bec447d626df7fa832594c0a7aa389",
+        "authorDate": "2026-08-05T04:08:48Z",
+        "subject": "Full codebase snapshot — production-ready auto-resolver, watchdog scripts, OOM fixes"
+      }
+    },
+    {
+      "sourcePath": "script/build-capsule.ts",
+      "archivedPath": "history/scripts-and-config/script/build-capsule.ts/build-capsule--242f7fa8f557.ts",
+      "category": "scripts-and-config",
+      "gitBlobSha": "c1a2e0659a5659fce64218642232cdbb23e03bce",
+      "sha256": "242f7fa8f55797f96e8740e94e0c6b61bc810db226ea1d6afb4aa42d9e7f7ac6",
+      "bytes": 9631,
+      "originalMode": "100644",
+      "observedAtCommit": {
+        "hash": "6473b753036594fa1b58a15d45c3cc10188dbb0e",
+        "authorDate": "2026-08-13T12:57:10Z",
+        "subject": "Update platform capsule configuration and build script"
+      }
+    },
+    {
+      "sourcePath": "script/build-capsule.ts",
+      "archivedPath": "history/scripts-and-config/script/build-capsule.ts/build-capsule--59fb28cd8298.ts",
+      "category": "scripts-and-config",
+      "gitBlobSha": "168ba32ab704154ea6ead7d90073134bedd8891c",
+      "sha256": "59fb28cd829893ca0e60659f415ca0b32177729f638ffcd540861e23e705b5ac",
+      "bytes": 9064,
+      "originalMode": "100644",
+      "observedAtCommit": {
+        "hash": "260bd153a974e52a9fa419ec21e7f16fc4e90360",
+        "authorDate": "2026-08-13T12:22:32Z",
+        "subject": "Implement the capsule build process and associated unit tests."
+      }
+    },
+    {
+      "sourcePath": "script/build-capsule.ts",
+      "archivedPath": "history/scripts-and-config/script/build-capsule.ts/build-capsule--7f7fffca0d02.ts",
+      "category": "scripts-and-config",
+      "gitBlobSha": "11918ff03f8fe8b9dcda121eb7b4f29e0d0ed14e",
+      "sha256": "7f7fffca0d022762074ee282b257ac2fb1eda9b4c371f7752bfdd64fc0e5b923",
+      "bytes": 9411,
+      "originalMode": "100644",
+      "observedAtCommit": {
+        "hash": "3abae187dff13d68ec1c4893473ef992a2eabb9a",
+        "authorDate": "2026-08-13T12:39:24Z",
+        "subject": "Remove obsolete build assets from public directory"
+      }
+    },
+    {
+      "sourcePath": "script/build-capsule.ts",
+      "archivedPath": "history/scripts-and-config/script/build-capsule.ts/build-capsule--f856bff9b8c6.ts",
+      "category": "scripts-and-config",
+      "gitBlobSha": "f3bd534f41ebaca0f60c3783d724240fa5468bc4",
+      "sha256": "f856bff9b8c66e14d5d9c2e5ae3c6d0d4b0afbd58f7c7f06cbcc18da23a8f241",
+      "bytes": 9640,
+      "originalMode": "100644",
+      "observedAtCommit": {
+        "hash": "ad3f5f9f981fb366eefb8bc5236e3519907d90bd",
+        "authorDate": "2026-08-31T19:45:47Z",
+        "subject": "Bump actions/setup-java from 4 to 6"
+      }
+    },
+    {
+      "sourcePath": "script/build.ts",
+      "archivedPath": "history/scripts-and-config/script/build.ts/build--0603559d517a.ts",
+      "category": "scripts-and-config",
+      "gitBlobSha": "7e22aa207ef9033ae60ec1cb7b7a07a6339661aa",
+      "sha256": "0603559d517abc5d34ecf994416c475317f427ff4903f5f886d38b9343eb7e1b",
+      "bytes": 1432,
+      "originalMode": "100644",
+      "observedAtCommit": {
+        "hash": "2fb71be80c14039e8dfc6b696508b5fbbc046ef5",
+        "authorDate": "2026-08-13T12:34:00Z",
+        "subject": "Update capsule build configuration and artifacts"
+      }
+    },
+    {
+      "sourcePath": "script/build.ts",
+      "archivedPath": "history/scripts-and-config/script/build.ts/build--2b2587238fc3.ts",
+      "category": "scripts-and-config",
+      "gitBlobSha": "364434e496dfcf458cc5498acad071a51663b339",
+      "sha256": "2b2587238fc3bbd50e2781e4b511e9d2013f58f6133cf0a9e6f0f32d861d426d",
+      "bytes": 12259,
+      "originalMode": "100644",
+      "observedAtCommit": {
+        "hash": "c9c99601098d271dc8404fffb9c40bdf5be19ddf",
+        "authorDate": "2026-08-29T18:12:20Z",
+        "subject": "Update agent memory documentation and remove outdated test report"
+      }
+    },
+    {
+      "sourcePath": "script/build.ts",
+      "archivedPath": "history/scripts-and-config/script/build.ts/build--40b4e86a3d2a.ts",
+      "category": "scripts-and-config",
+      "gitBlobSha": "81c46feba614556787e217651d8a9a7078533719",
+      "sha256": "40b4e86a3d2add9dbb513fefaab1b6b41a36bef914e80831821b3a90a9aa9be8",
+      "bytes": 3276,
+      "originalMode": "100644",
+      "observedAtCommit": {
+        "hash": "503d24a23e3268abbf58f4a6bf05fe224a633fbb",
+        "authorDate": "2026-08-14T03:47:16Z",
+        "subject": "Update memory logs and document deployment footprint"
+      }
+    },
+    {
+      "sourcePath": "script/build.ts",
+      "archivedPath": "history/scripts-and-config/script/build.ts/build--503a1e6e0851.ts",
+      "category": "scripts-and-config",
+      "gitBlobSha": "c82d352a65aed407aa64ff31873e2357c2d16554",
+      "sha256": "503a1e6e08519864f2fac40a5df8619f2baa686b893c44c48ee6b72237a1b452",
+      "bytes": 18206,
+      "originalMode": "100644",
+      "observedAtCommit": {
+        "hash": "cc477c9340a236cd22bb000d7b62978c4c3406ac",
+        "authorDate": "2026-08-29T22:32:35Z",
+        "subject": "Git commit prior to merge"
+      }
+    },
+    {
+      "sourcePath": "script/build.ts",
+      "archivedPath": "history/scripts-and-config/script/build.ts/build--5f138f6ce774.ts",
+      "category": "scripts-and-config",
+      "gitBlobSha": "8dfcaacabff470edfab83aab0e7bc583d15ba2cb",
+      "sha256": "5f138f6ce7746cef03828e10d9de01f0068e623f1c5c453e4a90a5dc14a2f94b",
+      "bytes": 4348,
+      "originalMode": "100644",
+      "observedAtCommit": {
+        "hash": "53accf9ff77471b0f9400e22241d6e718ba9e307",
+        "authorDate": "2026-08-14T09:33:03Z",
+        "subject": "Published your App"
+      }
+    },
+    {
+      "sourcePath": "script/build.ts",
+      "archivedPath": "history/scripts-and-config/script/build.ts/build--640292032b3e.ts",
+      "category": "scripts-and-config",
+      "gitBlobSha": "c93ca6a346a9a97f303db101a3da4dc2045d1a7a",
+      "sha256": "640292032b3e60dba2351f80de11fb4e020d3dc18bb35db0916365b6c288bc63",
+      "bytes": 13217,
+      "originalMode": "100644",
+      "observedAtCommit": {
+        "hash": "fac78aab31a6aa82c3b9cdcef1f02185d21e4a27",
+        "authorDate": "2026-08-29T18:36:50Z",
+        "subject": "Update build script and capsule pack logic"
+      }
+    },
+    {
+      "sourcePath": "script/build.ts",
+      "archivedPath": "history/scripts-and-config/script/build.ts/build--6e6b965a3330.ts",
+      "category": "scripts-and-config",
+      "gitBlobSha": "290c831222e171762d2f8b3f882a42c3e3de928f",
+      "sha256": "6e6b965a3330a99e506210d24b96d6554a346613608b1fd67afe6e19aed46443",
+      "bytes": 20722,
+      "originalMode": "100644",
+      "observedAtCommit": {
+        "hash": "ad3f5f9f981fb366eefb8bc5236e3519907d90bd",
+        "authorDate": "2026-08-31T19:45:47Z",
+        "subject": "Bump actions/setup-java from 4 to 6"
+      }
+    },
+    {
+      "sourcePath": "script/build.ts",
+      "archivedPath": "history/scripts-and-config/script/build.ts/build--9a210c794cd1.ts",
+      "category": "scripts-and-config",
+      "gitBlobSha": "0cb39bf913695a1108b42b35e269fb813cf215f1",
+      "sha256": "9a210c794cd102a5afd28d65cb2095092ed02a839b4ff9e9643b73ed928496d9",
+      "bytes": 4831,
+      "originalMode": "100644",
+      "observedAtCommit": {
+        "hash": "33790c752459fa22c9d426768353d9558d9cccfc",
+        "authorDate": "2026-08-14T09:01:18Z",
+        "subject": "Remove deprecated maxcore artifacts and clean up project documentation"
+      }
+    },
+    {
+      "sourcePath": "script/build.ts",
+      "archivedPath": "history/scripts-and-config/script/build.ts/build--a0d6468301ef.ts",
+      "category": "scripts-and-config",
+      "gitBlobSha": "203eac675c10673c6c4e3c6fc8e9be3ebb5869ec",
+      "sha256": "a0d6468301ef7bcf58d8f872dd92f1843f9bf5018689a97473c9e38208e6dcb9",
+      "bytes": 7029,
+      "originalMode": "100644",
+      "observedAtCommit": {
+        "hash": "0d3611c36e562a22f0fea3c295d0e6fd6cf4f8ca",
+        "authorDate": "2026-08-29T17:56:42Z",
+        "subject": "Add documentation for deploying autofix coverage gaps"
+      }
+    },
+    {
+      "sourcePath": "script/build.ts",
+      "archivedPath": "history/scripts-and-config/script/build.ts/build--b3b96785b146.ts",
+      "category": "scripts-and-config",
+      "gitBlobSha": "986e3101f4d724c6df63db1487925c0faaeeaead",
+      "sha256": "b3b96785b146dea6a431ef7d68f2e68dfb67677dc2c21e11e4f7fb8c708abe4d",
+      "bytes": 6877,
+      "originalMode": "100644",
+      "observedAtCommit": {
+        "hash": "e84230b4bca2076ebbba030f4115427041f02cc1",
+        "authorDate": "2026-08-21T22:53:03Z",
+        "subject": "Update pdim-restore implementation and add parallel extraction documentation."
+      }
+    },
+    {
+      "sourcePath": "script/build.ts",
+      "archivedPath": "history/scripts-and-config/script/build.ts/build--c3ec7396f28c.ts",
+      "category": "scripts-and-config",
+      "gitBlobSha": "a94cfb6e337cc372b776d54780abdbb93bdf21e9",
+      "sha256": "c3ec7396f28ca5690cf28e824856bab011206774a84b94f66de8f6c7fd771140",
+      "bytes": 2772,
+      "originalMode": "100644",
+      "observedAtCommit": {
+        "hash": "a2f0f4cef35f4a8961d5667b7325a67c962feccc",
+        "authorDate": "2026-08-13T13:02:12Z",
+        "subject": "Update capsule build script logic"
+      }
+    },
+    {
+      "sourcePath": "script/build.ts",
+      "archivedPath": "history/scripts-and-config/script/build.ts/build--c715a5a7ed5f.ts",
+      "category": "scripts-and-config",
+      "gitBlobSha": "c0487b1e84c25df4c80f3e8ee1cc94ef69673e73",
+      "sha256": "c715a5a7ed5f33387c8bee174ab010c6aa7472a11e73a9b02a018caa43ba9bd4",
+      "bytes": 4483,
+      "originalMode": "100644",
+      "observedAtCommit": {
+        "hash": "54021673e6139a542c0ee07e86d748258dadf38c",
+        "authorDate": "2026-08-14T04:07:18Z",
+        "subject": "Update build process and deployment memory footprint documentation"
+      }
+    },
+    {
+      "sourcePath": "script/build.ts",
+      "archivedPath": "history/scripts-and-config/script/build.ts/build--ff6bba349e04.ts",
+      "category": "scripts-and-config",
+      "gitBlobSha": "f41e8de78b8606604011f3b121eb78aca394ebae",
+      "sha256": "ff6bba349e049dad394e3a32dd8e4ea63c8672e9bc9615b58817978eb25c0c96",
+      "bytes": 7857,
+      "originalMode": "100644",
+      "observedAtCommit": {
+        "hash": "d5953fd43c69f31ebb3c7ac55d35492eb17d24d1",
+        "authorDate": "2026-08-29T15:31:12Z",
+        "subject": "Fix MaxCore workspace bootstrap race with restore-aware retries"
+      }
+    },
+    {
+      "sourcePath": "scripts/deployment-autofix.mjs",
+      "archivedPath": "history/scripts-and-config/scripts/deployment-autofix.mjs/deployment-autofix--54df3b7864e9.mjs",
+      "category": "scripts-and-config",
+      "gitBlobSha": "3aa07ad20914ed24f911b46072f095a63a523cda",
+      "sha256": "54df3b7864e98669fe2e924aaacd0250a33964f40fdb949ad68bcb19293bb18e",
+      "bytes": 3321,
+      "originalMode": "100644",
+      "observedAtCommit": {
+        "hash": "ad3f5f9f981fb366eefb8bc5236e3519907d90bd",
+        "authorDate": "2026-08-31T19:45:47Z",
+        "subject": "Bump actions/setup-java from 4 to 6"
+      }
+    },
+    {
+      "sourcePath": "scripts/deployment-autofix.mjs",
+      "archivedPath": "history/scripts-and-config/scripts/deployment-autofix.mjs/deployment-autofix--7efb934770bc.mjs",
+      "category": "scripts-and-config",
+      "gitBlobSha": "1665bb809a12dccbb97a1a33df04b3d0d6dc4b0e",
+      "sha256": "7efb934770bc30833e749b22a19accd0e4003e0a9cfb3ec30ef75e55800ba894",
+      "bytes": 2839,
+      "originalMode": "100644",
+      "observedAtCommit": {
+        "hash": "728128212b4ddf7b8bd0d96eade7231cf24a7384",
+        "authorDate": "2026-08-20T12:21:52Z",
+        "subject": "Update eslint configuration"
+      }
+    },
+    {
+      "sourcePath": "scripts/start-dev.sh",
+      "archivedPath": "history/scripts-and-config/scripts/start-dev.sh/start-dev--9c35a798458b.sh",
+      "category": "scripts-and-config",
+      "gitBlobSha": "6e38999e11ce1333c002f1f5c5d6193e243a376b",
+      "sha256": "9c35a798458ba9586b2301ffa8df6578db164ce35fe66714cb8204c454371b8c",
+      "bytes": 1313,
+      "originalMode": "100644",
+      "observedAtCommit": {
+        "hash": "ad3f5f9f981fb366eefb8bc5236e3519907d90bd",
+        "authorDate": "2026-08-31T19:45:47Z",
+        "subject": "Bump actions/setup-java from 4 to 6"
+      }
+    },
+    {
+      "sourcePath": "scripts/start-dev.sh",
+      "archivedPath": "history/scripts-and-config/scripts/start-dev.sh/start-dev--d51412ffd78a.sh",
+      "category": "scripts-and-config",
+      "gitBlobSha": "de2a779a3d15fec88c3fc28424ec89dd96ef0e1d",
+      "sha256": "d51412ffd78a2ceb9d7368aefdcc497a0fc91b87f5f067742708c2c623107e1d",
+      "bytes": 1022,
+      "originalMode": "100644",
+      "observedAtCommit": {
+        "hash": "a3e2d5a12fc6f7d166100b616ac88136a8e9e7e8",
+        "authorDate": "2026-08-26T01:19:08Z",
+        "subject": "Git commit prior to merge"
+      }
+    },
+    {
+      "sourcePath": "scripts/start-production.sh",
+      "archivedPath": "history/scripts-and-config/scripts/start-production.sh/start-production--279861aca296.sh",
+      "category": "scripts-and-config",
+      "gitBlobSha": "a654bbc7906ee50b76f63d14bbdd63ce71edb3c7",
+      "sha256": "279861aca296fbf54b71e7920d9311e7296a79b0fc7894991c1da76acb1cd9de",
+      "bytes": 582,
+      "originalMode": "100755",
+      "observedAtCommit": {
+        "hash": "ad3f5f9f981fb366eefb8bc5236e3519907d90bd",
+        "authorDate": "2026-08-31T19:45:47Z",
+        "subject": "Bump actions/setup-java from 4 to 6"
+      }
+    },
+    {
+      "sourcePath": "scripts/start-production.sh",
+      "archivedPath": "history/scripts-and-config/scripts/start-production.sh/start-production--fa8ba1998b1d.sh",
+      "category": "scripts-and-config",
+      "gitBlobSha": "88dcb51db5b0a302961aae552494d86449cfa6f6",
+      "sha256": "fa8ba1998b1d4f597d4e44daf0b494200fab73fa6e1478f01b49f28a5482e307",
+      "bytes": 587,
+      "originalMode": "100755",
+      "observedAtCommit": {
+        "hash": "740d812cd8bec447d626df7fa832594c0a7aa389",
+        "authorDate": "2026-08-05T04:08:48Z",
+        "subject": "Full codebase snapshot — production-ready auto-resolver, watchdog scripts, OOM fixes"
+      }
+    },
+    {
+      "sourcePath": "start.sh",
+      "archivedPath": "history/scripts-and-config/start.sh/start--1dbd624f10ff.sh",
+      "category": "scripts-and-config",
+      "gitBlobSha": "bb0620c671d421fa5695ee867a4549087e6d911f",
+      "sha256": "1dbd624f10ffa9896fdd79d08548b1b92fe955faf79aeb459ac770d097bb111d",
+      "bytes": 12625,
+      "originalMode": "100755",
+      "observedAtCommit": {
+        "hash": "3339fdbf4f53e60256c4a3e9755546bade5c9383",
+        "authorDate": "2026-08-22T00:24:22Z",
+        "subject": "Published your App"
+      }
+    },
+    {
+      "sourcePath": "start.sh",
+      "archivedPath": "history/scripts-and-config/start.sh/start--21964db82ef9.sh",
+      "category": "scripts-and-config",
+      "gitBlobSha": "52fd578bc75cb18265c508dc49c46830ed167101",
+      "sha256": "21964db82ef9be7c3ea78b8da98e1b47edbf94cf144886f127f01ee6ec85a39b",
+      "bytes": 15071,
+      "originalMode": "100755",
+      "observedAtCommit": {
+        "hash": "ad3f5f9f981fb366eefb8bc5236e3519907d90bd",
+        "authorDate": "2026-08-31T19:45:47Z",
+        "subject": "Bump actions/setup-java from 4 to 6"
+      }
+    },
+    {
+      "sourcePath": "start.sh",
+      "archivedPath": "history/scripts-and-config/start.sh/start--35b316649520.sh",
+      "category": "scripts-and-config",
+      "gitBlobSha": "d5bfb83333d311c67c50cdda04f8eaa4f6ccb3cc",
+      "sha256": "35b316649520bd9398c6a4f3e7857ab4efb7361bb7b670a237429394bcfa3f7a",
+      "bytes": 14812,
+      "originalMode": "100755",
+      "observedAtCommit": {
+        "hash": "f02e0b064ed2cf77829cadf4c3deca644c12ebb9",
+        "authorDate": "2026-08-29T00:26:39Z",
+        "subject": "Update dockerignore rules"
+      }
+    },
+    {
+      "sourcePath": "start.sh",
+      "archivedPath": "history/scripts-and-config/start.sh/start--688a50de953f.sh",
+      "category": "scripts-and-config",
+      "gitBlobSha": "6d9caa4a9acb4a58b6f897fb55061214d7db9834",
+      "sha256": "688a50de953fd711b794edbaa752b90ce7788ae713fa2110e293f2884531df87",
+      "bytes": 13535,
+      "originalMode": "100755",
+      "observedAtCommit": {
+        "hash": "ab30ebcf78c13cd47eae034740a870324238b447",
+        "authorDate": "2026-08-26T00:00:13Z",
+        "subject": "Published your App"
+      }
+    },
+    {
+      "sourcePath": "start.sh",
+      "archivedPath": "history/scripts-and-config/start.sh/start--8ad9f3dc1044.sh",
+      "category": "scripts-and-config",
+      "gitBlobSha": "2dda6d8dd3930b5a6fe71b26a04b18830391f156",
+      "sha256": "8ad9f3dc10444eb564d2cb90e6068dd3cd552db7d3447dac87c8c771f3f7609d",
+      "bytes": 12326,
+      "originalMode": "100755",
+      "observedAtCommit": {
+        "hash": "53accf9ff77471b0f9400e22241d6e718ba9e307",
+        "authorDate": "2026-08-14T09:33:03Z",
+        "subject": "Published your App"
+      }
+    },
+    {
+      "sourcePath": "start.sh",
+      "archivedPath": "history/scripts-and-config/start.sh/start--ad5a36299765.sh",
+      "category": "scripts-and-config",
+      "gitBlobSha": "6fdbd7bd746fcaf5fb27351c841454568f9655af",
+      "sha256": "ad5a3629976517ad0c7b1c24fc918a1e175ff6e175f9c0487bce17a133e71112",
+      "bytes": 13918,
+      "originalMode": "100755",
+      "observedAtCommit": {
+        "hash": "a3e2d5a12fc6f7d166100b616ac88136a8e9e7e8",
+        "authorDate": "2026-08-26T01:19:08Z",
+        "subject": "Git commit prior to merge"
+      }
+    },
+    {
+      "sourcePath": "start.sh",
+      "archivedPath": "history/scripts-and-config/start.sh/start--d7f79d604107.sh",
+      "category": "scripts-and-config",
+      "gitBlobSha": "41007e3b720a6377b5280b46db6d83e43c394d2b",
+      "sha256": "d7f79d604107ee8f802175fd84f6fe82079ae7bf8aaa17a759ff0ba60464686e",
+      "bytes": 15189,
+      "originalMode": "100755",
+      "observedAtCommit": {
+        "hash": "78fc334addc76afcd26cceb18c1d0c9b30206f5c",
+        "authorDate": "2026-08-23T01:15:19Z",
+        "subject": "Refactor creative model service logic"
+      }
+    },
+    {
+      "sourcePath": "start.sh",
+      "archivedPath": "history/scripts-and-config/start.sh/start--ed0c2e410764.sh",
+      "category": "scripts-and-config",
+      "gitBlobSha": "6de3a078ca52fe5a71cafe530682d71887453b1e",
+      "sha256": "ed0c2e4107642d37a24dde9fb7dd951a7ce8358d5c3a367b2aaa96039b991b99",
+      "bytes": 13613,
+      "originalMode": "100755",
+      "observedAtCommit": {
+        "hash": "1d96e43684cd254809333ad137b103b62541bded",
+        "authorDate": "2026-08-22T01:11:46Z",
+        "subject": "Published your App"
+      }
+    }
+  ]
+}

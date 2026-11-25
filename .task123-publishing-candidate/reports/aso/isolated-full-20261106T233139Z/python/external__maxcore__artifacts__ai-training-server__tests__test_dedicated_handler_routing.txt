@@ -1,0 +1,61 @@
+.............................                                            [100%]
+=============================== warnings summary ===============================
+tests/test_dedicated_handler_routing.py::test_ads_meta_uses_social_awareness_but_keeps_network_identity
+  <repo>/external/maxcore/artifacts/ai-training-server/ai_model/director/api.py:77: PydanticDeprecatedSince20: `max_items` is deprecated and will be removed, use `max_length` instead. Deprecated in Pydantic V2.0 to be removed in V3.0. See Pydantic V2 Migration Guide at https://errors.pydantic.dev/2.13/migration/
+    platforms: List[str] = Field(default=["tiktok", "instagram"], max_items=8)
+
+tests/test_dedicated_handler_routing.py::test_ads_meta_uses_social_awareness_but_keeps_network_identity
+  <repo>/external/maxcore/artifacts/ai-training-server/server.py:1893: DeprecationWarning: 
+          on_event is deprecated, use lifespan event handlers instead.
+  
+          Read more about it in the
+          [FastAPI docs for Lifespan Events](https://fastapi.tiangolo.com/advanced/events/).
+          
+    @app.on_event("startup")
+
+tests/test_dedicated_handler_routing.py::test_ads_meta_uses_social_awareness_but_keeps_network_identity
+tests/test_dedicated_handler_routing.py::test_ads_meta_uses_social_awareness_but_keeps_network_identity
+tests/test_dedicated_handler_routing.py::test_ads_meta_uses_social_awareness_but_keeps_network_identity
+  <repo>/.pythonlibs/lib/python3.12/site-packages/fastapi/applications.py:4598: DeprecationWarning: 
+          on_event is deprecated, use lifespan event handlers instead.
+  
+          Read more about it in the
+          [FastAPI docs for Lifespan Events](https://fastapi.tiangolo.com/advanced/events/).
+          
+    return self.router.on_event(event_type)  # ty: ignore[deprecated]
+
+tests/test_dedicated_handler_routing.py::test_ads_meta_uses_social_awareness_but_keeps_network_identity
+  <repo>/external/maxcore/artifacts/ai-training-server/server.py:2642: DeprecationWarning: 
+          on_event is deprecated, use lifespan event handlers instead.
+  
+          Read more about it in the
+          [FastAPI docs for Lifespan Events](https://fastapi.tiangolo.com/advanced/events/).
+          
+    @app.on_event("shutdown")
+
+tests/test_dedicated_handler_routing.py::test_ads_meta_uses_social_awareness_but_keeps_network_identity
+  <repo>/external/maxcore/artifacts/ai-training-server/ai_model/training/live_learning.py:559: DeprecationWarning: 
+          on_event is deprecated, use lifespan event handlers instead.
+  
+          Read more about it in the
+          [FastAPI docs for Lifespan Events](https://fastapi.tiangolo.com/advanced/events/).
+          
+    @router.on_event("startup")
+
+tests/test_dedicated_handler_routing.py::test_ads_meta_uses_social_awareness_but_keeps_network_identity
+  <repo>/external/maxcore/artifacts/ai-training-server/server.py:7765: DeprecationWarning: 
+          on_event is deprecated, use lifespan event handlers instead.
+  
+          Read more about it in the
+          [FastAPI docs for Lifespan Events](https://fastapi.tiangolo.com/advanced/events/).
+          
+    @app.on_event("startup")
+
+tests/test_dedicated_handler_routing.py::test_audio_internal_body_caller_mood_and_targets_beat_fast_priors[calm-calm]
+tests/test_dedicated_handler_routing.py::test_audio_internal_body_caller_mood_and_targets_beat_fast_priors[None-mellow]
+tests/test_dedicated_handler_routing.py::test_audio_job_acknowledges_before_awareness_script_inference
+  <repo>/external/maxcore/artifacts/ai-training-server/server.py:10967: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+    "created_at": datetime.utcnow().isoformat() + "Z",
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+29 passed, 11 warnings in 11.47s

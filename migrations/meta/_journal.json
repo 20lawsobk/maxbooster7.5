@@ -50,6 +50,13 @@
       "when": 1791940500000,
       "tag": "0006_dmca_workflow_contract",
       "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "7",
+      "when": 1795210000000,
+      "tag": "0101_collaboration_rooms",
+      "breakpoints": true
     }
   ]
 }

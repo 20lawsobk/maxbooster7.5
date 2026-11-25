@@ -279,6 +279,27 @@ class DistributionAgent:
             caption=caption,
             hashtags=_parse_hashtags_from_awareness(awareness, req.platform),
             posting_time=_parse_timing_from_awareness(awareness, req.platform))
+
+    @generation_guard
+    def compose_live_awareness(self, req: DistributionRequest) -> DistributionResponse:
+        """Package already-composed live-awareness copy without trained weights.
+
+        This is the explicit pre-checkpoint serving path. ScriptAgent has
+        produced and safety-checked the actual copy from the caller brief and
+        pinned fresh awareness; this step only derives distribution metadata.
+        """
+        from ai_model.generation.awareness import require_context
+
+        awareness = require_context(req.platform, "text") + "\n" + (req.awareness or "")
+        caption = (req.script or "").strip()
+        if not self._is_meaningful(caption):
+            raise ValueError("Live-awareness social script is not usable for distribution")
+        return DistributionResponse(
+            caption=caption,
+            hashtags=_parse_hashtags_from_awareness(awareness, req.platform),
+            posting_time=_parse_timing_from_awareness(awareness, req.platform),
+        )
+
     def _is_meaningful(self, text: str) -> bool:
         if not text or len(text) < 10:
             return False
