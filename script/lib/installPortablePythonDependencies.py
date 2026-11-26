@@ -23,7 +23,33 @@ def runtime_requirements(root):
         if requirement and not requirement.startswith("#"):
             Requirement(requirement)
             requirements.add(requirement)
+    requirements.add(locked_urllib3_requirement(root))
     return sorted(requirements)
+
+
+def locked_urllib3_requirement(root):
+    with (root / "pyproject.toml").open("rb") as stream:
+        project = tomllib.load(stream)
+    declared = [
+        Requirement(text)
+        for text in project.get("project", {}).get("dependencies", [])
+        if canonicalize_name(Requirement(text).name) == "urllib3"
+    ]
+    if len(declared) != 1:
+        raise RuntimeError("root pyproject.toml must declare exactly one urllib3 security constraint")
+
+    with (root / "uv.lock").open("rb") as stream:
+        lock = tomllib.load(stream)
+    locked = [
+        package.get("version")
+        for package in lock.get("package", [])
+        if canonicalize_name(package.get("name", "")) == "urllib3"
+    ]
+    if len(locked) != 1 or not isinstance(locked[0], str):
+        raise RuntimeError("uv.lock must contain exactly one locked urllib3 version")
+    if not declared[0].specifier.contains(locked[0], prereleases=True):
+        raise RuntimeError("uv.lock urllib3 version is outside the declared security constraint")
+    return f"urllib3=={locked[0]}"
 
 
 def requirements_satisfied(requirements, installed):
@@ -46,8 +72,6 @@ def pip_install_environment(base=None):
     # The runtime is an isolated install prefix, not a user-site install.
     # Override builder-level pip configuration that may force --user.
     environment["PIP_USER"] = "0"
-    for destination in ("PIP_TARGET", "PIP_PREFIX", "PIP_ROOT"):
-        environment.pop(destination, None)
     return environment
 
 

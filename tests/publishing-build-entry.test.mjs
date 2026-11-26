@@ -80,7 +80,7 @@ function fixture(t) {
     if(members.some(p=>p.includes("journal.json"))) throw Error("shipped recovery");
     if(members.some(p=>p==="venv" || p.startsWith("venv/"))) throw Error("shipped workspace Python environment");
     tx.preserveMembers(members);
-    await packCapsuleMembers({root,members,capsule:"app_remainder.pdim",threads:1,attestSource:true});
+    await packCapsuleMembers({root,members,capsule:"app_remainder.pdim",threads:1});
     cleanPublishingPayload({root,env:process.env,dockerignore:policy,requiredPaths:["start.sh","package.json","${RECOVERY_HELPER_PATH}"]});
     const measured=measurePublishingPayload(root,policy);
     console.log("REAL_FIXTURE_BUILD_COMPLETE", measured.totalBytes, deploymentPackStateDirectory(root));

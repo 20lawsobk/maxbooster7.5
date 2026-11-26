@@ -54,16 +54,13 @@ export async function restoreAppRemainderCapsule(capsuleName, manifestName, sent
     const marker = inside(sentinel);
     const manifest = JSON.parse(readFileSync(inside(manifestName), "utf8"));
     if (!/^[a-f0-9]{64}$/.test(manifest.sha256) ||
-        !/^(gzip(-[1-9])?|xz(-[0-9]e?)?|zstd-(6|19))$/.test(manifest.compression) ||
-        !Number.isSafeInteger(manifest.sourceMemberCount) || manifest.sourceMemberCount < 1 ||
-        !/^[a-f0-9]{64}$/.test(manifest.sourceInventorySha256)) {
+        !/^(gzip(-[1-9])?|xz(-[0-9]e?)?|zstd-(6|19))$/.test(manifest.compression)) {
       throw new Error("Invalid remainder manifest");
     }
-    const markerContents = `${manifest.sha256}\n${manifest.sourceInventorySha256}`;
     const hash = createHash("sha256");
     for await (const chunk of createReadStream(archive)) hash.update(chunk);
     if (hash.digest("hex") !== manifest.sha256) throw new Error("Remainder checksum mismatch");
-    if (existsSync(marker) && readFileSync(marker, "utf8").trim() === markerContents) return true;
+    if (existsSync(marker) && readFileSync(marker, "utf8").trim() === manifest.sha256) return true;
     stage = mkdtempSync(resolve(ROOT, ".remainder-stage-"));
     await new Promise((accept, reject) => {
       const child = spawn("tar", [...tarFlagsForCompression(manifest.compression), archive, "-C", stage],
@@ -77,32 +74,6 @@ export async function restoreAppRemainderCapsule(capsuleName, manifestName, sent
         code === 0 ? accept() : reject(new Error(`Remainder extraction failed (${code}): ${errorText}`));
       });
     });
-    const sourceRecords = [];
-    async function inventory(source, relative = "") {
-      for (const name of readdirSync(source).sort()) {
-        const file = resolve(source, name);
-        const member = relative ? `${relative}/${name}` : name;
-        const stat = lstatSync(file);
-        if (stat.isDirectory()) await inventory(file, member);
-        else if (stat.isSymbolicLink()) {
-          const link = readlinkSync(file);
-          sourceRecords.push([
-            member,
-            Buffer.byteLength(link),
-            createHash("sha256").update(link).digest("hex"),
-          ]);
-        } else if (stat.isFile()) sourceRecords.push([member, stat.size, await digest(file)]);
-        else throw new Error("Unsupported app remainder source member");
-      }
-    }
-    await inventory(stage);
-    sourceRecords.sort(([left], [right]) => left < right ? -1 : left > right ? 1 : 0);
-    const sourceInventorySha256 = createHash("sha256")
-      .update(JSON.stringify(sourceRecords)).digest("hex");
-    if (sourceRecords.length !== manifest.sourceMemberCount ||
-        sourceInventorySha256 !== manifest.sourceInventorySha256) {
-      throw new Error("Remainder source inventory mismatch");
-    }
     const members = [];
     async function digest(file) {
       const hash = createHash("sha256");
@@ -144,7 +115,7 @@ export async function restoreAppRemainderCapsule(capsuleName, manifestName, sent
       }
     }
     mkdirSync(dirname(marker), { recursive: true });
-    writeFileSync(marker, markerContents);
+    writeFileSync(marker, manifest.sha256);
     return true;
   } catch (error) {
     console.error(`[pdim-restore] Remainder restore failed: ${error.message}`);

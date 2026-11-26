@@ -32,7 +32,7 @@ export function getNixClosureSize() {
 
 async function main() {
   fs.rmSync(path.join(root, "dist/build-complete.json"), { force: true });
-  const { writeBuildContract, readBuildInputs } = await import("../scripts/build-contract.mjs");
+  const { writeBuildContract, readBuildInputs } = await import("../scripts/start-production.mjs");
   const inputs = readBuildInputs(root);
   execSync("bash script/sync-subsystem-dependencies.sh", {
     cwd: root,
@@ -90,6 +90,8 @@ async function main() {
   // already prefer ./python_runtime/bin/python3.
   if (isDeployBuild) {
     try {
+      // The shared provisioner pins the runtime and validates its dependency
+      // contract before the release packer can create a capsule.
       provisionPortablePython(root);
     } catch (e) {
       throw new Error(

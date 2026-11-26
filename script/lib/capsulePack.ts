@@ -345,8 +345,6 @@ export function packCapsule({
 
 export interface PackCapsuleMembersOptions {
   preserveSource?: boolean;
-  /** Bind a scattered-file capsule manifest to the exact source members packed. */
-  attestSource?: boolean;
   outputRoot?: string;
   /** Source paths intentionally omitted from an explicit source capsule. */
   excludePaths?: string[];
@@ -393,7 +391,6 @@ export function packCapsuleMembers({
   threads = 0,
   compressionLevel = CAPSULE_COMPRESSION_LEVEL,
   preserveSource = false,
-  attestSource = false,
   outputRoot = root,
 }: PackCapsuleMembersOptions): Promise<PackCapsuleResult | null> {
   const compression = `zstd-${compressionLevel}`;
@@ -426,44 +423,6 @@ export function packCapsuleMembers({
       }
     }
     if (existingMembers.length === 0) return resolveOne(null);
-
-    let sourceAttestation: { sourceMemberCount: number; sourceInventorySha256: string } | undefined;
-    if (attestSource) {
-      try {
-        const records = existingMembers.map((member) => {
-          if (!member || path.isAbsolute(member) || member.split(/[\\/]/).includes("..") ||
-              /[\r\n]/.test(member)) {
-            throw new Error(`Invalid attested capsule member: ${member}`);
-          }
-          const absolute = path.resolve(root, member);
-          const relative = path.relative(path.resolve(root), absolute);
-          if (!relative || relative.startsWith(`..${path.sep}`) || path.isAbsolute(relative)) {
-            throw new Error(`Attested capsule member escapes root: ${member}`);
-          }
-          const stat = fs.lstatSync(absolute);
-          if (stat.isSymbolicLink()) {
-            const link = fs.readlinkSync(absolute);
-            return [
-              relative.split(path.sep).join("/"),
-              Buffer.byteLength(link),
-              createHash("sha256").update(link).digest("hex"),
-            ] as const;
-          }
-          if (!stat.isFile()) throw new Error(`Attested capsule member is not a regular file: ${member}`);
-          return [
-            relative.split(path.sep).join("/"),
-            stat.size,
-            sha256FileSync(absolute),
-          ] as const;
-        }).sort(([left], [right]) => left < right ? -1 : left > right ? 1 : 0);
-        sourceAttestation = {
-          sourceMemberCount: records.length,
-          sourceInventorySha256: createHash("sha256").update(JSON.stringify(records)).digest("hex"),
-        };
-      } catch (error) {
-        return rejectOne(error as Error);
-      }
-    }
 
     const capsulePath = path.resolve(outputRoot, capsule);
     fs.mkdirSync(path.dirname(capsulePath), { recursive: true });
@@ -541,7 +500,6 @@ export function packCapsuleMembers({
             memberCount: existingMembers.length,
             rawBytes,
             excludePaths: normalizedExcludePaths,
-            ...(sourceAttestation ?? {}),
           },
           null,
           2,

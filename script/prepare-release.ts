@@ -168,7 +168,7 @@ try {
 
   const appMembers = (await inventory(app)).filter(entry => !entry.path.startsWith("dist/deployment/") && !fs.lstatSync(path.join(app, entry.path)).isDirectory()).map(entry => entry.path);
   const packed = await packCapsuleMembers({ root: app, members: appMembers, capsule: "app_remainder.pdim",
-    outputRoot: payload, preserveSource: true, attestSource: true, threads: capsuleThreads });
+    outputRoot: payload, preserveSource: true, threads: capsuleThreads });
   if (!packed) throw new Error("Application capsule is empty");
   fs.rmSync(app, { recursive: true, force: true }); // Own generated staging only.
   await verifyCapsule(root, work, payload, "app_remainder", "");

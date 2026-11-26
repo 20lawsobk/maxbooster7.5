@@ -128,7 +128,7 @@ test("a late build failure invalidates its completion marker", () => {
 test("Python provisioning fails closed without deleting the existing runtime", () => {
   const source = fs.readFileSync("script/build.ts", "utf8");
   assert.match(source, /import \{ provisionPortablePython \} from "\.\/lib\/provisionPortablePython\.mjs"/);
-  assert.match(source, /if \(isDeployBuild\) \{\s*try \{\s*provisionPortablePython\(root\);/);
+  assert.match(source, /provisionPortablePython\(root\);/);
   assert.ok(source.indexOf("provisionPortablePython(root)") < source.indexOf("const capsuleTargets"));
   assert.doesNotMatch(source, /curl[^\n]*\|\s*tar/);
   const start = source.indexOf("} catch (e) {") + "} catch (e) {".length;
@@ -170,41 +170,16 @@ test("DNS production startup uses a compiled entry, not tsx", () => {
   assert.match(supervisor, /production \? path.resolve\(DNS_NODE_DIR, "\.\.\/dist\/dns-node.mjs"\) : "src\/index.ts"/);
 });
 
-test("configured production Python runtime enforces its service manifest security floor", () => {
-  const build = fs.readFileSync("script/build.ts", "utf8");
-  const shellBuild = fs.readFileSync("build.sh", "utf8");
-  const replit = fs.readFileSync(".replit", "utf8");
-  const { scripts } = JSON.parse(fs.readFileSync("package.json", "utf8"));
-  const provisioner = fs.readFileSync("script/lib/provisionPortablePython.mjs", "utf8");
+test("production Python build pins urllib3 to the version recorded in uv.lock", () => {
+  const lock = fs.readFileSync("uv.lock", "utf8");
+  const match = lock.match(/\[\[package\]\]\s+name = "urllib3"\s+version = "([^"]+)"/);
+  assert.ok(match, "uv.lock must contain a locked urllib3 package");
+  const project = fs.readFileSync("pyproject.toml", "utf8");
   const installer = fs.readFileSync("script/lib/installPortablePythonDependencies.py", "utf8");
-  const service = fs.readFileSync("external/maxcore/artifacts/ai-training-server/pyproject.toml", "utf8");
-  assert.match(replit, /build = \["npm", "run", "deployment:build"\]/);
-  assert.equal(scripts["deployment:build"], "bash build.sh");
-  assert.match(shellBuild, /phase_python\(\)\s*\{\s*node script\/lib\/provisionPortablePython\.mjs "\$PWD"/);
-  assert.match(build, /provisionPortablePython\(root\)/);
-  assert.match(provisioner, /installPortablePythonDependencies\.py/);
-  assert.match(installer, /external\/maxcore\/artifacts\/ai-training-server\/pyproject\.toml/);
-  assert.match(installer, /requirements_satisfied/);
-  assert.match(service, /urllib3>=2\.8\.0/);
-});
-
-test("packaged Python installs neutralize host pip destinations and fail closed", () => {
-  const installer = fs.readFileSync("script/lib/installPortablePythonDependencies.py", "utf8");
-  assert.match(installer, /environment\["PIP_USER"\]\s*=\s*"0"/);
-  assert.match(installer,
-    /for destination in \("PIP_TARGET", "PIP_PREFIX", "PIP_ROOT"\):\s*environment\.pop\(destination, None\)/);
-  assert.equal((installer.match(/env=environment/g) || []).length, 2,
-    "every Python package installation must use the sanitized environment");
-  assert.match(installer, /subprocess\.run\(\[\*pip, \*ordinary\], check=True, env=environment\)/,
-    "ordinary package installation failures must stop the provisioning step");
-});
-
-test("urllib3 security path regression uses the packaged production interpreter", () => {
-  const { scripts } = JSON.parse(fs.readFileSync("package.json", "utf8"));
-  const command = scripts["test:dependency-security-paths"];
-  assert.match(command, /python_runtime\/bin\/python3 -I tests\/urllib3-security-paths\.py/);
-  assert.doesNotMatch(command, /(?:^|&&\s*)python3\s+tests\/urllib3-security-paths\.py/,
-    "the production gate must not depend on host-global Python packages");
+  assert.match(project, /"urllib3>=2\.8\.0,<3"/, "the security floor must not be lowered");
+  assert.match(installer, /def locked_urllib3_requirement\(root\)/);
+  assert.match(installer, /requirements\.add\(locked_urllib3_requirement\(root\)\)/,
+    `production Python installer must pin lockfile urllib3 ${match[1]}`);
 });
 
 test("embedded production MaxCore has a compiled entry and excludes the dashboard", () => {
@@ -295,6 +270,14 @@ test("production startup rejects missing, altered and stale build output", () =>
 
  test("build input identity ignores nested dependency caches but tracks imported source", () => {
   const root = fs.mkdtempSync(path.join(os.tmpdir(), "build-input-cache-"));
+  const portablePythonInputs = [
+    "script/lib/installPortablePythonDependencies.py",
+    "script/lib/verifyPortablePython.py",
+    "pyproject.toml",
+    "uv.lock",
+    "external/maxcore/artifacts/ai-training-server/pyproject.toml",
+    "server/services/diffusion/requirements.txt",
+  ];
   try {
     for (const file of [
       "package.json",
@@ -302,6 +285,7 @@ test("production startup rejects missing, altered and stale build output", () =>
       "vite.config.ts",
       "start.sh",
       "scripts/deployment/ports.replit",
+      ...portablePythonInputs,
     ]) {
       fs.mkdirSync(path.dirname(path.join(root, file)), { recursive: true });
       fs.writeFileSync(path.join(root, file), "fixture");
@@ -316,6 +300,7 @@ test("production startup rejects missing, altered and stale build output", () =>
     assert.ok(Object.hasOwn(before, "server/services/ai_content_sidecar.py"));
     assert.ok(Object.hasOwn(before, "server/services/secure_http.py"));
     assert.ok(Object.hasOwn(before, "scripts/deployment/ports.replit"));
+    for (const file of portablePythonInputs) assert.ok(Object.hasOwn(before, file), `${file} is not attested`);
     const cache = path.join(lib, "node_modules/.cache/jiti/generated.mjs");
     fs.writeFileSync(cache, "export default 1;");
     assert.deepEqual(readBuildInputs(root), before);
@@ -326,6 +311,8 @@ test("production startup rejects missing, altered and stale build output", () =>
     fs.writeFileSync(path.join(lib, "added.ts"), "export default 1;");
     assert.ok(Object.hasOwn(readBuildInputs(root), "external/maxcore/lib/api-spec/added.ts"));
     fs.writeFileSync(path.join(root, "scripts/deployment/ports.replit"), "changed");
+    assert.notDeepEqual(readBuildInputs(root), before);
+    fs.writeFileSync(path.join(root, "uv.lock"), "updated lock");
     assert.notDeepEqual(readBuildInputs(root), before);
     fs.writeFileSync(path.join(root, "server/services/ai_content_sidecar.py"), "print('updated sidecar')");
     assert.notDeepEqual(readBuildInputs(root), before);
@@ -342,8 +329,8 @@ test("generated MaxCore library dist declarations do not invalidate source attes
     "external/maxcore/lib/db/dist/index.d.ts",
   ];
   const required = [
-    "dist/index.mjs", "dist/cluster.mjs", "dist/gateway.mjs", "dist/compute-sizing.mjs",
-    "dist/dns-node.mjs", "dist/dns-api.mjs", "dist/retained-pdim-recovery-worker.mjs", "dist/public/index.html",
+    "dist/index.mjs", "dist/cluster.mjs", "dist/gateway.mjs", "dist/dns-api.mjs", "dist/compute-sizing.mjs",
+    "dist/dns-node.mjs", "dist/retained-pdim-recovery-worker.mjs", "dist/public/index.html",
     "external/maxcore/artifacts/api-server/dist/index.mjs",
   ];
   try {

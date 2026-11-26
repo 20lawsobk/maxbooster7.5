@@ -276,18 +276,6 @@ phase_pack_pdim() {
   _pack_directory_capsule external/pdim external_pdim.pdim "Pocket Dimension"
 }
 
-phase_pack_app_remainder() {
-  require_state_dir
-  require_file "$DEPLOY_STATE_DIR/app-capsule-ready"
-  require_file "$DEPLOY_STATE_DIR/packer-ready"
-  require_file dist/publish-capsules.mjs
-
-  echo "==> Packing the verified application remainder before runtime capsules..."
-  node dist/publish-capsules.mjs app-remainder app_remainder.pdim
-  require_file app_remainder.pdim
-  require_file app_remainder.manifest.json
-}
-
 phase_prune() {
   require_state_dir
 
@@ -373,8 +361,11 @@ phase_source() {
 
 phase_remainder() {
   if [ ! -s shared/social-platform-optimization.json ]; then
-    fail 'Required runtime social-awareness registry missing before capsule validation'
+    fail 'Required runtime social-awareness registry missing before capsule pack'
   fi
+
+  echo "==> Packing application remainder for verified startup restoration..."
+  node dist/publish-capsules.mjs remainder app_remainder.pdim
 
   for _capsule in \
     app_remainder \
@@ -536,7 +527,7 @@ if [ "${1:-}" = "--executive-task" ]; then
   readonly BUILD_TASK
 
   case "$BUILD_TASK" in
-    cleanup|node|diffusion|dependencies|rust|strip|python|app_capsule|packer|pack_app_remainder|prune|pack_node|pack_python|pack_maxcore|pack_pdim|source|remainder|assets|finalize)
+    cleanup|node|diffusion|dependencies|rust|strip|python|app_capsule|packer|prune|pack_node|pack_python|pack_maxcore|pack_pdim|source|remainder|assets|finalize)
       printf '==> Starting task: %s\n' "$BUILD_TASK"
       SECONDS=0
 

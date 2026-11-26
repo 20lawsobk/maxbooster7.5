@@ -44,8 +44,6 @@ export const BOOTSTRAP_AND_CAPSULE_OWN_PATHS = [
   // The startup executive imports additional modules before restore-app runs.
   "dist/deployment/",
   "dist/.db-indexes-ok",
-  "dist/deployment",
-  "dist/publish-capsules.mjs",
   ".replit",
   ".git",
   // Existing capsules' own artifacts + the directories they pack (already

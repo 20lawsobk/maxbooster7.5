@@ -280,11 +280,8 @@ test("startup plan requires all restores before launching app; source deletion i
  assert.equal(startPlan(process.execPath).find(t=>t.id==="restore-python").args.at(-1),".pdim-restored-py");
  const plan=coordinateBuildPlan(buildPlan());
  assert.deepEqual(plan.find(t=>t.id==="source").deps.sort(),[
-  "assets","pack_app_remainder","pack_maxcore","pack_node","pack_pdim","pack_python","rust",
+  "assets","pack_maxcore","pack_node","pack_pdim","pack_python","rust",
  ]);
- assert.ok(plan.find(t=>t.id==="pack_app_remainder").deps.includes("app_capsule"));
- assert.ok(plan.find(t=>t.id==="prune").deps.includes("pack_app_remainder"));
- assert.ok(plan.find(t=>t.id==="pack_maxcore").deps.includes("pack_app_remainder"));
 });
 test("a ready application is supervised beyond the startup deadline",async()=>{
  const app={...task("application",[],"setTimeout(()=>{},250)"),application:true};

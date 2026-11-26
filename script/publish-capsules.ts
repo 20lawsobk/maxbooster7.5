@@ -8,22 +8,6 @@ import {
 } from "./deployment/capacity.mjs";
 import { packCachedDeploymentCapsule } from "./lib/deploymentCapsuleCache.js";
 import { computeRemainingAppMembers } from "./lib/dockerignoreScan.js";
-import { validateBuild } from "../scripts/build-contract.mjs";
-
-const APP_REMAINDER_REQUIRED_MEMBERS = [
-  "dist/build-complete.json",
-  "dist/index.mjs",
-  "dist/cluster.mjs",
-  "dist/gateway.mjs",
-  "dist/dns-node.mjs",
-  "dist/dns-api.mjs",
-  "dist/compute-sizing.mjs",
-  "dist/retained-pdim-recovery-worker.mjs",
-  "dist/public/index.html",
-  "scripts/startup-health.mjs",
-  "scripts/redis-supervisor.sh",
-  "bin/boosterstate",
-];
 
 // Bundle into dist before node_modules is packed. The resulting CLI uses only
 // Node built-ins and the installed zstd executable, not the removed source tree.
@@ -44,28 +28,15 @@ export async function publishCapsule(root: string, mode: string, capsule: string
     process.env.DEPLOY_TASK_CPU,
     liveCapacity().cpus,
   );
-  if (mode === "app-remainder") {
-    if (capsule !== "app_remainder.pdim" || inputs.length !== 0) {
-      throw new Error("App remainder requires its configured capsule name and no explicit inputs");
+  if (mode === "remainder") {
+    if (capsule !== "app_remainder.pdim" || inputs.length) {
+      throw new Error("Remainder operation requires only app_remainder.pdim");
     }
-    for (const file of [
-      "app_remainder.pdim",
-      "app_remainder.pdim.partial",
-      "app_remainder.manifest.json",
-      "app_remainder.manifest.json.partial",
-      ".app_remainder_pdim.filelist",
-    ]) fs.rmSync(path.join(root, file), { force: true });
-
-    validateBuild(root);
     const members = computeRemainingAppMembers(root);
     if (!members.length) throw new Error("Application remainder is empty");
-    const missing = APP_REMAINDER_REQUIRED_MEMBERS.filter((file) => !members.includes(file));
-    if (missing.length) throw new Error(`App remainder is missing required runtime entries: ${missing.join(", ")}`);
-    const result = await packCapsuleMembers({
-      root, members, capsule, threads, preserveSource: true, attestSource: true,
-    });
-    if (!result) throw new Error("App remainder contains no runtime members");
-    return result;
+    // Remove only files included in the verified capsule; leave bootstrap and
+    // deployment-executive modules on disk for pre-restoration startup.
+    return packCapsuleMembers({ root, members, capsule, threads, preserveSource: false });
   }
   if (mode === "directory" || mode === "prepare") {
     if (sourceInputs.length !== 1 || !fs.statSync(path.join(root, sourceInputs[0])).isDirectory()) {

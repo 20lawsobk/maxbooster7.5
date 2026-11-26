@@ -17,7 +17,6 @@ const DEADLINES_SECONDS = Object.freeze({
   pack_python: 600,
   pack_maxcore: 600,
   pack_pdim: 600,
-  pack_app_remainder: 600,
   source: 600,
   remainder: 600,
   finalize: 180,
@@ -32,7 +31,6 @@ const ELASTIC_TASKS = new Set([
   "pack_python",
   "pack_maxcore",
   "pack_pdim",
-  "pack_app_remainder",
   "source",
   "remainder",
 ]);
@@ -47,7 +45,6 @@ const RETRYABLE_CAPSULE_TASKS = new Set([
   "pack_python",
   "pack_maxcore",
   "pack_pdim",
-  "pack_app_remainder",
 ]);
 
 function buildTask(id, deps = [], memoryMB = 256, cpu = 1, io = 1) {
@@ -115,20 +112,16 @@ export function buildPlan() {
       "python",
     ], 8192, 2),
 
-    // Capture the scattered runtime payload while all source/build inputs
-    // still exist; later packing phases may remove those trees.
-    buildTask("pack_app_remainder", ["app_capsule"], 1536, 1, 2),
-
     // Now includes npm prune and security audits, so reserve more memory.
-    buildTask("prune", ["app_capsule", "packer", "pack_app_remainder"], 768),
+    buildTask("prune", ["app_capsule", "packer"], 768),
 
     // Each archive is CPU-elastic up to the machine ceiling. I/O reservations
     // admit at most two heavy packers together, so the executive divides the
     // available CPU budget between them and gives a lone packer the full share.
     buildTask("pack_node", ["prune"], 1536, 1, 2),
-    buildTask("pack_python", ["pack_app_remainder"], 1536, 1, 2),
-    buildTask("pack_maxcore", ["pack_app_remainder"], 1536, 1, 2),
-    buildTask("pack_pdim", ["pack_app_remainder"], 1536, 1, 2),
+    buildTask("pack_python", ["app_capsule"], 1536, 1, 2),
+    buildTask("pack_maxcore", ["app_capsule"], 1536, 1, 2),
+    buildTask("pack_pdim", ["app_capsule"], 1536, 1, 2),
 
     buildTask("source", [
       "assets",
@@ -137,7 +130,6 @@ export function buildPlan() {
       "pack_python",
       "pack_maxcore",
       "pack_pdim",
-      "pack_app_remainder",
     ], 1536),
 
     buildTask("remainder", ["source"], 1536),
