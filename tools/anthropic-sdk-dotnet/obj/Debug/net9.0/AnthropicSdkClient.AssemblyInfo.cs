@@ -13,7 +13,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("AnthropicSdkClient")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+28c9c8eecbbef3409840ad7d01e90f0b9de10dfb")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+20732cfe0fbe27edaff239b7d8c04c20f92f314f")]
 [assembly: System.Reflection.AssemblyProductAttribute("AnthropicSdkClient")]
 [assembly: System.Reflection.AssemblyTitleAttribute("AnthropicSdkClient")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]
