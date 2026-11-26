@@ -95,10 +95,22 @@ test("legacy production shell delegates to the validated npm start path", () => 
 test("release CI preserves PostgreSQL fixtures, builds through npm, and validates restored hashes", () => {
   const ci = fs.readFileSync(".github/workflows/ci.yml", "utf8");
   assert.match(ci, /Prepare private PostgreSQL fixture binaries/);
-  assert.match(ci, /- name: Build release capsules through the production npm launcher[\s\S]*?run: npm run build\s+env:\s+NODE_ENV: production\s+DEPLOY_PACK: "1"/);
-  assert.match(ci, /- name: Restore release capsules with the shipped runtime[\s\S]*?- name: Validate source and artifact hashes after restore/);
-  assert.match(ci, /- name: Validate source and artifact hashes after restore[\s\S]*?validateBuild\(process\.cwd\(\)\)/);
-  assert.match(ci, /- name: Verify build output/);
+  const buildStart = ci.indexOf("\n  build:\n");
+  const integrationStart = ci.indexOf("\n  test-integration:\n");
+  const summaryStart = ci.indexOf("\n  ci-summary:\n");
+  assert.ok(buildStart >= 0 && integrationStart > buildStart && summaryStart > integrationStart);
+  const buildJob = ci.slice(buildStart, integrationStart);
+  const integrationJob = ci.slice(integrationStart, summaryStart);
+  const nix = fs.readFileSync("replit.nix", "utf8");
+  assert.match(nix, /pkgs\.pnpm_10/);
+  assert.match(buildJob, /uses: pnpm\/action-setup@v4[\s\S]*?version: 10\.12\.4\s+run_install: false/);
+  assert.match(buildJob, /test "\$\(pnpm --version\)" = "10\.12\.4"/);
+  assert.doesNotMatch(buildJob, /npm exec --yes --package=pnpm@/);
+  assert.match(buildJob, /- name: Build release capsules through the production npm launcher[\s\S]*?run: npm run deployment:build\s+env:\s+NODE_ENV: production\s+DEPLOY_PACK: "1"/);
+  assert.match(buildJob, /- name: Restore release capsules with the shipped runtime[\s\S]*?- name: Validate source and artifact hashes after restore/);
+  assert.match(buildJob, /- name: Validate source and artifact hashes after restore[\s\S]*?validateBuild\(process\.cwd\(\)\)/);
+  assert.match(buildJob, /- name: Verify build output/);
+  assert.match(integrationJob, /- name: Build application for integration tests\s+run: npm run build\s+env:\s+NODE_ENV: production\s+DEPLOY_PACK: "1"/);
 });
 
 test("a late build failure invalidates its completion marker", () => {

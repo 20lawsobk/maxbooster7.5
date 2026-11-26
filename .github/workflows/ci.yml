@@ -163,6 +163,15 @@ jobs:
           node-version-file: ".nvmrc"
           cache: "npm"
 
+      - name: Install pinned pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 10.12.4
+          run_install: false
+
+      - name: Verify pinned pnpm
+        run: test "$(pnpm --version)" = "10.12.4"
+
       - name: Install dependencies
         run: npm ci --no-audit --no-fund --legacy-peer-deps
 
@@ -171,7 +180,8 @@ jobs:
 
       - name: Reconcile independent runtime dependencies
         run: |
-          npm exec --yes --package=pnpm@10.26.1 -- node scripts/reconcile-nested-dependencies.mjs --apply --online
+          pnpm --version
+          node scripts/reconcile-nested-dependencies.mjs --apply --online
           npm ci --prefix dns-os --ignore-scripts --no-audit --no-fund
           npm ci --prefix tls-proxy --ignore-scripts --no-audit --no-fund
 
@@ -180,7 +190,7 @@ jobs:
 
       - name: Build release capsules through the production npm launcher
         # Verify the public npm build entrypoint, not only its inner script.
-        run: npm run build
+        run: npm run deployment:build
         env:
           NODE_ENV: production
           DEPLOY_PACK: "1"
@@ -322,6 +332,12 @@ jobs:
 
       - name: Install dependencies
         run: npm ci --no-audit --no-fund --legacy-peer-deps
+
+      - name: Build application for integration tests
+        run: npm run build
+        env:
+          NODE_ENV: production
+          DEPLOY_PACK: "1"
 
       - name: Push database schema
         run: npx drizzle-kit push --force
