@@ -33,11 +33,8 @@ MAXCORE_SERVING_RELEASE = "live-awareness"
 STRIPE_ALLOW_CATALOG_PROVISIONING = "0"
 
 [[ports]]
-localPort = 53
-externalPort = 3001
-
-[[ports]]
 localPort = 1053
+exposeLocalhost = false
 
 [[ports]]
 localPort = 5000
@@ -45,33 +42,43 @@ externalPort = 80
 
 [[ports]]
 localPort = 5353
+exposeLocalhost = false
 
 [[ports]]
 localPort = 5380
+exposeLocalhost = false
 
 [[ports]]
 localPort = 5556
+exposeLocalhost = false
 
 [[ports]]
 localPort = 8008
+exposeLocalhost = false
 
 [[ports]]
 localPort = 8080
+exposeLocalhost = false
 
 [[ports]]
 localPort = 8090
+exposeLocalhost = false
 
 [[ports]]
 localPort = 9877
+exposeLocalhost = false
 
 [[ports]]
 localPort = 9878
+exposeLocalhost = false
 
 [[ports]]
 localPort = 9879
+exposeLocalhost = false
 
 [[ports]]
 localPort = 9880
+exposeLocalhost = false
 
 [nix]
 channel = "stable-25_05"
