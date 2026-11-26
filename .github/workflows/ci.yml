@@ -100,20 +100,21 @@ jobs:
 
       - name: Prepare private PostgreSQL fixture binaries
         run: |
-          if ! find /usr/lib/postgresql -path '*/bin/initdb' -type f -print -quit 2>/dev/null | grep -q .; then
+          if ! find /usr/lib/postgresql -path '*/bin/initdb' -type f -print -quit 2>/dev/null | grep -q . || ! command -v redis-server >/dev/null 2>&1; then
             sudo apt-get update
-            sudo apt-get install -y postgresql
+            sudo apt-get install -y postgresql redis-server
           fi
           pg_bin="$(find /usr/lib/postgresql -path '*/bin/initdb' -type f -print -quit | xargs dirname)"
           test -x "$pg_bin/postgres"
           "$pg_bin/initdb" --version
+          redis-server --version
           echo "$pg_bin" >> "$GITHUB_PATH"
 
       - name: Run unit tests
         # Fixture suites launch private PostgreSQL processes as the runner user.
         # A configured DATABASE_URL does not supply initdb/postgres binaries.
         # Keep them separate from any provider or production database.
-        # The preceding step exposes the installed server binaries via PATH.
+        # The preceding step exposes test-only PostgreSQL and Redis binaries.
         run: npm run test:ci
         env:
           NODE_ENV: test

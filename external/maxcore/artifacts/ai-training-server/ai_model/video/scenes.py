@@ -602,7 +602,7 @@ def _extract_last_frame_b64(clip_path: str) -> str:
             subprocess.run([
                 "ffmpeg", "-y", "-v", "error",
                 "-ss", str(max(0.0, duration - 1.0)), "-i", clip_path,
-                "-map", "0:v:0", "-an", "-vsync", "0",
+                "-map", "0:v:0", "-an", "-fps_mode:v", "passthrough",
                 "-update", "1", output,
             ], stdout=subprocess.DEVNULL, stderr=subprocess.PIPE,
                 timeout=10, check=True)

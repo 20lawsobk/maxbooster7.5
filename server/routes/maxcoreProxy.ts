@@ -30,6 +30,7 @@ import { requireAdmin, requireAuthOnly } from "../middleware/auth.js";
 import { logger } from "../logger.js";
 import { prepareGenerationAwareness } from "../services/generationAwareness.js";
 import { MaxCoreControlError } from "../services/maxcoreControlTransport.js";
+import { plannedGenerationDeadlineMs } from "../../external/maxcore/artifacts/api-server/src/config/planned-generation-policy.js";
 import {
   absolutizeMaxcoreMediaUrls,
   getMaxcoreAdminHeaders,
@@ -142,9 +143,83 @@ const ADMIN_MAXCORE_ENDPOINT_ALIASES: Record<string, string> = {
   "/api/admin/maxcore/warm/status": "/api/warm/status",
 };
 
-// Generous timeout — generation calls (image/video/audio) can be slow.
-const GEN_TIMEOUT_MS = 120_000;
+const DEFAULT_PROXY_TIMEOUT_MS = 120_000;
+const CONTROL_TIMEOUT_MS = 4_000;
+const ACCOUNT_ANALYTICS_TIMEOUT_MS = 10_000;
+const MEDIA_HEADERS_TIMEOUT_MS = 30_000;
+const MEDIA_BODY_TIMEOUT_MS = 600_000;
 const BINARY_PREFIXES = ["image/", "video/", "audio/", "application/octet-stream"];
+const CONTROL_PATHS = new Set([
+  "/api/awareness/unified/status",
+  "/api/awareness/unified/ready",
+  "/api/awareness/unified/context",
+  "/api/awareness/unified/profile-discover",
+  "/api/awareness/unified/admin/source-status",
+  "/api/awareness/unified/admin/source-review",
+  "/api/generation/capabilities",
+  "/api/admin/maxcore/health",
+  "/api/admin/maxcore/readiness",
+  "/api/admin/maxcore/warm/status",
+  "/api/models/social/state",
+  "/api/models/advertising/state",
+  "/api/models/content/state",
+  "/api/models/engagement/state",
+]);
+const ACCOUNT_ANALYTICS_PATHS = new Set([
+  "/api/analytics/capability",
+  "/api/analytics/predict",
+  "/api/analytics/insights",
+]);
+const GENERATION_PATH_ALIASES: Record<string, string> = {
+  "/api/generate/video": "/api/video/generate-ai",
+};
+
+type MaxcoreProxyTimeouts = {
+  headersTimeoutMs: number;
+  totalTimeoutMs: number;
+};
+
+export function maxcoreProxyTimeouts(
+  path: string,
+  body?: unknown,
+): MaxcoreProxyTimeouts {
+  if (CONTROL_PATHS.has(path)) {
+    return {
+      headersTimeoutMs: CONTROL_TIMEOUT_MS,
+      totalTimeoutMs: CONTROL_TIMEOUT_MS,
+    };
+  }
+  if (ACCOUNT_ANALYTICS_PATHS.has(path)) {
+    return {
+      headersTimeoutMs: ACCOUNT_ANALYTICS_TIMEOUT_MS,
+      totalTimeoutMs: ACCOUNT_ANALYTICS_TIMEOUT_MS,
+    };
+  }
+  if (path === "/api/audio/upload") {
+    return {
+      headersTimeoutMs: DEFAULT_PROXY_TIMEOUT_MS,
+      totalTimeoutMs: DEFAULT_PROXY_TIMEOUT_MS,
+    };
+  }
+  if (
+    path.startsWith("/api/maxcore-media/") ||
+    /^\/api\/video-job\/[^/]+\/(?:preview\/[^/]+|download|file|video)$/.test(path) ||
+    /^\/api\/audio\/[^/]+\/(?:stems|midi)$/.test(path) ||
+    /^\/api\/files\/stems\/[^/]+\/[^/]+$/.test(path)
+  ) {
+    return {
+      headersTimeoutMs: MEDIA_HEADERS_TIMEOUT_MS,
+      totalTimeoutMs: MEDIA_BODY_TIMEOUT_MS,
+    };
+  }
+
+  const policyPath = GENERATION_PATH_ALIASES[path] ?? path;
+  const plannedTimeout =
+    plannedGenerationDeadlineMs(policyPath, body) ??
+    plannedGenerationDeadlineMs(policyPath.replace(/^\/api(?=\/)/, ""), body);
+  const timeoutMs = plannedTimeout ?? DEFAULT_PROXY_TIMEOUT_MS;
+  return { headersTimeoutMs: timeoutMs, totalTimeoutMs: timeoutMs };
+}
 
 function isBinary(contentType: string | null): boolean {
   if (!contentType) return false;
@@ -158,18 +233,26 @@ function isBinary(contentType: string | null): boolean {
  * must remain active while pipeline consumes the body, and a disconnected
  * browser must cancel the upstream transfer.
  */
-function createUpstreamAbort(
+export function createUpstreamAbort(
   req: Request,
   res: ExpressResponse,
-  timeoutMs: number,
+  timeouts: MaxcoreProxyTimeouts,
 ) {
   const controller = new AbortController();
-  const timeout = setTimeout(() => {
-    controller.abort(
-      new DOMException("The upstream request timed out", "TimeoutError"),
-    );
-  }, timeoutMs);
-  timeout.unref?.();
+  const startedAt = performance.now();
+  let timeout: ReturnType<typeof setTimeout>;
+  const abortForTimeout = () => {
+    if (!controller.signal.aborted) {
+      controller.abort(
+        new DOMException("The upstream request timed out", "TimeoutError"),
+      );
+    }
+  };
+  const armTimeout = (timeoutMs: number) => {
+    timeout = setTimeout(abortForTimeout, timeoutMs);
+    timeout.unref?.();
+  };
+  armTimeout(timeouts.headersTimeoutMs);
 
   const abortForClient = () => {
     if (!controller.signal.aborted && !res.writableEnded) {
@@ -183,6 +266,22 @@ function createUpstreamAbort(
 
   return {
     signal: controller.signal,
+    headersReceived() {
+      if (controller.signal.aborted) return;
+      const elapsed = performance.now() - startedAt;
+      if (elapsed >= timeouts.headersTimeoutMs) {
+        abortForTimeout();
+        return;
+      }
+      if (timeouts.headersTimeoutMs === timeouts.totalTimeoutMs) return;
+      clearTimeout(timeout);
+      const remaining = timeouts.totalTimeoutMs - elapsed;
+      if (remaining <= 0) {
+        abortForTimeout();
+        return;
+      }
+      armTimeout(remaining);
+    },
     cleanup() {
       clearTimeout(timeout);
       req.off?.("aborted", abortForClient);
@@ -296,7 +395,11 @@ async function proxyToMaxCore(
     }
   }
 
-  const abort = createUpstreamAbort(req, res, GEN_TIMEOUT_MS);
+  const abort = createUpstreamAbort(
+    req,
+    res,
+    maxcoreProxyTimeouts(req.path, req.body),
+  );
   try {
     const upstream = await fetch(targetUrl, {
       method,
@@ -304,6 +407,7 @@ async function proxyToMaxCore(
       body,
       signal: abort.signal,
     });
+    abort.headersReceived();
 
     const contentType = upstream.headers.get("content-type");
 
@@ -386,7 +490,11 @@ async function proxyAudioUpload(
     res.status(413).json({ error: "Audio upload exceeds size limit" });
     return;
   }
-  const abort = createUpstreamAbort(req, res, GEN_TIMEOUT_MS);
+  const abort = createUpstreamAbort(
+    req,
+    res,
+    maxcoreProxyTimeouts(req.path, req.body),
+  );
   try {
     const upstream = await fetch(`${origin}/api/audio/upload`, {
       method: "POST",
@@ -399,6 +507,7 @@ async function proxyAudioUpload(
       duplex: "half",
       signal: abort.signal,
     } as RequestInit & { duplex: "half" });
+    abort.headersReceived();
     const text = await upstream.text();
     res.status(upstream.status);
     try {
@@ -456,7 +565,11 @@ async function proxyMaxcoreMedia(
   }
 
   const targetUrl = `${origin}${subPath}${req.url.includes("?") ? req.url.slice(req.url.indexOf("?")) : ""}`;
-  const abort = createUpstreamAbort(req, res, GEN_TIMEOUT_MS);
+  const abort = createUpstreamAbort(
+    req,
+    res,
+    maxcoreProxyTimeouts(req.path),
+  );
   try {
     const upstream = await fetch(targetUrl, {
       method: "GET",
@@ -465,6 +578,7 @@ async function proxyMaxcoreMedia(
       redirect: "manual",
       signal: abort.signal,
     });
+    abort.headersReceived();
     // Never follow a redirect blindly — that would let a compromised/misbehaving
     // MaxCore instance turn this public proxy into an open relay to arbitrary
     // hosts. Treat any redirect as an upstream failure instead.

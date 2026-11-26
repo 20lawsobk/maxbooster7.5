@@ -514,8 +514,9 @@ separately rather than summed as additional feature coverage.
 Use the prepared Node 22 runtime, at least 22.12 (recorded run: 22.23.3), npm 10, pnpm 10,
 Python 3.12+, PostgreSQL server tools (`initdb`, `pg_ctl`, `postgres`, `psql`),
 native Redis, Chromium, FFmpeg, espeak-ng with its data files, OpenSSL,
-tar/xz/zstd, Git, Go 1.26.6 and Rust 1.93.1 with Cargo. Run disposable PostgreSQL
-fixtures as a non-root OS user. Put these executables on `PATH`.
+tar/xz/zstd, Git, Go 1.26.6 and Rust 1.93.1 with Cargo, and .NET 9 SDK for the
+local Anthropic SDK tests. Run disposable PostgreSQL fixtures as a non-root OS
+user. Put these executables on `PATH`.
 `replit.nix` declares the main system tools; the cloud environment may use
 extracted binaries and require their `LD_LIBRARY_PATH` as well.
 

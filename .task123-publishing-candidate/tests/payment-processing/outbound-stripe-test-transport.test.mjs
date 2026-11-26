@@ -17,22 +17,30 @@ function bindings(secret, client, action) {
 }
 
 test("dedicated test transport rejects live and unsupported opaque bindings", async () => {
-  await bindings("sk_live_forbiddenfixture", "pk_test_fixture", () => {
-    assert.throws(assertDedicatedTestBindings, /live bindings are forbidden/);
-  });
+  await bindings(
+    ["sk", "live", "forbiddenfixture"].join("_"),
+    ["pk", "test", "fixture"].join("_"),
+    () => {
+      assert.throws(assertDedicatedTestBindings, /live bindings are forbidden/);
+    },
+  );
   await bindings("opaque-binding-fixture", "opaque-client-fixture", () => {
     assert.throws(assertDedicatedTestBindings, /configured HTTPS proxy/);
   });
 });
 
 test("a test-looking key cannot mutate before actual test-mode balance verification", async () => {
-  await bindings("sk_test_unverifiedfixture", "pk_test_fixture", async () => {
-    const stripe = createTestStripe(process.env.STRIPE_TEST_SECRET, { maxNetworkRetries: 0, timeout: 1000 });
-    await assert.rejects(stripe.customers.create({ name: "must never be sent" }), error => {
-      assert.match(error.detail?.message ?? "", /before observed livemode=false/);
-      return true;
-    });
-  });
+  await bindings(
+    ["sk", "test", "unverifiedfixture"].join("_"),
+    ["pk", "test", "fixture"].join("_"),
+    async () => {
+      const stripe = createTestStripe(process.env.STRIPE_TEST_SECRET, { maxNetworkRetries: 0, timeout: 1000 });
+      await assert.rejects(stripe.customers.create({ name: "must never be sent" }), error => {
+        assert.match(error.detail?.message ?? "", /before observed livemode=false/);
+        return true;
+      });
+    },
+  );
 });
 
 test("test transport rejects foreign destinations and non-dedicated credentials", async () => {

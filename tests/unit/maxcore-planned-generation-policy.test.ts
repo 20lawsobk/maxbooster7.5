@@ -11,6 +11,7 @@ import ts from "typescript";
 import { PLANNED_GENERATION_DEADLINES, plannedGenerationDeadlineMs } from "../../external/maxcore/artifacts/api-server/src/config/planned-generation-policy.js";
 import { modelAuthHeaders, modelOwnedBody } from "../../external/maxcore/artifacts/api-server/src/config/model-auth.js";
 import { proxyLifetime } from "../../external/maxcore/artifacts/api-server/src/config/proxy-lifecycle.js";
+import { createUpstreamAbort, maxcoreProxyTimeouts } from "../../server/routes/maxcoreProxy.js";
 
 type Planned = { path: string; handler: string; modality: string; options: Record<string, boolean> };
 const pythonSource = "external/maxcore/artifacts/ai-training-server/server.py";
@@ -119,6 +120,124 @@ describe("planned route inventory is exact and complete", () => {
   it("does not exempt unknown/admin prefix lookalikes or inherited property names", () => {
     for (const path of ["/api/generate/unknown", "/platform/social/generate/extra", "/training/start", "/api-keys", "toString", "__proto__"]) {
       expect(plannedGenerationDeadlineMs(path, { mode: "planner" }), path).toBeUndefined();
+    }
+  });
+});
+
+describe("application MaxCore proxy deadlines", () => {
+  it.each([
+    { path: "/api/content/generate", body: {}, expected: 60_000 },
+    { path: "/api/generate/content", body: {}, expected: 60_000 },
+    { path: "/api/generate/campaign", body: {}, expected: 60_000 },
+    { path: "/api/generate/text", body: { mode: "planner" }, expected: 30_000 },
+    { path: "/api/generate/text", body: {}, expected: 60_000 },
+    { path: "/api/generate/image", body: {}, expected: 600_000 },
+    { path: "/api/generate/audio", body: {}, expected: 600_000 },
+    { path: "/api/generate-video", body: {}, expected: 600_000 },
+    { path: "/api/generate/video", body: {}, expected: 600_000 },
+    { path: "/api/video/generate-ai", body: {}, expected: 600_000 },
+    { path: "/api/video/extend", body: {}, expected: 600_000 },
+    { path: "/api/platform/video/generate", body: {}, expected: 600_000 },
+    { path: "/api/platform/daw/generate", body: {}, expected: 600_000 },
+    { path: "/api/platform/distribution/plan", body: {}, expected: 60_000 },
+    { path: "/api/platform/social/generate", body: {}, expected: 60_000 },
+    { path: "/api/platform/social/autopilot", body: {}, expected: 60_000 },
+    { path: "/api/platform/ads/generate", body: {}, expected: 60_000 },
+    { path: "/api/platform/ads/autopilot", body: {}, expected: 60_000 },
+    { path: "/api/platform/ads/audience", body: {}, expected: 60_000 },
+    { path: "/api/platform/ads/optimize", body: {}, expected: 60_000 },
+    { path: "/api/content/score", body: {}, expected: 60_000 },
+    { path: "/api/analyze", body: {}, expected: 60_000 },
+    { path: "/api/analyze/sentiment", body: {}, expected: 60_000 },
+    { path: "/api/optimize/ad", body: {}, expected: 60_000 },
+    { path: "/api/predict/engagement", body: {}, expected: 60_000 },
+    { path: "/api/awareness/unified/status", body: {}, expected: 4_000 },
+    { path: "/api/models/social/state", body: {}, expected: 4_000 },
+    { path: "/api/analytics/capability", body: {}, expected: 10_000 },
+    {
+      path: "/api/audio/upload",
+      body: {},
+      expected: { headersTimeoutMs: 120_000, totalTimeoutMs: 120_000 },
+    },
+    {
+      path: "/api/maxcore-media/generated/video.mp4",
+      body: {},
+      expected: { headersTimeoutMs: 30_000, totalTimeoutMs: 600_000 },
+    },
+    { path: "/api/unclassified", body: {}, expected: 120_000 },
+  ])("uses the route budget for $path", ({ path, body, expected }) => {
+    const timeout = maxcoreProxyTimeouts(path, body);
+    expect(timeout).toEqual(
+      typeof expected === "number"
+        ? { headersTimeoutMs: expected, totalTimeoutMs: expected }
+        : expected,
+    );
+  });
+
+  it("switches from the header cap to the remaining total deadline", async () => {
+    vi.useFakeTimers();
+    const req = new EventEmitter();
+    const res = Object.assign(new EventEmitter(), { writableEnded: false });
+    const abort = createUpstreamAbort(
+      req as unknown as Parameters<typeof createUpstreamAbort>[0],
+      res as unknown as Parameters<typeof createUpstreamAbort>[1],
+      { headersTimeoutMs: 4, totalTimeoutMs: 14 },
+    );
+
+    try {
+      await vi.advanceTimersByTimeAsync(3);
+      expect(abort.signal.aborted).toBe(false);
+      abort.headersReceived();
+      await vi.advanceTimersByTimeAsync(9);
+      expect(abort.signal.aborted).toBe(false);
+      await vi.advanceTimersByTimeAsync(1);
+      expect(abort.signal.aborted).toBe(false);
+      await vi.advanceTimersByTimeAsync(1);
+      expect(abort.signal.reason).toMatchObject({ name: "TimeoutError" });
+    } finally {
+      abort.cleanup();
+    }
+
+    expect(req.listenerCount("aborted")).toBe(0);
+    expect(res.listenerCount("close")).toBe(0);
+    expect(vi.getTimerCount()).toBe(0);
+  });
+
+  it("aborts when the upstream response headers exceed their shorter cap", async () => {
+    vi.useFakeTimers();
+    const req = new EventEmitter();
+    const res = Object.assign(new EventEmitter(), { writableEnded: false });
+    const abort = createUpstreamAbort(
+      req as unknown as Parameters<typeof createUpstreamAbort>[0],
+      res as unknown as Parameters<typeof createUpstreamAbort>[1],
+      { headersTimeoutMs: 4, totalTimeoutMs: 14 },
+    );
+
+    try {
+      await vi.advanceTimersByTimeAsync(4);
+      expect(abort.signal.reason).toMatchObject({ name: "TimeoutError" });
+    } finally {
+      abort.cleanup();
+    }
+  });
+
+  it("preserves one overall deadline for streamed client uploads", async () => {
+    vi.useFakeTimers();
+    const req = new EventEmitter();
+    const res = Object.assign(new EventEmitter(), { writableEnded: false });
+    const abort = createUpstreamAbort(
+      req as unknown as Parameters<typeof createUpstreamAbort>[0],
+      res as unknown as Parameters<typeof createUpstreamAbort>[1],
+      { headersTimeoutMs: 10, totalTimeoutMs: 10 },
+    );
+
+    try {
+      await vi.advanceTimersByTimeAsync(5);
+      abort.headersReceived();
+      await vi.advanceTimersByTimeAsync(5);
+      expect(abort.signal.reason).toMatchObject({ name: "TimeoutError" });
+    } finally {
+      abort.cleanup();
     }
   });
 });
