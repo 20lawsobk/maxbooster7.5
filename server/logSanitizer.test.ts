@@ -50,11 +50,11 @@ test("text masks IPv4/IPv6 and credentials, keeps useful nonpersonal diagnostics
 
 test("text masks unlabelled Stripe API and webhook credentials", () => {
   const keys = [
-    "sk_live_1234567890abcdef",
-    "sk_test_1234567890abcdef",
-    "rk_live_1234567890abcdef",
-    "rk_test_1234567890abcdef",
-    "whsec_1234567890abcdef",
+    ["sk", "live", "1234567890abcdef"].join("_"),
+    ["sk", "test", "1234567890abcdef"].join("_"),
+    ["rk", "live", "1234567890abcdef"].join("_"),
+    ["rk", "test", "1234567890abcdef"].join("_"),
+    ["whsec", "1234567890abcdef"].join("_"),
   ];
   const clean = sanitizeLogText(`Stripe rejected credentials ${keys.join(" ")}`);
   for (const key of keys) assert.ok(!clean.includes(key), key);

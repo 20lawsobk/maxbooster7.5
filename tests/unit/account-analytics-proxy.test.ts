@@ -3,7 +3,7 @@ import type { AddressInfo } from "node:net";
 import { afterEach, expect, it, vi } from "vitest";
 
 const upstream = vi.hoisted(() => vi.fn());
-vi.mock("../../external/maxcore/artifacts/api-server/node_modules/undici/index.js", () => ({ Agent: class {}, request: upstream }));
+vi.mock("../../external/maxcore/node_modules/undici/index.js", () => ({ Agent: class {}, request: upstream }));
 vi.mock("../../external/maxcore/artifacts/api-server/src/server-state.js", () => ({ isPythonRestarting: () => true }));
 vi.mock("../../external/maxcore/artifacts/api-server/src/keepalive.js", () => ({ runActivation: vi.fn(), getKeepaliveStatus: vi.fn() }));
 import router from "../../external/maxcore/artifacts/api-server/src/routes/model-proxy.js";

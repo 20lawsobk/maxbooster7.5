@@ -7,6 +7,22 @@ import { fileURLToPath, pathToFileURL } from "node:url";
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../..");
 const TIMEOUT_MS = 20 * 60 * 1000;
 const LFS_POINTER_LIMIT = 1024;
+const MAX_STAGED_JSON_BYTES = 16 * 1024 * 1024;
+const GIT_CONTEXT_ENV_KEYS = [
+  "GIT_DIR",
+  "GIT_WORK_TREE",
+  "GIT_INDEX_FILE",
+  "GIT_COMMON_DIR",
+  "GIT_PREFIX",
+];
+
+export function envForCommand(command, env = process.env) {
+  const childEnv = { ...env };
+  if (command !== "git") {
+    for (const key of GIT_CONTEXT_ENV_KEYS) delete childEnv[key];
+  }
+  return childEnv;
+}
 
 function run(
   command,
@@ -19,7 +35,7 @@ function run(
     stdio: capture ? "pipe" : "inherit",
     timeout: TIMEOUT_MS,
     maxBuffer,
-    env: process.env,
+    env: envForCommand(command),
   });
 }
 
@@ -258,10 +274,26 @@ function verifyStagedModelPointers(root, paths, deletedPaths) {
   }
 }
 
-function verifyStagedJson(root, paths, deletedPaths) {
+export function verifyStagedJson(root, paths, deletedPaths) {
   for (const file of paths.filter((item) => item.endsWith(".json"))) {
     if (deletedPaths.has(file)) continue;
-    const content = stagedBlob(root, file);
+    const sizeResult = run("git", ["cat-file", "-s", `:${file}`], {
+      cwd: root,
+      capture: true,
+    });
+    if (sizeResult.status !== 0) {
+      throw new Error(`Could not inspect staged JSON file: ${file}`);
+    }
+    const bytes = Number(sizeResult.stdout.trim());
+    if (!Number.isSafeInteger(bytes) || bytes < 0) {
+      throw new Error(`Could not inspect staged JSON size: ${file}`);
+    }
+    if (bytes > MAX_STAGED_JSON_BYTES) {
+      throw new Error(
+        `Staged JSON file exceeds the ${MAX_STAGED_JSON_BYTES}-byte review limit: ${file}`,
+      );
+    }
+    const content = stagedBlob(root, file, MAX_STAGED_JSON_BYTES + 1);
     if (content.status !== 0) {
       throw new Error(`Could not read staged JSON file: ${file}`);
     }

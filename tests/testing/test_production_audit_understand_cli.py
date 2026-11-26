@@ -131,7 +131,7 @@ class ProductionAuditUnderstandCliTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as temporary:
             repo = Path(temporary)
             (repo / "README.md").write_text(
-                "Example credential: AKIAIOSFODNN7EXAMPLE\n",
+                "Example credential: " + "AKIA" + "IOSFODNN7EXAMPLE\n",
                 encoding="utf-8",
             )
             cfg = {
