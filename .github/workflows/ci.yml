@@ -207,7 +207,7 @@ jobs:
           test -x bin/boosterstate
           test -f dist/gateway.mjs
           test -f dist/compute-sizing.mjs
-          python_runtime/bin/python3 -c 'import numpy, PIL, scipy, fastapi, uvicorn, pydantic'
+          python_runtime/bin/python3 -I -c 'import numpy, PIL, scipy, fastapi, uvicorn, pydantic, torch'
           echo "=== Build Outputs ==="
           ls -lh dist/public/ 2>/dev/null || echo "No dist/public found"
           ls -lh dist/*.mjs 2>/dev/null || echo "No dist MJS files found"
