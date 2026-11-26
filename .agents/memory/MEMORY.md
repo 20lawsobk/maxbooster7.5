@@ -191,3 +191,4 @@
 - [Minimum account age](minimum-account-age.md) — user selected 16 as the consistent registration and policy minimum; preserve existing accounts.
 - [.replit Nix channel pin](replit-nix-channel-required.md) — missing `[nix] channel` drops to legacy nixpkgs (no node/postgresql_17); upstream syncs of tracked .replit drop it again
 - [MaxCore Python test invocation](maxcore-python-test-invocation.md) — unittest with PYTHONPATH=.:tests; pytest/httpx2 absent; live-server files need running MaxCore
+- [Rebase after merged origin history](rebase-after-merged-origin.md) — flattened rebases can replay pre-merge reversions; compare final tree with ORIG_HEAD and preserve merged state.

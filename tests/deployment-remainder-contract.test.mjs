@@ -7,17 +7,11 @@ import { pathToFileURL } from "node:url";
 import { build } from "esbuild";
 import { buildPlan, startPlan } from "../script/deployment/plans.mjs";
 
-test("publishing graph captures the application remainder before destructive packing", () => {
+test("publishing graph builds the application remainder before finalizing", () => {
   const tasks = new Map(buildPlan().map(task => [task.id, task]));
-  assert.deepEqual(tasks.get("pack_app_remainder")?.deps, ["app_capsule"]);
-  assert.deepEqual(tasks.get("prune")?.deps, ["app_capsule", "packer", "pack_app_remainder"]);
-  assert.ok(tasks.get("source")?.deps.includes("pack_app_remainder"));
   assert.deepEqual(tasks.get("remainder")?.deps, ["source"]);
   assert.deepEqual(tasks.get("finalize")?.deps, ["remainder"]);
   assert.deepEqual(tasks.get("remainder")?.args, ["build.sh", "--executive-task", "remainder"]);
-  assert.deepEqual(tasks.get("pack_app_remainder")?.args, [
-    "build.sh", "--executive-task", "pack_app_remainder",
-  ]);
 
   const restore = startPlan(process.execPath).find(task => task.id === "restore-app");
   assert.deepEqual(restore?.args.slice(1), [
@@ -25,18 +19,16 @@ test("publishing graph captures the application remainder before destructive pac
   ]);
 
   const shell = fs.readFileSync("build.sh", "utf8");
-  assert.match(shell, /phase_pack_app_remainder\(\)\s*\{/);
-  assert.match(shell, /node dist\/publish-capsules\.mjs app-remainder app_remainder\.pdim/);
   assert.match(shell, /phase_remainder\(\)\s*\{/);
-  assert.match(shell, /\|pack_app_remainder\|prune\|/);
+  assert.match(shell, /node dist\/publish-capsules\.mjs remainder app_remainder\.pdim/);
+  assert.match(shell, /\|source\|remainder\|assets\|finalize\)/);
   assert.match(shell, /Required startup capsule or manifest missing/);
   assert.match(shell, /Required runtime social-awareness registry missing/);
   assert.match(shell, /cp shared\/social-platform-optimization\.json \\\s+"\$DEPLOY_STATE_DIR\/social-platform-optimization\.json"/);
   assert.match(shell, /cp "\$DEPLOY_STATE_DIR\/social-platform-optimization\.json" \\\s+shared\/social-platform-optimization\.json/);
   const packer = fs.readFileSync("script/publish-capsules.ts", "utf8");
-  assert.match(packer, /mode === "app-remainder"/);
-  assert.match(packer, /validateBuild\(root\)/);
-  assert.match(packer, /preserveSource: true, attestSource: true/);
+  assert.match(packer, /mode === "remainder"/);
+  assert.match(packer, /preserveSource: false/);
 });
 
 test("remainder inventory retains pre-restore modules and selects runtime assets", async t => {
@@ -46,7 +38,6 @@ test("remainder inventory retains pre-restore modules and selects runtime assets
     "dist/deployment/executive.mjs",
     "dist/deployment/owned-processes.mjs",
     "dist/pdim-restore.mjs",
-    "dist/publish-capsules.mjs",
     "dist/index.mjs",
     "dist/public/index.html",
     "source.pdim",
@@ -83,7 +74,6 @@ test("remainder inventory retains pre-restore modules and selects runtime assets
   }
   for (const bootstrap of ["dist/deployment/executive.mjs",
     "dist/deployment/owned-processes.mjs", "dist/pdim-restore.mjs",
-    "dist/publish-capsules.mjs",
     "build.sh", ".node_bin/node", "node_modules.pdim",
     "node_modules.manifest.json", "scripts/port-contract.sh"]) {
     assert.ok(!members.includes(bootstrap), `bootstrap must remain outside capsule: ${bootstrap}`);
